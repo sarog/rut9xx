@@ -33,6 +33,9 @@ $ make menuconfig
 $ make
 ```
 
+To avoid having to install texinfo for `automake` docs:
+`ln -s /usr/bin/true ~/.local/bin/makeinfo`
+
 After successful build you will get the image file "RUT9XX_R_GPL_00.XX.YY_WEBUI.bin" in "bin/ar71xx/tltFws/".
 
 ### Installation
