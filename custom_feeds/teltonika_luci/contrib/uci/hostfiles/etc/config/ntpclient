@@ -1,0 +1,14 @@
+config ntpserver
+	option hostname '0.europe.pool.ntp.org'
+	option port     '123'
+
+config ntpserver
+	option hostname '3.europe.pool.ntp.org'
+	option port     '123'
+
+config ntpdrift
+	option freq     '0'
+
+config ntpclient
+	option interval	60
+	#option count	10

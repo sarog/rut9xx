@@ -1,0 +1,184 @@
+#!/usr/bin/env lua
+
+require("uci")
+
+local uci = uci.cursor()
+local sms = {}
+local debug_level= 1
+
+function debug(level, string)
+	if debug_level >= level then
+		os.execute("logger -s -t send_conf_messages \"" ..string.. "\"")
+	end
+end
+
+function string:split( inSplitPattern, outResults )
+  if not outResults then
+    outResults = { }
+  end
+  local theStart = 1
+  local theSplitStart, theSplitEnd = string.find( self, inSplitPattern, theStart )
+  while theSplitStart do
+    table.insert( outResults, string.sub( self, theStart, theSplitStart-1 ) )
+    theStart = theSplitEnd + 1
+    theSplitStart, theSplitEnd = string.find( self, inSplitPattern, theStart )
+  end
+  table.insert( outResults, string.sub( self, theStart ) )
+  return outResults
+end
+
+function fileExists(path, name)
+	local string = "ls ".. path
+	local h = io.popen(string)
+	local t = h:read("*all")
+	h:close()
+
+	for i in string.gmatch(t, "%S+") do
+		if i == name then
+			return 1
+		end
+	end
+end
+
+function read_text(value)
+	debug(1, "Generating configuration messages")
+	local messages = {}
+	local msg = "CONF:1-%d"
+	local tmpFile = "/tmp/conf_msg"
+	local f = io.open(tmpFile, "rb")
+	local value = f:read("*all")
+	f:close()
+
+	if value then
+		debug(1, "Reading configuration file")
+		local count_messages = 1
+		table.insert(messages, "conf")
+		local myTable = value:split(", ")
+		for n, word in ipairs(myTable) do
+			if string.len(msg.. " " ..word) > 140 then
+				table.insert(messages, msg)
+				count_messages = count_messages + 1
+				msg="CONF:" ..count_messages.. "-%d"
+			end
+			msg = msg.. ", " ..word
+		end
+		table.insert(messages, msg)
+		os.remove(tmpFile)
+		return messages
+	end
+end 
+
+function get_certs(cert, patern)
+	--local file = uci:get("sms_utils", "cfgsms", cert)
+	local file_path = "/lib/uci/upload/"
+	local file_name = string.format("cbid.sms_utils.cfgsms.%s", cert)
+	local file = file_path .. "" .. file_name
+	local messages = {}
+	
+	if fileExists(file_path, file_name) then
+		debug(1, "Generating certificate (" .. cert .. ") messages")
+		local cert_file = io.open(file, "r")
+		if cert_file then
+			debug(1, "Reading certificate (" .. cert .. ") file")
+			local line
+			local num = 1
+			local msg = patern.. "1-%d"
+			table.insert(messages, "cert")
+			
+			repeat
+				line = cert_file:read("*l")
+				if line then
+					if string.len(msg.. "\n" ..line) > 157 then
+						table.insert(messages, msg)
+						num = num + 1
+						msg = patern ..""..num.."-%d"
+					end
+						msg = msg.. "\n" ..line
+				else
+					table.insert(messages, msg)
+				end
+			until not line
+			cert_file:close()
+			os.remove(file)
+		end
+		table.insert(sms, messages)
+	end
+end
+
+function set_status(string)
+	local tmpStatus = "/tmp/sms_status"
+	local file = io.open(tmpStatus, "w")
+	file:write(string)
+	file:close()
+end
+
+debug(1, "Staring send_conf_messages...")
+
+if fileExists("/tmp/", "conf_msg") then
+	uci:delete("sms_utils", "message", "wait_response")
+	uci:delete("sms_utils", "message", "number")
+	uci:commit("sms_utils")
+	
+	get_certs("ca", "CRTF:")
+	get_certs("cert", "SRVR:")
+	get_certs("key", "PRIVAT:")
+	get_certs("dh", "DHPAR:")
+	get_certs("secret", "SECR:")
+	table.insert(sms, read_text())
+	--print("Metatable "..#sms)
+	local num_messages
+	--print("pradzia")
+	if #sms > 0 then
+		local status = ""
+		local messages_count = 0
+		local count_sent = 0
+		--print("first")
+		for i,table in pairs(sms) do
+			local num = 0
+			for n, message in pairs(table) do
+				local telnum = arg[1] 
+				if telnum and telnum ~= "" then
+					--print("I: " ..n)
+					if n > 1 then
+						message = string.format(message, #table-1)
+						os.execute("sleep 2")
+						output = assert (io.popen(string.format('gsmctl -S -s " %s %s"',telnum, message)))
+						os.execute("echo " .. string.format('gsmctl -S -s " %s %s"',telnum, message) .. ">>/tmp/test.send")
+						local response = output:read()
+						output:close()
+						if response == "OK" then
+							num = num + 1
+							count_sent = count_sent + 1
+							set_status("SC:1:S:" ..status.." "..num.. "/" ..(#table - 1).. " messages sent.")
+						else
+							set_status("ER:1:S:" ..response)
+						end
+						
+						debug(1, "Sending message to " .. telnum .. " response: " .. response)
+					else
+						if message == "conf" then
+							status = "Sending configuration."
+						elseif message == "cert" then
+								status = "Sending certificate."
+						end
+						set_status("SC:1:S:" ..status)
+						messages_count = messages_count + #table - 1
+					end
+				end
+			end
+		end
+		
+		if count_sent > 0 then
+			if count_sent == messages_count then
+				debug(1, "Status DONE")
+				set_status("SC:0:W:Done")
+			else
+				set_status("ER:0:W:Only " ..count_sent.. " of "..messages_count.." messages sent")
+			end
+		else
+			set_status("ER:0:W:Stop")
+		end
+	end
+end
+
+debug(1, "Stoping...")

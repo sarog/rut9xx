@@ -1,0 +1,36 @@
+From 740b393040b3e6c1e44c30f472916756ca6771ee Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Edgaras=20A=C5=A1montas?= <edgaras.asmontas@teltonika.lt>
+Date: Fri, 30 Mar 2018 10:50:25 +0300
+Subject: [PATCH] Revert "uhttpd: Add TCP_FASTOPEN support"
+
+This reverts commit a8bf9c00842224edb394e79909053f7628ee6a82.
+---
+ listen.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/listen.c b/listen.c
+index 2a54888..92ca680 100644
+--- a/listen.c
++++ b/listen.c
+@@ -107,17 +107,15 @@ void uh_setup_listeners(void)
+ 		/* TCP keep-alive */
+ 		if (conf.tcp_keepalive > 0) {
+ #ifdef linux
+-			int tcp_ka_idl, tcp_ka_int, tcp_ka_cnt, tcp_fstopn;
++			int tcp_ka_idl, tcp_ka_int, tcp_ka_cnt;
+ 
+ 			tcp_ka_idl = 1;
+ 			tcp_ka_cnt = 3;
+ 			tcp_ka_int = conf.tcp_keepalive;
+-			tcp_fstopn = 5;
+ 
+ 			setsockopt(sock, SOL_TCP, TCP_KEEPIDLE,  &tcp_ka_idl, sizeof(tcp_ka_idl));
+ 			setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, &tcp_ka_int, sizeof(tcp_ka_int));
+ 			setsockopt(sock, SOL_TCP, TCP_KEEPCNT,   &tcp_ka_cnt, sizeof(tcp_ka_cnt));
+-			setsockopt(sock, SOL_TCP, TCP_FASTOPEN,  &tcp_fstopn, sizeof(tcp_fstopn));
+ #endif
+ 
+ 			setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes));
+-- 
+2.16.2
+

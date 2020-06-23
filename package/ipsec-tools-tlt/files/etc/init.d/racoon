@@ -1,0 +1,22 @@
+#!/bin/sh /etc/rc.common
+#/etc/init.d/racoon
+
+START=90
+STOP=90
+
+start()
+{
+	/etc/racoon/racoon.sh start &
+}
+ 
+stop()
+{
+	/etc/racoon/racoon.sh stop &
+}
+
+restart()
+{
+	/etc/racoon/racoon.sh restart &
+}
+
+

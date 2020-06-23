@@ -1,0 +1,131 @@
+<%+cbi/valueheader%>
+
+<%-
+	local uci = require "luci.model.uci".cursor()
+	local utl = require "luci.util"
+	local fwm = require "luci.model.firewall".init()
+	local nwm = require "luci.model.network".init()
+
+	local zone, fwd, fz
+	local value = self:formvalue(section)
+	if not value or value == "-" then
+		value = self:cfgvalue(section) or self.default
+	end
+
+	local def  = fwm:get_defaults()
+	local zone = fwm:get_zone(value)
+	local empty = true
+-%>
+
+<% if zone then %>
+<div style="white-space:nowrap">
+	<label class="zonebadge" style="background-color:<%=zone:get_color()%>">
+		<strong><%=zone:name()%>:</strong>
+		<%-
+			local zempty = true
+			for _, net in ipairs(zone:get_networks()) do
+				net = nwm:get_network(net)
+				if net then
+					zempty = false
+		-%>
+
+			<span class="ifacebadge<% if net:name() == self.network then %> ifacebadge-active<% end %>"><%=net:name()%>:
+			<%
+				local nempty = true
+				for _, iface in ipairs(net:is_bridge() and net:get_interfaces() or { net:get_interface() }) do
+					nempty = false
+			 %>
+				<img<%=attr("title", iface:get_i18n())%> style="width:16px; height:16px; vertical-align:middle" src="<%=resource%>/icons/<%=iface:type()%><%=iface:is_up() and "" or "_disabled"%>.png" />
+			<% end %>
+			<% if nempty then %><% end %>
+			</span>
+		<%- end end -%>
+		<%- if zempty then 
+				if zone:name() == "vpn" then
+					exist = 0
+					uci:foreach("openvpn", "openvpn",
+						function (section)
+							if section.enable == "1" then
+								exist = 1
+							end
+						end
+					)
+
+					if exist == 1 then %>
+						<span title="enabled"> openvpn:<img title="enabled" style="width:16px; height:16px; vertical-align:middle" src="<%=resource%>/icons/vpn.png"/></span>
+					<%else%>
+						<span title="disabled"> openvpn:<img title="disabled" style="width:16px; height:16px; vertical-align:middle" src="<%=resource%>/icons/vpn_disabled.png"/></span>
+					<% end %>
+				<% elseif zone:name() == "gre" then 
+				exist = 0
+					uci:foreach("gre_tunnel", "gre_tunnel",
+						function (section)
+							if section.enabled == "1" then
+								exist = 1
+							end
+						end
+					)
+
+					if exist == 1 then %>
+						<span title="enabled"> gre tunnel:<img style="width:16px; height:16px; vertical-align:middle" src="<%=resource%>/icons/vpn.png"/></span>
+					<%else%>
+						<span title="disabled"> gre tunnel:<img style="width:16px; height:16px; vertical-align:middle" src="<%=resource%>/icons/vpn_disabled.png"/></span>
+					<% end %>
+				<% elseif zone:name() == "l2tp" then 
+						exist = 0
+					uci:foreach("network", "interface",
+						function (section)
+							if section.proto == "l2tp" and section.enabled == "1" then
+								exist = 1
+							end
+						end
+					)
+
+					if exist == 1 then %>
+						<span title="enabled"> l2tp:<img style="width:16px; height:16px; vertical-align:middle" src="<%=resource%>/icons/vpn.png"/></span>
+					<%else%>
+						<span title="disabled"> l2tp:<img style="width:16px; height:16px; vertical-align:middle" src="<%=resource%>/icons/vpn_disabled.png"/></span>
+					<% end %>
+					<% elseif zone:name() == "pptp" then 
+						exist = 0
+					uci:foreach("network", "interface",
+						function (section)
+							if section.proto == "pptp" and section.enabled == "1" then
+								exist = 1
+							end
+						end
+					)
+					local pptp_en = uci:get("pptpd", "pptpd", "enabled")
+					if (pptp_en == "1") then
+						exist = 1
+					end
+
+					if exist == 1 then %>
+						<span title="enabled"> pptp:<img style="width:16px; height:16px; vertical-align:middle" src="<%=resource%>/icons/vpn.png"/></span>
+					<%else%>
+						<span title="disabled"> pptp:<img style="width:16px; height:16px; vertical-align:middle" src="<%=resource%>/icons/vpn_disabled.png"/></span>
+					<% end %>
+				<% end %>
+		<% end -%>
+	</label>
+<!--
+	&#160;&#8658;&#160;
+	<% for _, fwd in ipairs(zone:get_forwardings_by("src")) do
+		fz = fwd:dest_zone()
+		empty = false %>
+		<label class="zonebadge" style="background-color:<%=fz:get_color()%>">
+			<strong><%=fz:name()%></strong>
+		</label>&#160;
+	<% end %>
+-->
+<!--
+	<% if empty then %>
+		<label class="zonebadge zonebadge-empty">
+			<strong><%=zone:forward():upper()%></strong>
+		</label>
+	<% end %>
+-->
+</div>
+<% end %>
+
+<%+cbi/valuefooter%>

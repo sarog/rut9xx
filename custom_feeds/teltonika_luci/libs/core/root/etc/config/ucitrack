@@ -1,0 +1,290 @@
+config network
+	option init network
+	list affects gsmd-usb
+	list affects dhcp_common
+	list affects gre_tunnel
+	list affects openvpn
+	list affects xl2tpd
+	list affects pptpd
+	list affects vrrpd
+	list affects simpin
+	list affects strongswan
+	list affects reregister
+	list affects bridge_arp
+	list affects load_balancing
+	list affects fix_sta_ap
+	list affects mosquitto
+	list affects mqtt_pub
+	list affects modbusgateway
+	list affects telenor_mqtt
+	list affects stunnel
+	list affects tcplogger
+	list affects iot
+	list affects udprelay
+	list affects quagga
+	list affects multi_wifi
+
+config quagga
+	option init quagga
+
+config gsmd-usb
+	option init gsmd-usb
+
+config bridge_arp
+	option init bridge_arp
+
+config wireless
+	list affects fix_sta_ap
+	list affects network
+	list affects coovachilli
+
+config portscan
+	list affects firewall
+
+config privoxy
+	option init privoxy
+
+config firewall
+	option init firewall
+	list affects coovachilli
+	list affects qos
+	list affects hostblock
+	list affects pptpd
+	list affects gre_tunnel
+
+config coovachilli
+	option init chilli
+	list affects privoxy
+	list affects radius
+	list affects uhttpd
+
+config dhcp_common
+	option init dhcp_common
+	list affects dnsmasq
+	list affects dhcprelay
+
+config dhcp
+	option init dnsmasq
+
+config dnsmasq
+	option init dnsmasq
+
+config bird4
+	option init bird4
+	list affects firewall
+
+config dhcprelay
+	option init dhcprelay
+
+config dropbear
+	option init dropbear
+
+config httpd
+	option init httpd
+
+config fstab
+	option init fstab
+
+config qos
+	option init qos
+
+config system
+	option init led
+	option init ledsman
+	option init tcpdebug
+	list affects luci_statistics
+
+config ntpclient
+	option init ntpclient
+	option init gpsd
+	list affects ntpserver
+
+config ntpserver
+    option init ntpserver
+
+config multiwan
+	option init multiwan
+
+config ping_reboot
+	option init ping_reboot
+
+config eventslog_report
+	option init eventslog_report
+	list affects eventslog
+	list affects cron
+
+config eventslog
+	option init eventslog
+
+config cron
+	option init cron
+
+config uhttpd
+	option init uhttpd
+
+config gre_tunnel
+	option init gre-tunnel
+
+config strongswan
+	option init ipsec
+	list affects firewall
+	list affects multiwan
+
+config sms_utils
+	option init sms-utils
+
+config radius
+	option init radiusd
+
+config tcplogger
+	option init tcplogger
+
+config openvpn
+	option init openvpn
+
+config mdcollectd
+	option init mdcollectd
+
+config smscollect
+	option init smscollect
+
+config rms_connect_mqtt
+	option init rms_connect
+	list affects mdcollectd
+
+config hostblock
+	option init hostblock
+
+config data_limit
+	option init limit_guard
+	list affects mdcollectd
+
+
+config sim_switch
+	option init sim_conf_switch
+	option init sim_switch
+	list affects mdcollectd
+
+config gps
+	option init gpsd
+
+config rs
+	option init rs232
+	list affects firewall
+
+config usb_to_serial
+	option init usb_to_serial
+	list affects firewall
+
+config periodic_reboot
+	option init periodic_reboot
+
+config vrrpd
+	option init vrrpd
+
+config simpin
+	option init simpin
+
+config simcard
+	option init sim_conf_switch
+	list affects network
+	list affects sim_switch
+	list affects data_limit
+
+config mosquitto
+	option init mosquitto
+
+config modbusgateway
+	option init modbusgateway
+
+config mqtt_pub
+	option init mqtt_pub
+
+config pptpd
+	option init pptpd
+
+config reregister
+	option init reregister
+
+config output_control
+	option init output_control
+	option init output_scheduler
+
+config ddns
+	option init ddns
+
+config logtrigger
+	option init logtrigger
+
+config ioman
+	option init ioman
+
+config sms_gateway
+	option init pop3_ets
+
+config sim_idle_protection
+	option init sim_idle_protection
+
+config smpp_config
+	option init smpp_init
+
+config modbus
+	option init modbusd
+
+config cli
+	option init shellinabox
+
+config load_balancing
+	option init load_balancing
+
+config fix_sta_ap
+	option init fix_sta_ap
+
+config xl2tpd
+	option init xl2tpd
+
+config static_arp
+	option init static_arp
+
+config kmod_man
+	option init kmod_man
+
+config wget_reboot
+	option init wget_reboot
+
+config hotspot_scheduler
+	option init hotspot_scheduler
+
+config stunnel
+	option init stunnel
+
+config modbus_tcp_master
+	option init modbus_tcp_master
+
+config modbus_master_alarms
+	list affects 'modbus_tcp_master'
+	list affects 'modbus_serial_master'
+
+config modbus_data_sender
+	option init 'modbus_data_sender'
+
+config modbus_serial_master
+	option init modbus_serial_master
+
+config modbusgateway
+	option init modbusgateway
+
+config iot
+	option init 'cud'
+
+config iottw
+	option init 'twd'
+
+config udprelay
+	option init 'udprelay'
+
+config profiles
+    option init profiler
+
+config multi_wifi
+	option init 'multi_wifi'

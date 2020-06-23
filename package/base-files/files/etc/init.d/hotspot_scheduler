@@ -1,0 +1,74 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=99
+CRONTAB_ID=aCr5E6Lm
+SCHEDULER_SCRIPT=/sbin/hotspot_restrict.sh
+DAYS="mon tue wed thu fri sat sun"
+OLD_MODE=
+COUNT=0
+CURR_DAY=$(echo "`date +%a`" | awk '{print tolower($0)}')
+CURR_HOUR=`date +%H`
+
+set_schedule(){
+	local hour
+	local action
+	local schedule=$1
+	local day=$2
+	local id=$3
+
+	for hour in $(seq 0 23)
+	do
+		mode=${schedule:${hour}:1}
+
+		if [ "${OLD_MODE}" != "${mode}" ]; then
+			if [ "${mode}" == "1" ]; then
+				action=set
+				COUNT=$((COUNT+1))
+			else
+				action=clear
+			fi
+
+			(crontab -l ; echo "0 ${hour} * * ${day} ${SCHEDULER_SCRIPT} \"${action}\" \"${id}\" #$CRONTAB_ID") | crontab -
+		fi
+		if [ "${day}" == "${CURR_DAY}" -a ${CURR_HOUR} -eq ${hour} ]; then
+			[ "${mode}" == "1" ] && action=set || action=clear
+
+			${SCHEDULER_SCRIPT} ${action} ${id}
+		fi
+
+		OLD_MODE=${mode}
+	done
+	OLD_MODE=
+}
+
+perform_ap(){
+	local section=$1
+	local schedule
+	OLD_MODE=
+
+	for day in ${DAYS}
+	do
+		config_get schedule ${section} ${day}
+
+		[ -n "${schedule}" -a -n "${day}" ] && set_schedule "${schedule}" "${day}" "${section}"
+	done
+}
+
+stop_ap(){
+	${SCHEDULER_SCRIPT} "clear" "$1"
+}
+
+start(){
+	config_load hotspot_scheduler
+	config_foreach perform_ap "ap"
+
+	#Clean crontab if schedules is not set.
+	[ ${COUNT} -eq 0 ] && stop
+}
+
+stop(){
+	config_load hotspot_scheduler
+	crontab -l | grep -v "$CRONTAB_ID"  | crontab -
+	config_foreach stop_ap "ap"
+}

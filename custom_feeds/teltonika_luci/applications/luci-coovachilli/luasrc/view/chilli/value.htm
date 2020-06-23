@@ -1,0 +1,42 @@
+<%+cbi/valueheader%>
+	<input type="<%=self.password and 'password" class="cbi-input-password' or self.hidden_field and 'hidden"' or 'text" class="cbi-input-text' %>" autocomplete="<% if self.noautocomplete then %>off<%else%>on<% end %>" onchange="cbi_d_update(this.id)"<%=
+		attr("name", cbid) .. attr("id", cbid) .. attr("value", self:cfgvalue(section) or self.default) .. ifattr(self.hardDisabled == true, "disabled", "disabled") ..
+		ifattr(self.size, "size") .. ifattr(self.placeholder, "placeholder") .. ifattr(self.maxlength, "maxlength")
+	%> <%- if self.maxWidth then -%> style="max-width:<%=self.maxWidth%>;" <%- end -%>/>
+	<% if self.password then %><img src="<%=resource%>/cbi/reload.gif" style="vertical-align:sub" title="<%:Reveal/hide password%>" onclick="var e = document.getElementById('<%=cbid%>'); e.type = (e.type=='password') ? 'text' : 'password';"/><% end %>
+	<% if #self.keylist > 0 or self.datatype then -%>
+	<script type="text/javascript">//<![CDATA[
+		<% if #self.keylist > 0 then -%>
+		cbi_combobox_init('<%=cbid%>', {
+		<%-
+			for i, k in ipairs(self.keylist) do
+		-%>
+			<%-=string.format("%q", k) .. ":" .. string.format("%q", self.vallist[i])-%>
+			<%-if i<#self.keylist then-%>,<%-end-%>
+		<%-
+			end
+		-%>
+		}, '<%- if not self.rmempty and not self.optional then -%>
+			<%-: -- Please choose -- -%>
+		<%- end -%>', '
+		<%- if self.combobox_manual then -%>
+			<%-=self.combobox_manual-%>
+		<%- else -%>
+			<%-: -- custom -- -%>
+		<%- end -%>'
+		<%- if self.maxWidth then -%>
+		, '<%= self.maxWidth %>'
+		<%- end -%>);
+		<%- end %>
+		<% if self.datatype then -%>
+		cbi_validate_field('<%=cbid%>', <%=tostring((self.optional or self.rmempty) == true)%>, '<%=self.datatype:gsub("'", "\\'")%>');
+		<%- end %>
+	//]]></script>
+	<% end -%>
+	
+	<select class="cbi-input-select" onchange="cbi_d_update(this.id)" id="cbid.<%=self.config%>.<%=section%>.<%=self.unit_field_option%>" name="cbid.<%=self.config%>.<%=section%>.<%=self.unit_field_option%>" size="1">
+		<option id="cbi-<%=self.config%>-<%=section%>-<%=self.unit_field_option%>-kb" value="kb" <%= ifattr(self:cfgunits(section) == "kb", "selected") %>>Kbit/s</option>
+		<option id="cbi-<%=self.config%>-<%=section%>-<%=self.unit_field_option%>-mb" value="mb" <%= ifattr(self:cfgunits(section) == "mb", "selected") %>>Mbit/s</option>
+		<option id="cbi-<%=self.config%>-<%=section%>-<%=self.unit_field_option%>-gb" value="gb" <%= ifattr(self:cfgunits(section) == "gb", "selected") %>>Gbit/s</option>
+	</select>
+<%+cbi/valuefooter%>

@@ -1,0 +1,10 @@
+<%+cbi/valueheader%>
+
+  <input class="cbi-button cbi-button-apply" type="submit" name="cbi.apply" value="Save" />
+  <input type="button" 
+         class="cbi-button cbi-button-apply" 
+         value="Next" 
+         onclick="parent.location='<%=luci.dispatcher.build_url("admin", "wizard", "step2")%>'" 
+  />
+
+<%+cbi/valuefooter%>

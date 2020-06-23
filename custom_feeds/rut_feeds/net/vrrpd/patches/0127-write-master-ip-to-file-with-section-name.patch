@@ -1,0 +1,53 @@
+--- a/vrrpd.c	2019-10-28 08:48:26.413058987 +0000
++++ b/vrrpd.c	2019-10-28 08:48:19.776210688 +0000
+@@ -625,8 +625,10 @@
+ 	}
+ 
+ 	/* Scott added 9-4-02 */
+-	master_ipaddr = ip->saddr;
+-	write_ip_to_file(vsrv);
++	if (ip->saddr && master_ipaddr != ip->saddr) {
++		master_ipaddr = ip->saddr;
++		write_ip_to_file(vsrv);
++	}
+ 	return 0;
+ }
+ 
+@@ -1397,10 +1399,14 @@
+ 	FILE *pCMD, *f;
+ 	char BufferInfo[100];
+ 	char status[10];
+-	if(!strcmp(vsrv->vif.ifname , "br-lan")){
+-		pCMD = fopen("/tmp/vrrpd_lan_log", "r");
+-	}else{
+-		pCMD = fopen("/tmp/vrrpd_wan_log", "r");
++	if (vsrv->log_file) {
++		pCMD = fopen(vsrv->log_file, "r");
++	} else {
++		if (!strcmp(vsrv->vif.ifname, "br-lan")) {
++			pCMD = fopen("/tmp/vrrpd_lan_log", "r");
++		} else {
++			pCMD = fopen("/tmp/vrrpd_wan_log", "r");
++		}
+ 	}
+ 	if (pCMD == NULL){
+ 		printf("Error opening file!\n");
+@@ -1409,10 +1415,14 @@
+ 		BufferInfo[strlen(BufferInfo)-1] = '\0';
+ 		strncpy(status, BufferInfo, sizeof(status));
+ 		fclose(pCMD);
+-		if(!strcmp(vsrv->vif.ifname , "br-lan")){
+-			f = fopen("/tmp/vrrpd_lan_log", "wb");
+-		}else{
+-			f = fopen("/tmp/vrrpd_wan_log", "wb");
++		if (vsrv->log_file) {
++			f = fopen(vsrv->log_file, "wb");
++		} else {
++			if (!strcmp(vsrv->vif.ifname, "br-lan")) {
++				f = fopen("/tmp/vrrpd_lan_log", "wb");
++			} else {
++				f = fopen("/tmp/vrrpd_wan_log", "wb");
++			}
+ 		}
+ 		if (f == NULL){
+ 			printf("Error opening file!\n");

@@ -1,0 +1,68 @@
+--- a/vrrpd.c	(date 1538981383000)
++++ b/vrrpd.c	(date 1538981383000)
+@@ -58,6 +58,7 @@
+ static vrrp_rt	glob_vsrv;	/* a global because used in the signal handler*/
+ /* Scott added 9-4-02 */
+ int master_ipaddr = 0;
++int daemonize = 0;
+ 
+ static char	PidDir[FILENAME_MAX+1];
+ static char	scriptdown[FILENAME_MAX+1];
+@@ -856,6 +857,7 @@
+ 							, VRRP_ADVER_DFL );
+ 	fprintf( stderr, "  -z prio  : Set the priority after SIGTTIN (not decrement as default)\n");
+ 	fprintf( stderr, "  -x prio  : Set the priority after SIGTTOU (not increment as default)\n");
++	fprintf( stderr, "  -r       : Run as deamon\n");
+ 	fprintf( stderr, "  ipaddr/length   : Should be at the end - IP address(es) of the virtual server and the length of the subnet mask - \n" );
+ 	fprintf( stderr, "  -V        : display version\n\n" );
+         fprintf( stderr, " ---------------------------------------------------------------------------\n");
+@@ -961,7 +963,7 @@
+ 	int	c;
+ 	vsrv->no_vmac = 1;
+ 	while( 1 ){
+-		c = getopt( argc, argv, "f:M:Vhnsi:v:a:p:z:x:d:D:U:I:O:" );
++		c = getopt( argc, argv, "f:M:Vhnrsi:v:a:p:z:x:d:D:U:I:O:" );
+ 		/* if the parsing is completed, exit */
+ 		if( c == EOF )	break;
+ 		switch( c ){
+@@ -1052,6 +1054,10 @@
+ 			showdelay = vsrv->adver_int;
+ 			vsrv->adver_int *= VRRP_TIMER_HZ;
+ 			break;
++
++		case 'r':
++			daemonize	= 1;
++			break;
+ 	
+ 		case 'M':
+ 			monitor = atoi(optarg);
+@@ -1879,15 +1885,21 @@
+                 exit (0);
+         }
+ 
+-	// First we fork and kill our parent
+-	if (fork())
+-	{
+-		/* Close out the standard file descriptors */
+-        	close(STDIN_FILENO);
+-        	close(STDOUT_FILENO);
+-        	close(STDERR_FILENO);
+-		exit(0);
++	if (daemonize == 1) {
++		// First we fork and kill our parent
++		if (fork())
++			exit(0);
+ 	}
++
++	// First we fork and kill our parent
++//	if (fork())
++//	{
++//		/* Close out the standard file descriptors */
++//        	close(STDIN_FILENO);
++//        	close(STDOUT_FILENO);
++//        	close(STDERR_FILENO);
++//		exit(0);
++//	}
+ 	/* Change the file mode mask */
+    	umask(0);       
+     

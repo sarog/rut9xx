@@ -1,0 +1,57 @@
+#!/bin/sh
+
+init() {
+	if [ -f /var/run/racoon-tracker.pid ]
+	then
+		logger -t "$0" "already running, exiting"
+		exit 0
+	fi
+	echo "$$" > /var/run/racoon-tracker.pid
+}
+
+get_wan_ip() {
+	local retry=20
+	MULTIWAN_FILE="/tmp/.mwan/cache"
+	while [ "$retry" -gt "0" ]; do
+		WAN="wan"
+		if [ -e "$MULTIWAN_FILE" ]; then
+			wan_fail=`cat /tmp/.mwan/cache | grep wan_fail_map | awk -F '"' '{print $2}'`
+			if [ "$wan_fail" == "wan[x]" ]; then
+				#wan2
+				WAN="wan2"
+			fi
+		fi
+		local iface=`uci get network.$WAN.ifname`
+		EXTERNAL=`/sbin/ifconfig $iface | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}'`
+		if [ "$EXTERNAL" == "" ]; then
+			logger -t "$0" "got empty WAN ip, trying again ($retry retries left)"
+			sleep 6
+		else
+			echo "$EXTERNAL"
+			return 0
+		fi
+		retry=$((retry-1))
+	done
+	logger -t "$0" "cannot determine WAN ip, exiting"
+	exit 1
+}
+
+OLD_WANIP=$(get_wan_ip)
+INTERVAL=10
+
+init
+
+while [ 1 ]
+do
+	CURR_WANIP=$(get_wan_ip)
+	
+	if [ "$CURR_WANIP" != "$OLD_WANIP" ]
+	then
+		logger -t "$0" "WAN ip change detected: $OLD_WANIP > $CURR_WANIP"
+		OLD_WANIP=$CURR_WANIP
+		#countermeasure here
+		logger -t "$0" "restarting racoon..."
+		/etc/init.d/racoon restart
+	fi
+	sleep $INTERVAL
+done

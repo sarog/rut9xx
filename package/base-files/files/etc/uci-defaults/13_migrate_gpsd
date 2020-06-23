@@ -1,0 +1,231 @@
+#!/bin/sh
+
+source /lib/functions.sh
+source /lib/teltonika-functions.sh
+
+num=0
+
+gps_write_opt() {
+        local config_name=$1
+        local section_type=$2
+        local section_name=$3
+        local option_name=$4
+        local value=$5
+
+        uci set $config_name.$section_name.$option_name=$value
+        uci commit $config_name
+}
+
+nmea_rule_create() {
+	local rule_name="$1"
+	local forwarding_enabled="$2"
+	local forwarding_interval="$3"
+	local collecting_enabled="$4"
+	local collecting_interval="$5"
+	local ftest_cmd=`uci get gps.$rule_name 2>&1`
+
+	if [ "$ftest_cmd" = "uci: Entry not found" ]
+	then
+		tlt_uci_write_opt "gps" "nmea_rule" "$rule_name" "forwarding_enabled" "$forwarding_enabled"
+		tlt_uci_write_opt "gps" "nmea_rule" "$rule_name" "forwarding_interval" "$forwarding_interval"
+		tlt_uci_write_opt "gps" "nmea_rule" "$rule_name" "collecting_enabled" "$collecting_enabled"
+		tlt_uci_write_opt "gps" "nmea_rule" "$rule_name" "collecting_interval" "$collecting_interval"
+	fi
+}
+
+nmea_forwarding_create() {
+	local ftest_cmd=`uci get gps.nmea_forwarding 2>&1`
+
+	if [ "$ftest_cmd" = "uci: Entry not found" ]
+	then
+		tlt_uci_write_opt "gps" "section" "nmea_forwarding" "enabled" "0"
+		tlt_uci_write_opt "gps" "section" "nmea_forwarding" "hostname" "192.168.1.5"
+		tlt_uci_write_opt "gps" "section" "nmea_forwarding" "port" "8500"
+		tlt_uci_write_opt "gps" "section" "nmea_forwarding" "proto" "tcp"
+	fi
+}
+
+nmea_forwarding_cache_create() {
+	local ftest_cmd=`uci get gps.nmea_forwarding_cache 2>&1`
+
+	if [ "$ftest_cmd" = "uci: Entry not found" ]
+	then
+		tlt_uci_write_opt "gps" "section" "nmea_forwarding_cache" "type" "ram"
+		tlt_uci_write_opt "gps" "section" "nmea_forwarding_cache" "sentences_max" "5000"
+		tlt_uci_write_opt "gps" "section" "nmea_forwarding_cache" "location" " "
+	fi
+}
+
+nmea_collecting_create() {
+	local ftest_cmd=`uci get gps.nmea_collecting 2>&1`
+
+	if [ "$ftest_cmd" = "uci: Entry not found" ]
+	then
+		tlt_uci_write_opt "gps" "section" "nmea_collecting" "enabled" "0"
+		tlt_uci_write_opt "gps" "section" "nmea_collecting" "location" " "
+	fi
+}
+
+https_section_create() {
+	local ftest_cmd=`uci get gps.https 2>&1`
+
+	if [ "$ftest_cmd" = "uci: Entry not found" ]
+	then
+		tlt_uci_write_opt "gps" "section" "https" "enabled" "0"
+		tlt_uci_write_opt "gps" "section" "https" "hostname" " "
+
+		tlt_uci_write_opt "gps" "https_tavl" "https_tavl" "send_digital_input1" "0"
+		tlt_uci_write_opt "gps" "https_tavl" "https_tavl" "send_digital_input2" "0"
+		tlt_uci_write_opt "gps" "https_tavl" "https_tavl" "send_analog_input" "0"
+		tlt_uci_write_opt "gps" "https_tavl" "https_tavl" "send_gsm_signal" "0"
+	fi
+}
+
+avl_io_section_create() {
+	local ftest_cmd=`uci get gps.avl_io 2>&1`
+
+	if [ "$ftest_cmd" = "uci: Entry not found" ]
+	then
+		tlt_uci_write_opt "gps" "avl_io" "avl_io" "analog_interval" "5"
+	fi
+}
+
+gps_sync_time_convert() {
+	local sync_interval=`uci get ntpclient.@ntpclient[-1].gps_interval`
+
+	case $sync_interval in
+		"1")
+			uci set ntpclient.@ntpclient[-1].gps_interval=300
+			;;
+		"2")
+			uci set ntpclient.@ntpclient[-1].gps_interval=1800
+			;;
+		"3")
+			uci set ntpclient.@ntpclient[-1].gps_interval=3600
+			;;
+		"4")
+			uci set ntpclient.@ntpclient[-1].gps_interval=21600
+			;;
+		"5")
+			uci set ntpclient.@ntpclient[-1].gps_interval=43200
+			;;
+		"6")
+			uci set ntpclient.@ntpclient[-1].gps_interval=86400
+			;;
+		"7")
+			uci set ntpclient.@ntpclient[-1].gps_interval=604800
+			;;
+		"8")
+			uci set ntpclient.@ntpclient[-1].gps_interval=2592000
+			;;
+	esac
+
+	uci commit ntpclient
+}
+
+rule_option_set() {
+	config_get collect_period gps min_period
+	config_get distance gps min_distance
+	config_get angle gps min_angle
+	config_get saved_records gps min_saved_record
+	config_get send_period gps send_period
+	config_get enabled gps enabled
+	config_get enabled_server gps enabled_server
+	config_get ip gps ip
+	config_get proto gps proto
+	config_get port gps port
+	config_get analog_interval gps analog_interval
+
+	tlt_uci_write_opt "gps" "section" "gpsd" "enabled" "$enabled"
+
+	tlt_uci_write_opt "gps" "section" "avl" "enabled" "$enabled_server"
+	tlt_uci_write_opt "gps" "section" "avl" "hostname" "$ip"
+	tlt_uci_write_opt "gps" "section" "avl" "port" "$port"
+	tlt_uci_write_opt "gps" "section" "avl" "proto" "$proto"
+
+	if [ -z $analog_interval ]
+	then
+		tlt_uci_write_opt "gps" "avl_io" "avl_io" "analog_interval" "5"
+	else
+		tlt_uci_write_opt "gps" "avl_io" "avl_io" "analog_interval" "$analog_interval"
+	fi
+
+	tlt_uci_write_opt "gps" "section" "avl_rule_main" "enabled" "1"
+	tlt_uci_write_opt "gps" "section" "avl_rule_main" "send_period" "$send_period"
+	tlt_uci_write_opt "gps" "section" "avl_rule_main" "saved_records" "$saved_records"
+	tlt_uci_write_opt "gps" "section" "avl_rule_main" "angle" "$angle"
+	tlt_uci_write_opt "gps" "section" "avl_rule_main" "distance" "$distance"
+	tlt_uci_write_opt "gps" "section" "avl_rule_main" "collect_period" "$collect_period"
+	tlt_uci_write_opt "gps" "section" "avl_rule_main" "priority" "low"
+
+	uci delete gps.gps
+	uci commit gps
+}
+
+rule_section_rename_cb() {
+	local wan_name=`uci get gps.@rule[-1].wan`
+	local type_name=`uci get gps.@rule[-1].type`
+	local period=`uci get gps.@rule[-1].min_period`
+	local distance=`uci get gps.@rule[-1].min_distance`
+	local angle=`uci get gps.@rule[-1].min_angle`
+	local saved_records=`uci get gps.@rule[-1].min_saved_record`
+	local send_period=`uci get gps.@rule[-1].send_period`
+	local din_status=`uci get gps.@rule[-1].din2`
+	local enabled=`uci get gps.@rule[-1].enabled`
+
+	if [ -z $type_name ]
+       	then 
+		local wan_type="$wan_name"
+	else
+		local wan_type="${wan_name}_$type_name"
+	fi
+
+	uci add gps avl_rule
+	uci rename gps.@avl_rule[-1]="avl_rule$num"
+
+	if [ -z $enabled ]
+	then
+		gps_write_opt "gps" "avl_rule" "avl_rule$num" "enabled" "0"
+	else
+		gps_write_opt "gps" "$section" "avl_rule$num" "enabled" "$enabled"
+	fi
+
+	gps_write_opt "gps" "avl_rule" "avl_rule$num" "wan_status" "$wan_type"
+	gps_write_opt "gps" "avl_rule" "avl_rule$num" "collect_period" "$collect_period"
+	gps_write_opt "gps" "avl_rule" "avl_rule$num" "distance" "$distance"
+	gps_write_opt "gps" "avl_rule" "avl_rule$num" "angle" "$angle"
+	gps_write_opt "gps" "avl_rule" "avl_rule$num" "saved_records" "$saved_records"
+	gps_write_opt "gps" "avl_rule" "avl_rule$num" "send_period" "$send_period"
+	gps_write_opt "gps" "avl_rule" "avl_rule$num" "din_status" "$din_status"
+	gps_write_opt "gps" "avl_rule" "avl_rule$num" "priority" "low"
+
+	uci delete gps.@rule[-1]
+	uci commit
+	logger rename_avl_rules: renamed gps."$type_name" rule to gps.avl_rule
+
+	num=$((num+1))
+}
+
+config_load gps
+
+nmea_rule_create "GPGSV" "0" "5" "0" "5"
+nmea_rule_create "GPGGA" "0" "5" "0" "5"
+nmea_rule_create "GPVTG" "0" "5" "0" "5"
+nmea_rule_create "GPRMC" "0" "5" "0" "5"
+nmea_rule_create "GPGSA" "0" "5" "0" "5"
+nmea_rule_create "GLGSV" "0" "5" "0" "5"
+nmea_rule_create "GNGSA" "0" "5" "0" "5"
+nmea_rule_create "GNGNS" "0" "5" "0" "5"
+nmea_rule_create "GAGSV" "0" "5" "0" "5"
+nmea_rule_create "PQGSV" "0" "5" "0" "5"
+nmea_rule_create "PQGSA" "0" "5" "0" "5"
+
+nmea_forwarding_cache_create
+nmea_forwarding_create
+nmea_collecting_create
+https_section_create
+avl_io_section_create
+gps_sync_time_convert
+
+config_foreach rule_option_set "gps"
+config_foreach rule_section_rename_cb "rule"

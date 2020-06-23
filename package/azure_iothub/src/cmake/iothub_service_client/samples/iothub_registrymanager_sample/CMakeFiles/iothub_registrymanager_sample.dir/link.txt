@@ -1,0 +1,1 @@
+/usr/bin/cc -fPIC  -Werror  -rdynamic CMakeFiles/iothub_registrymanager_sample.dir/iothub_registrymanager_sample.c.o  -o iothub_registrymanager_sample ../../libiothub_service_client.a ../../../c-utility/libaziotsharedutil.a ../../../uamqp/libuamqp.a ../../../c-utility/libaziotsharedutil.a -lcurl -lssl -lcrypto -lpthread -lm -lrt -luuid ../../../libparson.a 

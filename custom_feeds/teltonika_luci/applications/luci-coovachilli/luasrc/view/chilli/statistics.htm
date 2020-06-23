@@ -1,0 +1,270 @@
+<%+header%>
+
+<%
+	require "teltonika_lua_functions"
+	local sqlite = require "lsqlite3"
+	local dbPath = "/var/"
+	local dbName = "hotspot.db"
+	local dbFullPath = dbPath .. "" .. dbName
+	local result
+	local uci = require "luci.model.uci".cursor()
+	local curssid = luci.dispatcher.context.requestpath
+	local bus = require "ubus"
+	local _ubus = bus.connect()
+	local section
+
+	if curssid[#curssid] ~= "statistics" then
+	      curssid =  curssid[#curssid]
+
+	      uci:foreach("wireless", "wifi-iface", function(s)
+			if s.ssid and s.ssid == curssid then
+				section = s.hotspotid
+			end
+	      end)
+	else
+
+		uci:foreach("coovachilli", "general", function(s)
+			if not section then
+				section = s[".name"]
+			end
+		end)
+	end
+
+	function get_ifname(section)
+		local info = _ubus:call("network.wireless", "status", { })
+		local interfaces = info.radio0.interfaces
+		local wireless_section
+
+		for i, net in ipairs(interfaces) do
+			hotspot_id= uci:get("wireless", net.section, "hotspotid") or getParam("uci -q get wireless." .. net.section .. ".hotspotid")
+
+			if hotspot_id == section  then
+				return net.ifname
+			end
+		end
+
+	end
+
+	function format_date(time)
+		return os.date("%F %T", time)
+	end
+
+	function start_end_time(hotspot_section, config)
+		local days_left, hours_left
+		local time_left, end_time, start_time
+		local period = uci:get(config, hotspot_section, "period") or "3"
+		local timestamp = os.time()
+		local year, month, weekday, day, hour = tonumber(os.date("%Y", timestamp)), tonumber(os.date("%m", timestamp)), tonumber(os.date("%w", timestamp)), tonumber(os.date("%d", timestamp)), tonumber(os.date("%H", timestamp))
+		local start_yr, start_mth, start_wday, start_d, start_hr = year, month, weekday, day, hour
+
+		if period == "3" then --Period month
+			local start_day = tonumber(uci:get(config, hotspot_section, "day") or "1")
+
+			if start_day < day then
+				month = month + 1
+			else
+				start_mth = start_mth - 1
+			end
+
+			day = start_day
+			start_d = start_day
+			hour = 0
+		elseif period == "1" then --Period day
+			local start_hour = tonumber(uci:get(config, hotspot_section, "hour") or "1")
+
+			if start_hour < hour then
+				day = day + 1
+			else
+				start_d = start_d - 1
+			end
+
+			hour = start_hour
+			start_hr = start_hour
+		elseif period == "2" then --period week
+			local start_weekday = tonumber(uci:get(config, hotspot_section, "weekday") or "1")
+			weekday = weekday == 0 and 7 or weekday
+
+			if weekday ~= start_weekday then
+				if start_weekday < weekday then
+					day = day + (7 - (weekday - start_weekday))
+					start_d = start_d - (weekday - start_weekday)
+				else
+					day = day + (start_weekday - weekday)
+					start_d = start_d - (7 - start_weekday + start_wday)
+				end
+			end
+
+			hour = 0
+			start_hour = 0
+		end
+
+		end_time = tonumber(os.time{year=year, month=month, day=day, hour=hour})
+		start_time = tonumber(os.time{year=start_yr, month=start_mth, day=start_d, hour=start_hr})
+
+		return {start_time = start_time, end_time = end_time, }
+	end
+
+	function convert_bytes(bytes)
+		local divisor = 1024
+		local metric = {"B", "KB", "MB", "GB", "TB"}
+		local num = 1
+		local result
+
+		while bytes > divisor do
+			bytes = bytes / divisor
+			num = num + 1
+		end
+
+		bytes = round((math.floor(bytes * (10^3) + 0.5) / (10^3)),2)
+
+		if num < 6 and num > 0 then
+			result = bytes .. " " .. metric[num]
+		end
+
+ 		return result or bytes
+	end
+
+	if section then
+		local hotspot_number = string.match(section, "%d+") or "1"
+		local session_section = "unlimited" .. hotspot_number
+		ifname = get_ifname(section)
+		downloadlimit = "0"
+		uploadlimit = "0"
+		defsessiontimeout = "0"
+		time = start_end_time(session_section, "coovachilli")
+		experation_date = format_date(time.end_time)
+		local mode = uci:get("coovachilli", section, "mode")
+
+		if mode and (mode == "mac" or mode == "sms") then
+			downloadlimit = uci:get("coovachilli", session_section, "downloadlimit") or "0"
+			uploadlimit = uci:get("coovachilli", session_section, "uploadlimit") or "0"
+			defsessiontimeout = uci:get("coovachilli", session_section, "defsessiontimeout") or "0"
+		end
+
+		if fileExists(dbPath, dbName) then
+			local db
+			db = sqlite.open(dbPath .. dbName)
+			if db then
+				local query_template
+
+				if ifname then
+					query_template = "SELECT user, ip, mac, MAX(end_time) AS end_time, MIN(time) AS time, SUM (input) AS input, SUM (output) AS output, SUM (duration) AS duration FROM statistics WHERE time >= %s and ifname = '%s' GROUP BY mac, user"
+					query = string.format(query_template, time.start_time, ifname)
+				else
+					query_template = "SELECT user, ip, mac, MAX(end_time) AS end_time, MIN(time) AS time, SUM (input) AS input, SUM (output) AS output, SUM (duration) AS duration FROM statistics WHERE time >= %s GROUP BY mac, user"
+					query = string.format(query_template, time.start_time)
+				end
+
+				result = selectDB(query, db)
+				closeDB(db)
+			end
+		end
+	end
+
+
+%>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript" src="<%=resource%>/Dable.js"></script>
+<script type="text/javascript">//<![CDATA[
+	function delete_mac(btn, mac, ifname)
+	{
+		btn.value = 'Clearing...';
+		XHR.get('<%=luci.dispatcher.build_url("admin", "services", "hotspot", "delete_mac")%>',
+			{ clear: 1, mac: mac, ifname: ifname},
+			function(x, info)
+			{
+				var success = false;
+
+				if (info){
+					if (info.stat === 0) {
+						location.reload();
+					}
+				}
+
+				if (!success)
+					btn.value = 'Clear';
+			}
+		);
+
+		return false;
+	}
+//]]></script>
+<h2><a id="content" name="content"><%=translate("Hotspot Statistics")%></a></h2>
+<fieldset>
+	<legend><%=translate("Hotspot statistics")%></legend>
+	<div id="loading" style="display: inline;">
+		<span style="position: relative; bottom: 12px;"> Loading... </span>
+		<img src="/luci-static/resources/icons/loading.gif" alt="Loading">
+	</div>
+<div id="TableDable" style="display: none">
+
+	<table id="tablepaging" class="yui" align="center" width="100%" cellspacing="10" >
+		<thead style="border-bottom: 1px solid #DDD;">
+			<tr>
+				<th class="cbi-section-table-cell" width="10%" ><%=translate("Username")%></th>
+				<th class="cbi-section-table-cell" width="10%" ><%=translate("IP")%></th>
+				<th class="cbi-section-table-cell" width="10%" ><%=translate("MAC")%></th>
+				<th class="cbi-section-table-cell" width="10%" ><%=translate("Start time")%></th>
+				<th class="cbi-section-table-cell" width="10%" ><%=translate("End time")%></th>
+				<th class="cbi-section-table-cell" width="10%" ><%=translate("Use time")%></th>
+				<th class="cbi-section-table-cell" width="10%" ><%=translate("Download")%></th>
+				<th class="cbi-section-table-cell" width="10%" ><%=translate("Upload")%></th>
+				<% if downloadlimit ~= "0" or uploadlimit ~= "0" or defsessiontimeout ~= "0" then %>
+ 				<th class="cbi-section-table-cell" width="10%" ><%=translate("Expiration time")%></th>
+ 				<% end %>
+				<th class="cbi-section-table-cell" width="10%" ><%=translate("Clean")%></th>
+			</tr>
+		</thead>
+		<tbody>
+			<%
+			if result then
+				for name, row in ipairs(result) do	%>
+						<tr class="cbi-section-table-row">
+							<td class="cbi-section-table-cell" width="10%"><% if row.user ~= "" then %><%=escapeHTML(row.user)%><%else%>-<%end%></td>
+							<td class="cbi-section-table-cell" width="10%"><%=escapeHTML(row.ip)%></td>
+							<td class="cbi-section-table-cell" width="10%"><%=escapeHTML(row.mac)%></td>
+							<td class="cbi-section-table-cell" width="10%"><%=escapeHTML(os.date("%F %T", row.time))%></td>
+							<td class="cbi-section-table-cell" width="10%"><% if row.end_time == 0 then %> - <% else %> <%=escapeHTML(os.date("%F %T", row.end_time))%> <%end%></td>
+							<td class="cbi-section-table-cell" width="10%"><% if row.duration == 0 then %> - <% else %> <%=escapeHTML(os.date("!%X", row.duration))%> <%end%></td>
+							<td class="cbi-section-table-cell" width="10%"><% if row.input then %> <%=escapeHTML(convert_bytes(row.input))%> <% else  %> - <% end%></td>
+							<td class="cbi-section-table-cell" width="10%"><% if row.output then %> <%=escapeHTML(convert_bytes(row.output))%> <% else  %> - <% end%></td>
+							<% if downloadlimit ~= "0" or uploadlimit ~= "0" or defsessiontimeout ~= "0" then %>
+								<td class="cbi-section-table-cell" width="10%"><% if experation_date then %> <%=escapeHTML(experation_date)%> <% else  %> - <% end%></td>
+							<% end %>
+							<td class="cbi-section-table-cell" width="10%"><input type="button" value="Clean*" onclick="delete_mac(this, '<%=row.mac%>', '<%=ifname%>')"></td>
+						</tr>
+				<%end%>
+
+			<%else%>
+				<tr class="cbi-section-table-row">
+					<td style="padding:20px 0 20px 10px;" colspan="8">
+					<em><%=translate("There are no records yet.")%></em>
+					</td>
+				</tr>
+			<%end %>
+
+		</tbody>
+	</table>
+</div>
+
+<script type="text/javascript">
+
+var dable = new Dable("TableDable");
+AddWindowOnLoadEvent(hide);
+
+function hide(){
+	var e = document.getElementById("loading");
+	e.setAttribute('style', 'display: none;');
+}
+
+</script>
+
+</fieldset>
+
+<%if result then %>
+<div class="disclaimer_msg" style="display:inline-block;width:100%">
+	<span>* <%=translate("Cleaning the statistics will also disconnect the user")%></span>
+</div>
+<%end%>
+
+<%+footer%>

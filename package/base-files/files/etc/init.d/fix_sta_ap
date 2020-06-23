@@ -1,0 +1,47 @@
+#!/bin/sh /etc/rc.common
+. /lib/functions.sh
+
+USE_PROCD=1
+START=88
+STOP=99
+
+STA_ENABLED=0
+AP_DISABLED=0
+
+check_wifi_enabled(){
+	local mode
+	config_get mode $1 "mode"
+	case "$mode" in
+		"sta")
+			config_get STA_ENABLED $1 "user_enable" "1"
+		;;
+		"ap")
+			config_get AP_DISABLED $1 "disabled" "0"
+		;;
+	esac
+}
+
+fix_wifi_sta() {
+	config_get mode $1 mode ""
+	[[ "$mode" != "sta"  ]] && return
+	config_get user_enable $1 user_enable "0"
+	[[ "$user_enable" != "1" ]]; return
+	config_get disabled $1 disabled "0"
+	if [ "$disabled" == "1" ]; then
+		uci -q del wireless.$1.disabled
+		uci commit
+	fi
+}
+
+config_load "wireless"
+config_foreach check_wifi_enabled "wifi-iface"
+config_foreach fix_wifi_sta "wifi-iface"
+
+if [ "$STA_ENABLED" = "1" ] && [ "$AP_DISABLED" == "0" ]; then
+	start_service() {
+		procd_open_instance
+		procd_set_param command /sbin/fix_sta_ap.sh
+		procd_set_param respawn
+		procd_close_instance
+	}
+fi

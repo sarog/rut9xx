@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=70
+STOP=40
+
+start_service() {
+	procd_open_instance
+	procd_set_param command lua /usr/bin/pop3_ets start
+	procd_close_instance
+}
+
+stop_service() {
+	/usr/bin/pop3_ets stop
+}
+
+restart () {
+	/usr/bin/pop3_ets start
+}

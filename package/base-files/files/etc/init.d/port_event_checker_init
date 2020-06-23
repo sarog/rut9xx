@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2015 Teltonika
+
+USE_PROCD=1
+START=75
+STOP=10
+
+command_line="/usr/sbin/port_event_checker"
+
+start_service() {
+	procd_open_instance
+	procd_set_param respawn
+	procd_set_param command $command_line
+	procd_close_instance
+}
+service_triggers()
+{
+	procd_add_reload_trigger "port_event_checker"
+}

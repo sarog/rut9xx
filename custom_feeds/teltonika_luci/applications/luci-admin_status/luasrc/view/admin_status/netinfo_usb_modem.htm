@@ -1,0 +1,491 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: index.htm 8408 2012-04-02 22:50:26Z jow $
+
+-%>
+
+
+<%
+	require "luci.fs"
+	require "luci.tools.status"
+	luci.util = require "luci.util"
+	local translatef = luci.i18n.translatef
+	local nw = require "luci.model.network"
+	local sys = require "luci.sys"
+	
+	local has_3g = false
+	local has_3g_ppp= false
+
+	local moduleType = luci.util.trim(luci.sys.exec("uci get system.module.type"))
+	local moduleDev = luci.util.trim(luci.sys.exec("uci get network.ppp.device"))
+
+	if moduleDev == "/dev/ttyHS5" then
+		moduleDev = false
+	else
+		moduleDev = true
+	end
+	if moduleType == "3g" then
+		has_3g = true
+	end
+	if moduleType == "3g_ppp" then
+		has_3g_ppp = true;
+	end
+
+	local data_type = sys.exec("gsmctl -Ft")
+	if data_type ~= nil then
+		if data_type:match("^CDMA") or data_type:match("^EDGE") or data_type:match("^GPRS")
+		then
+			data_type = "2G"
+		elseif data_type:match("^WCDMA") or data_type:match("^HSDPA") or data_type:match("^HSUPA") or data_type:match("^HSPA") or data_type:match("^HSPA+")
+		then
+			data_type = "3G"
+		elseif data_type:match("^LTE")
+		then
+			data_type = "4G"
+		end
+	end
+	
+	if luci.http.formvalue("status") == "1" then
+
+		local gstate, gimei, gsigstr, goper, gctype, grecv, gsent, gpin, gcellid, grscp, gecio, grsrp, grsrq, gsinr
+		local data = nw:usb_modem_info()
+
+		if (data ~= nil) then
+			netstate = data["netstate"]
+			gstate  = data["state"]
+			gsigstr = data["signal"]
+			gimei   = data["imei"]
+			goper   = data["oper"]
+			gctype  = data["ntype"]
+			gimsi = data["imsi"]
+			giccid = data["iccid"]
+			sim_use = luci.util.trim(luci.sys.exec("/sbin/gpio.sh get SIM"))
+			if gctype ~= nil then
+				if gctype:match("^CDMA") or gctype:match("^EDGE") or gctype:match("^GPRS") or gctype:match("^GSM")
+				then
+					gctype = "2G " .. "(" .. gctype .. ")"
+				elseif gctype:match("^WCDMA") or gctype:match("^HSDPA") or gctype:match("^HSUPA") or gctype:match("^HSPA") or gctype:match("^HSPA+") or gctype:match("^UMTS") or gctype:match("^HSDPA/HSUPA")
+				then
+					gctype = "3G " .. "(" .. gctype .. ")"
+				elseif gctype:match("^LTE")
+				then
+					gctype = "4G " .. "(" .. gctype .. ")"
+				elseif gctype:match("^Unknown")
+				then
+					gctype = "Unknown"
+				end
+			end
+			grecv = data["rxbytes"]
+			gsent = data["txbytes"]
+
+			gsim = data["simstate"]
+			gpin = data["pinstate"]
+			gcellid = data["cellid"]
+			grscp = data["rscp"]
+			gecio = data["ecio"]
+			grsrp = data["rsrp"]
+			grsrq = data["rsrq"]
+			gsinr = data["sinr"]
+			gpinr = data["pinleft"]
+			if gsim ~= nil then
+				if gsim:match("not inserted") and gpin ~= nil then
+					gsim = translate("Not inserted")
+					--gsigstr = "N/A"
+				elseif gsim:match("inserted") and gpin ~= nil then
+					if gpin:match("READY") then
+						gsim = translate("Ready")
+					elseif gpin:match("PIN REQUIRED") then
+						if gpinr == "N/A" then
+							gsim = translate("PIN required")
+						elseif tonumber(gpinr) == 1 then
+							gsim = translatef("PIN required. %d attempt left.", tonumber(gpinr))
+							--gsigstr = "N/A"
+						elseif tonumber(gpinr) >= 1 and tonumber(gpinr) <= 3 then
+							gsim = translatef("PIN required. %d attempts left.", tonumber(gpinr))
+							--gsigstr = "N/A"
+						else
+							gsim = translate("PIN required")
+							--gsigstr = "N/A"
+						end
+					elseif gpin:match("PUK REQUIRED") then
+						if gpinr == "N/A" then
+							gsim = translate("PIN required")
+						elseif tonumber(gpinr) == 1 then
+							gsim = translatef("PUK required. %d attempt left.", tonumber(gpinr))
+							--gsigstr = "N/A"
+						elseif tonumber(gpinr) >= 1 and tonumber(gpinr) <= 10 then
+							gsim = translatef("PUK required. %d attempts left.", tonumber(gpinr))
+							--gsigstr = "N/A"
+						else
+							gsim = translate("PUK required")
+							--gsigstr = "N/A"
+						end
+					else
+						gsim = translate("SIM error")
+						--gsigstr = "N/A"
+					end
+				else
+					gsim = translate("Not inserted")
+					--gsigstr = "N/A"
+				end
+			end
+		end
+		local rv = {
+			netstate	= netstate,
+			gstate		= gstate,
+			gsigstr		= gsigstr,
+			gimei		= gimei,
+			goper		= goper,
+			gctype		= gctype,
+			grecv		= grecv,
+			gsent		= gsent,
+			sim_use		= sim_use,
+			gsim		= gsim,
+			gimsi		= gimsi,
+			giccid		= giccid,
+			gcellid		= gcellid,
+			grscp		= grscp,
+			gecio 		= gecio,
+			grsrp 		= grsrp,
+			grsrq 		= grsrq,
+			gsinr 		= gsinr
+		}
+
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(rv)
+
+		return
+	end
+-%>
+
+<%+header%>
+<script type="text/javascript">
+
+</script>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+function get_icon_str(avail, srenght)
+{
+var icon;
+	if (!avail)
+		icon = "<%=resource%>/icons/signalnone.png";
+	else if (srenght > -52)
+		icon = "<%=resource%>/icons/signal100.png";
+	else if (srenght > -67)
+		icon = "<%=resource%>/icons/signal80.png";
+	else if (srenght > -82)
+		icon = "<%=resource%>/icons/signal60.png";
+	else if (srenght > -97)
+		icon = "<%=resource%>/icons/signal40.png";
+	else if (srenght > -112)
+		icon = "<%=resource%>/icons/signal20.png";
+	else if (srenght <= -112)
+		icon = "<%=resource%>/icons/signal0.png";
+	return icon;
+}
+	var wifidevs = <%=luci.http.write_json(netdevs)%>;
+	var arptable = <%=luci.http.write_json(arpcache)%>;
+
+function refreshPage(){
+	document.getElementById("refresh").disabled = true;
+	XHR.get('<%=luci.dispatcher.build_url("admin", "status", "netinfo", "usb_modem" )%>', { status: 1 },
+		function(x, info)
+		{
+			if (x && x.status === 403)
+				location.href = location.href;
+
+			var e;
+			var gicon;
+			var constant = 1024;
+			gicon = get_icon_str((info.gsigstr != undefined) && (info.gsigstr != 0) && (info.gsigstr != "N/A"), parseInt(info.gsigstr));
+			if (gicon && (gicon != undefined))
+			{
+				if (e = document.getElementById('3gBar0'))
+				{
+					e.src = gicon;
+				}
+			}
+				if (e = document.getElementById('3gState'))
+					(info.gstate) ? e.innerHTML = info.gstate.charAt(0).toUpperCase() + (info.gstate).slice(1) : e.innerHTML   = "N/A";
+
+				if (e = document.getElementById('3gOperState'))
+					(info.netstate) ? e.innerHTML = info.netstate.charAt(0).toUpperCase() + (info.netstate).slice(1) : e.innerHTML   = "N/A";
+
+				if (e = document.getElementById('3gImei'))
+					(info.gimei) ? e.innerHTML = info.gimei : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('3gImsi'))
+					(info.gimsi) ? e.innerHTML = info.gimsi : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('3gICCID'))
+					(info.giccid) ? e.innerHTML = info.giccid : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('3gSimUse'))
+					(info.sim_use == '1') ? e.innerHTML = 'SIM 1' : (info.sim_use == '0') ? e.innerHTML = 'SIM 2' :  e.innerHTML = "SIM 1";
+
+				if (e = document.getElementById('3gSim'))
+					(info.gsim.charAt(0).toUpperCase() + (info.gsim).slice(1)) ? e.innerHTML = info.gsim.charAt(0).toUpperCase() + (info.gsim).slice(1) : e.innerHTML   = "N/A";
+
+				if (e = document.getElementById('3gStr'))
+					(info.gsigstr == 'N/A') ? e.innerHTML = info.gsigstr : (info.gsigstr) ? e.innerHTML = String.format('%d dBm', info.gsigstr) : e.innerHTML = "N/A";
+				
+				if (e = document.getElementById('3gCid'))
+					(info.gcellid) ? e.innerHTML = info.gcellid : e.innerHTML     = "N/A";
+					
+				if (e = document.getElementById('3gRsrp'))
+					(info.grsrp) ? e.innerHTML = String.format('%d dBm', info.grsrp) : e.innerHTML     = "N/A";
+					
+				if (e = document.getElementById('3gRsrq'))
+					(info.grsrq) ? e.innerHTML = String.format('%f dBm', info.grsrq) : e.innerHTML     = "N/A";
+					
+				if (e = document.getElementById('3gSinr'))
+					(info.gsinr != 'N/A') ? e.innerHTML = String.format('%f dBm', info.gsinr) : e.innerHTML     = "N/A";
+					
+				if (e = document.getElementById('3gRscp'))
+					(info.grscp) ? e.innerHTML = String.format('%d dBm', info.grscp) : e.innerHTML     = "N/A";
+					
+				if (e = document.getElementById('3gecio'))
+					(info.gecio) ? e.innerHTML = String.format('%f dBm', info.gecio) : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('3gProv')){
+					if(info.netstate == "unregistered"){
+						e.innerHTML  = "N/A";
+					}else{
+						(info.goper) ? e.innerHTML = info.goper : e.innerHTML = "N/A";
+					}
+				}
+
+				if (e = document.getElementById('3gCType'))
+					(info.gctype) ? e.innerHTML = info.gctype : e.innerHTML   = "N/A";
+
+				if (e = document.getElementById('3gRecv'))
+					if (info.grecv === "N/A"){
+						e.innerHTML     = "0 B";
+					}
+					else{
+						if (info.grecv){
+							var recvdat1 = info.grecv;
+							var recvdata1 = convert(info.grecv);
+							info.grecv = recvdata1 + ' ('+recvdat1+' bytes)' ;
+							e.innerHTML = info.grecv;
+						}else {
+							e.innerHTML     = "N/A";
+						}
+					}
+					if (e = document.getElementById('3gSent'))
+					if (info.gsent === "N/A"){
+						e.innerHTML     = "0 B";
+					}
+					else{
+						if (info.gsent){
+							var recvdat2 = info.gsent;
+							var recvdata2 = convert(info.gsent);
+							info.gsent = recvdata2 + ' ('+recvdat2+' bytes)' ;
+							e.innerHTML = info.gsent;
+						}else {
+							e.innerHTML     = "N/A";
+						}}
+
+				document.getElementById('refresh').disabled = false;
+
+		function convert(bytes){
+		var recvdata = bytes;
+			if (recvdata > constant){
+				recvdata = recvdata / constant;
+				if (recvdata > constant ){
+					recvdata = recvdata / constant;
+					if (recvdata > constant ){
+						recvdata = recvdata / constant;
+						recvdata =  recvdata.toFixed(1) + " GB";
+					}else{
+						recvdata =  recvdata.toFixed(1) + " MB";
+					}
+				}
+				else{
+					recvdata =  recvdata.toFixed(1) + " KB";
+				}
+			}else{
+				recvdata =  recvdata + " B";
+			}
+			return recvdata;
+		}
+
+		}
+	);
+}
+AddWindowOnLoadEvent(refreshPage);
+<% if has_3g or has_3g_ppp then %>
+function g3Load0()
+{
+  if (e = document.getElementById('3gBar1'))
+	e.style.visibility = 'hidden';
+  if (e = document.getElementById('3gBar0'))
+	e.style.visibility = 'visible';
+}
+AddWindowOnLoadEvent(g3Load0);
+<% end %>
+
+function show(id){
+	e = document.getElementById(id);
+	if (e && id) {
+		if (e.style.display == "none") {
+			e.style.display="";
+		}
+		else
+		{
+			e.style.display="none";
+		}
+	}
+}
+
+function enable_progress(action){
+	var connect = document.getElementById('applyConnection');
+		if (connect ){
+			var text = document.getElementById('cbi-apply-system-status');
+			if (text) {
+				if (action == 1){
+					text.textContent = "Rebooting modem...";
+				}
+				else if (action == 2){
+					text.textContent = "Reregistering on network...";
+				}
+				else if (action == 3){
+					text.textContent = "Restarting mobile data connection...";
+				}
+			}
+			connect.style.display="inline";
+		}
+}
+function disable_progress(){
+	var connect = document.getElementById('applyConnection');
+		if (connect ){
+			connect.style.display="none";
+		}
+}
+function disable_refresh(){
+	document.getElementById("reboot_modem").disabled = false;
+	document.getElementById("reboot_connection").disabled = false;
+	document.getElementById("reregister").disabled = false;
+	//document.getElementById("refresh").disabled = false;
+	refreshPage();		
+}
+function clear_table_view(){
+	
+	if (e = document.getElementById('3gBar0'))
+		e.src = "<%=resource%>/icons/signalnone.png";
+		
+	if (e = document.getElementById('3gState'))
+		e.innerHTML = "-";
+
+	if (e = document.getElementById('3gOperState'))
+		e.innerHTML = "-";
+		
+	if (e = document.getElementById('3gImei'))
+		e.innerHTML = "-";
+	
+	if (e = document.getElementById('3gImsi'))
+		e.innerHTML = "-";
+
+	if (e = document.getElementById('3gICCID'))
+		e.innerHTML = "-";
+
+	if (e = document.getElementById('3gSimUse'))
+		e.innerHTML = "-";
+			
+	if (e = document.getElementById('3gSim'))
+		e.innerHTML = "-";			
+
+	if (e = document.getElementById('3gStr'))
+		e.innerHTML = "-";			
+				
+	if (e = document.getElementById('3gCid'))
+		e.innerHTML = "-";	
+				
+	if (e = document.getElementById('3gProv'))
+		e.innerHTML = "-";
+		
+	if (e = document.getElementById('3gCType'))
+		e.innerHTML = "-";
+					
+	if (e = document.getElementById('3gRecv'))
+		e.innerHTML = "-";
+				
+	if (e = document.getElementById('3gSent'))
+		e.innerHTML = "-";
+		
+	if (e = document.getElementById('3gSinr'))
+		e.innerHTML = "-";
+					
+	if (e = document.getElementById('3gRsrq'))
+		e.innerHTML = "-";
+				
+	if (e = document.getElementById('3gRsrp'))
+		e.innerHTML = "-";
+		
+	if (e = document.getElementById('3gRscp'))
+		e.innerHTML = "-";
+		
+	if (e = document.getElementById('3gecio'))
+		e.innerHTML = "-";
+}
+//]]></script>
+
+<fieldset class="cbi-section">
+	<div class="applyChanges" id="applyConnection" style="display: none;">
+		<span id="cbi-apply-system-status"><%=translate("Rebooting...")%></span>
+		<img src="/luci-static/resources/icons/loading.gif" alt="Loading">
+	</div>
+<h2><a id="content" name="content"><%=translate("Mobile Information")%></a></h2>
+</fieldset>
+<fieldset class="cbi-section">
+	<div id="g3BarsShow" class="overlayParent">
+		<div class="overlayLegend" style="height: 18px;">
+			<div style="float: left;">
+				<%=translate("Mobile")%>&#160;&#160;<img id="3gBar0" style="visibility: visible; height: 23px;float:none;" onload="g3Load0()" src="<%=resource%>/icons/signal0.png" />
+			</div>
+ 	</div>
+	<table id="3gTable" width="100%" cellspacing="10" class="cbi-section-table">
+		<% if moduleDev == true then %>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('Mobile data connection status')%>')" onmouseout="HideHint(this)"><%=translate("Data connection state")%></td><td 								id="3gState"><%: - %></td></tr>
+		<% end %>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('Modem\\\'s IMEI (International Mobile Equipment Identity) number')%>')" onmouseout="HideHint(this)"><%=translate("IMEI")%></td><td            				id="3gImei"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('IMSI (International Mobile Subscriber Identity) is used to identify the user in a cellular network')%>')" onmouseout="HideHint(this)"><%=translate("IMSI")%></td><td 	id="3gImsi"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('ICCID (Integrated Circuit Card Identifier) is used to identify each SIM internationally')%>')" onmouseout="HideHint(this)"><%=translate("ICCID")%></td><td 	id="3gICCID"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('Indicates the SIM card\\\'s state, e.g. PIN required, Not inserted, etc')%>')" onmouseout="HideHint(this)"><%=translate("Sim card state")%></td><td  			id="3gSim"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('Received Signal Strength Indicator (RSSI). Signal\\\'s strength measured in dBm')%>')" onmouseout="HideHint(this)"><%=translate("Signal strength")%></td><td 		id="3gStr"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('Cell ID. Represents Cell ID of current connected cell')%>')" onmouseout="HideHint(this)"><%=translate("Cell ID")%></td><td 		id="3gCid"><%: - %></td></tr>
+		<% if data_type == "4G" then %>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('RSRP. Indicates the reference signal received power')%>')" onmouseout="HideHint(this)"><%=translate("RSRP")%></td><td 						id="3gRsrp"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('RSRQ. Indicates the reference signal received quality')%>')" onmouseout="HideHint(this)"><%=translate("RSRQ")%></td><td 						id="3gRsrq"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('SINR. Indicates the signal to interference plus noise ratio')%>')" onmouseout="HideHint(this)"><%=translate("SINR")%></td><td 						id="3gSinr"><%: - %></td></tr>
+		<% end %>
+		<% if data_type == "3G" then %>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('RSCP. Indicates the reference signal received power')%>')" onmouseout="HideHint(this)"><%=translate("RSCP")%></td><td 						id="3gRscp"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('Ec/Io. Indicates the downlink carrier-to-interference ratio')%>')" onmouseout="HideHint(this)"><%=translate("Ec/Io")%></td><td 						id="3gecio"><%: - %></td></tr>
+		<% end %>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('Operator\\\'s name of the connected GSM network')%>')" onmouseout="HideHint(this)"><%=translate("Operator")%></td><td        						id="3gProv"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('GSM network\\\'s status')%>')" onmouseout="HideHint(this)"><%=translate("Operator state")%></td><td        								id="3gOperState"><%: - %></td></tr>
+		<% if moduleDev == true then %>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('Indicates the GSM network\\\'s access technology')%>')" onmouseout="HideHint(this)"><%=translate("Connection type")%></td><td 						id="3gCType"><%: - %></td></tr>
+		<% end %>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('How many bytes were received via mobile data connection')%>')" onmouseout="HideHint(this)"><%=translate("Bytes received")%> *</td><td  					id="3gRecv"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%" onmouseover="ShowHint(this, '<%=translate('How many bytes were sent via mobile data connection')%>')" onmouseout="HideHint(this)"><%=translate("Bytes sent")%> *</td><td      					id="3gSent"><%: - %></td></tr>
+	</table>
+</fieldset>
+<fieldset class="cbi-section">
+	<button id="refresh" class="cbi-button-refresh"  style="float: right;" disabled onClick="refreshPage()"><%=translate("Refresh")%></button>
+</fieldset>
+<div class="disclaimer_msg">
+	<span>*<%=translate("Your carrier\'s data usage accounting may differ. Teltonika is not liable should any accounting discrepancies occur.")%></span>
+</div>
+<%+footer%>

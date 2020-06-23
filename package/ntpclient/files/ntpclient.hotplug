@@ -1,0 +1,170 @@
+#!/bin/sh
+# Copyright (C) 2006-2014 OpenWrt.org
+
+. /lib/functions.sh
+
+unset SERVER
+unset PORT
+unset INTERVAL
+unset COUNT
+unset INTERFACE_GLOBAL
+unset SAVE_TIME
+unset FORCE
+
+NTPC=`which ntpclient`
+
+check_server() {
+	local hostname
+	local port
+	local interface
+	[ -n "$SERVER" ] && return
+	config_get hostname $1 hostname
+	config_get port $1 port
+	config_get interface $1 interface
+
+	[ -z "$interface" ] && interface=$INTERFACE_GLOBAL
+
+	[ -n "$interface" ] && {
+		# $INTERFACE is passed from hotplug event
+		[ "$interface" = "$INTERFACE" ] || return
+	}
+
+	[ -z "$hostname" ] && return
+	if [ "$FORCE" = "1" ]
+    then
+        $NTPC -c 1 -i 2 -h $hostname -t > /dev/null && { SERVER=$hostname; PORT=${port:-123}; }
+    else
+        $NTPC -c 1 -i 2 -h $hostname > /dev/null && { SERVER=$hostname; PORT=${port:-123}; }
+    fi
+}
+
+set_drift() {
+	config_get freq $1 freq
+	[ -n "$freq" ] && adjtimex -f $freq >/dev/null
+}
+
+start_ntpclient() {
+    date=$(curl time.nist.gov:13)
+	year="20"${date:7:2}
+    month=${date:10:2}
+    day=${date:13:2}
+    hour=${date:16:2}
+    min=${date:19:2}
+    sec=${date:22:2}
+    TZ=$(cat /tmp/TZ)
+    echo $TZ
+    dif=$(TZ="$TZ" date +'%z')
+    echo $dif
+    sign=${dif:0:1}
+    dif_hour=${dif:1:2}
+    dif_min=${dif:3:5}
+    dif_hour=$(expr $dif_hour + 0)
+    dif_min=$(expr $dif_min + 0)
+	if [ ${#hours} = "0" ]
+    then
+            hours=0$hours
+    fi
+    if [ ${#min} = "0" ]
+    then
+            min=0$min
+    fi
+    if [ $sign = "-" ]
+    then
+        hours=$(($hour-$dif_hour))
+        if [ $dif_min != "00" ]
+        then
+            min=$(($min-$dif_min))
+        fi
+    else
+        hours=$(($hour+$dif_hour))
+        if [ $dif_min != "00" ]
+        then
+            min=$(($min+$dif_min))
+        fi
+    fi
+    if [ ${#hours} = "1" ]
+    then
+            hours=0$hours
+    fi
+    if [ ${#min} = "1" ]
+    then
+            min=0$min
+    fi
+    if [ ${#hours} = "0" ]
+    then
+            hours=00$hours
+    fi
+    if [ ${#min} = "0" ]
+    then
+            min=00$min
+    fi
+    echo $hours
+    echo $min
+    #full_date=$year$month$day$hours$min.$sec
+    full_date=$(date -d $year-$month-$day" "$hours:$min:$sec +%s)
+    echo $full_date   
+    FILES=/tmp/luci-sessions/*
+	for f in $FILES
+	do
+    	lua /usr/lib/lua/luci/tools/session_set.lua $full_date $f
+        echo $f
+	done
+	config_foreach set_drift ntpdrift
+	config_foreach check_server ntpserver
+	[ -z "$SERVER" ] && exit 0
+	logger starting ntpclient
+	if [ "$FORCE" = "1" ]
+    then
+        $NTPC ${COUNT:+-c $COUNT} ${INTERVAL:+-i $INTERVAL} -s -l -D $SAVE_TIME -h $SERVER -t 2> /dev/null
+    else
+        $NTPC ${COUNT:+-c $COUNT} ${INTERVAL:+-i $INTERVAL} -s -l -D $SAVE_TIME -h $SERVER 2> /dev/null
+    fi
+}
+
+stop_ntpclient() {
+	logger stopping ntpclient
+	killall ntpclient
+}
+
+load_settings() {
+	local interval
+	local count
+	local iface
+	local enabled
+	local save
+	local force
+	
+	config_get interval $1 interval
+	config_get count $1 count
+	config_get interface $1 interface
+	config_get enabled $1 enabled
+	config_get save $1 save
+	config_get force $1 force
+	
+	if [ "$enabled" != "1" ]
+	then
+		stop_ntpclient
+		exit 0
+	fi
+
+	[ -n "$count" ] && COUNT=$count
+	[ -n "$interval" ] && INTERVAL=$interval
+	[ -n "$interface" ] && INTERFACE_GLOBAL=$interface
+	[ "$force" = "1" ] && FORCE=$force
+	[ "$save" = "1" ] && SAVE_TIME="-S"
+}
+config_load ntpclient
+config_foreach load_settings ntpclient
+
+NTP_RUNNING=`ps | grep $NTPC | grep -v grep`
+
+case "${ACTION:-ifup}" in
+	ifup)
+		#/etc/rc.common /etc/init.d/ntpserver stop
+		[ -z "$NTP_RUNNING" ] && start_ntpclient
+		#/etc/rc.common /etc/init.d/ntpserver start
+	;;
+	ifdown)
+		[ -n "$NTP_RUNNING" ] && stop_ntpclient 
+	;;
+esac

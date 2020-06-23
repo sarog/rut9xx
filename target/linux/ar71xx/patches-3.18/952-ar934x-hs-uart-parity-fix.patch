@@ -1,0 +1,63 @@
+--- a/drivers/tty/serial/ar934x_hs_uart.c
++++ b/drivers/tty/serial/ar934x_hs_uart.c
+@@ -135,19 +135,34 @@
+ 	unsigned int timeout = 0;
+ 
+ 	baud = up->port.state->port.tty->termios.c_ospeed;
+-	if (baud == 9600)
+-		timeout = 500;
+-	else if (baud == 4800)
+-		timeout = 1500;
+-	else if (baud == 2400)
+-		timeout = 3500;
+-	else if (baud == 1200)
+-		timeout = 8500;
+-	else if (baud == 600)
+-		timeout = 16500;
+-	else if (baud == 300)
+-		timeout = 32500;
+-
++	if (up->port.state->port.tty->termios.c_cflag & PARENB) {
++		if (baud == 9600)
++			timeout = 700;
++		else if (baud == 4800)
++			timeout = 1700;
++		else if (baud == 2400)
++			timeout = 3700;
++		else if (baud == 1200)
++			timeout = 8700;
++		else if (baud == 600)
++			timeout = 17500;
++		else if (baud == 300)
++			timeout = 35500;
++	}
++	else{
++		if (baud == 9600)
++			timeout = 500;
++		else if (baud == 4800)
++			timeout = 1500;
++		else if (baud == 2400)
++			timeout = 3500;
++		else if (baud == 1200)
++			timeout = 8500;
++		else if (baud == 600)
++			timeout = 16500;
++		else if (baud == 300)
++			timeout = 32500;
++	}
+ 	//timeout = 9120000/baud;
+ 	rdata = ch & AR934X_HS_UART_DATA_TX_RX_MASK;
+ 	rdata |= AR934X_HS_UART_DATA_TX_CSR;
+--- a/drivers/tty/serial/ar934x_hs_uart.h
++++ b/drivers/tty/serial/ar934x_hs_uart.h
+@@ -37,8 +37,8 @@
+ #define AR934X_HS_UART_CS_PARITY_S		0
+ #define AR934X_HS_UART_CS_PARITY_M		0x3
+ #define	  AR934X_HS_UART_CS_PARITY_NONE		0
+-#define	  AR934X_HS_UART_CS_PARITY_ODD		1
+-#define	  AR934X_HS_UART_CS_PARITY_EVEN		2
++#define	  AR934X_HS_UART_CS_PARITY_ODD		2
++#define	  AR934X_HS_UART_CS_PARITY_EVEN		3
+ #define AR934X_HS_UART_CS_IF_MODE_S		2
+ #define AR934X_HS_UART_CS_IF_MODE_M		0x3
+ #define	  AR934X_HS_UART_CS_IF_MODE_NONE	0

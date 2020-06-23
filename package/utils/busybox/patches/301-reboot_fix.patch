@@ -1,0 +1,18 @@
+--- a/applets/install.sh
++++ b/applets/install.sh
+@@ -75,6 +75,7 @@
+ install -m 755 busybox "$prefix/bin/busybox" || exit 1
+ 
+ for i in $h; do
++	if [ "$i" != "/sbin/reboot" ]; then
+ 	appdir=`dirname "$i"`
+ 	app=`basename "$i"`
+ 	mkdir -p "$prefix/$appdir" || exit 1
+@@ -130,6 +131,7 @@
+ 			echo "  $prefix/$i already exists"
+ 		fi
+ 	fi
++	fi
+ done
+ 
+ exit 0

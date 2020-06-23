@@ -1,0 +1,78 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -120,32 +120,13 @@
+ 		elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "armv[67]l")
+ 			set(ARCHITECTURE "arm-hwfpu")
+ 			set(PLATFORM "linux-arm-hwfpu")
++		elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "mips")
++			set(ARCHITECTURE "mips")
++			set(PLATFORM "linux-mips")
+ 		else () # default to linux-x86_64
+ 			set(ARCHITECTURE "x86_64")
+ 			set(PLATFORM "linux-x86-64")
+ 		endif()
+-	elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+-		set(OS "windows")
+-		# On Windows, rely on the generator for the build bitness
+-		if(${CMAKE_GENERATOR} MATCHES "Win64")
+-			set(ARCHITECTURE "x86_64")
+-			set(PLATFORM "win64")
+-		else()
+-			set(ARCHITECTURE "x86_32")
+-			set(PLATFORM "win32")
+-		endif()
+-	elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+-		set(OS "macos")
+-		if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64" OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "AMD64")
+-			set(ARCHITECTURE "x86_64")
+-			set(PLATFORM "macos64")
+-		elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_32" OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "i[36]86")
+-			set(ARCHITECTURE "x86_32")
+-			set(PLATFORM "macos32")
+-		else () # default to macos64
+-			set(ARCHITECTURE "x86_64")
+-			set(PLATFORM "macos64")
+-		endif ()
+ 	endif ()
+ endif ()
+ 
+@@ -427,6 +408,23 @@
+ 			-ffunction-sections
+ 			-fdata-sections
+ 		)
++	elseif (${PLATFORM} MATCHES "linux-mips")
++		# set linker flags
++		set(
++			CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread -fPIC -Wl,--gc-sections"
++			CACHE INTERNAL "" FORCE
++		)
++		# set defines and compiler flags
++		add_definitions(
++			-DLTC_NO_ROLC
++			-D_GNU_SOURCE
++			-D_FILE_OFFSET_BITS=64
++			-DCC_GNU
++			-pthread
++			-fPIC
++			-ffunction-sections
++			-fdata-sections
++		)
+ 	elseif (${PLATFORM} MATCHES "linux-coldfire")
+ 		# set linker flags
+ 		set(
+@@ -490,14 +488,3 @@
+ endif()
+ 
+ add_subdirectory(src)
+-add_subdirectory(examples/SteamSensor)
+-add_subdirectory(examples/warehouseextlib)
+-add_subdirectory(examples/simpleextlib)
+-add_subdirectory(examples/ExtUseExample)
+-add_subdirectory(test)
+-if (NOT RELEASE)
+-	add_subdirectory(examples/Regression)
+-endif ()
+-
+-# does the application run
+-add_test(SteamSensorRuns SteamSensor 25)
+>

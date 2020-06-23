@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2016 Teltonika
+
+START=99
+STOP=99
+
+FUNC_NAME="sim_switch"
+USE_PROCD=1
+LOCK_FILE=/var/lock/sim_switch.lock
+
+start_service() {
+	/usr/sbin/$FUNC_NAME start &
+}
+
+stop_service() { 
+        /usr/sbin/$FUNC_NAME stop &
+} 
+ 
+reload_service() { 
+	[ -f $LOCK_FILE ] && {
+		echo "1" > $LOCK_FILE
+		return
+	 }
+	 /usr/sbin/$FUNC_NAME restart &
+} 
+

@@ -1,0 +1,49 @@
+Gali atsitikti taip, kad pasileis daug uqmi vienu metu ir vienas gali "praryti"
+kitam skirtas žinutes tad svarbu naudoti file locką, kad vienu metu galėtų
+skaityti žinutes tik vienas uqmi.
+
+Signed-off-by: Giedrius Statkevičius <giedrius.statkevicius@teltonika.lt>
+---
+Matosi, kai DEBUG_PACKET būna definintas ir daug uqmi paleistų, kad ateina
+paketai skirti ne tam uqmi ir niekad neateina reikalingi paketai.
+
+diff --git a/dev.c b/dev.c
+index a586157..7652699 100644
+--- a/dev.c
++++ b/dev.c
+@@ -3,6 +3,7 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <string.h>
++#include <sys/types.h>
+ #include "uqmi.h"
+ #include "qmi-errors.h"
+ #include "qmi-errors.c"
+@@ -302,6 +303,8 @@ int qmi_device_open(struct qmi_dev *qmi, const char *path)
+ {
+ 	struct ustream *us = &qmi->sf.stream;
+ 	int fd;
++	struct flock fl;
++	int ret;
+ 
+ 	uloop_init();
+ 
+@@ -309,6 +312,18 @@ int qmi_device_open(struct qmi_dev *qmi, const char *path)
+ 	if (fd < 0)
+ 		return -1;
+ 
++	fl.l_type = F_WRLCK;
++	fl.l_whence = SEEK_SET;
++	fl.l_start = 0;
++	fl.l_len = 0;
++	fl.l_pid = getpid();
++
++	ret = fcntl(fd, F_SETLKW, &fl);
++	if (ret == -1) {
++		close(fd);
++		return -1;
++	}
++
+ 	us->notify_read = qmi_notify_read;
+ 	ustream_fd_init(&qmi->sf, fd);
+ 	INIT_LIST_HEAD(&qmi->req);

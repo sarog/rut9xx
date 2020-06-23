@@ -1,0 +1,311 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008 OpenWrt.org
+START=50
+
+USE_PROCD=1
+PROG="/usr/sbin/snmpd"
+
+CONFIGFILE="/var/run/snmpd.conf"
+OUTCONFIG="/usr/lib/snmp/snmpd.conf"
+MODULESPATH="/usr/lib/snmpd-mod"
+
+ENABLED=0
+V1="0"
+V2C="0"
+V3="0"
+
+_config_write() {
+    [ -n "$1" ] || return 0
+
+    echo "$1" >> $CONFIGFILE
+}
+
+boot() {
+    start "$@"
+}
+
+service_triggers()
+{
+        procd_add_reload_trigger "snmpd"
+}
+
+snmpd_load_modules() {
+    for module in $(ls $MODULESPATH 2>/dev/null); do
+        _config_write "dlmod ${module%.*} $MODULESPATH/$module"
+    done
+}
+
+snmpd_agent_add() {
+	local cfg="$1"
+	local proto udp
+
+    config_get enabled "$cfg" enabled 0
+    [ $enabled -ne 1 ] && return 0
+	ENABLED="1"
+    config_get agentaddress "$cfg" agentaddress
+    [ -n "$agentaddress" ] || return 0
+
+    config_get snmp_version "$cfg" version ""
+    if [ "$snmp_version" = "v1/v2" ]; then
+    	V1="1"
+    	V2C="1"
+    elif [ "$snmp_version" = "v1/v2/v3" ]; then
+    	V1="1"
+        V2C="1"
+        V3="1"
+    elif [ "$snmp_version" = "v3" ]; then
+    	V3="1"
+    fi
+
+	echo "agentaddress $agentaddress" >> $CONFIGFILE
+}
+
+snmpd_system_add() {
+	local cfg="$1"
+	config_get syslocation "$cfg" sysLocation
+	[ -n "$syslocation" ] && echo "sysLocation $syslocation" >> $CONFIGFILE
+	config_get syscontact "$cfg" sysContact
+	[ -n "$syscontact" ] && echo "sysContact $syscontact" >> $CONFIGFILE
+	config_get sysname "$cfg" sysName
+	[ -n "$sysname" ] && echo "sysName $sysname" >> $CONFIGFILE
+	config_get sysservice "$cfg" sysService
+	[ -n "$sysservice" ] && echo "sysService $sysservice" >> $CONFIGFILE
+	config_get sysdescr "$cfg" sysDescr
+	[ -n "$sysdescr" ] && echo "sysDescr $sysdescr" >> $CONFIGFILE
+	config_get sysobjectid "$cfg" sysObjectID
+	[ -n "$sysobjectid" ] && echo "sysObjectID $sysobjectid" >> $CONFIGFILE
+}
+
+snmpd_com2sec_add() {
+	local cfg="$1"
+	config_get secname "$cfg" secname
+	[ -n "$secname" ] || return 0
+	config_get community "$cfg" community
+	[ -n "$community" ] || return 0
+	echo "com2sec $secname 0.0.0.0/0 $community" >> $CONFIGFILE
+	echo "com2sec rw 127.0.0.1/32 private" >> $CONFIGFILE
+}
+
+snmpd_com2sec6_add() {
+	local cfg="$1"
+	config_get secname "$cfg" secname
+	[ -n "$secname" ] || return 0
+	config_get source "$cfg" source
+	[ -n "$source" ] || return 0
+	config_get community "$cfg" community
+	[ -n "$community" ] || return 0
+	echo "com2sec6 $secname $source $community" >> $CONFIGFILE
+}
+
+snmpd_group_add() {
+	local cfg="$1"
+	config_get group "$cfg" group
+	[ -n "$group" ] || return 0
+	config_get version "$cfg" version
+	[ -n "$version" ] || return 0
+	config_get secname "$cfg" secname
+	[ -n "$secname" ] || return 0
+    [ "$version" == "v1" -a "$V1" != "1" ] && return 0
+    [ "$version" == "v2c" -a "$V2C" != "1" ] && return 0
+
+	echo "group $group $version $secname" >> $CONFIGFILE
+	echo "group private $version rw" >> $CONFIGFILE
+}
+
+snmpd_view_add() {
+	local cfg="$1"
+	config_get viewname "$cfg" viewname
+	[ -n "$viewname" ] || return 0
+	config_get type "$cfg" type
+	[ -n "$type" ] || return 0
+	config_get oid "$cfg" oid
+	[ -n "$oid" ] || return 0
+	# optional mask
+	config_get mask "$cfg" mask
+	echo "view $viewname $type $oid $mask" >> $CONFIGFILE
+}
+
+snmpd_access_add() {
+	local cfg="$1"
+	config_get group "$cfg" group
+	[ -n "$group" ] || return 0
+	config_get context "$cfg" context
+	[ -n $context ] || return 0
+	[ "$context" == "none" ] && context='""'
+	config_get version "$cfg" version
+	[ -n "$version" ] || return 0
+	config_get level "$cfg" level
+	[ -n "$level" ] || return 0
+	config_get prefix "$cfg" prefix
+	[ -n "$prefix" ] || return 0
+	config_get read "$cfg" read
+	[ -n "$read" ] || return 0
+	config_get write "$cfg" write
+	[ -n "$write" ] || return 0
+	config_get notify "$cfg" notify
+	[ -n "$notify" ] || return 0
+	echo "access $group $context $version $level $prefix $read $write $notify" >> $CONFIGFILE
+}
+
+snmpd_pass_add() {
+	local cfg="$1"
+	local pass='pass'
+
+	config_get miboid "$cfg" miboid
+	[ -n "$miboid" ] || return 0
+	config_get prog "$cfg" prog
+	[ -n "$prog" ] || return 0
+	config_get_bool persist "$cfg" persist 0
+	[ $persist -ne 0 ] && pass='pass_persist'
+	config_get priority "$cfg" priority
+	priority=${priority:+-p $priority}
+	echo "$pass $priority $miboid $prog" >> $CONFIGFILE
+}
+
+snmpd_exec_add() {
+	local cfg="$1"
+
+	config_get name "$cfg" name
+	[ -n "$name" ] || return 0
+	config_get prog "$cfg" prog
+	[ -n "$prog" ] || return 0
+	config_get args "$cfg" args
+	config_get miboid "$cfg" miboid
+	echo "exec $miboid $name $prog $args" >> $CONFIGFILE
+}
+
+snmpd_disk_add() {
+        local cfg="$1"
+        local disk='disk'
+
+        config_get partition "$cfg" partition
+        [ -n "$partition" ] || return 0
+        config_get size "$cfg" size
+        [ -n "$size" ] || return 0
+        echo "$disk $partition $size" >> $CONFIGFILE
+}
+
+snmpd_user_add() {
+	local cfg="$1"
+	local enabled rights username mibaccess seclevel
+
+	config_get enabled "$cfg" enabled 0
+	[ $enabled -ne 1 ] && return 0
+	config_get username "$cfg" username
+	[ -n "$username" ] || return 0
+	config_get mibaccess "$cfg" mibaccess
+	config_get seclevel "$cfg" seclevel "noauth"
+	config_get rights "$cfg" rights "ro"
+	[ "$rights" == "rw" ] && rights="rw" || rights="ro"
+
+    case $seclevel in
+        noauth)
+            _config_write "createUser $username"
+            ;;
+        auth)
+            config_get authtype "$cfg" authtype
+            [ -n "$authtype" ] || return 0
+            config_get authpass "$cfg" authpass
+            [ -n "$authpass" ] || return 0
+
+            _config_write "createUser $username $authtype \"$authpass\""
+            ;;
+        priv)
+            config_get authtype "$cfg" authtype
+            [ -n "$authtype" ] || return 0
+            config_get authpass "$cfg" authpass
+            [ -n "$authpass" ] || return 0
+            config_get privtype "$cfg" privtype
+            [ -n "$privtype" ] || return 0
+            config_get privpass "$cfg" privpass
+            [ -n "$privpass" ] || return 0
+
+            _config_write "createUser $username $authtype \"$authpass\" $privtype \"$privpass\""
+            ;;
+    esac
+
+	echo "${rights}user $username $seclevel ${mibaccess}" >> $CONFIGFILE
+}
+
+snmpd_trap2sink_add(){
+    local cfg="$1"
+
+    config_get trap_enabled "$cfg" trap_enabled
+    [ "$trap_enabled" == "1" ] || return 0
+    config_get trap_host "$cfg" trap_host
+	[ -n "$trap_host" ] || return 0
+	config_get trap_community "$cfg" trap_community
+	[ -n "$trap_community" ] || return 0
+	config_get trap_port "$cfg" trap_port
+	[ -n "$trap_port" ] || return 0
+
+    _config_write "trap2sink $trap_host:$trap_port $trap_community"
+}
+
+snmpd_snmpv3_add() {
+	local cfg="$1"
+
+	config_get version "$cfg" version
+	[ -n "$version" -a "$version" != "v1/v2" ] || return 0
+	if [ "$version" != "v1/v2/v3" -a "$version" != "v3" ]; then
+		return 0
+	fi
+	config_get user_name "$cfg" user_name
+	[ -n "$user_name" ] || return 0
+	config_get auth_type "$cfg" auth_type
+	config_get auth_pass "$cfg" auth_pass
+	config_get encryption_type "$cfg" encryption_type
+	config_get encryption_pass "$cfg" encryption_pass
+	echo "CreateUser $user_name $auth_type \"$auth_pass\" $encryption_type \"$encryption_pass\"" >> $CONFIGFILE
+	echo "Rouser $user_name priv" >> $CONFIGFILE
+}
+
+start_service() {
+	[ -f "$CONFIGFILE" ] && rm -f "$CONFIGFILE"
+	[ -f "$OUTCONFIG" ] && rm -f "$OUTCONFIG"
+    config_load snmpd
+    
+    config_foreach snmpd_agent_add agent
+    config_foreach snmpd_agent_add snmpd
+
+    [ "$ENABLED" != "1" ] && return 0
+
+    logger "start_service snmpd"
+	config_foreach snmpd_system_add system
+	[ $V1 = "1" -o $V2C = "1" ] && {
+	    config_foreach snmpd_com2sec_add com2sec
+	    config_foreach snmpd_group_add group
+	    config_foreach snmpd_view_add view
+        config_foreach snmpd_access_add access
+	}
+
+	config_foreach snmpd_pass_add pass
+	config_foreach snmpd_exec_add exec
+	config_foreach snmpd_disk_add disk
+	snmpd_load_modules
+	config_foreach snmpd_trap2sink_add trap
+	config_foreach snmpd_snmpv3_add agent
+
+    procd_open_instance
+	procd_set_param command $PROG -Lf /dev/null -f
+	#Permit caching configuration
+	procd_append_param command -Cc $CONFIGFILE
+	procd_append_param command --noPersistentSave=1 --noPersistentLoad=1
+	procd_set_param file /etc/config/snmpd
+	procd_set_param respawn
+
+	for iface in $(ls /sys/class/net 2>/dev/null); do
+		procd_append_param netdev "$iface"
+	done
+
+	procd_close_instance
+}
+
+stop_service() {
+	[ -f "$CONFIGFILE" ] && rm -f "$CONFIGFILE"
+	[ -f "$OUTCONFIG" ] && rm -f "$OUTCONFIG"
+}
+
+reload_service() {
+	restart
+}

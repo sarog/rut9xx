@@ -1,0 +1,32 @@
+#!/bin/sh /etc/rc.common
+# Periodic reboot init script.
+
+START=54
+CONFIG_GET="uci -q get periodic_reboot.periodic_reboot"
+
+script_run()
+{
+	sed -i "/sbin\/reboot/d" /etc/crontabs/root
+	minutes=0
+	hours=0
+	hours=`$CONFIG_GET.hours`
+	hours=`eval expr $hours`
+	minutes=`$CONFIG_GET.minutes`
+	minutes=`eval expr $minutes`
+	local days=`$CONFIG_GET.day 2>/dev/null`
+	days=${days// /,}
+	echo "$minutes $hours * * $days /sbin/reboot -e" >> /etc/crontabs/root
+	/etc/init.d/cron restart
+}
+
+start()
+{
+	if [ `$CONFIG_GET.enable` -eq 1 ] ; then
+		script_run
+	fi
+}
+
+stop()
+{
+	sed -i "/sbin\/reboot/d" /etc/crontabs/root
+}

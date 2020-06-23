@@ -1,0 +1,13 @@
+Index: stunnel-5.50/configure
+===================================================================
+--- stunnel-5.50.orig/configure
++++ stunnel-5.50/configure
+@@ -6601,7 +6601,7 @@ fi
+ done
+ 
+     case "${host}" in
+-        avr-*.* | powerpc-*-aix* | rl78-*.* | visium-*.*)
++        avr-*.* | powerpc-*-aix* | rl78-*.* | visium-*.* | mips-*)
+             ;;
+         *)
+ 

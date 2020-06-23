@@ -1,0 +1,660 @@
+<%-
+	require "luci.tools.status"
+
+	local nixio  = require "nixio"
+	local bus = require "ubus"
+	local _ubus = bus.connect()
+	local uci = require "luci.model.uci".cursor()
+	local ntm = require "luci.model.network"
+	local translate, translatef = luci.i18n.translate, luci.i18n.translatef
+
+	ntm.init()
+
+	function logger(string)
+		os.execute("logger \"" ..string.. "\"")
+	end
+
+	function device(ip)
+		local dev
+		for k, v in ipairs(nixio.getifaddrs()) do
+			if v.family == "inet" then
+				if v.addr == ip then
+					dev = v.name
+				end
+			end
+		end
+		return dev
+	end
+
+	function getParam(string)
+		local h = io.popen(string)
+		local t = h:read()
+		h:close()
+		return t
+	end
+
+	function fileExists(path, name)
+		local string = "ls ".. path
+		local h = io.popen(string)
+		local t = h:read("*all")
+		h:close()
+
+		for i in string.gmatch(t, "%S+") do
+			if i == name then
+				return 1
+			end
+		end
+	end
+
+	local info = _ubus:call("network.wireless", "status", { })
+	local interfaces = info.radio0.interfaces
+	local pathinfo = os.getenv("PATH_INFO")
+	local args = {}
+	local wifi_ifname
+	local socket_path = "/var/run/"
+	local socket_file = ""
+	local clients = {}
+	local tun_ip
+	local curdev
+
+	for node in pathinfo:gmatch("[^/]+") do
+		args[#args+1] = node
+	end
+
+	local hotspot_section = args[#args]
+
+	tun_ip = uci:get("coovachilli", hotspot_section, "net")
+
+	if tun_ip then
+		tun_ip = tun_ip:match("%d+.%d+.%d+.%d+")
+		curdev = device(tun_ip)
+	end
+
+	for i, net in ipairs(interfaces) do
+		hotspot_id = uci:get("wireless", net.section, "hotspotid") or getParam("uci -q get wireless." .. net.section .. ".hotspotid")
+
+		if hotspot_section == hotspot_id then
+			wifi_ifname = net.ifname
+		end
+	end
+
+	if wifi_ifname then
+		socket_file = string.format("chilli.%s.sock", wifi_ifname)
+		if fileExists(socket_path, socket_file) then
+			local command = string.format("/usr/sbin/chilli_query -s %s%s list", socket_path, socket_file)
+			local res = io.popen(command)
+			repeat
+				local tmp = {}
+				local num = 1
+				local params = {"mac", "ip", "auth", "id", "loged", "user", "duration", "idle", "input", "output", "total", "swap", "up", "down", "url"}
+				line = res:read("*l")
+				if line then
+					for i in string.gmatch(line, "%S+") do
+						if params[num] and i then
+							tmp[params[num]] = i
+							num = num + 1
+						end
+					end
+					clients[#clients + 1] = tmp
+				end
+			until not line
+			res:close()
+		end
+	end
+	if luci.http.formvalue("update") == "1" then
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(clients)
+		return
+	end
+-%>
+
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	var bwxhr = new XHR();
+
+	var G;
+	var TIME = 0;
+	var RXB  = 1;
+	var RXP  = 2;
+	var TXB  = 3;
+	var TXP  = 4;
+
+	var width  = 760;
+	var height = 300;
+	var step   = 5;
+
+	var data_wanted = Math.floor(width / step);
+	var data_fill   = 0;
+	var data_stamp  = 0;
+
+	var data_rx = [ ];
+	var data_tx = [ ];
+
+	var line_rx;
+	var line_tx;
+
+	var label_25;
+	var label_50;
+	var label_75;
+
+	var label_rx_cur;
+	var label_rx_avg;
+	var label_rx_peak;
+
+	var label_tx_cur;
+	var label_tx_avg;
+	var label_tx_peak;
+
+	var label_scale;
+
+	function bandwidth_label(bytes, br)
+	{
+		var uby = 'KBytes';
+		var kby = (bytes / 1024);
+
+		if (kby >= 1024)
+		{
+			uby = 'MBytes';
+			kby = kby / 1024;
+		}
+
+		var ubi = 'Kbits';
+		var kbi = (bytes * 8 / 1024);
+
+		if (kbi >= 1024)
+		{
+			ubi = 'Mbits';
+			kbi = kbi / 1024;
+		}
+
+		return String.format("%f %s/s%s(%f %s/s)",
+			kbi.toFixed(2), ubi,
+			br ? '<br />' : ' ',
+			kby.toFixed(2), uby
+		);
+	}
+
+	/* wait for SVG */
+	window.setTimeout(
+		function() {
+			var svg = document.getElementById('bwsvg');
+
+			try {
+				G = svg.getSVGDocument
+					? svg.getSVGDocument() : svg.contentDocument;
+			}
+			catch(e) {
+				G = document.embeds['bwsvg'].getSVGDocument();
+			}
+
+			if (!G)
+			{
+				window.setTimeout(arguments.callee, 1000);
+			}
+			else
+			{
+				/* find sizes */
+				width       = svg.offsetWidth  - 2;
+				height      = svg.offsetHeight - 2;
+				data_wanted = Math.ceil(width / step);
+
+				/* prefill datasets */
+				for (var i = 0; i < data_wanted; i++)
+				{
+					data_rx[i] = 0;
+					data_tx[i] = 0;
+				}
+
+				/* find svg elements */
+				line_rx = G.getElementById('rx');
+				line_tx = G.getElementById('tx');
+
+				label_25 = G.getElementById('label_25');
+				label_50 = G.getElementById('label_50');
+				label_75 = G.getElementById('label_75');
+
+				label_rx_cur  = document.getElementById('rx_bw_cur');
+				label_rx_avg  = document.getElementById('rx_bw_avg');
+				label_rx_peak = document.getElementById('rx_bw_peak');
+
+				label_tx_cur  = document.getElementById('tx_bw_cur');
+				label_tx_avg  = document.getElementById('tx_bw_avg');
+				label_tx_peak = document.getElementById('tx_bw_peak');
+
+				label_scale   = document.getElementById('scale');
+
+
+				/* plot horizontal time interval lines */
+				for (var i = width % (step * 60); i < width; i += step * 60)
+				{
+					var line = G.createElementNS('http://www.w3.org/2000/svg', 'line');
+						line.setAttribute('x1', i);
+						line.setAttribute('y1', 0);
+						line.setAttribute('x2', i);
+						line.setAttribute('y2', '100%');
+						line.setAttribute('style', 'stroke:black;stroke-width:0.1');
+
+					var text = G.createElementNS('http://www.w3.org/2000/svg', 'text');
+						text.setAttribute('x', i + 5);
+						text.setAttribute('y', 15);
+						text.setAttribute('style', 'fill:#999999; font-size:9pt');
+						text.appendChild(G.createTextNode(Math.round((width - i) / step / 60) + 'm'));
+
+					label_25.parentNode.appendChild(line);
+					label_25.parentNode.appendChild(text);
+				}
+
+				label_scale.innerHTML = String.format('<%:(%d minutes window, %d seconds interval)%>', data_wanted / 60, 3);
+
+				/* render datasets, start update interval */
+				XHR.poll(3, '<%=build_url("admin/status/realtime/bandwidth_status", curdev)%>', null,
+					function(x, data)
+					{
+						var data_max   = 0;
+						var data_scale = 0;
+
+						var data_rx_avg = 0;
+						var data_tx_avg = 0;
+
+						var data_rx_peak = 0;
+						var data_tx_peak = 0;
+
+						for (var i = data_stamp ? 0 : 1; i < data.length; i++)
+						{
+							/* skip overlapping entries */
+							if (data[i][TIME] <= data_stamp)
+								continue;
+
+							/* normalize difference against time interval */
+							if (i > 0)
+							{
+								var time_delta = data[i][TIME] - data[i-1][TIME];
+								if (time_delta)
+								{
+									data_rx.push((data[i][RXB] - data[i-1][RXB]) / time_delta);
+									data_tx.push((data[i][TXB] - data[i-1][TXB]) / time_delta);
+								}
+							}
+						}
+
+						/* cut off outdated entries */
+						data_rx = data_rx.slice(data_rx.length - data_wanted, data_rx.length);
+						data_tx = data_tx.slice(data_tx.length - data_wanted, data_tx.length);
+
+						/* find peak */
+						for (var i = 0; i < data_rx.length; i++)
+						{
+							data_max = Math.max(data_max, data_rx[i]);
+							data_max = Math.max(data_max, data_tx[i]);
+
+							data_rx_peak = Math.max(data_rx_peak, data_rx[i]);
+							data_tx_peak = Math.max(data_tx_peak, data_tx[i]);
+
+							if (i > 0)
+							{
+								data_rx_avg = (data_rx_avg + data_rx[i]) / 2;
+								data_tx_avg = (data_tx_avg + data_tx[i]) / 2;
+							}
+							else
+							{
+								data_rx_avg = data_rx[i];
+								data_tx_avg = data_tx[i];
+							}
+						}
+
+						/* remember current timestamp, calculate horizontal scale */
+						data_stamp = data[data.length-1][TIME];
+						data_scale = height / (data_max * 1.1);
+
+						/* plot data */
+						var pt_rx = '0,' + height;
+						var pt_tx = '0,' + height;
+
+						var y_rx = 0;
+						var y_tx = 0;
+
+						for (var i = 0; i < data_rx.length; i++)
+						{
+							var x = i * step;
+
+							y_rx = height - Math.floor(data_rx[i] * data_scale);
+							y_tx = height - Math.floor(data_tx[i] * data_scale);
+
+							pt_rx += ' ' + x + ',' + y_rx;
+							pt_tx += ' ' + x + ',' + y_tx;
+						}
+
+						pt_rx += ' ' + width + ',' + y_rx + ' ' + width + ',' + height;
+						pt_tx += ' ' + width + ',' + y_tx + ' ' + width + ',' + height;
+
+
+						line_rx.setAttribute('points', pt_rx);
+						line_tx.setAttribute('points', pt_tx);
+
+						label_25.firstChild.data = bandwidth_label(1.1 * 0.25 * data_max);
+						label_50.firstChild.data = bandwidth_label(1.1 * 0.50 * data_max);
+						label_75.firstChild.data = bandwidth_label(1.1 * 0.75 * data_max);
+
+						label_rx_cur.innerHTML = bandwidth_label(data_rx[data_rx.length-1], true);
+						label_tx_cur.innerHTML = bandwidth_label(data_tx[data_tx.length-1], true);
+
+						label_rx_avg.innerHTML = bandwidth_label(data_rx_avg, true);
+						label_tx_avg.innerHTML = bandwidth_label(data_tx_avg, true);
+
+						label_rx_peak.innerHTML = bandwidth_label(data_rx_peak, true);
+						label_tx_peak.innerHTML = bandwidth_label(data_tx_peak, true);
+					}
+				);
+			}
+		}, 1000
+	);
+
+XHR.poll(5, '<%=REQUEST_URI%>', { update: 1 },
+	function(x, users)
+	{
+
+		function count_time(user){
+			var s = "N/A";
+			if (user){
+				var res = user.split("/");
+				if (res){
+					<% local auth = uci:get("coovachilli", hotspot_section, "mode")
+
+					if auth and auth == "mac" then
+						local hotspot_number = string.match(hotspot_section, "%d+") or "1"
+						local session_section = "unlimited" .. hotspot_number
+						local conf_duration = uci:get("coovachilli", session_section, "defsessiontimeout")
+						if conf_duration then
+					%>
+						res[1] = "<%=conf_duration%>";
+					<%	end
+					end %>
+					var duration;
+					(res[1] && Number(res[1]) > 0) ? duration = res[1] : duration = "-";
+					s = res[0] + "/" + duration;
+					s += "<strong> sec.</strong>"
+				}
+			}
+
+			return s
+		}
+
+		function count_data(user){
+			var s = "N/A"
+			if (user){
+				var res = user.split("/");
+				if (res){
+					var input;
+					if (res[0]) {
+						input = formatSizeUnits(res[0]);
+						s = input;
+					}
+				}
+			}
+			return s
+		}
+
+		//Triname issiloginusius userius
+		var rows = document.getElementsByName("user");
+		var deletions = 0;
+		if (rows){
+			var length = rows.length;
+			for (var n = 0; n < rows.length; n++) {
+				var exists = false;
+				for (var u = 0; u < users.length; u++) {
+					if ("user-" + users[u].id == rows[n].id){
+						if (users[u].loged == "1")
+							exists = true;
+					}
+				}
+				if (! exists){
+					rows[n].parentNode.removeChild(rows[n]);
+					deletions += 1;
+				}
+			}
+
+			if (deletions > 0 && deletions == length){
+				var no_user = document.getElementById("no-users");
+				if (no_user)
+					no_user.style.display = "";
+			}
+		}
+
+		//Atnaujiname info arba pridedam nauja useri
+		for (var i = 0; i < users.length; i++) {
+			var user = document.getElementById("user-" + users[i].id);
+			if (user) {
+				if (users[i].loged == "0"){
+					user.parentNode.removeChild(user);
+				}
+				else {
+					var time = document.getElementById("time-" + users[i].id);
+					var download = document.getElementById("download-" + users[i].id);
+
+					if (time) {
+						var s = "<strong>Idle / Max: </strong>";
+						s += count_time(users[i].idle);
+						s += "<br/><strong>Duration / Max: </strong>";
+						s += count_time(users[i].duration);
+						s += "</br>";
+						time.innerHTML = s;
+					}
+
+					if (download) {
+						var s = "<strong>Download: </strong>";
+						s += count_data(users[i].input);
+						s += "<br/><strong>Upload: </strong>";
+						s += count_data(users[i].output);
+						s += "</br>";
+						download.innerHTML = s;
+					}
+					exists = true;
+				}
+			}
+			else {
+				if (users[i].loged == "1"){
+					var table = document.getElementById("users-table");
+					if (table) {
+						var row = table.insertRow(1);
+						if (row){
+							row.setAttribute("class", "cbi-section-table-row cbi-rowstyle-" + (1 + ((i-1) % 2)));
+							row.setAttribute("style", "border-bottom: 1px solid #DDD;");
+							row.setAttribute("id", "user-" + users[i].id);
+							row.setAttribute("name", "user");
+							var s = '<td class="cbi-value-field" style="width:16px; vertical-align: middle; padding:3px; text-align: center;">' +
+										'<img src="<%=resource%>/cbi/save.gif" title="<%=translate("Not associated")%>"/><br>' +
+								'</td>' +
+								'<td class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px">' +
+									'<strong><%=translate("Logged in")%>: </strong> <%="Yes"%><br />'
+
+							if (users[i].url.length > 20){
+								url_addr = users[i].url.substring(0, 20) + "...";
+							}
+							else {
+								url_addr = users[i].url
+							}
+							s += '<strong><%=translate("URL")%>:</strong><a href="' + users[i].url + '" onmouseover="ShowHint(this,\'' + users[i].url + '\')" onmouseout="HideHint(this)" >' + url_addr + '</a><br/>' +
+								'</td>' +
+								'<td class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px">' +
+									'<strong><%=translate("IP Address")%>: </strong>' + users[i].ip + '<br/>' +
+									'<strong><%=translate("MAC Address")%>: </strong>' + users[i].mac + '<br/>'+
+								'</td>' +
+								'<td class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px" id="time-' + users[i].id + '">' +
+									'<strong><%=translate("Idle / Max")%>: </strong> ' + count_time(users[i].idle) + '<br />' +
+									'<strong><%=translate("Duration / Max")%>: </strong> ' + count_time(users[i].duration) + '<br />' +
+								'</td>' +
+								'<td class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px" id="download-' + users[i].id + '">' +
+									'<strong><%=translate("Download ")%>:</strong> ' + count_data(users[i].input) +'<br/>' +
+									'<strong><%=translate("Upload ")%>:</strong> ' + count_data(users[i].output) + '<br/>' +
+								'</td>' +
+								'<td class="cbi-value-field" style="text-align:right">' +
+										'<input type="button" class="cbi-button cbi-button-edit" style="margin-right: 20px;width:100px;" onclick="hotspot_logout(\'' + users[i].mac + '\', \'<%=socket_path .. "" .. socket_file%>\')" title="<%=translate("Logout this client")%>" value="<%=translate("Logout")%>"/>' +
+								'</td>'
+
+							row.innerHTML = s;
+							var no_user = document.getElementById("no-users");
+							if (no_user)
+								no_user.style.display = "none";
+
+						}
+					}
+				}
+				exists = true
+			}
+		}
+	}
+);
+
+function formatSizeUnits(bytes){
+        if      (bytes>=1024000000) {bytes=(bytes/1024000000).toFixed(2)+'<strong>  GB</strong>';}
+        else if (bytes>=1024000)    {bytes=(bytes/1024000).toFixed(2)+'<strong>  MB</strong>';}
+        else if (bytes>=1024)       {bytes=(bytes/1024).toFixed(2)+'<strong>  KB</strong>';}
+        else if (bytes>1)           {bytes=bytes+'<strong>  bytes</strong>';}
+        else if (bytes==1)          {bytes=bytes+'<strong>  byte</strong>';}
+        else                        {bytes='';}
+        return bytes;
+}
+
+function hotspot_logout(mac, socket) {
+	spin_loader();
+	XHR.get('<%=luci.dispatcher.build_url("admin/services/hotspot/logout")%>', { mac: mac, socket: socket },
+		function(x, info) {
+		var e = document.getElementById("logging-text")
+			if (e){
+				if (info.response == 1){
+					e.textContent = "Logout successful"
+				}
+				else {
+					e.textContent = "Logout unsuccessful"
+				}
+			}
+			location.reload();
+ 		}
+
+	);
+}
+
+function spin_loader(interval) {
+	document.getElementById("spin-loader").style.display='';
+// 	setTimeout(function(){  document.getElementById("spin-loader").style.display='none';}, interval);
+}
+
+//]]></script>
+<div id="spin-loader" class="applyChanges" style="display: none;">
+	<span id="logging-text"><%=translate("Logging out")%></span>
+	<img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" />
+</div>
+<h2><a id="content" name="content"><%=translate("Clients Management")%></a></h2>
+
+<div class="cbi-map">
+	<fieldset class="cbi-section">
+		<table class="cbi-section-table5" style="margin:10px; empty-cells:hide" id="users-table">
+			<tr style="background-color: #f5f5f5;" id="table-header">
+				<td id="ap_td" style="width:34px"><img src="<%=resource%>/icons/clients_manage.png" style="float:left; margin-right:10px;" id="ap_iw-upstate" /></td>
+				<td colspan="5" style="text-align:left">
+					<big><strong><%=translate("Hotspot Clients")%></strong></big><br/>
+				</td>
+			</tr>
+			<%
+			local exists = false
+			if #clients > 0 then
+				local if_info = io.popen("ifconfig eth0 | awk '/HWaddr/ {print $5}'")
+				local lan_mac = if_info:read("*all")
+				if_info:close()
+
+				if lan_mac then
+					lan_mac = string.gsub(lan_mac, ":", "-")
+					lan_mac = string.gsub(lan_mac, "\n", "")
+				end
+				for i, net in ipairs(clients) do
+					if lan_mac ~= net["mac"] and net["loged"] == "1" then
+						exists = true %>
+					<tr class="cbi-section-table-row cbi-rowstyle-<%=1 + ((i-1) % 2)%>" style="border-bottom: 1px solid #DDD;" id="user-<%=net.id%>" name="user">
+						<td class="cbi-value-field" style="width:16px; vertical-align: middle; padding:3px; text-align: center;">
+							<%if net["loged"] == "1" then%>
+								<img src="<%=resource%>/cbi/save.gif" title="<%=translate('Not associated')%>" /><br />
+							<%else%>
+								<img src="<%=resource%>/cbi/reset.gif" title="<%=translate('Not associated')%>" /><br />
+							<%end%>
+						</td>
+						<td class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px">
+							<strong><%=translate("Logged in")%>:</strong> <% if net["loged"] == "1" then%> <%="Yes"%> <%else%> <%="No"%> <%end%><br />
+							<%if string.len(net["url"]) > 20 then
+								url_addr = string.sub(net["url"], 0, 20) .. "..."
+							else
+								url_addr = net["url"]
+							end%>
+							<strong><%=translate("URL")%>:</strong><a href="<%=net["url"]%>" onmouseover="ShowHint(this,'<%=net["url"]%>')" onmouseout="HideHint(this)" > <%=url_addr%></a><br />
+						</td>
+						<td class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px">
+							<strong><%=translate("IP Address")%>:</strong> <%=net["ip"]%><br />
+							<strong><%=translate("MAC Address")%>:</strong> <%=net["mac"]%><br />
+						</td>
+						<td class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px" id="time-<%=net.id%>">
+							<strong><%=translate("Idle / Max")%>:</strong> -<br />
+							<strong><%=translate("Duration / Max")%>:</strong> -<br />
+						</td>
+						<td class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px" id="download-<%=net.id%>">
+							<strong><%=translate("Download ")%>: </strong>-<br />
+							<strong><%=translate("Upload ")%>: </strong>-<br />
+						</td>
+						<td class="cbi-value-field" style="text-align:right">
+							<% if net["loged"] == "1" then %>
+								<input type="button" class="cbi-button cbi-button-edit" style="margin-right: 20px;width:100px;" onclick="hotspot_logout('<%=net["mac"]%>', '<%=socket_path .. "" .. socket_file%>')" title="<%=translate('Logout this client')%>" value="<%=translate('Logout')%>"/>
+							<%else%>
+								<input type="button" class="cbi-button cbi-button-edit" style="margin-right: 20px;width:100px;color: #B8B8B8;" title="<%=translate('Logout this client')%>" value="<%=translate('Logout')%>"/>
+							<%end%>
+						</td>
+					</tr>
+					<%end
+				end %>
+			<%end %>
+				<tr class="cbi-section-table-row cbi-rowstyle-2" id="no-users" <%if exists then%>style="display: none;<%end%>" >
+					<td></td>
+					<td colspan="5" class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px">
+						<em><%=translate("There are no clients connected")%></em>
+					</td>
+				</tr>
+		</table>
+	</fieldset>
+</div>
+<br>
+
+<h2><a id="content" name="content"><%=translate("Realtime Traffic")%></a></h2>
+
+<embed id="bwsvg" style="width:100%; height:300px; border:1px solid #000000; background-color:#FFFFFF" src="<%=resource%>/bandwidth.svg" />
+<div style="text-align:right"><small id="scale">-</small></div>
+<br />
+
+<table style="width:100%; table-layout:fixed" cellspacing="5">
+	<tr>
+		<td style="text-align:right; vertical-align:top"><strong style="border-bottom:2px solid blue" onmouseover="ShowHint(this, '<%=translate('Incoming traffic on selected network interface')%>')" onmouseout="HideHint(this)"><%=translate("Inbound:")%></strong></td>
+		<td id="rx_bw_cur">0 kbit/s<br />(0 KB/s)</td>
+
+		<td style="text-align:right; vertical-align:top"><strong onmouseover="ShowHint(this, '<%=translate('Average of incoming traffic on selected network interface')%>')" onmouseout="HideHint(this)"><%=translate("Average:")%></strong></td>
+		<td id="rx_bw_avg">0 kbit/s<br />(0 KB/s)</td>
+
+		<td style="text-align:right; vertical-align:top"><strong onmouseover="ShowHint(this, '<%=translate('Peak of incoming traffic on selected network interface')%>')" onmouseout="HideHint(this)"><%=translate("Peak:")%></strong></td>
+		<td id="rx_bw_peak">0 kbit/s<br />(0 KB/s)</td>
+	</tr>
+	<tr>
+		<td style="text-align:right; vertical-align:top"><strong style="border-bottom:2px solid green" onmouseover="ShowHint(this, '<%=translate('Outgoing traffic on selected network interface')%>')" onmouseout="HideHint(this)"><%=translate("Outbound:")%></strong></td>
+		<td id="tx_bw_cur">0 kbit/s<br />(0 KB/s)</td>
+
+		<td style="text-align:right; vertical-align:top"><strong onmouseover="ShowHint(this, '<%=translate('Average of outgoing traffic on selected network interface')%>')" onmouseout="HideHint(this)"><%=translate("Average:")%></strong></td>
+		<td id="tx_bw_avg">0 kbit/s<br />(0 KB/s)</td>
+
+		<td style="text-align:right; vertical-align:top"><strong onmouseover="ShowHint(this, '<%=translate('Peak of outgoing traffic on selected network interface')%>')" onmouseout="HideHint(this)"><%=translate("Peak:")%></strong></td>
+		<td id="tx_bw_peak">0 kbit/s<br />(0 KB/s)</td>
+	</tr>
+</table>
+
+<div class="cbi-page-actions">
+	<div style="float:left">
+		<input class="cbi-button cbi-button-link" type="button" value="<%=translate("Back to Overview")%>" onclick="location.href='<%=luci.dispatcher.build_url("admin", "services", "hotspot", "general")%>'" />
+	</div>
+</div>
+<%+footer%>

@@ -1,0 +1,20 @@
+#!/bin/sh /etc/rc.common
+
+START=54
+
+. /lib/functions.sh
+
+
+unset_fail_counter() {
+	uci set ping_reboot.$1.fail_counter=0
+}
+
+start()
+{
+	/sbin/ping_reboot start
+}
+
+stop()
+{	
+	/sbin/ping_reboot stop
+}

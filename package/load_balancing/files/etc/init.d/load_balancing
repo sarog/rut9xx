@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+START=99
+
+start() {
+	/usr/sbin/load_balancing start
+}
+
+stop() {
+	/usr/sbin/load_balancing stop
+}
+
+restart() {
+	stop
+	start
+}

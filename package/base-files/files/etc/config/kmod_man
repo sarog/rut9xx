@@ -1,0 +1,9 @@
+config module
+	option name 'H323'
+	option path '/etc/modules.d/nf-nathelper-h323'
+	option enabled '0'
+
+config module
+	option name 'SIP'
+	option path '/etc/modules.d/nf-nathelper-sip'
+	option enabled '0'

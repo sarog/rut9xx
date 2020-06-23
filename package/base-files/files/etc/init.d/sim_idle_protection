@@ -1,0 +1,36 @@
+#!/bin/sh /etc/rc.common
+
+START=66
+
+CONFIG_GET="uci get -q sim_idle_protection"
+
+start()
+{	
+	local CARDS="sim1 sim2"
+	local TIME=""
+	
+	for SIM in $CARDS
+	do
+		if [ `$CONFIG_GET.$SIM.enable` -eq 1 ] ; then
+			hour="`$CONFIG_GET.$SIM.hour`"
+			minute="`$CONFIG_GET.$SIM.min`"
+			
+			if [ "`$CONFIG_GET.$SIM.period`" = "month" ] ; then
+				day="`$CONFIG_GET.$SIM.day`"
+				TIME="$minute $hour $day * *"
+			elif [ "`$CONFIG_GET.$SIM.period`" = "week" ] ; then
+				weekday="`$CONFIG_GET.$SIM.weekday`"
+				TIME="$minute $hour * * $weekday"
+			fi
+			
+			echo  "$TIME /sbin/sim_idle_protection.sh $SIM" >> /etc/crontabs/root
+		fi
+	done
+	/etc/init.d/cron restart
+}
+
+stop()
+{
+	sed -i "/sim_idle_protection.sh/d" /etc/crontabs/root
+	/etc/init.d/cron restart
+}

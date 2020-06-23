@@ -1,0 +1,412 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2010 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: load.htm 8325 2012-03-04 14:06:30Z jow $
+
+-%>
+
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+	var bwxhr = new XHR();
+
+	function con_type(num){
+		var con = ["2G (GSM)" , "2G (GPRS)" , "2G (EDGE)" , "3G (WCDMA)", "3G (HSDPA)", "3G (HSUPA)", "3G (HSPA)" , "3G (HSPA+)", "3G (DC-HSPA+)", "3G(HSDPA+HSUPA)", "UMTS", "4G (LTE)", "N/A"];
+		document.getElementById("con_type").innerHTML = con[num];
+	}
+
+	var G;
+	var TIME = 0;
+	var L01   = 1;
+	var L05   = 2;
+	var L15  = 3;
+	var L20  = 4;
+	var L25  = 5;
+	var L30  = 6;
+	var L35  = 7;
+	var L40  = 8;
+	var L45  = 9;
+	var L50  = 10;
+	var L55  = 11;
+	var L60  = 12;
+
+	var width  = 760;
+	var height = 300;
+	var step   = 5;
+
+	var data_wanted = Math.floor(width / step);
+	var data_fill   = 0;
+	var data_stamp  = 0;
+
+	var data_01  = [ ];
+	var data_05  = [ ];
+	var data_15 = [ ];
+	var data_20 = [ ];
+	var data_25 = [ ];
+	var data_30 = [ ];
+	var data_35 = [ ];
+	var data_40 = [ ];
+	var data_45 = [ ];
+	var data_50 = [ ];
+	var data_55 = [ ];
+	var data_60 = [ ];
+
+	var line_01;
+	var line_05;
+	var line_15;
+	var line_20;
+	var line_25;
+	var line_30;
+	var line_35;
+	var line_40;
+	var line_45;
+	var line_50;
+	var line_55;
+	var line_60;
+
+	var label_25;
+	var label_050;
+	var label_75;
+
+	var label_01_cur;
+	var label_01_avg;
+	var label_01_peak;
+
+	var label_05_cur;
+	var label_05_avg;
+	var label_05_peak;
+
+	var label_15_cur;
+	var label_15_avg;
+	var label_15_peak;
+
+	var label_scale;
+	var all_dbm = 0;
+	var count = 0;
+
+
+	/* wait for SVG */
+	window.setTimeout(
+		function() {
+			var svg = document.getElementById('bwsvg');
+
+			try {
+				G = svg.getSVGDocument
+					? svg.getSVGDocument() : svg.contentDocument;
+			}
+			catch(e) {
+				G = document.embeds['bwsvg'].getSVGDocument();
+			}
+
+			if (!G)
+			{
+				window.setTimeout(arguments.callee, 1000);
+			}
+			else
+			{
+				/* find sizes */
+				width       = svg.offsetWidth  - 2;
+				height      = svg.offsetHeight - 2;
+				data_wanted = Math.ceil(width / step);
+
+				/* prefill datasets */
+				for (var i = 0; i < data_wanted; i++)
+				{
+					data_01[i] = 0;
+					data_05[i] = 0;
+					data_15[i] = 0;
+					data_20[i] = 0;
+					data_25[i] = 0;
+					data_30[i] = 0;
+					data_35[i] = 0;
+					data_40[i] = 0;
+					data_45[i] = 0;
+					data_50[i] = 0;
+					data_55[i] = 0;
+					data_60[i] = 0;
+				}
+
+				/* find svg elements */
+				line_01 = G.getElementById('load01');
+				line_05 = G.getElementById('load05');
+				line_15 = G.getElementById('load15');
+				line_20 = G.getElementById('load20');
+				line_25 = G.getElementById('load25');
+				line_30 = G.getElementById('load30');
+				line_35 = G.getElementById('load35');
+				line_40 = G.getElementById('load40');
+				line_45 = G.getElementById('load45');
+				line_50 = G.getElementById('load50');
+				line_55 = G.getElementById('load55');
+				line_60 = G.getElementById('load60');
+
+				label_25 = G.getElementById('label_25');
+				label_50 = G.getElementById('label_50');
+				label_75 = G.getElementById('label_75');
+
+				label_01_cur  = document.getElementById('str_cur');
+				label_01_avg  = document.getElementById('str_avg');
+				label_01_peak = document.getElementById('str_peak');
+
+				label_scale   = document.getElementById('scale');
+
+
+				/* plot horizontal time interval lines */
+				for (var i = width % (step * 60); i < width; i += step * 60)
+				{
+					var line = G.createElementNS('http://www.w3.org/2000/svg', 'line');
+						line.setAttribute('x1', i);
+						line.setAttribute('y1', 0);
+						line.setAttribute('x2', i);
+						line.setAttribute('y2', '100%');
+						line.setAttribute('style', 'stroke:black;stroke-width:0.1');
+
+					var text = G.createElementNS('http://www.w3.org/2000/svg', 'text');
+						text.setAttribute('x', i + 5);
+						text.setAttribute('y', 15);
+						text.setAttribute('style', 'fill:#999999; font-size:9pt');
+						text.appendChild(G.createTextNode(Math.round((width - i) / step / 60) + 'm'));
+
+					label_25.parentNode.appendChild(line);
+					label_25.parentNode.appendChild(text);
+				}
+				var data_avg = -120;
+				var data_peak = -120;
+				label_scale.innerHTML = String.format('<%:(%d minutes window, %d second interval)%>', data_wanted / 60, 1);
+
+				/* render datasets, start update interval */
+				XHR.poll(1, '<%=build_url("admin/status/realtime/mobile_status")%>', null,
+					function(x, data)
+					{
+						var data_max   = 0;
+						var data_scale = 0;
+						var noise_floor = -120;
+
+						con_type(data[0][13]);
+
+						var dbm = Math.max(data[0][1],data[0][2],data[0][3],data[0][4],data[0][5],data[0][6],data[0][7],data[0][8],data[0][9],data[0][10],data[0][11],data[0][12])
+						document.getElementById("str_cur").innerHTML = parseInt(dbm) + " dBm";
+
+						if(dbm != 120){
+							count++;
+							all_dbm += dbm;
+						}
+
+						for (var i = data_stamp ? 0 : 1; i < data.length; i++)
+						{
+							/* skip overlapping entries */
+							if (data[i][TIME] <= data_stamp)
+								continue;
+
+							data_01.push(data[i][L01]- noise_floor);
+							data_05.push(data[i][L05]- noise_floor);
+							data_15.push(data[i][L15]- noise_floor);
+							data_20.push(data[i][L20]- noise_floor);
+							data_25.push(data[i][L25]- noise_floor);
+							data_30.push(data[i][L30]- noise_floor);
+							data_35.push(data[i][L35]- noise_floor);
+							data_40.push(data[i][L40]- noise_floor);
+							data_45.push(data[i][L45]- noise_floor);
+							data_50.push(data[i][L50]- noise_floor);
+							data_55.push(data[i][L55]- noise_floor);
+							data_60.push(data[i][L60]- noise_floor);
+						}
+
+						/* cut off outdated entries */
+						data_01 = data_01.slice(data_01.length - data_wanted, data_01.length);
+						data_05 = data_05.slice(data_05.length - data_wanted, data_05.length);
+						data_15 = data_15.slice(data_15.length - data_wanted, data_15.length);
+						data_20 = data_20.slice(data_20.length - data_wanted, data_20.length);
+						data_25 = data_25.slice(data_25.length - data_wanted, data_25.length);
+						data_30 = data_30.slice(data_30.length - data_wanted, data_30.length);
+						data_35 = data_35.slice(data_35.length - data_wanted, data_35.length);
+						data_40 = data_40.slice(data_40.length - data_wanted, data_40.length);
+						data_45 = data_45.slice(data_45.length - data_wanted, data_45.length);
+						data_50 = data_50.slice(data_50.length - data_wanted, data_50.length);
+						data_55 = data_55.slice(data_55.length - data_wanted, data_55.length);
+						data_60 = data_60.slice(data_60.length - data_wanted, data_60.length);
+
+						/* find peak */
+						for (var i = 0; i < data_01.length; i++)
+						{
+							data_max = Math.max(data_01[i],data_05[i],data_15[i],data_20[i],data_25[i],data_30[i],data_35[i],data_40[i],data_45[i],data_50[i],data_55[i],data_60[i], data_max);
+						}
+
+						data_peak = Math.max(data_peak, dbm);
+						document.getElementById("str_peak").innerHTML = parseInt(data_peak) + " dBm";
+						data_avg = (data_avg + dbm) / 2;
+						document.getElementById("str_avg").innerHTML = (all_dbm / count).toFixed(1) + " dBm";
+
+						/* remember current timestamp, calculate horizontal scale */
+						data_stamp = data[data.length-1][TIME];
+						data_scale = (height / (data_max * 1.1)).toFixed(1);
+
+
+						/* plot data */
+						var pt_01 = '0,' + height;
+						var pt_05 = '0,' + height;
+						var pt_15 = '0,' + height;
+						var pt_20 = '0,' + height;
+						var pt_25 = '0,' + height;
+						var pt_30 = '0,' + height;
+						var pt_35 = '0,' + height;
+						var pt_40 = '0,' + height;
+						var pt_45 = '0,' + height;
+						var pt_50 = '0,' + height;
+						var pt_55 = '0,' + height;
+						var pt_60 = '0,' + height;
+
+						var y_01 = 0;
+						var y_05 = 0;
+						var y_15 = 0;
+						var y_20 = 0;
+						var y_25 = 0;
+						var y_30 = 0;
+						var y_35 = 0;
+						var y_40 = 0;
+						var y_45 = 0;
+						var y_50 = 0;
+						var y_55 = 0;
+						var y_60 = 0;
+
+						for (var i = 0; i < data_01.length; i++)
+						{
+							var x = i * step;
+
+							y_01 = height - Math.floor(data_01[i] * data_scale);
+							y_05 = height - Math.floor(data_05[i] * data_scale);
+							y_15 = height - Math.floor(data_15[i] * data_scale);
+							y_20 = height - Math.floor(data_20[i] * data_scale);
+							y_25 = height - Math.floor(data_25[i] * data_scale);
+							y_30 = height - Math.floor(data_30[i] * data_scale);
+							y_35 = height - Math.floor(data_35[i] * data_scale);
+							y_40 = height - Math.floor(data_40[i] * data_scale);
+							y_45 = height - Math.floor(data_45[i] * data_scale);
+							y_50 = height - Math.floor(data_50[i] * data_scale);
+							y_55 = height - Math.floor(data_55[i] * data_scale);
+							y_60 = height - Math.floor(data_60[i] * data_scale);
+
+							if (y_01 == 300) y_01 += 1;
+							if (y_05 == 300) y_05 += 1;
+							if (y_15 == 300) y_15 += 1;
+							if (y_20 == 300) y_20 += 1;
+							if (y_25 == 300) y_25 += 1;
+							if (y_30 == 300) y_30 += 1;
+							if (y_35 == 300) y_35 += 1;
+							if (y_40 == 300) y_40 += 1;
+							if (y_45 == 300) y_45 += 1;
+							if (y_50 == 300) y_50 += 1;
+							if (y_55 == 300) y_55 += 1;
+							if (y_60 == 300) y_60 += 1;
+
+							pt_01 += ' ' + x + ',' + y_01;
+							pt_05 += ' ' + x + ',' + y_05;
+							pt_15 += ' ' + x + ',' + y_15;
+							pt_20 += ' ' + x + ',' + y_20;
+							pt_25 += ' ' + x + ',' + y_25;
+							pt_30 += ' ' + x + ',' + y_30;
+							pt_35 += ' ' + x + ',' + y_35;
+							pt_40 += ' ' + x + ',' + y_40;
+							pt_45 += ' ' + x + ',' + y_45;
+							pt_50 += ' ' + x + ',' + y_50;
+							pt_55 += ' ' + x + ',' + y_55;
+							pt_60 += ' ' + x + ',' + y_60;
+						}
+
+						pt_01 += ' ' + width + ',' + y_01 + ' ' + width + ',' + height;
+						pt_05 += ' ' + width + ',' + y_05 + ' ' + width + ',' + height;
+						pt_15 += ' ' + width + ',' + y_15 + ' ' + width + ',' + height;
+						pt_20 += ' ' + width + ',' + y_20 + ' ' + width + ',' + height;
+						pt_25 += ' ' + width + ',' + y_25 + ' ' + width + ',' + height;
+						pt_30 += ' ' + width + ',' + y_30 + ' ' + width + ',' + height;
+						pt_35 += ' ' + width + ',' + y_35 + ' ' + width + ',' + height;
+						pt_40 += ' ' + width + ',' + y_40 + ' ' + width + ',' + height;
+						pt_45 += ' ' + width + ',' + y_45 + ' ' + width + ',' + height;
+						pt_50 += ' ' + width + ',' + y_50 + ' ' + width + ',' + height;
+						pt_55 += ' ' + width + ',' + y_55 + ' ' + width + ',' + height;
+						pt_60 += ' ' + width + ',' + y_60 + ' ' + width + ',' + height;
+
+
+						line_01.setAttribute('points', pt_01);
+						line_05.setAttribute('points', pt_05);
+						line_15.setAttribute('points', pt_15);
+						line_20.setAttribute('points', pt_20);
+						line_25.setAttribute('points', pt_25);
+						line_30.setAttribute('points', pt_30);
+						line_35.setAttribute('points', pt_35);
+						line_40.setAttribute('points', pt_40);
+						line_45.setAttribute('points', pt_45);
+						line_50.setAttribute('points', pt_50);
+						line_55.setAttribute('points', pt_55);
+						line_60.setAttribute('points', pt_60);
+
+						function str(dbm)
+						{
+								return String.format("%d dBm", noise_floor + dbm);
+						}
+
+						label_25.firstChild.data = str(1.1 * 0.25 * data_max);
+						label_50.firstChild.data = str(1.1 * 0.50 * data_max);
+						label_75.firstChild.data = str(1.1 * 0.75 * data_max);
+
+
+					}
+				);
+			}
+		}, 1000
+	);
+//]]></script>
+
+<h2><a id="content" name="content"><%=translate("Mobile Signal Strength")%></a></h2>
+
+<embed id="bwsvg" style="width:100%; height:300px; border:1px solid #000000; background-color:#FFFFFF" src="<%=resource%>/mobilerate.svg" />
+<div style="text-align:right"><small id="scale">-</small></div>
+<br />
+
+<table style="width:100%; table-layout:fixed" cellspacing="5">
+	<tr>
+		<td style="text-align:right; vertical-align:top"><strong onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("Connection type:")%></strong></td>
+		<td id="con_type">N/A</td>
+
+		<td style="text-align:right; vertical-align:top"><strong onmouseover="ShowHint(this, '<%=translate('Shows signal\\\'s strength in dBm over time')%>')" onmouseout="HideHint(this)"><%=translate("Signal:")%></strong></td>
+		<td id="str_cur">0 dBm</td>
+
+		<td style="text-align:right; vertical-align:top"><strong onmouseover="ShowHint(this, '<%=translate('Shows signal\\\'s average value in dBm over time')%>')" onmouseout="HideHint(this)"><%=translate("Average:")%></strong></td>
+		<td id="str_avg">0 dBm</td>
+
+		<td style="text-align:right; vertical-align:top"><strong onmouseover="ShowHint(this, '<%=translate('Shows maximum signal\\\'s value in dBm over time')%>')" onmouseout="HideHint(this)"><%=translate("Peak:")%></strong></td>
+		<td id="str_peak">0 dBm</td>
+	</tr>
+</table>
+
+<br>
+
+<table style="width:100%; table-layout:fixed" cellspacing="1">
+	<tr>
+		<td style="text-align:center"><strong style="border-bottom:4px solid #eb706e" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("2G (GSM) ")%></strong></td>
+		<td style="text-align:center"><strong style="border-bottom:4px solid #e0b324" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("2G (GPRS) ")%></strong></td>
+		<td style="text-align:center"><strong style="border-bottom:4px solid #6be5dc" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("2G (EDGE) ")%></strong></td>
+		<td style="text-align:center"><strong style="border-bottom:4px solid #459992" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("3G (WCDMA) ")%></strong></td>
+	</tr>
+		<td style="text-align:center"><strong style="border-bottom:4px solid #5c78ff" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("3G (HSDPA) ")%></strong></td>
+		<td style="text-align:center"><strong style="border-bottom:4px solid #1d55a8" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("3G (HSUPA) ")%></strong></td>
+		<td style="text-align:center"><strong style="border-bottom:4px solid #d5afff" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("3G (HSPA) ")%></strong></td>
+		<td style="text-align:center"><strong style="border-bottom:4px solid #823ba3" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("3G (HSPA+) ")%></strong></td>
+	</tr>
+	<tr>
+		<td style="text-align:center"><strong style="border-bottom:4px solid #d1d8dc" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("3G (DC-HSPA+) ")%></strong></td>
+		<td style="text-align:center"><strong style="border-bottom:4px solid #8b8b8b" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("3G (HSDPA+HSUPA) ")%></strong></td>
+		<td style="text-align:center"><strong style="border-bottom:4px solid #1a1f25" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("3G (UMTS) ")%></strong></td>
+		<td style="text-align:center"><strong style="border-bottom:4px solid #00FF00" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("4G (LTE) ")%></strong></td>
+	</tr>
+</table>
+
+<%+footer%>

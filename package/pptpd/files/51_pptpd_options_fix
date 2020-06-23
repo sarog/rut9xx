@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+# Removes backed up /overlay/etc/ppp/options.pptpd file
+# which was there because of a bug.
+# TODO: delete this in the future
+
+FILE="/overlay/upper/etc/ppp/options.pptpd"
+
+[ -f "$FILE" ] && {
+	# Revert to factory state
+	rm -f "$FILE"
+
+	# Remount the rootfs to apply changes
+	mount -o remount /
+}

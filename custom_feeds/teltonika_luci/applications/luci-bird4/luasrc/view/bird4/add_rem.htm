@@ -1,0 +1,33 @@
+
+<!--<div class="cbi-section-create cbi-tblsection-create">
+	<br />
+	<table class="cbi-section-table" style="width:100%; margin-left:5px">
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell" colspan="6"><%=translate("Input Configuration")%>:</th>
+		</tr>
+		<tr class="cbi-section-table-descr">
+			<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Select input type of input rule')%>')" onmouseout="HideHint(this)"><%=translate("Input type")%></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td class="cbi-section-table-cell" style="width:110px">
+				<select class="cbi-input-select" id="_newinput.type" name="_newinput.type" onchange="triger()" style="float:left;">
+					<option value="digital1"><%=translate("Digital")%></option>
+					<option value="digital2"><%=translate("Digital isolated")%></option>
+					<option value="analog"><%=translate("Analog")%></option>
+				</select>
+			</td>
+
+			<td class="cbi-section-table-cell">
+				<input type="submit" class="cbi-button cbi-button-add" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" value="<%:Add%>" />
+			</td>
+		</tr>
+	</table>
+</div>-->
+
+<div class="cbi-section-create">
+	<% if self.invalid_cts then -%><div class="cbi-section-error"><% end %>
+	<label class="cbi-value-title-2" style="padding-left:10px;"<%= attr("for", cbid) %>><span onmouseover="ShowHint(this, 'Name of the new OSPF area configuration. Used for easier configurations management purpose only')" onmouseout="HideHint(this)"><%=translate("New area name:")%></span></label>
+	<input type="text" class="cbi-section-create-name" name="cbid.<%=self.config%>.<%=self.sectiontype%>.name" maxlength="10" />
+	<input  class="cbi-button cbi-button-add" name="cbid.<%=self.config%>.<%=self.sectiontype%>.add" onclick="this.form.cbi_state='add-section'; return true" type="submit" value="<%:Add New%>" title="<%=translate('Add New')%>" />
+	<% if self.invalid_cts then %><br /><%=translate("Invalid")%></div><% end %>
+</div>

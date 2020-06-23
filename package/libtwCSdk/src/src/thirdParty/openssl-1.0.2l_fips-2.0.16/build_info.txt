@@ -1,0 +1,10 @@
+Openssl version: Openssl 1.0.2L
+FIPS Version: FIPS 2.0.16
+Build date: m6/26/2017
+NASM Version: NASM version 2.13.01 compiled on Jun 14 2017
+Modifications: Custom build process to set r-path of ssl libraries and binaries to $ORIGIN (to use immediate directory)
+Toolchains Used: gcc-linux-x86-64-cross" "gcc-linux-x86-32-cross" "gcc-linux-arm-hwfpu-cross" "gcc-linux-arm-cross" "gcc-linux-coldfire-cross" "gcc-linux-arm-aarch64-cross"
+SSL Compile Options: missing variable "shared fips no-idea no-engine no-md4"
+
+
+Please note the following toolchains are ALWAYS build with "no-asm" as they do note support building the assembler optimization: gcc-linux-coldfire-cross

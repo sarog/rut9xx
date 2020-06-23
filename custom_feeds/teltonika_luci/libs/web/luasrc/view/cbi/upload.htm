@@ -1,0 +1,19 @@
+<%
+	local t = require("luci.tools.webadmin")
+	local v = self:cfgvalue(section)
+	local s = v and nixio.fs.stat(v)
+-%>
+
+<script type="text/JavaScript" src="/luci-static/default/upload-validation.js"></script>
+
+<%+cbi/valueheader%>
+<span style="position: relative; bottom: 2px;">
+	<% if s then %>
+		<%:Uploaded File%> (<%=t.byte_format(s.size)%>)
+		<input type="hidden"<%= attr("value", v) .. attr("name", cbid) .. attr("id", cbid) %> />
+		<input class="cbi-button cbi-input-image" style="margin:0; position: relative; top: 5px; border: none; border-radius: 0px;  <%- if self.maxWidth then -%> max-width:<%=self.maxWidth%>; <%- end -%>" type="image" value="<%:Replace entry%>" name="cbi.rlf.<%=section .. "." .. self.option%>" alt="<%:Replace entry%>" title="<%:Replace entry%>" src="<%=resource%>/cbi/remove.gif" />
+	<% else %>
+		<input class="cbi-input-file" type="file"<%= attr("name", cbid) .. attr("id", cbid) %>  onchange="CheckFilesize(this.id, '<%=self.size%>', '<%=self.sizetext%>', '<%=self.sizetextempty%>');"  <%- if self.maxWidth then -%> style="max-width:<%=self.maxWidth%>;" <%- end -%>/>
+	<% end %>
+</span>	
+<%+cbi/valuefooter%>

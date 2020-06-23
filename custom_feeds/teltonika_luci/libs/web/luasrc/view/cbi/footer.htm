@@ -1,0 +1,48 @@
+	<%- if pageaction then -%>
+	<div class="cbi-page-actions">
+		<% if not wizStep then%>
+			<% if redirect then %>
+			<div style="float:left">
+				<input class="cbi-button cbi-button-link" type="button" value="<%=translate("Back to Overview")%>" onclick="location.href='<%=pcdata(redirect)%>'" />
+			</div>
+			<% end %>
+			<% if flow.skip then %>
+				<input class="cbi-button cbi-button-skip" type="submit" name="cbi.skip" value="<%=translate("Skip")%>" />
+			<% end %>
+			<% if refreshpage then %>
+				<button id="refreshbutton" class="cbi-button-refresh"  style="float: right;" onClick="cbi_d_refresh_page('refreshbutton')"><%=refreshpage%></button>
+			<% elseif not autoapply then %>
+				<input class="cbi-button cbi-button-apply" type="submit" name="cbi.apply" value="<%=translate("Save")%>" />
+			<% else%>
+				<input class="cbi-button cbi-button-save" type="submit" value="<%=translate("Save")%>" />
+			<% end %>
+		<% elseif wizStep > 0 and wizStep < 5 then %>
+			<div style="height: 0px;">
+				<input class="cbi-button cbi-button-reset" type="submit" name="cbi.wizard.skip" value="<%=translate("Skip Wizard")%>" />
+				<input class="cbi-button cbi-button-apply" type="submit" name="cbi.wizard.next" value="<%=translate("Next")%>" />
+			</div>
+		<% elseif wizStep == 99 then%>
+			<div style="height: 0px;">
+				<input class="cbi-button cbi-button-reset" type="submit" name="cbi.wizard.skip" value="<%=translate("Skip Wizard")%>" />
+				<input class="cbi-button cbi-button-save" type="submit" name="cbi.wizard.finish" value="<%=translate("Finish")%>" />
+			</div>
+		<% elseif wizStep == 5 then%>
+			<div style="height: 0px;">
+				<input class="cbi-button cbi-button-apply" type="submit" name="cbi.apply" value="<%=translate("Save")%>" />
+			</div>
+		<% end %>
+	</div>
+	<%- end -%>
+	<script type="text/javascript">cbi_d_update();</script>
+</form>
+	<%- if disclaimer_msg then -%>
+		<div class="disclaimer_msg">
+			<span>* <%=translate("Your carrier\'s data usage accounting may differ. " .. brand(2) .. " is not liable should any accounting discrepancies occur.")%></span>
+		</div>
+	<%- end -%>
+	<%- if email_to_sms then -%>
+	<div class="disclaimer_msg">
+		<span>* <%=translate("Please note that all POP3 server email messages from inbox will be deleted.")%></span>
+	</div>
+	<%- end -%>
+<%+footer%>

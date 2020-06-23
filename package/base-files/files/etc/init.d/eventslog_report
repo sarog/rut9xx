@@ -1,0 +1,56 @@
+#!/bin/sh /etc/rc.common
+
+. /lib/functions.sh
+
+START=49
+
+init_run(){
+	local hour type
+	local wday
+	local day
+	local month
+	local enable
+	local event
+	config_get enable "$1" "enable" "0"
+
+	if [ "$enable" = 1 ]; then
+		config_get type "$1" "type"
+		[ -n "$type" -a "$type" == "tcp" ] && return 1
+
+		config_get hour "$1" "hour" "0"
+		config_get wday "$1" "wday"
+		config_get day "$1" "day" "0"
+		config_get month "$1" "month" "0"
+
+		if [ "$hour" = 0 ] || [ -z "$hour" ]; then
+			hour="*"
+		fi
+		if [ "$wday" = "" ] || [ -z "$wday" ]; then
+			wday="*"
+		fi
+		if [ "$day" = 0 ] || [ -z "$day" ]; then
+			day="*"
+		fi
+		if [ "$month" = 0 ] || [ -z "$month" ]; then
+			month="*"
+		fi
+
+		sed -i "/$1/d" /etc/crontabs/root
+	#	echo "$month * * * * sh /usr/sbin/eventslog_report.sh $1" >> /etc/crontabs/root
+		echo "0 $hour $day $month $wday sh /usr/sbin/eventslog_report.sh $1" >> /etc/crontabs/root
+	fi
+}
+
+start(){
+	config_load eventslog_report
+	config_foreach init_run "rule"
+}
+
+stop(){
+	sed -i "/eventslog_report/d" /etc/crontabs/root
+}
+
+reload(){
+	stop
+	start
+}

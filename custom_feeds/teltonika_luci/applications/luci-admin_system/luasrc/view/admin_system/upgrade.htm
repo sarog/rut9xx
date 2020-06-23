@@ -1,0 +1,86 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2009 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: upgrade.htm 7798 2011-10-26 23:43:04Z jow $
+
+-%>
+
+<%+header%>
+
+<%if checksum == "0\n" then%>
+	<h2><a id="content" name="content"><%=translate("Firmware upgrade - ")%><font color="red"><%=translate("verification failed")%></font></a></h2>
+<%else %>
+	<h2><a id="content" name="content"><%=translate("Firmware upgrade - ")%><font color="green"><%=translate("verification succeeded")%></font></a></h2>
+<%end%>
+
+<p>
+	<%if checksum == "0\n" then%>
+		<%=translate("<b>MD5 verification failed. This means that flash image is either damaged or not compatible with this router.</b> <br />Ensure to get a correct flash image and try to upgrade again.")  %>
+	<%else %>
+		<%=translate(" The flash image was uploaded and MD5 verification was successful. <b>This is the last chance to abort flashing if required.</b> <br />Click \"Proceed\" below to start the flash procedure.") %>
+	<%end%>
+
+	<% if storage > 0 and size > storage and checksum ~= "0\n" then %>
+		<br /><br />
+		<div class="error"><%=translate("It appears that you try to flash an image that does not fit into the flash memory, please verifythe image file! ")%></div>
+	<% end %>
+</p>
+
+<fieldset class="cbi-section" style="margin-top:25%;">
+	<ul>
+		<li><%=translate("Checksum")%>: <code>
+		<%if checksum == "0\n" then%>
+			<%="n/a"%>
+		<%else %>
+			<%=checksum%>
+		<%end%>
+		
+		</code></li>
+		<li><%=translate("Size")%>: <%
+			local w = require "luci.tools.webadmin"
+			write(w.byte_format(size))
+
+			if storage > 0 then
+				write(luci.i18n.translatef(
+					" (%s available)",
+					w.byte_format(storage)
+				))
+			end
+		%></li>
+		<% if keep == "keep_all" then %>
+			<li><%=translate("All configuration files will be kept")%></li>
+		<% else %>
+			<li><B><%=translate("Note: All configuration files will be erased")%></B></li>
+		<% end %>
+	</ul>
+</fieldset>
+
+<div class="cbi-page-actions right">
+	<form style="display:inline" action="<%=REQUEST_URI%>" method="post">
+		<input class="cbi-button cbi-button-reset" style="float: left;" type="submit" value="<%=translate('Cancel')%>" />
+	</form>
+	<form style="display:inline" action="<%=REQUEST_URI%>" method="post">
+		<input type="hidden" name="step" value="2" />
+		<input type="hidden" name="keep" value="<%=keep and "1" or ""%>" />
+		<input type="hidden" name="keep_network" value="<%=keep_network and "1" or ""%>" />
+		<input type="hidden" name="keep_3g" value="<%=keep_3g and "1" or ""%>" />
+		<input type="hidden" name="keep_lan" value="<%=keep_lan and "1" or ""%>" />
+		<input type="hidden" name="keep_ddns" value="<%=keep_ddns and "1" or ""%>" />
+		<input type="hidden" name="keep_wireless" value="<%=keep_wireless and "1" or ""%>" />
+		<input type="hidden" name="keep_firewall" value="<%=keep_firewall and "1" or ""%>" />
+		<input type="hidden" name="keep_openvpn" value="<%=keep_openvpn and "1" or ""%>" />
+		<%if checksum ~= "0\n" then%>
+			<input class="cbi-button cbi-button-apply" type="submit" value="<%=translate('Proceed')%>" />
+		<%end%>
+	</form>
+</div>
+
+<%+footer%>

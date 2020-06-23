@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+
+START=05
+STOP=95
+
+start() {
+	date -s @$(date +%s -r /etc/init.d/luci_fixtime)
+}
+
+stop() {
+	[ -w /etc/init.d/luci_fixtime ] && cat /dev/null >> /etc/init.d/luci_fixtime && touch /etc/init.d/luci_fixtime
+}

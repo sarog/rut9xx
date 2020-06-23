@@ -1,0 +1,16 @@
+--- a/src/starter/files.h
++++ b/src/starter/files.h
+@@ -19,8 +19,11 @@
+ #define PROC_KLIPS              "/proc/net/pf_key"
+ #define PROC_MODULES    "/proc/modules"
+ 
+-#define CONFIG_FILE     IPSEC_CONFDIR "/ipsec.conf"
+-#define SECRETS_FILE    IPSEC_CONFDIR "/ipsec.secrets"
++//#define CONFIG_FILE     IPSEC_CONFDIR "/ipsec.conf"
++//#define SECRETS_FILE    IPSEC_CONFDIR "/ipsec.secrets"
++
++#define CONFIG_FILE     "/tmp/ipsec/ipsec.conf"
++#define SECRETS_FILE    "/tmp/ipsec/ipsec.secrets"
+ 
+ #define CHARON_CTL_FILE IPSEC_PIDDIR "/charon.ctl"
+ 

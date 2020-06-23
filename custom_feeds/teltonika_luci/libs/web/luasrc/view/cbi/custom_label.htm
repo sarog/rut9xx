@@ -1,0 +1,5 @@
+<%+cbi/valueheader%>
+	<div style="width: auto; margin-top: 8px" <%if self.customHint ~= nil then%>onmouseover="ShowHint(this, '<%=translate(self.customHint)%>')" onmouseout="HideHint(this)"<% end %> <%=
+		attr("name", cbid) .. ifattr(self.size, "size").. ifattr(self.hardDisabled == true, "disabled", "disabled")
+	%> > <%if self.customValue ~= nil then%> <%=translate(self.customValue)%><% else %><%:N/A%><% end %></div>
+<%+cbi/valuefooter%>

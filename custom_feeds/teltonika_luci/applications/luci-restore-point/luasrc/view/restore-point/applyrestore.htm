@@ -1,0 +1,120 @@
+<html>
+	<head>
+		<title><%=luci.sys.hostname()%> - <% if title then %><%=title%><% else %><%=translate("Rebooting...")%><% end %></title>
+		<link rel="stylesheet" type="text/css" media="screen" href="<%=media%>/style.css" />
+		<script type="text/javascript" src="/luci-static/resources/spin.js"></script>
+		<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+		<script type="text/javascript">//<![CDATA[
+		var fCount = 0;
+		var iDuration = 160;
+		var iStep = 5;
+		var fDiv = 100 / (iDuration / iStep);
+		
+		var lanip = "<%=sIP%>";
+		var protocol = "<%=sProtocol%>";
+		var port = "<%=sPort%>";
+		var configwan = "<%=wan%>";
+		var webwan = <%="self.location.host"%>;
+
+
+		if (configwan == webwan){
+			var ip = webwan;
+			var sURL = protocol+"://"+ip+":"+port;
+		}else{
+			var ip = lanip;
+			var sURL = protocol+"://"+ip+":"+port;
+		}
+		var lanURL = protocol+"://"+lanip+":"+port;
+			
+			window.onload = StartUpdate;
+			
+			function StartUpdate() {
+				XHR.poll(100, '<%=REQUEST_URI%>', { step: 3, filelink: "<%=filelink%>" },
+				function(x, info) {
+					XHR.halt();
+					WaitForFinish();
+				}
+				);
+			}
+
+			function WaitForFinish() {
+				var iSkip = 0;
+				var interval = window.setInterval(function() {
+					var img = new Image();
+					img.onload = function() {
+						window.clearInterval(interval);
+						UpdateMsg("bail");
+					};
+					UpdateMsg();
+					if (iStep*iSkip >= 10) {
+						img.src = sURL + "<%=resource%>" + "/icons/loading.gif?" + Math.random();
+					} else {
+						iSkip++;
+					}
+				}, iStep * 1000);
+			}
+
+			function UpdateMsg(sMode) {
+				var objElm;
+				if (typeof sMode == 'undefined' || sMode == "") {
+					if (fCount < 100) {
+						fCount = fCount + fDiv;
+						if (objElm = document.getElementById("id_progress")) {
+							if (fCount >= 100)
+								objElm.innerHTML = fCount.toFixed(0) + "% done. " + '<a style="text-decoration: underline;" href=' + lanURL + '>Login</a>';
+							else
+								objElm.innerHTML = fCount.toFixed(0) + "% done";
+						}
+					}
+				} else {
+					var interval2 = window.setInterval(function() {
+						if (fCount < 100) {
+							fCount = fCount + fDiv;
+							if (objElm = document.getElementById("id_progress"))
+								objElm.innerHTML = fCount.toFixed(0) + "% done";
+						} else {
+							window.clearInterval(interval2);
+							location.href = sURL;
+						}
+					}, 100);
+				}
+			}
+		//]]></script>
+	</head>
+	<body>
+		<div id="maincontainer" style="overflow:hidden; min-width:940px" >
+			<div id="maincontent" class="container">
+				<h2><a id="content" name="content"><%=translate("System")%> - <% if title then %><%=title%><% else %><%=translate("Rebooting...")%><% end %></a> <span id="id_progress" style="color: green;">0% done</span></h2>
+
+				<fieldset class="cbi-section">
+					<div class="spin_wrapper">
+						<div id="spinner"></div>
+					</div>
+						<p1><% if msg then %><%=msg%><% else %><%=translate("Changes applied.")%><% end %></p1>
+						<p2><% if msg1 then %><%=msg1%><% end %></p2>
+				</fieldset>
+						<p3><% if msg2 then %><%=msg2%><% end %></p3>
+<%+footer%>
+<script type="text/javascript">//<![CDATA[
+	var apply_xhr = new XHR();
+
+	var opts = {
+		lines: 14, // The number of lines to draw
+		length: 13, // The length of each line
+		width: 5, // The line thickness
+		radius: 17, // The radius of the inner circle
+		rotate: 0, // The rotation offset
+		color: '#000', // #rgb or #rrggbb
+		speed: 1.7, // Rounds per second
+		trail: 64, // Afterglow percentage
+		shadow: false, // Whether to render a shadow
+		hwaccel: true, // Whether to use hardware acceleration
+		className: 'spinner', // The CSS class to assign to the spinner
+		zIndex: 2e9, // The z-index (defaults to 2000000000)
+		top: 50, // Top position relative to parent in px
+		left: 'auto' // Left position relative to parent in px
+	};
+	var target = document.getElementById('spinner');
+
+	var spinner = new Spinner(opts).spin(target);
+//]]></script>

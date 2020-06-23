@@ -1,0 +1,92 @@
+--- vrrpd-1.15.orig/vrrpd.c	(date 1538982252000)
++++ vrrpd-1.15/vrrpd.c	(date 1538982252000)
+@@ -1458,6 +1458,11 @@
+ 	vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%swe are now the master router.", vsrv->vrid, vif->ifname,master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is down, " : "");
+ 	strcpy(backup_reason,"");
+ 	char status[10];
++	struct eventslog new_task;
++	default_task(&new_task);
++	new_task.requests = INSERT;
++	new_task.table = "EVENTS";
++	new_task.type = "VRRP";
+ 	/* set the VRRP MAC address -- rfc2338.7.3 */
+ 	if( !vsrv->no_vmac ){
+ 		vrrpd_log(LOG_WARNING, "VRRP ID %d change MAC %s",vsrv->vrid, vif->ifname);
+@@ -1477,6 +1482,8 @@
+ 		/* init the struct */
+ 	VRRP_TIMER_SET( vsrv->adver_timer, vsrv->adver_int );
+ 	vsrv->state = VRRP_STATE_MAST;
++	new_task.text = "Router is in master mode";
++	execute_task(&new_task);
+ 	vsrv->wantstate = VRRP_STATE_MAST;
+ 	strcpy(status, "Master");
+ 	write_to_file(vsrv, status);
+@@ -1539,6 +1546,11 @@
+ static void state_init( vrrp_rt *vsrv )
+ {
+ 	char status[10];
++	struct eventslog new_task;
++	default_task(&new_task);
++	new_task.requests = INSERT;
++	new_task.table = "EVENTS";
++	new_task.type = "VRRP";
+ 	vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%s - INIT State (backup) -", vsrv->vrid, vsrv->vif.ifname, master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is up, " : "");
+ 	if ( vsrv->priority == VRRP_PRIO_OWNER ) {
+ 		 state_goto_master( vsrv );
+@@ -1550,6 +1562,8 @@
+ 		VRRP_TIMER_SET( vsrv->ms_down_timer, delay );
+ 		vsrv->state = VRRP_STATE_BACK;
+ 		vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%s - INIT State (backup) -", vsrv->vrid, vsrv->vif.ifname, master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is up, " : "");
++		new_task.text = "Router is in backup mode";
++		execute_task(&new_task);
+ 		strcpy(status, "Backup");
+ 		write_to_file(vsrv, status);
+ 		if ((master_ipaddr) && (vsrv->wantstate == VRRP_STATE_BACK)){
+@@ -1619,6 +1633,11 @@
+ 	int		len	= vrrp_read( vsrv, buf, sizeof(buf) );
+ 	struct iphdr	*iph	= (struct iphdr *)buf;
+ 	vrrp_pkt	*hd	= (vrrp_pkt *)((char *)iph + (iph->ihl<<2));
++	struct eventslog new_task;
++	default_task(&new_task);
++	new_task.requests = INSERT;
++	new_task.table = "EVENTS";
++	new_task.type = "VRRP";
+ 
+ 	if( vsrv->state != VRRP_STATE_BACK ){
+ 		if( vsrv->wantstate == VRRP_STATE_BACK ){
+@@ -1644,6 +1663,10 @@
+ 			vsrv->state	= VRRP_STATE_BACK;
+ 			vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%swe are now a backup router.", vsrv->vrid, vsrv->vif.ifname,
+ 				master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is up, " : "");
++			new_task.text = "Router is in backup mode";
++			execute_task(&new_task);
++			strcpy(status, "Backup");
++			write_to_file(vsrv, status);
+ 			
+ 			/* script down */
+ 	                if (strlen(scriptdown) != 0){
+
+@@ -71,6 +71,10 @@
+ static char *timenowstring;
+ int mypid;
+
++static int open_sock( vrrp_rt *vsrv );
++static void write_ip_to_file( vrrp_rt *vsrv);
++char *ipaddr_to_str(uint32_t ipaddr);
++
+ /****************************************************************
+  NAME	: Monitoring only
+  AIM	:
+
+Index: vrrpd-1.15/vrrpd.h
+===================================================================
+--- vrrpd-1.15.orig/vrrpd.h
++++ vrrpd-1.15/vrrpd.h
+@@ -15,6 +15,7 @@
+
+ /* system include */
+ #include <stdint.h>
++#include <libeventslog/libevents.h>
+
+ #define VRRPD_VERSION	"0.4"
+ /* Scott added 9-4-02 */

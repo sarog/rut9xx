@@ -1,0 +1,41 @@
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -1149,6 +1149,7 @@
+ 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, 0x6613)}, /* Onda H600/ZTE MF330 */
+ 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, 0x0023)}, /* ONYX 3G device */
+ 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, 0x9000)}, /* SIMCom SIM5218 */
++	{ USB_DEVICE(QUALCOMM_VENDOR_ID, 0x9003)}, /* Quectel UC20*/
+ 	{ USB_DEVICE_INTERFACE_CLASS(SIERRA_VENDOR_ID, 0x68c0, 0xff),
+ 	  .driver_info = (kernel_ulong_t)&sierra_mc73xx_blacklist }, /* MC73xx */
+ 	{ USB_DEVICE_INTERFACE_CLASS(SIERRA_VENDOR_ID, 0x9041, 0xff),
+@@ -2076,6 +2077,20 @@
+ 	    iface_desc->bInterfaceClass != USB_CLASS_CDC_DATA)
+ 		return -ENODEV;
+ 
++	// Add to cancel the binding of UC20 NDIS interface -> start
++	if (dev_desc->idVendor == cpu_to_le16(0x05c6) &&
++		dev_desc->idProduct == cpu_to_le16(0x9003) &&
++		iface_desc->bInterfaceNumber == 0x04)
++		return -ENODEV;
++	// Add to cancel the binding of UC20 NDIS interface -> end
++	// Add to cancel the binding of EC20 NDIS interface -> start
++	if (dev_desc->idVendor == cpu_to_le16(0x05c6) &&
++		dev_desc->idProduct == cpu_to_le16(0x9215) &&
++		iface_desc->bInterfaceNumber == 0x04)
++		return -ENODEV;
++	// Add to cancel the binding of EC20 NDIS interface -> end
++
++		
+ 	/* Store device id so we can use it during attach. */
+ 	usb_set_serial_data(serial, (void *)id);
+
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -819,6 +819,7 @@
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9245)},	/* Samsung Gobi 2000 Modem device (VL176) */
+ 	{QMI_GOBI_DEVICE(0x03f0, 0x251d)},	/* HP Gobi 2000 Modem device (VP412) */
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9215)},	/* Acer Gobi 2000 Modem device (VP413) */
++	{QMI_FIXED_INTF(0x05c6, 0x9003, 4)},    /* Quectel UC20 */
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9265)},	/* Asus Gobi 2000 Modem device (VR305) */
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9235)},	/* Top Global Gobi 2000 Modem device (VR306) */
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9275)},	/* iRex Technologies Gobi 2000 Modem device (VR307) */

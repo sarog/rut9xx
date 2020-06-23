@@ -1,0 +1,179 @@
+body {
+	background-image: url("background");
+	background-repeat: no-repeat;
+	background-color: #FFFFFF;
+	background-position: center;
+}
+
+#logo {
+	content: url("logo_image");
+}
+
+.link {
+	font-size: 14;
+	color: #767676;
+}
+
+.link-sms {
+	font-size: 14;
+	color: #767676;
+}
+
+.logout_link {
+	font-size: 14;
+	color: #404040;
+}
+
+.requested_web {
+	font-size: 14;
+	color: #404040;
+}
+
+.login_link {
+	font-size: 14;
+	color: #404040;
+}
+
+.terms_text {
+	font-size: 12;
+	color: #404040;
+}
+
+.terms {
+	font-size: 12;
+	color: #404040;
+}
+
+
+#welcome_title {
+	font-size: 25;
+	color: #373737;
+}
+
+#welcome_text {
+	font-size: 14;
+	color: #404040;
+}
+
+#failed_title {
+	font-size: 25;
+	color: #373737;
+}
+
+#failed_text {
+	font-size: 14;
+	color: #373737;
+}
+
+#success_title {
+	font-size: 25;
+	color: #373737;
+}
+
+#success_text {
+	font-size: 14;
+	color: #373737;
+}
+
+#logout_title {
+	font-size: 25;
+	color: #373737;
+}
+
+#logout_text {
+	font-size: 14;
+	color: #373737;
+}
+
+#warning_title {
+	font-size: 25;
+	color: #373737;
+}
+
+#warning_text {
+	font-size: 14;
+	color: #373737;
+}
+
+#phone_title {
+	font-size: 25;
+	color: #373737;
+}
+
+#phone_text {
+	font-size: 14;
+	color: #373737;
+}
+
+#password_title {
+	font-size: 25;
+	color: #373737;
+}
+
+#password_text {
+	font-size: 14;
+	color: #373737;
+}
+
+#error_title {
+	font-size: 25;
+	color: #373737;
+}
+
+#error_text {
+	font-size: 14;
+	color: #373737;
+}
+
+.data_limit_title {
+	font-size: 25;
+	color: #205599;
+}
+
+.data_limit_text {
+	font-size: 14;
+	color: #404040;
+}
+
+.time_limit_title {
+	font-size: 25;
+	color: #205599;
+}
+
+.time_limit_text {
+	font-size: 14;
+	color: #404040;
+}
+
+.limit_expiration_title {
+}
+
+.limit_expiration_text {
+	font-size: 13;
+	color: #404040;
+}
+
+.login {
+	font-size: 13;
+	color: #404040;
+}
+
+.send {
+	font-size: 13;
+	color: #404040;
+}
+
+.username {
+	font-size: 13;
+	color: #404040;
+}
+
+.pass {
+	font-size: 13;
+	color: #404040;
+}
+
+.tel_number {
+	font-size: 13;
+	color: #404040;
+}

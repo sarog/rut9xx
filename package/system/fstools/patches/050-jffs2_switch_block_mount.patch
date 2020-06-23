@@ -1,0 +1,10 @@
+--- a/libfstools/overlay.c
++++ b/libfstools/overlay.c
+@@ -242,6 +242,7 @@
+ 
+ 		ULOG_INFO("performing overlay whiteout\n");
+ 		umount2("/tmp/root", MNT_DETACH);
++		system("block mount");
+ 		foreachdir("/overlay/", handle_whiteout);
+ 		break;
+ 

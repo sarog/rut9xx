@@ -1,0 +1,212 @@
+<%-
+local rowcnt = 1
+function rowstyle()
+	rowcnt = rowcnt + 1
+	return (rowcnt % 2) + 1
+end
+
+function width(o)
+	if o.width then
+		if type(o.width) == 'number' then
+			return ' style="width:%dpx"' % o.width
+		end
+		return ' style="width:%s"' % o.width
+	end
+	return ''
+end
+-%>
+
+<!-- tblsection -->
+<fieldset class="cbi-section" id="cbi-<%=self.config%>-<%=self.sectiontype%>">
+	<% if self.title and #self.title > 0 then -%>
+		<legend><%=self.title%></legend>
+	<%- end %>
+	<%- if self.sortable then -%>
+		<input type="hidden" id="cbi.sts.<%=self.config%>.<%=self.sectiontype%>" name="cbi.sts.<%=self.config%>.<%=self.sectiontype%>" value="" />
+	<%- end -%>
+	<div class="cbi-section-descr"><%=self.description%></div>
+	<div class="cbi-section-node">
+		<%- local count = 1 -%>
+		<table class="cbi-section-table">
+			<tr class="cbi-section-table-titles">
+			<%- if not self.anonymous then -%>
+				<%- if self.sectionhead then -%>
+					<th class="cbi-section-table-cell"><%=self.sectionhead%></th>
+				<%- else -%>
+					<th>&#160;</th>
+				<%- end -%>
+			<%- end -%>
+			<%- for i, k in pairs(self.children) do if not k.optional then -%>
+				<th class="cbi-section-table-cell"<%=width(k)%> onmouseover="ShowHint(this, '<%=translate(k.description)%>')" onmouseout="HideHint(this)">
+				<%- if k.titleref then -%><a title="<%=self.titledesc or translate('Go to relevant configuration page')%>" class="cbi-title-ref" href="<%=k.titleref%>"><%- end -%>
+					<%-=k.title-%>
+				<%- if k.titleref then -%></a><%- end -%>
+				</th>
+			<%- count = count + 1; end; end; if self.sortable then -%>
+				<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=self.sorthint%>')" onmouseout="HideHint(this)"><%=translate("Sort")%></th>
+			<%- end; if self.extedit or self.addremove or self.addbutton then -%>
+				<th class="cbi-section-table-cell">&#160;</th>
+			<%- count = count + 1; end -%>
+			</tr>
+			<tr class="cbi-section-table-descr" style="height:10px;">
+			<%- if not self.anonymous then -%>
+				<%- if self.sectiondesc then -%>
+					<th class="cbi-section-table-cell"><%=self.sectiondesc%></th>
+				<%- else -%>
+					<th></th>
+				<%- end -%>
+			<%- end -%>
+			<!--
+			<%- for i, k in pairs(self.children) do if not k.optional then -%>
+				<th class="cbi-section-table-cell"<%=width(k)%> onmouseover="ShowHint(this, '<%=k.description%>')" onmouseout="HideHint(this)"></th>
+			<%- end; end; if self.sortable then -%>
+				<th class="cbi-section-table-cell"></th>
+			<%- end; if self.extedit or self.addremove or self.addbutton then -%>
+				<th class="cbi-section-table-cell"></th>
+			<%- end -%>
+			-->
+			<%
+				local isempty = true
+				local local_enabled = self.map.uci:get("radius", "radius", "enabled") or "0"
+				local local_ipaddr = self.map.uci:get("radius", "radius", "ipaddr") or "-"
+				local local_mask = self.map.uci:get("radius", "radius", "mask") or "-"
+				local local_name = self.map.uci:get("radius", "radius", "name") or "-"
+				local local_secret = self.map.uci:get("radius", "radius", "secret") or "-"
+
+				if local_enabled == "1" then
+					isempty = false
+			%>
+
+					</tr>
+					<tr class="cbi-section-table-row" id="cbi-radius-hotspot">
+						<td class="cbi-value-field">
+							<div id="cbi-radius-hotspot-enabled">
+								<input class="cbi-input-checkbox" onchange="cbi_d_update(this.id)" type="checkbox" value="1" checked="checked"  disabled>
+							</div>
+							<div id="cbip-radius-hotspot-enabled"></div>
+						</td>
+						<td class="cbi-value-field">
+							<div id="cbi-radius-hotspot-name">
+								<%=local_name%>
+							</div>
+							<div id="cbip-radius-hotspot-name"></div>
+						</td>
+						<td class="cbi-value-field">
+							<div id="cbi-radius-hotspot-ipaddr">
+								<%=local_ipaddr%>
+							</div>
+							<div id="cbip-radius-hotspot-ipaddr"></div>
+						</td>
+						<td class="cbi-value-field">
+							<div id="cbi-radius-hotspot-mask">
+								<%=local_mask%>
+							</div>
+							<div id="cbip-radius-hotspot-mask"></div>
+						</td>
+						<td class="cbi-value-field">
+							<div id="cbi-radius-hotspot-secret">
+								<%=local_secret%>
+							</div>
+							<div id="cbip-radius-hotspot-secret"></div>
+						</td>
+
+						<td class="cbi-section-table-cell">
+							<div id="cbi-radius-hotspot-message">
+								Automaticaly generated for hotspot
+							</div>
+							<div id="cbip-radius-hotspot-message"></div>
+						</td>
+					</tr>
+			<%-	end
+
+			for i, k in ipairs(self:cfgsections()) do
+					section = k
+					isempty = false
+					scope = { valueheader = "cbi/cell_valueheader", valuefooter = "cbi/cell_valuefooter" }
+			-%>
+			<tr class="cbi-section-table-row<% if self.extedit or self.rowcolors then %> cbi-rowstyle-<%=rowstyle()%><% end %>" id="cbi-<%=self.config%>-<%=section%>">
+				<% if not self.anonymous then -%>
+					<th><h3><%=(type(self.sectiontitle) == "function") and self:sectiontitle(section) or k%></h3></th>
+				<%- end %>
+
+
+				<%-
+					for k, node in ipairs(self.children) do
+						if not node.optional then
+							node:render(section, scope or {})
+						end
+					end
+				-%>
+
+				<%- if self.sortable then -%>
+					<td class="cbi-section-table-cell">
+						<input class="cbi-button cbi-button-up" type="button" value=""  onclick="return cbi_row_swap(this, true, 'cbi.sts.<%=self.config%>.<%=self.sectiontype%>')" alt="<%:Move up%>" title="<%=translate('Move up')%>" />
+						<input class="cbi-button cbi-button-down" type="button" value=""  onclick="return cbi_row_swap(this, false, 'cbi.sts.<%=self.config%>.<%=self.sectiontype%>')" alt="<%:Move down%>" title="<%=translate('Move down')%>" />
+					</td>
+				<%- end -%>
+
+				<%- if self.extedit or self.addremove or self.addbutton then -%>
+					<td class="cbi-section-table-cell">
+						<%- if self.addbutton then -%>
+							<input class="cbi-button cbi-button-edit" type="button" value="<%=self.addbuttontittle%>"
+							<%- if type(self.addbutton) == "string" then
+							%> onclick="location.href='<%=self.addbutton:format(section)%>'"
+							<%- elseif type(self.addbutton) == "function" then
+							%> onclick="location.href='<%=self:extedit(section)%>'"
+							<%- end 
+							%> alt="<%:Edit%>" title="<%:Edit%>" />
+						<%- end; if self.extedit then -%>
+							<input class="cbi-button cbi-button-edit" type="button" value="<%:Edit%>"
+							<%- if type(self.extedit) == "string" then
+							%> onclick="location.href='<%=self.extedit:format(section)%>'"
+							<%- elseif type(self.extedit) == "function" then
+							%> onclick="location.href='<%=self:extedit(section)%>'"
+							<%- end 
+							%> alt="<%:Edit%>" title="<%:Edit%>" />
+						<%- end; if self.addremove then %>
+							<input class="cbi-button cbi-button-remove" type="submit" value="<%:Delete%>"  onclick="this.form.cbi_state='del-section'; return true" name="cbi.rts.<%=self.config%>.<%=k%>" alt="<%:Delete%>" title="<%:Delete%>" />
+						<%- end -%>
+					</td>
+				<%- end -%>
+			</tr>
+			<%- end -%>
+			
+			<%- if isempty then -%>
+			<tr class="cbi-section-table-row">
+				<%- if self.novaluetext then -%>
+					<td style="padding:20px 0 20px 10px;" colspan="<%=count%>"><em><%=self.novaluetext%></em></td>
+				<%- else -%>
+					<td style="padding:20px 0 20px 10px;" colspan="<%=count%>"><em><%=translate("This section contains no values yet")%></em></td>
+				<%- end -%>
+			</tr>
+			<%- end -%>
+		</table>
+
+		<% if self.error then %>
+			<div class="cbi-section-error">
+				<ul><% for _, c in pairs(self.error) do for _, e in ipairs(c) do -%>
+					<li><%=pcdata(e):gsub("\n","<br />")%></li>
+				<%- end end %></ul>
+			</div>
+		<% end %>
+
+		<%- if self.addremove then -%>
+			<% if self.template_addremove then include(self.template_addremove) else -%>
+			<div class="cbi-section-create cbi-tblsection-create">
+				<% if self.anonymous then %>
+					<input class="cbi-button cbi-button-add" style="margin-left: 10px;" type="submit" value="<%:Add%>" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" title="<%:Add%>" />
+				<% else %>
+					<% if self.invalid_cts then -%><div class="cbi-section-error"><% end %>
+					<input type="text" class="cbi-section-create-name" id="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" />
+					<script type="text/javascript">cbi_validate_field('cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>', true, 'uciname');</script>
+					<input class="cbi-button cbi-button-add" type="submit" onclick="this.form.cbi_state='add-section'; return true" value="<%:Add%>" title="<%:Add%>" />
+					<% if self.invalid_cts then -%>
+						<br /><%:Invalid%></div>
+					<%- end %>
+				<% end %>
+			</div>
+			<%- end %>
+		<%- end -%>
+	</div>
+</fieldset>
+<!-- /tblsection -->

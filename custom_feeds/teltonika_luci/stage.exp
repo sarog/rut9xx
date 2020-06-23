@@ -1,0 +1,12 @@
+#!/usr/bin/expect
+spawn ssh root@192.168.99.161
+expect "root@192.168.99.161's password:"
+send "root\n"
+expect "root@Teltonika:"
+send "cp -r /usr/lib/lua/luci /tmp/luciTmp\n"
+expect "root@Teltonika:"
+send "mount /tmp/luciTmp /usr/lib/lua/luci\n"
+expect "root@Teltonika:"
+send "exit\n"
+interact
+

@@ -1,0 +1,55 @@
+<%- 
+local sys = require "luci.sys"
+if firstmap and messages then local msg; for _, msg in ipairs(messages) do 
+	local a, b, msgEdited
+	msg = tostring(msg)
+	b = 0    -- In this context 0 will mean "no tag"
+	a = msg:sub(1, 4)
+	if a == "wrn:" then
+		b = 1    -- In this context 1 will mean "warning"
+	elseif a == "err:" then
+		b = 2    -- In this context 2 will mean "error"
+	elseif a == "scs:" then
+		b = 3    -- 3 will mean success
+	end	
+	
+	if b == 1 then
+		msgEdited = msg:sub(5)    -- Grab a substring starting with the 5-th character and ending at with the last
+-%>
+	<div id="wrn_message" class="alert-message warning"><%=pcdata(msgEdited)%></div>
+<%- 
+	elseif b == 2 then
+		msgEdited = msg:sub(5)    -- Grab a substring starting with the 5-th character and ending at with the last
+-%>
+	<div id="err_message" class="alert-message error"><%=pcdata(msgEdited)%></div>
+<%- 
+	elseif b == 3 then
+		msgEdited = msg:sub(5)
+-%>
+	<div id="succ_message" class="alert-message success"><%=pcdata(msgEdited)%></div>
+<%-
+	else
+-%>
+	<div id="err_message" class="alert-message error"><%=pcdata(msg)%></div>
+<%- 
+	end 
+end -- To end the for loop	
+end -- To end the master if statement
+-%>
+	<div id="hidden_message" class="" style="display:none"></div>
+
+<%-+cbi/apply_xhr-%>
+
+<div class="cbi-map" id="cbi-<%=self.config%>">
+	<%- if firstmap and applymap then cbi_apply_xhr(self.config, parsechain, redirect) end -%>
+    <% if self.title and #self.title > 0 then %><h2><a id="content" name="content"><% if self.customTitle then %><%=self.customTitle%><% else %><%=self.title%><% end %></a></h2><% end %>
+	<% if self.description and #self.description > 0 then %><div class="cbi-map-descr"><%=self.description%></div><% end %>
+	<%- self:render_children() %>
+	
+</div>
+
+<style>
+	#cbi-zerotier-zerotier-address .cbi-value-field {
+		line-height: 30px;
+	}
+</style>

@@ -1,0 +1,27 @@
+config general 'hotspot1'
+	option profile 'custom'
+	option enabled '0'
+	option mode 'norad'
+	option protocol 'http'
+	option net '192.168.2.254/24'
+
+config ftp 'ftp'
+	option enabled '0'
+	option host 'your.ftp.server'
+	option user 'username'
+	option psw 'password'
+	option port '21'
+	option extra_name_info 'none'
+
+config interval
+	option descr 'Uploads every workday at 8:15'
+	option fixed '1'
+	option fixed_hour '8'
+	option fixed_minute '15'
+	option weekdays 'mon,tue,wed,thu,fri'
+
+config link 'link'
+
+config session 'unlimited1'
+	option name 'unlimited'
+	option id 'hotspot1'

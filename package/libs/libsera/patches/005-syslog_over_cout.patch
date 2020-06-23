@@ -1,0 +1,41 @@
+Index: libsera-1.2.2/src/srlogger.cc
+===================================================================
+--- libsera-1.2.2.orig/src/srlogger.cc
++++ libsera-1.2.2/src/srlogger.cc
+@@ -21,6 +21,7 @@
+ #include <iostream>
+ #include <fstream>
+ #include <pthread.h>
++#include <syslog.h>
+ #include "srlogger.h"
+ 
+ static const char *strlvls[] = { "DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "CRITICAL" };
+@@ -35,10 +36,13 @@ public:
+             _quota(quota), _lvl(lvl)
+     {
+         pthread_mutex_init(&mutex, NULL);
++        openlog("cmStreamApp", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
++        syslog(LOG_INFO, "cmStreamApp init");
+     }
+ 
+     virtual ~SrLogger()
+     {
++        closelog();
+         pthread_mutex_destroy(&mutex);
+     }
+ 
+@@ -113,13 +117,7 @@ void SrLogger::log(SrLogLevel lvl, const
+ 
+     if (pthread_mutex_lock(&mutex) == 0)
+     {
+-        std::cout << buf << strlvls[lvl] << ": " << msg << std::endl;
+-
+-        if (std::cout.rdbuf() == out.rdbuf() && out.tellp() != -1 && out.tellp() > _quota)
+-        {
+-            rotate();
+-        }
+-
++        syslog(LOG_INFO, "%s %s: %s\n", buf, strlvls[lvl], msg.c_str());
+         pthread_mutex_unlock(&mutex);
+     }
+ }

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Entities build="latest" majorVersion="0" minorVersion="0" modelPersistenceProviderPackage="NeoPersistenceProviderPackage" revision="0" schemaVersion="1000">
+   <StyleDefinitions />
+   <Networks />
+   <PersistenceProviderPackages />
+   <Mashups />
+   <ScriptFunctionLibraries />
+   <Projects />
+   <Users />
+   <DirectoryServices />
+   <Widgets />
+   <MediaEntities />
+   <Groups />
+   <PersistenceProviders />
+   <NotificationContents />
+   <ModelTags />
+   <LocalizationTables />
+   <Dashboards />
+   <DataAnalysisDefinitions />
+   <DataShapes />
+   <Things>
+      <Thing description="" documentationContent="" effectiveThingPackage="ValueStreamThing" enabled="true" homeMashup="" identifier="" lastModifiedDate="2017-11-13T09:26:18.904-05:00" name="SubscribedPropertyIntegrationTestValueStream" projectName="" published="false" tags="Applications:SubscribedPropertyIntegrationTest" thingTemplate="ValueStream" valueStream="">
+         <Owner name="Administrator" type="User" />
+         <avatar />
+         <DesignTimePermissions>
+            <Create />
+            <Read />
+            <Update />
+            <Delete />
+            <Metadata />
+         </DesignTimePermissions>
+         <RunTimePermissions />
+         <VisibilityPermissions>
+            <Visibility />
+         </VisibilityPermissions>
+         <ConfigurationTables>
+            <ConfigurationTable description="Data Thing Configuration" isMultiRow="false" name="DataThingSettings" ordinal="0">
+               <DataShape>
+                  <FieldDefinitions>
+                     <FieldDefinition baseType="STRING" description="Persistence Provider Name" name="persistenceProvider" ordinal="0" />
+                  </FieldDefinitions>
+               </DataShape>
+               <Rows>
+                  <Row>
+                     <persistenceProvider><![CDATA[ThingworxPersistenceProvider]]></persistenceProvider>
+                  </Row>
+               </Rows>
+            </ConfigurationTable>
+            <ConfigurationTable description="Configurable options to tune Value Stream performance" isMultiRow="false" name="PersistenceProviderCustomSettings" ordinal="2">
+               <DataShape>
+                  <FieldDefinitions>
+                     <FieldDefinition aspect.friendlyName="Persistence Provider Custom Settings Table" baseType="INFOTABLE" description="Persistence Provider Custom Config Table" name="customConfigTable" ordinal="0" />
+                  </FieldDefinitions>
+               </DataShape>
+               <Rows>
+                  <Row>
+                     <customConfigTable>
+                        <infoTable>
+                           <DataShape>
+                              <FieldDefinitions />
+                           </DataShape>
+                           <Rows />
+                        </infoTable>
+                     </customConfigTable>
+                  </Row>
+               </Rows>
+            </ConfigurationTable>
+         </ConfigurationTables>
+         <ThingShape>
+            <PropertyDefinitions />
+            <ServiceDefinitions />
+            <EventDefinitions />
+            <ServiceMappings />
+            <ServiceImplementations />
+            <Subscriptions />
+         </ThingShape>
+         <PropertyBindings />
+         <RemotePropertyBindings />
+         <RemoteServiceBindings />
+         <RemoteEventBindings />
+         <AlertConfigurations />
+         <ImplementedShapes />
+         <ThingProperties />
+         <ConfigurationChanges>
+            <ConfigurationChange changeAction="CREATE" changeReason="header : name : updated, thingTemplate : updated&#xA;configuration : persistenceProvider : updated&#xA;" timestamp="2017-11-09T09:16:39.058-05:00" user="Administrator" />
+            <ConfigurationChange changeAction="MODIFY" changeReason="header : tags : updated&#xA;" timestamp="2017-11-13T09:26:18.903-05:00" user="Administrator" />
+         </ConfigurationChanges>
+      </Thing>
+      <Thing description="" documentationContent="" effectiveThingPackage="RemoteThing" enabled="true" homeMashup="" identifier="" lastModifiedDate="2017-11-13T09:26:11.870-05:00" name="SubscribedPropertyIntegrationTestThing" projectName="" published="false" tags="Applications:SubscribedPropertyIntegrationTest" thingTemplate="RemoteThing" valueStream="SubscribedPropertyIntegrationTestValueStream">
+         <Owner name="Administrator" type="User" />
+         <avatar />
+         <DesignTimePermissions>
+            <Create />
+            <Read />
+            <Update />
+            <Delete />
+            <Metadata />
+         </DesignTimePermissions>
+         <RunTimePermissions />
+         <VisibilityPermissions>
+            <Visibility />
+         </VisibilityPermissions>
+         <ConfigurationTables />
+         <ThingShape>
+            <PropertyDefinitions>
+               <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.defaultValue="-1" aspect.isLogged="true" aspect.isPersistent="false" aspect.isReadOnly="false" baseType="INTEGER" category="" description="" isLocalOnly="false" name="TestInteger" ordinal="1" />
+            </PropertyDefinitions>
+            <ServiceDefinitions />
+            <EventDefinitions />
+            <ServiceMappings />
+            <ServiceImplementations />
+            <Subscriptions />
+         </ThingShape>
+         <PropertyBindings />
+         <RemotePropertyBindings>
+            <RemotePropertyBinding foldType="NONE" name="TestInteger" pushThreshold="0.0" pushType="VALUE" sourceName="TestInteger" timeout="0" />
+         </RemotePropertyBindings>
+         <RemoteServiceBindings />
+         <RemoteEventBindings />
+         <AlertConfigurations />
+         <ImplementedShapes />
+         <ThingProperties>
+            <lastConnection>
+               <Value>2017-11-13T09:22:28.384-05:00</Value>
+               <Timestamp>2017-11-13T09:22:28.384-05:00</Timestamp>
+               <Quality>GOOD</Quality>
+            </lastConnection>
+         </ThingProperties>
+         <ConfigurationChanges>
+            <ConfigurationChange changeAction="CREATE" changeReason="header : name : updated, thingTemplate : updated&#xA;" timestamp="2017-11-09T09:03:01.709-05:00" user="Administrator" />
+            <ConfigurationChange changeAction="MODIFY" changeReason="properties : TestInteger : added remote property from browse&#xA;" timestamp="2017-11-09T09:15:12.802-05:00" user="Administrator" />
+            <ConfigurationChange changeAction="MODIFY" changeReason="header : valueStream : updated&#xA;" timestamp="2017-11-09T09:16:41.004-05:00" user="Administrator" />
+            <ConfigurationChange changeAction="MODIFY" changeReason="header : tags : updated&#xA;" timestamp="2017-11-13T09:26:11.870-05:00" user="Administrator" />
+         </ConfigurationChanges>
+      </Thing>
+   </Things>
+   <Logs />
+   <Authenticators />
+   <ThingPackages />
+   <NotificationDefinitions />
+   <ApplicationKeys />
+   <StateDefinitions />
+   <ThingTemplates />
+   <ExtensionPackages />
+   <Organizations />
+   <Menus />
+   <Resources />
+   <DataTags />
+   <ThingShapes />
+   <Subsystems />
+</Entities>

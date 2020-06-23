@@ -1,0 +1,30 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=70
+STOP=40
+
+start_service() {
+	procd_open_instance
+	procd_set_param respawn
+	procd_set_param command /usr/bin/mdcollectd start
+	procd_close_instance
+}
+
+stop_service() {
+	/usr/bin/mdcollectd stop
+}
+
+restart () {
+	stop
+	start
+}
+
+reload_service() {
+	stop
+	start
+} 
+
+status () {
+	/usr/bin/mdcollectd status
+}

@@ -1,0 +1,77 @@
+<%
+local sys = require "luci.sys"
+function get_values()
+	local values = sys.exec("/sbin/sms_counter.lua value both")
+	local line_counter = 1
+	send = {}
+	recieved = {}
+	if values then
+		for line in values:gmatch("[^\r\n]+") do
+			send[line_counter] = string.gsub(line," .*","")
+			if tonumber(send[line_counter]) == nil then
+				send[line_counter] = nil
+			end
+			recieved[line_counter] = string.gsub(line,".* ","")
+			if tonumber(recieved[line_counter]) == nil then
+				recieved[line_counter] = nil
+			end
+			line_counter = line_counter + 1
+		end
+	end
+	for i=1,2 do
+		send[i] = send[i] or "0"
+		recieved[i] = recieved[i] or "0"
+	end
+end
+get_values()
+%>
+<%+header%>
+<script>
+	function reset(slot){
+			document.getElementById("reset1").disabled = true;
+			document.getElementById("reset2").disabled = true;
+			document.getElementById("spinner").style.display = "";
+			XHR.get('<%=luci.dispatcher.build_url("admin", "services", "sms_gateway", "sms_counter" )%>', { step: slot },
+			function(x, info){
+				document.getElementById("spinner").style.display = "none";
+				document.getElementById("reset1").disabled = false;
+				document.getElementById("reset2").disabled = false;
+				document.getElementById("send1").innerHTML = info.send[0];
+				document.getElementById("recieved1").innerHTML = info.recieved[0];
+				document.getElementById("send2").innerHTML = info.send[1];
+				document.getElementById("recieved2").innerHTML = info.recieved[1];
+		}
+		);
+	}
+</script>
+
+<div class="cbi-map" id="cbi-sms_gateway"><h2><a id="content" name="content">Statistics</a></h2>
+<fieldset class="cbi-section" id="cbi-sms_utils-statistics">
+<legend>SMS Statistics</legend>
+<div id="spinner" style="display:none;float:right"> <img src="/luci-static/resources/icons/loading.gif" style="width: 30px; height: 30px" alt="Loading"> Please wait ..</div>
+	<br>
+	<table class="cbi-section-table">
+		<tr>
+			<th style="width:5%">SIM Card</th>
+			<th style="width:15%;text-align:center">Sent SMS</th>
+			<th style="width:15%;text-align:center">Received SMS</th>
+			<th style="width:25%"></th>
+		</tr>
+		
+		<tr>
+			<td style="text-align:center">SIM 1</td>
+			<td id="send1" style="text-align:center"><%=send[1]%></td>
+			<td id="recieved1" style="text-align:center"><%=recieved[1]%></td>
+			<td  style="text-align:center"><input id="reset1" class="cbi-button cbi-button-add" style="margin-left: 10px;" value="Reset" name="cbi.cts.hostblock.block." title="Reset" type="button" onclick="reset(1)"></td>
+		</tr>
+
+		<tr>
+			<td style="text-align:center">SIM 2</td>
+			<td id="send2" style="text-align:center"><%=send[2]%></td>
+			<td id="recieved2" style="text-align:center"><%=recieved[2]%></td>
+			<td  style="text-align:center"><input id="reset2" class="cbi-button cbi-button-add" style="margin-left: 10px;" value="Reset" name="cbi.cts.hostblock.block." title="Reset" type="button" onclick="reset(2)"></td>
+		</tr>
+	</table>
+</div>
+</fieldset>
+<%+footer%>

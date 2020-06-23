@@ -1,0 +1,195 @@
+<%
+
+local MINIMUM_USB_PARTITION_SIZE_IN_1K_BLOCKS = 524288
+
+local function get_sda1_size()
+	local cmd = 'block info | grep -o \'^/dev/sda1: .*MOUNT="/mnt/sda1" .*TYPE="ext2".*$\''
+	local cmdoutput = luci.sys.exec(cmd)
+	local mounted = cmdoutput ~= nil and #cmdoutput > 9
+
+	local mountreturncode = 0
+	if not mounted then
+		luci.sys.exec("mkdir -p /mnt/sda1")
+		mountreturncode = luci.sys.call("mount -t ext2 /dev/sda1 /mnt/sda1")
+	end
+
+	if mountreturncode ~= 0 then
+		return "0"
+	end
+
+	local size = luci.sys.exec("df | grep -o '^/dev/sda1[ ]*[0-9]*' | grep -o [0-9]*$")
+
+	if not mounted then
+		luci.sys.exec("umount /mnt/sda1")
+	end
+
+	return tonumber(size) ~= nil and luci.util.trim(size) or "0"
+end
+
+local function is_expanded()
+	local cmd = 'block info | grep -o \'^/dev/sda1: .*MOUNT="/overlay" .*TYPE="ext2".*$\''
+	local cmdoutput = luci.sys.exec(cmd)
+	return cmdoutput ~= nil and #cmdoutput > 9
+end
+
+local function get_case()
+	if is_expanded() then
+		return 1
+	else
+		if luci.sys.exec("ls -1 /dev | grep -o '^sda$'") ~= "sda\n" then
+			return 2
+		elseif luci.sys.exec("ls -1 /dev | grep -o '^sda1$'") ~= "sda1\n" then
+			return 3
+		elseif luci.sys.exec("block info | grep '^/dev/sda1: .*TYPE=\"ext2\".*$' | grep -o 'TYPE=\"ext2\"'") ~= 'TYPE="ext2"\n' then
+			return 4
+		elseif tonumber(get_sda1_size()) < MINIMUM_USB_PARTITION_SIZE_IN_1K_BLOCKS then
+			return 5
+		else
+			return 6
+		end
+	end
+end
+
+local case = get_case()
+
+%>
+
+<%+header%>
+
+<style>
+li {
+	color: #404040;
+}
+.error > ol > li {
+	color: white;
+}
+</style>
+
+<script>
+function onClick(whenChecked, whenUnchecked) {
+	var checkbox = document.getElementById("mycheckbox");
+	var text = document.getElementById("mytext")
+	if (checkbox.checked == true) {
+		text.style.display = whenChecked;
+	} else {
+		text.style.display = whenUnchecked;
+	}
+}
+function reloadfn(x, y) {
+    window.location.replace('<%=build_url() .. "/admin/system/reboot?reboot=1"%>')
+}
+function expand() {
+	var checkbox = document.getElementById("mycheckbox");
+	if (checkbox.checked == true) {
+		XHR.get('<%=build_url("admin/system/memory-expansion/expand")%>', null, reloadfn);
+	}
+}
+function shrink() {
+	var checkbox = document.getElementById("mycheckbox");
+	if (checkbox.checked == false) {
+		XHR.get('<%=build_url("admin/system/memory-expansion/shrink")%>', null, reloadfn);
+	}
+}
+</script>
+
+<% if case == 2 then %>
+	<div id="err_message" class="alert-message error">
+	<b>The USB device is either:</b>
+	<ol>
+		<li>Not connected.</li>
+		<li>Not a USBMSD.</li>
+		<li>Not the first connected USB device in the USB hub.</li>
+		<li>A previously inserted device in the USB hub was removed,
+			and even though technically currently the USBMSD is the
+			first inserted USB device in the hub, it has to be
+			reinserted nevertheless for the change to take effect.</li>
+	</ol>
+	<b>Please, either:</b>
+	<ol>
+		<li>Insert the USB device.</li>
+		<li>Make sure it is a USBMSD.</li>
+		<li>Remove all devices from the USB hub and insert the USBMSD first.</li>
+		<li>Reinsert the USBMSD.</li>
+	</ol>
+	</div>
+<% elseif case == 3 then %>
+	<div id="err_message" class="alert-message error">
+	The first primary partition of the USBMSD is not found.</br>
+	Please make sure you have formatted the USBMSD correctly.
+	</div>
+<% elseif case == 4 then %>
+	<% local fs = luci.sys.exec("block info | grep '^/dev/sda1: .*TYPE=\".*\".*$' | grep -o 'TYPE=\".*\"' | grep -o '\".*\"'") %>
+	<div id="err_message" class="alert-message error">
+		The filesystem of the first primary partition of the USBMSD is not "ext2", but <% luci.http.write(fs and tostring(fs) or "???") %>.</br>
+		Please make sure you have formatted the USBMSD correctly.
+	</div>
+<% elseif case == 5 then %>
+	<div id="err_message" class="alert-message error">
+		The USBMSD partition is too small (<% luci.http.write(get_sda1_size()) %>K).
+		The minimum USBMSD partition size is <% luci.http.write(tostring(MINIMUM_USB_PARTITION_SIZE_IN_1K_BLOCKS)) %>K.</b></br>
+	</div>
+<% end %>
+
+<h2><a id="content" name="content"><%=translate("Memory expansion")%></a></h2>
+<fieldset>
+<legend>Memory expansion</legend>
+	<div class="cbi-value">
+		<label class="cbi-value-title">
+			<span>Enable memory expansion
+			</span>
+		</label>
+		<div class="cbi-value-field" style="">
+
+<% if case == 1 then %>
+			<input id="mycheckbox" class="cbi-input-checkbox" type="checkbox" onclick="onClick('none','block')" checked/>
+			<p id="mytext" style="display:none">
+				<b>
+					Warning: disabling memory expansion will reboot the router!
+					</br>
+					Warning: disabling memory expansion will revert the router to the state it was before the memory expansion.
+					This may leave router unconfigured if it was so before the expansion!
+					</br>
+					Warning: do not unplug the USBMSD before disabling memory expansion!
+				</b>
+			</p>
+<% elseif case == 6 then %>
+			<input id="mycheckbox" class="cbi-input-checkbox" type="checkbox" onclick="onClick('block','none')"/>
+			<p id="mytext" style="display:none">
+				<b>
+				Warning: memory expansion procedure will reboot the router!
+				</br>
+				Warning: when reversing the memory expansion procedure, the router will be reverted to the state it was
+				before the procedure. Make sure to fully configure the router before the procedure!
+				</br>
+				Warning: the procedure will erase all existing files from the USBMSD.
+				</br>
+				Warning: Samba shared directories on /mnt/sda1 will be deleted.
+				</b>
+			</p>
+<% else %>
+			<input id="mycheckbox" class="cbi-input-checkbox" type="checkbox" disabled/>
+<% end %>
+
+		</div>
+	</div>
+<hr>
+You can expand the memory of your router with a USB mass storage device (USBMSD).</br>
+You can use the extra memory to install additional software packages fitting your needs.</br>
+To be eligible for router memory expansion, the USBMSD must qualify the following imposed restrictions:</br>
+<ol>
+	<li>The USB must be the first one inserted.</br>For example, if you are using a USB hub, the eligible device is the first USBMSD attached to the hub.</li>
+	<li>The first partion of the USBMSD must be a primary partition.</li>
+	<li>The size of the first primary partition must be at least 512 MB.</li>
+	<li>The filesystem of the first primary partition must be ext2.</li>
+</ol>
+
+<% if case == 6 then %>
+	<div class="cbi-page-actions"><input class="cbi-button cbi-button-apply" type="submit" name="cbi.apply" value="Save" onclick="expand()"></div>
+<% elseif case == 1 then %>
+	<div class="cbi-page-actions"><input class="cbi-button cbi-button-apply" type="submit" name="cbi.apply" value="Save" onclick="shrink()"></div>
+<% else %>
+	<div class="cbi-page-actions"><input class="cbi-button cbi-button-apply" type="submit" name="cbi.apply" value="Save"></div>
+<% end %>
+
+</fieldset>
+<%+footer%>

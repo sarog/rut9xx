@@ -1,0 +1,57 @@
+<%+cbi/valueheader%>
+	<script type="text/javascript">
+		function only_display_required_sections() {
+			document.getElementById("cbi-coovachilli-users").style.display = "none";
+			document.getElementById("cbi-coovachilli-session").style.display = "none";
+			document.getElementById("custom-create-session").style.display = "none";
+			display_required_sections();
+		}
+		function display_required_sections() {
+			var mode = document.getElementById("cbid.coovachilli." + "<%=(section)%>" + ".mode");
+			if (mode) {
+				mode = mode.value;
+			}
+			console.log(mode);
+			if (mode == "norad") {
+				document.getElementById("cbi-coovachilli-users").style.display = "";
+				document.getElementById("cbi-coovachilli-session").style.display = "";
+				document.getElementById("custom-create-session").style.display = "";
+			} else if (mode == "mac" || mode == "sms") {
+				document.getElementById("cbi-coovachilli-session").style.display = "";
+			}
+		}
+
+		function set_values(e){
+			if (e.value){
+				XHR.get('<%=luci.dispatcher.build_url("admin/services/hotspot/profile_config")%>', { profile : e.value, section : "<%=section%>" },
+					function(x, info) {
+						if (info.stat == 0)
+							window.location.replace('<%=luci.dispatcher.build_url("admin/services/hotspot/redirect")%>?id=<%=section%>');
+			 		}
+				);
+			}
+		}
+
+		document.addEventListener('DOMContentLoaded', function() {
+			only_display_required_sections();
+			document.getElementById("cbid.coovachilli." + "<%=(section)%>" + ".mode").addEventListener('change', function() {
+				only_display_required_sections();
+			}, false);
+		}, false);
+	</script>
+	<select class="cbi-input-select" onchange="set_values(this); cbi_d_update(this.id)"<%= attr("id", cbid) .. attr("name", cbid) .. ifattr(self.size, "size") %> <%- if self.maxWidth then -%> style="max-width:<%=self.maxWidth%>;" <%- end -%><%- if self.hardDisabled then -%> disabled <%- end -%>>
+	<% for i, key in pairs(self.keylist) do -%>
+		<option id="cbi-<%=self.config.."-"..section.."-"..self.option.."-"..key%>"<%= attr("value", key) .. ifattr(tostring(self:cfgvalue(section) or self.default) == key, "selected", "selected") %>><%=striptags(self.vallist[i])%></option>
+	<%- end %>
+	</select>
+	<% if self.info then%>
+	<div>
+		<span style="color: rgb(64, 64, 64);" onmouseover="ShowHint(this, '')" onmouseout="HideHint(this)">
+			<% if self.url then%>
+			<a class="overview-mini-info_icon" href="<%=self.url%>"></a>
+			<% end %>
+		</span>
+		<label class="enthcon"><%=self.info %></label>
+	</div>
+	<% end %>
+<%+cbi/valuefooter%>

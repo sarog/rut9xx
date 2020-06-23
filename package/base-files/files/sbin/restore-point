@@ -1,0 +1,288 @@
+#!/bin/sh
+
+TMP_PATH="/tmp/restore-point"
+FIRMWARE="/dev/mtdblock6"
+
+sn=`mnf_info sn`
+sn_len=${#sn}
+
+# create a working directory for the process.
+[ ! -d "$TMP_PATH" ]; mkdir -p "$TMP_PATH"
+
+# if a program ended unsuccessfully print error message and exit.
+check_status() {
+	STATUS=$?
+	MSG=$1
+
+	if [ "$STATUS" != "0" ]; then
+		echo "$MSG"
+		exit 1
+	fi
+}
+
+usage() {
+cat <<EOF
+usage: $0
+	-c | --create <device> <image>
+	             create a restore point in /mnt/<device>/restore-point/<image> file.
+	-t | --create-temp <image>
+	             create a temporary restore point in /tmp/restore-point/<image> file.
+	-r | --restore <full-path-to-image> [reboot]
+	             restore image from <image> file.
+							 [reboot] optional reboot after successful command.
+							 warning! all current settings will be erased.
+	-g | --get-checksum <full-path-to-image>
+	             get a checksum of a restore point.
+	-m | --checksum <full-path-to-image>
+	             check if restore point checksum match.
+    -s | --get-serial_number <image>
+                 get router serial number which created restore point 
+	-h | --help  display this help
+EOF
+exit 1
+}
+
+# parse options
+case "$1" in
+	-c|--create)
+		DEV="$2" IMAGE="$3" MOUNT_PATH="/mnt/$DEV" MOUNT_PATH_FULL="$MOUNT_PATH/restore-point"
+
+		if [ -z "$DEV" -o -z "$IMAGE" ]; then
+			echo "missing arguments. exiting..."
+			exit 1
+		fi
+
+		if [ ! -d "$MOUNT_PATH" ]; then
+			echo "error: mount point '$MOUNT_PATH' does not exist."
+			exit 1
+		fi
+
+		if [ -e "$MOUNT_PATH_FULL/$IMAGE" ]; then
+			echo "error: restore point $MOUNT_PATH_FULL/$IMAGE already exists."
+			exit 1
+		fi
+
+		#remembering monitoring status
+		rms_status=`uci get rms_connect_mqtt.rms_connect_mqtt.enable`
+		uci set rms_connect_mqtt.rms_connect_mqtt.enable_on_rp="$rms_status"
+		uci commit rms_connect_mqtt
+		/etc/init.d/rms_connect stop
+
+		[ ! -d "$MOUNT_PATH_FULL" ]; mkdir -p "$MOUNT_PATH_FULL"
+		check_status "error: could not create target folder on the designated device."
+
+		/usr/bin/md5sum "$FIRMWARE" | awk -v image="$IMAGE" '{ print $1"  "image }' > "$TMP_PATH/${IMAGE}.md5" 2>/dev/null
+		check_status "error: could not create checksum for the restore point '${IMAGE}'."
+
+		/bin/dd if="$FIRMWARE" of="$TMP_PATH/$IMAGE" bs=65535 2>/dev/null
+		check_status "error: restore point '$IMAGE' creation failed."
+
+		cd "$TMP_PATH"
+		/usr/bin/md5sum -cs "$TMP_PATH/${IMAGE}.md5" 2>/dev/null
+		check_status "error: checksum mismatch - restore point '$IMAGE' creation failed."
+
+		cat "$TMP_PATH/${IMAGE}.md5" | awk '{ print $1 }' >> "$TMP_PATH/$IMAGE" 2>/dev/null
+		check_status "error: writing checksum to restore point '$IMAGE' failed."
+
+		if [ $sn_len = "8" ]; then
+			printf '%.8s' "$sn" >> "$TMP_PATH/$IMAGE"
+		else
+			printf '%.10s' "$sn" >> "$TMP_PATH/$IMAGE"
+		fi
+		check_status "error: writing serial name to restore point '$IMAGE' failed."
+
+		mv "$TMP_PATH/$IMAGE" "$MOUNT_PATH_FULL/$IMAGE" 2>/dev/null
+		check_status "error: could not store restore point '$IMAGE' to the designated device."
+
+		rm "$TMP_PATH/${IMAGE}.md5" 2>/dev/null
+
+		echo "success: restore point '$IMAGE' created."
+		/etc/init.d/rms_connect start
+		;;
+
+	-t|--create-temp)
+		IMAGE="$2"
+		if [ -z "$IMAGE" ]; then
+			echo "missing arguments. exiting..."
+			exit 1
+		fi
+
+		rm -f "$TMP_PATH"/*
+		#remembering monitoring status
+		rms_status=`uci get rms_connect_mqtt.rms_connect_mqtt.enable`
+		uci set rms_connect_mqtt.rms_connect_mqtt.enable_on_rp="$rms_status"
+		uci commit rms_connect_mqtt
+		/etc/init.d/rms_connect stop
+		#
+
+		/usr/bin/md5sum "$FIRMWARE" | awk -v image="$IMAGE" '{ print $1"  "image }' > "$TMP_PATH/${IMAGE}.md5" 2>/dev/null
+		logger -s "$FIRMWARE" | awk -v image="$IMAGE" '{ print $1"  "image }'
+		check_status "error: could not create checksum for the restore point '${IMAGE}'."
+
+		/bin/dd if="$FIRMWARE" of="$TMP_PATH/$IMAGE" bs=65535 2>/dev/null
+		check_status "error: restore point '$IMAGE' creation failed."
+
+		cd "$TMP_PATH"
+		/usr/bin/md5sum -cs "$TMP_PATH/${IMAGE}.md5" 2>/dev/null
+		check_status "error: checksum mismatch - restore point '$IMAGE' creation failed."
+
+		cat "$TMP_PATH/${IMAGE}.md5" | awk '{ print $1 }' >> "$TMP_PATH/$IMAGE" 2>/dev/null
+		check_status "error: writing checksum to restore point '$IMAGE' failed."
+
+		if [ $sn_len = "8" ]; then
+			printf '%.8s' "$sn" >> "$TMP_PATH/$IMAGE"
+		else
+			printf '%.10s' "$sn" >> "$TMP_PATH/$IMAGE"
+		fi
+		check_status "error: writing serial name to restore point '$IMAGE' failed."
+
+		rm "$TMP_PATH/${IMAGE}.md5" 2>/dev/null
+
+		echo "success: restore point '$IMAGE' created."
+		/etc/init.d/rms_connect start
+		;;
+
+	-r|--restore)
+		IMAGE=$2
+		REBOOT=$3
+		if [ -z "$IMAGE" ]; then
+			echo "missing arguments. exiting..."
+			exit 1
+		fi
+
+		if [ ! -e "$IMAGE" ]; then
+			echo "error: restore point '$IMAGE' does not exist."
+			exit 1
+		fi
+
+		SIZE=`ls -l "$IMAGE" | awk '{ print $5 }'`
+		FILENAME=$(basename "$IMAGE")
+
+		# get firmware of the restore point.
+		if [ $sn_len = "8" ]; then
+			dd if="$IMAGE" of="$TMP_PATH/${FILENAME}" bs=$(( $SIZE - 41 )) count=1 2>/dev/null
+		else
+			dd if="$IMAGE" of="$TMP_PATH/${FILENAME}" bs=$(( $SIZE - 43 )) count=1 2>/dev/null
+		fi
+		check_status "error: restore point '$IMAGE' failed."
+
+		# get checksum of the restore point.
+		if [ $sn_len = "8" ]; then
+			dd if="$IMAGE" of="$TMP_PATH/${FILENAME}.md5" bs=1 count=33 skip=$(( $SIZE - 41 )) 2>/dev/null
+		else
+			dd if="$IMAGE" of="$TMP_PATH/${FILENAME}.md5" bs=1 count=33 skip=$(( $SIZE - 43 )) 2>/dev/null
+		fi
+		check_status "error: restore point '$IMAGE' failed."
+
+		CHECKSUM=`cat "$TMP_PATH/${FILENAME}.md5"`
+		echo "$CHECKSUM  $TMP_PATH/${FILENAME}" > "$TMP_PATH/${FILENAME}.md5"
+		/usr/bin/md5sum -cs "$TMP_PATH/${FILENAME}.md5" 2>/dev/null
+		check_status "error: checksum mismatch - restore point '$IMAGE' failed."
+
+		if [ "$REBOOT" = "reboot" ]; then
+			mtd -r write "$TMP_PATH/$FILENAME" "firmware"
+			check_status "error: firmware restored failed."
+		else
+			mtd write "$TMP_PATH/$FILENAME" "firmware"
+			check_status "error: firmware restored failed."
+		fi
+
+		echo "success: firmware restored."
+		;;
+
+	-g|--get-checksum)
+		IMAGE=$2
+		if [ -z "$IMAGE" ]; then
+			echo "missing arguments. exiting..."
+			exit 1
+		fi
+
+		if [ ! -e "$IMAGE" ]; then
+			echo "error: restore point '$IMAGE' does not exist."
+			exit 1
+		fi
+
+		SIZE=`ls -l "$IMAGE" | awk '{ print $5 }'`
+		FILENAME=$(basename "$IMAGE")
+
+		# get checksum of the restore point.
+		if [ $sn_len = "8" ]; then
+			dd if="$IMAGE" of="$TMP_PATH/${FILENAME}.md5" bs=1 count=33 skip=$(( $SIZE - 41 )) 2>/dev/null
+		else
+			dd if="$IMAGE" of="$TMP_PATH/${FILENAME}.md5" bs=1 count=33 skip=$(( $SIZE - 43 )) 2>/dev/null
+		fi
+		check_status "error: getting checksum of '$IMAGE' failed."
+
+		CHECKSUM=`cat "$TMP_PATH/${FILENAME}.md5"`
+		echo "$CHECKSUM"
+		;;
+
+	-m|--checksum)
+		IMAGE=$2
+		if [ -z "$IMAGE" ]; then
+			echo "missing arguments. exiting..."
+			exit 1
+		fi
+
+		if [ ! -e "$IMAGE" ]; then
+			echo "error: restore point '$IMAGE' does not exist."
+			exit 1
+		fi
+
+		SIZE=`ls -l "$IMAGE" | awk '{ print $5 }'`
+		FILENAME=$(basename "$IMAGE")
+
+		# get firmware of the restore point.
+		if [ $sn_len = "8" ]; then
+			dd if="$IMAGE" of="$TMP_PATH/${FILENAME}" bs=$(( $SIZE - 41 )) count=1 2>/dev/null
+		else
+			dd if="$IMAGE" of="$TMP_PATH/${FILENAME}" bs=$(( $SIZE - 43 )) count=1 2>/dev/null
+		fi
+		check_status "error: restore point '$IMAGE' failed."
+
+		# get checksum of the restore point.
+		if [ $sn_len = "8" ]; then
+			dd if="$IMAGE" of="$TMP_PATH/${FILENAME}.md5" bs=1 count=33 skip=$(( $SIZE - 41 )) 2>/dev/null
+			check_status "error: restore point '$IMAGE' failed."
+		else
+			dd if="$IMAGE" of="$TMP_PATH/${FILENAME}.md5" bs=1 count=33 skip=$(( $SIZE - 43 )) 2>/dev/null
+			check_status "error: restore point '$IMAGE' failed."
+		fi
+
+		CHECKSUM=`cat "$TMP_PATH/${FILENAME}.md5"`
+		echo "$CHECKSUM  $TMP_PATH/${FILENAME}" > "$TMP_PATH/${FILENAME}.md5"
+		/usr/bin/md5sum -cs "$TMP_PATH/${FILENAME}.md5" 2>/dev/null
+		check_status "error: checksum mismatch - restore point '$IMAGE' failed."
+
+		echo "success: checksum ok."
+		;;
+
+	 -s|--get-serial_number)
+		IMAGE=$2
+		if [ -z "$IMAGE" ]; then
+			echo "missing arguments. exiting..."
+			exit 1
+		fi
+
+		if [ ! -e "$IMAGE" ]; then
+			echo "error: restore point '$IMAGE' does not exist."
+			exit 1
+		fi
+
+		SIZE=`ls -l "$IMAGE" | awk '{ print $5 }'`
+		name_offset=`expr $SIZE - $sn_len 2>/dev/null`
+		sn_fw=`dd if=$IMAGE bs=1 skip=$name_offset count=$sn_len 2>/dev/null`
+		if [ "$sn" == "$sn_fw" ]; then
+			return 0
+		else
+			echo "error: serial number mismatch."
+			return 1
+		fi
+		;;
+		
+	-h|--help) usage exit 1;;
+	*)
+		echo "invalid option: $1"
+		usage
+		exit 1;;
+esac

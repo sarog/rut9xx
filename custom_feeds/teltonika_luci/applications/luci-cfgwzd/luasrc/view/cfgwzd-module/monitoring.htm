@@ -1,0 +1,116 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: index.htm 8408 2012-04-02 22:50:26Z jow $
+
+-%>
+<%+header%>
+
+<fieldset class="cbi-section">
+	<div id="monitoringBarsShow" class="overlayParent">
+		<div class="overlayLegend"><%=translate("Status")%></div>
+	</div>
+	<div id="monitoring_status">
+		<table id="monitoring_status_table" width="100%" cellspacing="10">
+			<tr><td><em><%=translate("Collecting data...")%></em></td></tr>
+		</table>
+	</div>
+</fieldset>
+<fieldset class="cbi-section">
+    <button id="force-connect" type="button" class="cbi-button-refresh"
+            style="float: right; margin-left: 10px;background-image: url(''), -moz-linear-gradient(top, #e2e2e2, #a4a4a4) !important;padding: 4px 20px 3px 20px !important"
+            disabled onClick="refreshPage(2)"><%=translate("Connect")%>
+    </button>
+	<button id="refresh" type="button" class="cbi-button-refresh" style="float: right;" disabled onClick="refreshPage(1)"><%=translate("Refresh")%></button>
+</fieldset>
+<div class="disclaimer_msg">
+	<span>* <%=translate("Please note that connecting to remote server could take up to 5 minutes.")%></span>
+	<br><br>
+</div>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">
+    function refreshPage(type){
+        if (type === undefined)
+            type = 1;
+        document.getElementById("refresh").disabled = true;
+        document.getElementById("force-connect").disabled = true;
+        obj = document.getElementById('conn_type');
+        if (obj !== null)
+            obj.innerText = "Checking...";
+        obj = document.getElementById('conn_state');
+        if (obj !== null)
+            obj.innerText = "Checking...";
+        obj = document.getElementById('next_conn');
+        if (obj !== null)
+            obj.innerText = "Checking...";
+        obj = document.getElementById('next_try');
+        if (obj !== null)
+            obj.innerText = "Checking...";
+        var connectionType = "";
+        var hostname = "";
+        var port = "";
+        if (type === 2)
+            connectionType = document.getElementById("cbid.rms_connect_mqtt.rms_connect_mqtt.enable").value;
+
+        XHR.get('<%=luci.dispatcher.build_url("admin", "system", "admin", "xhr_the_data")%>', { status: type, conn_type: connectionType, hostname: hostname, port: port },
+            function(x, info)
+            {
+                if (!info && x.responseText.search("UnikalusTekstinisStringasKitoTokioNiekurNera") != -1){
+                    location.href=location.href;
+                }
+                if(info.status === "0") {
+                    s = '<tr><td width="33%%" onmouseover="ShowHint(this, \'<%=translate("")%>\')" onmouseout="HideHint(this)" ><%=translate("Management status")%></td><td id="conn_type">Disabled</td></tr>';
+                    s += String.format('<tr><td width="33%%" onmouseover="ShowHint(this, \'<%=translate("")%>\')" onmouseout="HideHint(this)"><%=translate("Router serial number")%></td><td>%s</td></tr>' +
+                        '<tr><td width="33%%" onmouseover="ShowHint(this, \'<%=translate("")%>\')" onmouseout="HideHint(this)"><%=translate("Router LAN MAC address")%></td><td>%s</td></tr>'
+                        , info.serial_nbr, info.lan_mac);
+
+                }else{
+                    s = '<tr><td width="33%%" onmouseover="ShowHint(this, \'<%=translate("")%>\')" onmouseout="HideHint(this)" ><%=translate("Management status")%></td><td id="conn_type">Enabled</td></tr>';
+                    s += String.format('<tr><td width="33%%" onmouseover="ShowHint(this, \'<%=translate("")%>\')" onmouseout="HideHint(this)"><%=translate("Connection state")%></td><td id="conn_state">%s</td></tr>', info.connection_state);
+
+                    s += String.format('<tr><td width="33%%" onmouseover="ShowHint(this, \'<%=translate("")%>\')" onmouseout="HideHint(this)"><%=translate("Router serial number")%></td><td>%s</td></tr>' +
+                        '<tr><td width="33%%" onmouseover="ShowHint(this, \'<%=translate("")%>\')" onmouseout="HideHint(this)"><%=translate("Router LAN MAC address")%></td><td>%s</td></tr>'
+                        , info.serial_nbr, info.lan_mac);
+                    if (info.is_connected === "0" && info.next_try !== "-1")
+                        s += String.format('<tr><td width="33%%" onmouseover="ShowHint(this, \'<%=translate("")%>\')" onmouseout="HideHint(this)"><%=translate("Next connection after")%></td><td id="next_try">%s</td></tr>', info.next_try);
+                }
+                ws = document.getElementById('monitoring_status');
+                ws.innerHTML = '<table id="monitoring_status_table" width="100%" cellspacing="10" class="cbi-section-table">' + s;
+
+                document.getElementById("refresh").disabled = false;
+                if (info.is_connected === "0") {
+                    document.getElementById("force-connect").disabled = false;
+                    document.getElementById("force-connect").innerText = "Connect";
+                }
+                else
+                    document.getElementById("force-connect").innerText = "Connected";
+            }
+        );
+    }
+
+    function warningMessage(){
+        var enabled = parseInt(document.getElementById("cbid.rms_connect_mqtt.rms_connect_mqtt.enable").value);
+        var div = document.getElementById("hidden_message");
+        if (enabled === 1 || enabled === 2) {
+            div.className = "" ;
+            div.style.display = "none";
+            div.innerHTML = "";
+        } else {
+            div.className = "alert-message warning" ;
+            div.style.display = "";
+            div.innerHTML = "RMS must be set to Enabled or Standby in order to use Remote Management System.<br><b>Warning</b>: physical access to router's web interface will be necessary to enable the functionality later.";
+        }
+    }
+
+    AddWindowOnLoadEvent(warningMessage);
+    AddWindowOnLoadEvent(refreshPage);
+</script>

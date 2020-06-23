@@ -1,0 +1,4548 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Turkish translation\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: Emre <emreo@bircom.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: tr\n"
+"X-Generator: Poedit 1.6.6\n"
+
+msgid "% done"
+msgstr "% tamamlandı"
+
+msgid "%d Hours"
+msgstr "%d Saat"
+
+msgid "%d hour"
+msgstr "%d Saat"
+
+msgid "%d hours"
+msgstr "%d Saat"
+
+msgid "%d min"
+msgstr "%d dk."
+
+msgid "%d sec."
+msgstr "%d sn."
+
+msgid "%s Configuration"
+msgstr "%s yapılandırma"
+
+msgid "%s authentication method"
+msgstr "%s doğrulama yöntemi"
+
+msgid "%s connection"
+msgstr "%s bağlantı"
+
+msgid "%s data limit  configuration"
+msgstr "%s veri limiti  yapılandırma"
+
+msgid "%s data limit (Mb)"
+msgstr "%s veri limiti (Mb)"
+
+msgid "%s data warning"
+msgstr "%s veri uyarı"
+
+msgid "%s selected as wan - cannot enable failover link."
+msgstr "%s wan olarak seçildi - failover açılamaz."
+
+msgid "%s traffic configuration"
+msgstr "%s veri akışı yapılandırma"
+
+msgid "(%d minute window, %d second interval)"
+msgstr "(%d dakika penceresi, %d ikinci aralık)"
+
+msgid "(%s available)"
+msgstr "(%s uygun)"
+
+msgid "(Length [6-32])"
+msgstr "(Uzunluk [6-32])"
+
+msgid "(Number [0-32])"
+msgstr "(Numara [0-32])"
+
+msgid "(Unnamed Entry)"
+msgstr "(İsimsiz Giriş)"
+
+msgid "(Unnamed Rule)"
+msgstr "(İsimsiz Kural)"
+
+msgid "(Unnamed SNAT)"
+msgstr "(İsimsiz SNAT)"
+
+msgid "(empty)"
+msgstr "(boş)"
+
+msgid "(no interfaces attached)"
+msgstr "(takılı arayüz yok)"
+
+msgid "(since %s)"
+msgstr "(beri %s)"
+
+msgid "-- Additional Field --"
+msgstr "-- ilave alan --"
+
+msgid "-- Please choose --"
+msgstr "-- Lütfen seçiniz--"
+
+msgid "-- custom --"
+msgstr "-- özel --"
+
+msgid "-disabled"
+msgstr "-kapalı "
+
+msgid "0% done"
+msgstr "0% tamamlandı"
+
+msgid "1 Hour"
+msgstr "1 Saat"
+
+msgid "1 Minute Load:"
+msgstr "1 dakika Load:"
+
+msgid "15 Minute Load:"
+msgstr "15 dakika Load:"
+
+msgid "2G only"
+msgstr "Sadece 2G"
+
+msgid "2G preferred"
+msgstr "Tercih edilen 2G"
+
+msgid "2G"
+msgstr "2G"
+
+msgid "3G Configuration"
+msgstr "3G yapılandırma"
+
+msgid "3G authentication method"
+msgstr "3G doğrulama yöntemi"
+
+msgid "3G data limit (Mb)"
+msgstr "3G veri limiti (Mb)"
+
+msgid "3G data limit"
+msgstr "3G veri limiti"
+
+msgid "3G only"
+msgstr "Sadece 3G"
+
+msgid "3G preferred"
+msgstr "Tercih edilen 3G"
+
+msgid "3G traffic"
+msgstr "3G veri akışı"
+
+msgid "3G"
+msgstr "3G"
+
+msgid "40MHz 2nd channel above"
+msgstr "40MHz 2 kanal yukarı"
+
+msgid "40MHz 2nd channel below"
+msgstr "40MHz 2 kanal aşağı"
+
+msgid "4G(LTE) only"
+msgstr "Sadece 4G(LTE)"
+
+msgid "4G(LTE) preferred"
+msgstr "Tercih edilen 4G(LTE)"
+
+msgid "5 Minute Load:"
+msgstr "5 dakikada yükleme:"
+
+msgid "<abbr title=\"Basic Service Set Identifier\">BSSID</abbr>"
+msgstr "<abbr title=\"Basic Service Set Identifier\"> BSSID</abbr>"
+
+msgid "<abbr title=\"Domain Name System\">DNS</abbr>-Server"
+msgstr "<abbr title=\"Domain Name System\"> DNS</abbr>-Server"
+
+msgid "<abbr title=\"Encrypted\">Encr.</abbr>"
+msgstr "<abbr title=\"Şifreli\"> Encr.</abbr>"
+
+msgid "<abbr title=\"Extended Service Set Identifier\">ESSID</abbr>"
+msgstr "<abbr title=\"Extended Service Set Identifier\"> ESSID</abbr>"
+
+msgid "<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Address"
+msgstr "<abbr title=\"Internet Protocol Version 4\"> IPv4</abbr>-Adresi"
+
+msgid "<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Broadcast"
+msgstr "<abbr title=\"Internet Protocol Version 4\"> IPv4</abbr>-Broadcast"
+
+msgid "<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Gateway"
+msgstr "<abbr title=\"Internet Protocol Version 4\"> IPv4</abbr>-Gateway"
+
+msgid "<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Netmask"
+msgstr "<abbr title=\"Internet Protocol Version 4\"> IPv4</abbr>-Ağ Maskesi"
+
+msgid "<abbr title=\"Internet Protocol Version 6\">IPv6</abbr>-Address"
+msgstr "<abbr title=\"Internet Protocol Version 6\"> IPv6</abbr>-Adresi"
+
+msgid "<abbr title=\"Internet Protocol Version 6\">IPv6</abbr>-Gateway"
+msgstr "<abbr title=\"Internet Protocol Version 6\"> IPv6</abbr>-Gateway"
+
+msgid "<abbr title=\"Media Access Control\">MAC</abbr>-Address"
+msgstr "<abbr title=\"Media Erişim Kontrol\">MAC</abbr>-Adres"
+
+msgid "<abbr title=\"Wireless Local Area Network\">WLAN</abbr>-Scan"
+msgstr "<abbr title=\"Kablosuz Yerel Alan Ağı\"> WLAN</abbr>-Tarama"
+
+msgid "<abbr title=\"maximal\">Max.</abbr> concurrent queries"
+msgstr "<abbr title=\"maximal\"> maks.</abbr> eşzamanlı sorgu"
+
+msgid "AP IP"
+msgstr "AP IP"
+
+msgid "APN"
+msgstr "APN"
+
+msgid "AR Support"
+msgstr "AR desteği"
+
+msgid "ARP retry threshold"
+msgstr "ARP yeniden deneme "
+
+msgid "ATM Bridges"
+msgstr "ATM köprüleri"
+
+msgid "ATM Virtual Channel Identifier (VCI)"
+msgstr "ATM sanal kanal tanımlayıcısı (VCI)"
+
+msgid "ATM Virtual Path Identifier (VPI)"
+msgstr "ATM sanal yol tanımlayıcısı (VPI)"
+
+msgid "ATM device number"
+msgstr "ATM aygıt numarası"
+
+msgid "Accept router advertisements"
+msgstr "Router önerilerini Kabul et"
+
+msgid "Access Concentrator"
+msgstr "Erişim yoğunlaştırıcı"
+
+msgid "Access Point"
+msgstr "Erişim noktası"
+
+msgid "Accounting port"
+msgstr "Hesap bağlantı"
+
+msgid "Action"
+msgstr "Eylem"
+
+msgid "Actions"
+msgstr "Eylemler"
+
+msgid "Activate this network"
+msgstr "Bu ağı aktif et"
+
+msgid "Active <abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Routes"
+msgstr "etkin <abbr title=\"Internet Protocol Version 4\"> IPv4</abbr>- Routes"
+
+msgid "Active <abbr title=\"Internet Protocol Version 6\">IPv6</abbr>-Routes"
+msgstr "etkin <abbr title=\"Internet Protocol Version 6\"> IPv6</abbr>-Routes"
+
+msgid "Active Connections"
+msgstr "Aktif bağlantılar"
+
+msgid "Active IPv4-Routes"
+msgstr "Aktif IPv4 Rotalar"
+
+msgid "Active IPv6-Routes"
+msgstr "Aktif IPv6 Rotalar"
+
+msgid "Active Leases"
+msgstr "Aktif kiralamalar"
+
+msgid "Ad-Hoc"
+msgstr "Özel"
+
+msgid "Add New"
+msgstr "Yeni Ekle"
+
+msgid "Add local domain suffix to names served from hosts files"
+msgstr "Kullanıcı dosyalarından alınan adlara yerel etki alanı soneki ekle"
+
+msgid "Add new interface..."
+msgstr "Yeni arabirim ekle..."
+
+msgid "Add profile"
+msgstr "Profil ekle"
+
+msgid "Add"
+msgstr "Ekle"
+
+msgid "Additional Hosts files"
+msgstr "İlave kullanıcı dosyaları"
+
+msgid "Address to access local relay bridge"
+msgstr "Yerel Relay Bridge Erişim Adresi"
+
+msgid "Address"
+msgstr "Adres"
+
+msgid "Administration properties"
+msgstr "Yönetim özellikleri"
+
+msgid "Administration"
+msgstr "Yönetim"
+
+msgid "Administrator Password"
+msgstr "Yönetici parolası"
+
+msgid "Advanced Settings"
+msgstr "Gelişmiş Ayarlar"
+
+msgid "Advertise IPv6 on network"
+msgstr "IPv6yı networkte tanıt"
+
+msgid "Advertised network ID"
+msgstr "Tanıtılan ağ kimliği"
+
+msgid "Alert"
+msgstr "Uyarı"
+
+msgid "All configuration files will be kept."
+msgstr "Tüm yapılandırma dosyaları tutulacak."
+
+msgid "All data usage"
+msgstr "Tüm veri kullanımı"
+
+msgid "All protocols"
+msgstr "Tüm iletişim kuralları"
+
+msgid "All usage:"
+msgstr "Tüm kullanım:"
+
+msgid "All"
+msgstr "Tüm"
+
+msgid "Allow all except listed"
+msgstr "Listedekilerin tümüne izin ver"
+
+msgid "Allow client-to-client traffic"
+msgstr "İstemciler arası trafiğe izin ver"
+
+msgid "Allow forward from <em>source zones</em>:"
+msgstr "<em>kaynak bölge</em> 'den gelene izin ver:"
+
+msgid "Allow forward to <em>destination zones</em>:"
+msgstr "<em>hedef bölge</em> 'e gidene izin ver:"
+
+msgid "Allow listed only"
+msgstr "Sadece listeye izin ver"
+
+msgid "Allow localhost"
+msgstr "Yerel Kullanıcıya izin ver"
+
+msgid "Allow root logins with password"
+msgstr "Root erişimine izin ver"
+
+msgid "Allow the <em>root</em> user to login with password"
+msgstr "<em>root</em> kullanıcısına şifre ile giriş için izin ver"
+
+msgid "Allowed range is 1 to 65535"
+msgstr "Izin verilen Aralık 1-65535 "
+
+msgid "Anonymous ID"
+msgstr "Anonim kimlik"
+
+msgid "Antenna %d"
+msgstr "Anten %d"
+
+msgid "Antenna 1"
+msgstr "Anten 1"
+
+msgid "Antenna 2"
+msgstr "Anten 2"
+
+msgid "Any zone"
+msgstr "Herhangi bir bölge"
+
+msgid "Any"
+msgstr "Herhangi biri"
+
+msgid "Apply"
+msgstr "Uygula"
+
+msgid "Applying changes"
+msgstr "Uygulama değişiklikleri"
+
+msgid "Applying configuration"
+msgstr "Uygulama Yapılandırması"
+
+msgid "Apr."
+msgstr "Nisan"
+
+msgid "Associated Stations"
+msgstr "İlişkili istasyonlar"
+
+msgid "Atheros 802.11%s Wireless Controller"
+msgstr "Atheros 802.11%s kablosuz denetleyicisi"
+
+msgid "Attempts Before WAN Failover"
+msgstr "WAN yedekleme öncesi deneme sayısı"
+
+msgid "Attempts Before WAN Recovery"
+msgstr "WAN geri alma öncesi deneme sayısı"
+
+msgid "Aug."
+msgstr "Ağustos"
+
+msgid "Authentication port"
+msgstr "Doğrulama portu"
+
+msgid "Authentication"
+msgstr "Kimlik Doğrulama"
+
+msgid "Authoritative"
+msgstr "Yetkili"
+
+msgid "Authorization Required"
+msgstr "Doğrulama gerekli"
+
+msgid "Auto Key (IKE)"
+msgstr "Auto Key (IKE)"
+
+msgid "Auto Refresh"
+msgstr "Otomatik Yenile"
+
+msgid "Auto"
+msgstr "Otomatik"
+
+msgid "Available packages"
+msgstr "Mevcut Paketler"
+
+msgid "Available"
+msgstr "Uygun"
+
+msgid "Average:"
+msgstr "Ortalama:"
+
+msgid "BS MAC address"
+msgstr "BS MAC adresi"
+
+msgid "BSSID"
+msgstr "BSSID"
+
+msgid "BSSID:"
+msgstr "BSSID:"
+
+msgid "Back to Overview"
+msgstr "Genel bakışa dön"
+
+msgid "Back to configuration"
+msgstr "Ayarlara geri dön"
+
+msgid "Back to overview"
+msgstr "Genel bakışa dön"
+
+msgid "Back to scan results"
+msgstr "Tarama sonuçlarına dön"
+
+msgid "Back"
+msgstr "Geri"
+
+msgid "Background Scan"
+msgstr "Arkaplanda tarama"
+
+msgid "Backup / Flash Firmware"
+msgstr "Yedekleme / Flash Firmware"
+
+msgid "Backup / Restore"
+msgstr "Yedekle / Geri Yükle"
+
+msgid "Backup ICMP host"
+msgstr "ICMP Host yedekleme"
+
+msgid "Failover Link"
+msgstr "Yedek Link"
+
+msgid "WAN Failover Status"
+msgstr "WAN yedekleme durumu"
+
+msgid "WAN Failover"
+msgstr "WAN yedekleme"
+
+msgid "Backup and Firmware"
+msgstr "Yedekleme ve Firmware"
+
+msgid "Backup and reset configuration"
+msgstr "Yedekleme ve yapılandırmayı sıfırla"
+
+msgid "Backup archive"
+msgstr "Arşivi yedekle"
+
+msgid "Backup file list"
+msgstr "Dosya listesisini yedekle"
+
+msgid "Bad address specified!"
+msgstr "Yanlış adres girildi"
+
+msgid "Bad address"
+msgstr "Yanlış adres"
+
+msgid "Basic ipsec configuration"
+msgstr "Temel IPSec yapılandırması"
+
+msgid "Batch Number"
+msgstr "Olay numarası"
+
+msgid "Below is a list of configured OpenVPN instances and their current state"
+msgstr "Yapılandırılmış OpenVPN örnekleri ve şu anki durumları aşağıdadır"
+
+msgid "Bit Rate"
+msgstr "Bit oranı"
+
+msgid "Bit rate"
+msgstr "Bit oranı"
+
+msgid "Bitrate"
+msgstr "Bitrate"
+
+msgid "Block DNS forwarding"
+msgstr "DNS yönlendirmeyi blokla"
+
+msgid "Blocked"
+msgstr "Bloke edilmiş"
+
+msgid "Bogus NX Domain Override"
+msgstr "Sahte NX etki alanı geçersiz"
+
+msgid "Bridge interfaces"
+msgstr "Arabirimleri köprüle"
+
+msgid "Bridge mode"
+msgstr "Köprüleme modu"
+
+msgid "Bridge unit number"
+msgstr "Köprü birim numarası"
+
+msgid "Bridge"
+msgstr "Köprü"
+
+msgid "Bring up on boot"
+msgstr "Açılışta one getir"
+
+msgid "Broadcom 802.11%s Wireless Controller"
+msgstr "Broadcom 802.11%s Kablosuz Denetleyicisi"
+
+msgid "Buffered"
+msgstr "Arabelleğe Alındı"
+
+msgid "Buttons"
+msgstr "Butonlar"
+
+msgid "Bytes recieved"
+msgstr "Alınan bayt"
+
+msgid "Bytes sent"
+msgstr "Gönderilen bayt"
+
+msgid "CA certificate NULL"
+msgstr "CA sertifikası BOŞ"
+
+msgid "CHAP"
+msgstr "CHAP"
+
+msgid "CIDR (netmask) value [0-32]"
+msgstr "[0-32] CIDR (ağ maskesi) değeri"
+
+msgid "CIDR-Notation: address/prefix"
+msgstr "CIDR gösterimi: adresi/öneki"
+
+msgid "CPU usage (%)"
+msgstr "CPU kullanım (%)"
+
+msgid "CPU"
+msgstr "CPU"
+
+msgid "Cached"
+msgstr "Önbellek"
+
+msgid "Cancel"
+msgstr "İptal"
+
+msgid "Cannot enable failover link at bridge mode."
+msgstr "Köprü modunda failover link çalışmaz"
+
+msgid "Cellular configuration will be kept."
+msgstr "Hücresel yapılandırma tutulacak."
+
+msgid "Certificate authority"
+msgstr "Sertifika yetkilisi"
+
+msgid "Chain"
+msgstr "Zincir"
+
+msgid "Change process priority"
+msgstr "İşlem önceliğini değiştirme"
+
+msgid "Changes applied."
+msgstr "Değişiklikler uygulandı"
+
+msgid "Changes the administrator password for accessing the device"
+msgstr "Cihaza erişmek için yönetici parolasını değiştirir"
+
+msgid "Changes"
+msgstr "Değişiklikler"
+
+msgid "Channel"
+msgstr "Kanal"
+
+msgid "Channel:"
+msgstr "Kanal:"
+
+msgid "Check"
+msgstr "Kontrol"
+
+msgid "Checksum"
+msgstr "Sağlama"
+
+msgid "Cipher"
+msgstr "Cipher"
+
+msgid "Click to reboot"
+msgstr "Yeniden başlat"
+
+msgid "Client ID to send when requesting DHCP"
+msgstr "Client ID - DHCP için"
+
+msgid "Client"
+msgstr "İstemci"
+
+msgid "Clock Adjustment"
+msgstr "Saati ayarlama"
+
+msgid "Close list..."
+msgstr "Listeyi kapat"
+
+msgid "Collecting data..."
+msgstr "Veri toplanıyor..."
+
+msgid "Combined CA"
+msgstr "CA kombine"
+
+msgid "Command"
+msgstr "Komut"
+
+msgid "Common Configuration"
+msgstr "Genel Yapılandırma"
+
+msgid "Common configuration"
+msgstr "Genel yapılandırma"
+
+msgid "Community name"
+msgstr "Topluluk adı"
+
+msgid "Community"
+msgstr "Topluluk"
+
+msgid "Compression"
+msgstr "Sıkıştırma"
+
+msgid "Configuration / Apply"
+msgstr "Yapılandırma / Uygula"
+
+msgid "Configuration / Changes"
+msgstr "Yapılandırma / Değişiklikler"
+
+msgid "Configuration / Revert"
+msgstr "Yapılandırma / İptal"
+
+msgid "Configuration Profiles"
+msgstr "Yapılandırma Profilleri"
+
+msgid "Configuration Wizard"
+msgstr "Yapılandırma Sihirbazı"
+
+msgid "Configuration applied."
+msgstr "Yapılandırma uygulandı"
+
+msgid "Configuration category"
+msgstr "Yapılandırma kategorisi"
+
+msgid "Configuration files will be kept."
+msgstr "Yapılandırma dosyaları tutulacak"
+
+msgid "Configuration"
+msgstr "Yapılandırma"
+
+msgid "Configure client mode"
+msgstr "İstemci modunu ayarla"
+
+msgid "Configure server bridge"
+msgstr "Sunucu köprüsünü ayarla"
+
+msgid "Configure server mode"
+msgstr "Sunucu modu ayarlama"
+
+msgid "Configures this mount as overlay storage for block-extroot"
+msgstr "Bu yuvayı block-extroot için yardımcı hafıza olarak ayarla"
+
+msgid "Confirmation"
+msgstr "Onay"
+
+msgid "Connect WRP100 automatically"
+msgstr "WRP100 e otomatik olarak bağlan"
+
+msgid "Connect"
+msgstr "Bağlan"
+
+msgid "Connected"
+msgstr "Bağlandı"
+
+msgid "Connecting..."
+msgstr "Bağlanıyor..."
+
+msgid "Connection Limit"
+msgstr "Bağlantı Limiti"
+
+msgid "Connection type"
+msgstr "Bağlantı türü"
+
+msgid "Connections"
+msgstr "Bağlantılar"
+
+msgid "Contact"
+msgstr "İletişim"
+
+msgid "Content blocker"
+msgstr "İçerik Engelleyicisi"
+
+msgid "Could not reset database."
+msgstr "Veritabanı sıfırlanamadı."
+
+msgid "Count of time measurements"
+msgstr "Zaman ölçümleri sayısı"
+
+msgid "Country Code"
+msgstr "Ülke kodu"
+
+msgid "Country"
+msgstr "Ülke"
+
+msgid "Cover the following interface"
+msgstr "Sonraki arabirimi kapsa"
+
+msgid "Cover the following interfaces"
+msgstr "Sonraki arabirimleri kapsa"
+
+msgid "Covered networks"
+msgstr "Kapsanan ağlar"
+
+msgid "Create / Assign firewall-zone"
+msgstr "Güvenlik duvarı alanı oluştur / Yarat"
+
+msgid "Create Interface"
+msgstr "Arayüz oluştur"
+
+msgid "Create Network"
+msgstr "Ağ oluşturma"
+
+msgid "Create a bridge over multiple interfaces"
+msgstr "Birden çok arabirim üzerinde bir köprü oluşturma"
+
+msgid "Create a new profile from current configuration:"
+msgstr "Mevcut yapılandırmadan yeni bir profil oluşturun:"
+
+msgid "Created"
+msgstr "Oluşturuldu"
+
+msgid "Critical"
+msgstr "Kritik"
+
+msgid "Cron Log Level"
+msgstr "Cron LOG seviyesi"
+
+msgid "Cryptography"
+msgstr "Şifreleme"
+
+msgid "Current system time"
+msgstr "Geçerli sistem saati"
+
+msgid "Custom Interface"
+msgstr "Özel arabirim"
+
+msgid "Custom Rules"
+msgstr "Özel kurallar"
+
+msgid "Custom regular expression"
+msgstr "Özel kurallı ifade"
+
+msgid "Custom update-URL"
+msgstr "Özel güncel-URL"
+
+msgid "Customizes the behaviour of the device LEDs if possible."
+msgstr "LED davranışlarını mümkünse kontrol et"
+
+msgid "DCHP Client"
+msgstr "DCHP istemci"
+
+msgid "DH group"
+msgstr "DH grubu"
+
+msgid "DHCP Leases"
+msgstr "DHCP kiraları"
+
+msgid "DHCP Server"
+msgstr "DHCP sunucusu"
+
+msgid "DHCP and DNS"
+msgstr "DHCP ve DNS"
+
+msgid "DHCP client"
+msgstr "DHCP istemci"
+
+msgid "DHCP"
+msgstr "DHCP"
+
+msgid "DHCP-Options"
+msgstr "DHCP seçenekleri"
+
+msgid "DMZ configuration"
+msgstr "DMZ yapılandırma"
+
+msgid "DMZ host IP address"
+msgstr "DMZ host IP adresi"
+
+msgid "DNS Server(s)"
+msgstr "DNS sunucusu(ları)"
+
+msgid "DNS forwardings"
+msgstr "DNS yönlendirme"
+
+msgid "DNS query port"
+msgstr "DNS sorgu portu"
+
+msgid "DNS server port"
+msgstr "DNS server portu"
+
+msgid "DNS servers will be queried in the order of the resolvfile"
+msgstr "DNS sunucuları çözüm dosyasına göre sıralanacak"
+
+msgid "DNS"
+msgstr "DNS"
+
+msgid "DNS-Server"
+msgstr "DNS sunucusu"
+
+msgid "DPD enable"
+msgstr "DPD etkinleştir"
+
+msgid "Daily data usage"
+msgstr "Günlük veri kullanımı"
+
+msgid "Daily"
+msgstr "Günlük"
+
+msgid "Date"
+msgstr "Tarih"
+
+msgid "Day usage:"
+msgstr "Günlük kullanım:"
+
+msgid "Day"
+msgstr "Gün"
+
+msgid "Dead peer detection"
+msgstr "Kapanmış uç birim algılama"
+
+msgid "Debug"
+msgstr "Debug"
+
+msgid "Dec."
+msgstr "Aralık"
+
+msgid "Default %d"
+msgstr "Varsayılan %d"
+
+msgid "Default Route"
+msgstr "Varsayılan rota"
+
+msgid "Default gateway"
+msgstr "Varsayılan ağ geçidi"
+
+msgid "Default state"
+msgstr "Varsayılan durum"
+
+msgid "Define a name for this network."
+msgstr "Bu ağ için bir ad tanımlayın."
+
+msgid "Delay (sec)"
+msgstr "Gecikme (sn)"
+
+msgid "Delay between requesting peer acknowledgement"
+msgstr "Sorgulama noktaları arası erteleme bilgisi onayı"
+
+msgid "Delete this interface"
+msgstr "Bu arabirimi sil"
+
+msgid "Delete this network"
+msgstr "Bu ağı sil"
+
+msgid "Delete"
+msgstr "Sil"
+
+msgid "Description"
+msgstr "Açıklama"
+
+msgid "Design"
+msgstr "Tasarım"
+
+msgid "Destination Address"
+msgstr "Hedef adresi"
+
+msgid "Destination IP address"
+msgstr "Hedef IP adresi"
+
+msgid "Destination address"
+msgstr "Hedef adresi"
+
+msgid "Destination port"
+msgstr "Hedef port"
+
+msgid "Destination zone"
+msgstr "Hedef bölgesi"
+
+msgid "Destination"
+msgstr "Hedef"
+
+msgid "Device Cert"
+msgstr "Aygıt sertifikası"
+
+msgid "Device Configuration"
+msgstr "Aygıt yapılandırması"
+
+msgid "Device certificate NULL"
+msgstr "Aygıt sertifikası BOŞ"
+
+msgid "Device"
+msgstr "Aygıt"
+
+msgid "Diagnostics"
+msgstr "Hata Tespiti"
+
+msgid "Dialing number"
+msgstr "Arama numarası"
+
+msgid "Diffie Hellman parameters"
+msgstr "Diffie Hellman parametreleri"
+
+msgid "Directory"
+msgstr "Dizin"
+
+msgid "Disable DHCP for this interface."
+msgstr "Bu arabirim için DHCP'yi kapat"
+
+msgid "Disable DNS setup"
+msgstr "DNS ayarlarını kapat"
+
+msgid "Disable EAP TLS session ticket"
+msgstr "EAP TLS oturumunu kapat"
+
+msgid "Disable HW-Beacon timer"
+msgstr "HW-Beacon zamanlayıcısını kapat"
+
+msgid "Disable NAT"
+msgstr "NAT'ı kapat"
+
+msgid "Disable"
+msgstr "Kapat"
+
+msgid "Disabled"
+msgstr "Kapalı"
+
+msgid "Discard upstream RFC1918 responses"
+msgstr "Upstream RFC1918 yanıtlarını göz ardı et"
+
+msgid "Disconnected"
+msgstr "Bağlantı kesildi"
+
+msgid "Displaying only packages containing"
+msgstr "Paket içeriği olanlar görüntüleniyor"
+
+msgid "Distance Optimization"
+msgstr "Mesafe optimizasyonu"
+
+msgid "Distance to farthest network member in meters."
+msgstr "Metre olarak en uzak ağ üyesine uzaklık."
+
+msgid "Diversity"
+msgstr "Çeşitlilik"
+
+msgid "Dnsmasq is a combined DHCP-Server and DNS-Forwarder for NAT firewalls"
+msgstr ""
+"Dnsmasq NAT güvenlik duvarı için  hem DHCP-Server hem de DNS-Forwarder "
+"içerir "
+
+msgid "Do not cache negative replies, e.g. for not existing domains"
+msgstr "Var olmayan domainlere ait olumsuz cevapları hafızada tutma"
+
+msgid "Do not forward requests that cannot be answered by public name servers"
+msgstr "Public DNS tarafından cevaplanmayan istekleri yönlendirme"
+
+msgid "Do not forward reverse lookups for local networks"
+msgstr "Ters DNS isteklerini yerel ağ için yönlendirme"
+
+msgid "Do not rewrite"
+msgstr "Yeniden yazma"
+
+msgid "Do not send probe responses"
+msgstr "Probe cevaplarını gönderme"
+
+msgid "Domain required"
+msgstr "Domain gerekli"
+
+msgid "Domain whitelist"
+msgstr "Domain beyazliste"
+
+msgid "Don't forget to save before toggling the wireless radio on and off."
+msgstr "Kablosuz ağı kapatıp açmadan once kaydetmeyi unutmayın"
+
+msgid "Don't forward DNS-Requests without DNS-Name"
+msgstr "DNS adı olmadan DNS isteklerini yönlendirme"
+
+msgid "Downlink Modulation"
+msgstr "Downlink Modülasyonu"
+
+msgid "Download and install package"
+msgstr "Paketi indir ve yükle"
+
+msgid "Download backup"
+msgstr "Yedeği indir"
+
+msgid "Download"
+msgstr "İndir"
+
+msgid "Drop invalid packets"
+msgstr "Hatalı paketleri yoksay"
+
+msgid "Dropbear Instance"
+msgstr "Dropbear Instance"
+
+msgid "Dynamic <abbr title=\"Dynamic Host Configuration Protocol\">DHCP</abbr>"
+msgstr ""
+"Dinamik <abbr title=\"Dynamic Host Configuration Protocol\">DHCP</abbr>"
+
+msgid "DHCP"
+msgstr "Dinamik DHCP"
+
+msgid "Dynamic DNS configuration will be kept."
+msgstr "Dinamik DNS ayarları tutulacak"
+
+msgid "Dynamic DNS"
+msgstr "Dinamik DNS"
+
+msgid "Dynamic tunnel"
+msgstr "Dinamik tünel"
+
+msgid "EAP Type"
+msgstr "EAP Tipi"
+
+msgid "EAP-Method"
+msgstr "EAP-Metodu"
+
+msgid "ESSID"
+msgstr "ESSID"
+
+msgid "Edit this interface"
+msgstr "Bu arabirimi düzenle"
+
+msgid "Edit this network"
+msgstr "Bu ağı düzenle"
+
+msgid "Edit"
+msgstr "Düzenle"
+
+msgid "Emergency"
+msgstr "Acil"
+
+msgid "Enable %s data limit"
+msgstr "%s veri limitini aktif et"
+
+msgid "Enable %s limit warninig"
+msgstr "%s Limit uyarısını aktif et"
+
+msgid "Enable %s traffic"
+msgstr "%s veri akışını aktif et"
+
+msgid "Enable <abbr title=\"Spanning Tree Protocol\">STP</abbr>"
+msgstr "<abbr title=\"Spanning Tree Protocol\">STP</abbr> Aktif et"
+
+msgid "Enable GRE Tunnel"
+msgstr "GRE Tüneli aktif et"
+
+msgid "Enable HE.net dynamic endpoint update"
+msgstr "HE.net dynamic endpoint güncellemesini aktif et"
+
+msgid "Enable IPsec"
+msgstr "IPsec'i aktif et"
+
+msgid "Enable IPv6 negotiation on the PPP link"
+msgstr "PPP link üzerinde IPv6 negotiationı aktif et"
+
+msgid "Enable Jumbo Frame passthrough"
+msgstr "Jumbo Frame passthrough aktif et"
+
+msgid "Enable NAT Loopback"
+msgstr "NAT Loopback'i Aktif et"
+
+msgid "Enable NAT traversal"
+msgstr "NAT traversal'i aktif et"
+
+msgid "Enable Ping Reboot"
+msgstr "Ping Reboot Aktif et"
+
+msgid "Enable SMS Reboot"
+msgstr "SMS Reboot Aktif Et"
+
+msgid "Enable SMS Status"
+msgstr "SMS Durum aktif et"
+
+msgid "Enable SNMP service"
+msgstr "SNMP Servisini Aktif Et"
+
+msgid "Enable STP"
+msgstr "STP Aktif Et"
+
+msgid "Enable SYN-flood protection"
+msgstr "SYN-flood korumasını aktif et"
+
+msgid "Enable Static Key encryption mode (non-TLS)"
+msgstr "Static Key (non-TLS) Şifreleme modunu aktif et"
+
+msgid "Enable TFTP server"
+msgstr "TFTP Sunucusunu aktif et"
+
+msgid "Enable VLAN functionality"
+msgstr "VLAN özelliğini aktif et"
+
+msgid "Enable buffering"
+msgstr "Arabelleği aktif et"
+
+msgid "Enable builtin NTP server"
+msgstr "Builtin NTP Sunucusunu aktif et"
+
+msgid "Enable filter"
+msgstr "Filtreyi aç"
+
+msgid "Enable initial contact"
+msgstr "Başlangıç irtibatını aç"
+
+msgid "Enable keep alive"
+msgstr "Canlı tutma özelliğini aç"
+
+msgid "Enable learning and aging"
+msgstr "Learning and Aging özelliğini aç"
+
+msgid "Enable logging on this zone"
+msgstr "Bu alanda loglamayı aktif et"
+
+msgid "Enable remote access"
+msgstr "Uzak erişimi aç"
+
+msgid "Enable site blocking"
+msgstr "Site bloklamayı aç"
+
+msgid "Enable this mount"
+msgstr "Bu yuvayı aç"
+
+msgid "Enable this swap"
+msgstr "Bu değişimi aç"
+
+msgid "Enable"
+msgstr "Aktif Et"
+
+msgid "Enable/Disable"
+msgstr "Aktif Et/ İnaktif Et"
+
+msgid "Enabled"
+msgstr "Aktif Edildi"
+
+msgid "Enables the Spanning Tree Protocol on this bridge"
+msgstr "Spanning tree protokolünü bu köprüde aç"
+
+msgid "Encapsulation mode"
+msgstr "Encapsulation Modu"
+
+msgid "Encr."
+msgstr "Şifreleme"
+
+msgid "Encryption algorithm"
+msgstr "Şifreleme algoritması"
+
+msgid "Encryption"
+msgstr "Şifreleme"
+
+msgid "Encryption:"
+msgstr "Şifreleme:"
+
+msgid "Erasing..."
+msgstr "Siliniyor..."
+
+msgid "Error"
+msgstr "Hata"
+
+msgid "Ethernet Adapter"
+msgstr "Ethernet Kartı"
+
+msgid "Ethernet Switch"
+msgstr "Ethernet switch"
+
+msgid "Expand hosts"
+msgstr "Hostları genişlet"
+
+msgid "Expires"
+msgstr "Sona erme zamanı"
+
+msgid "External IP address"
+msgstr "Dış IP Adresi"
+
+msgid "External port"
+msgstr "Harici port"
+
+msgid "External system log server port"
+msgstr "Harici LOG sunucu portu"
+
+msgid "External system log server"
+msgstr "Harici sistem log sunucusu"
+
+msgid "Extra arguments"
+msgstr "Ekstra parametler"
+
+msgid "FTP upload intervals"
+msgstr "FTP upload aralıkları"
+
+msgid "FTP upload settings"
+msgstr "FTP upload ayararı"
+
+msgid "Family"
+msgstr "Aile"
+
+msgid "Fast Frames"
+msgstr "Hızlı çerçeveler"
+
+msgid "Feb."
+msgstr "Şubat"
+
+msgid "File"
+msgstr "Dosya"
+
+msgid "Filename of the boot image advertised to clients"
+msgstr "Boot imaj dosya adı istemcilere duyuruldu"
+
+msgid "Filesystem"
+msgstr "Dosya sistemi"
+
+msgid "Filter URL rules"
+msgstr "URL Filtreleme kuralları"
+
+msgid "Filter private"
+msgstr "Özel filtreler"
+
+msgid "Filter useless"
+msgstr "Kullanılmayan filtreler"
+
+msgid "Filter"
+msgstr "Filtre"
+
+msgid "Find and join network"
+msgstr "Bir ağ bul ve katıl"
+
+msgid "Find package"
+msgstr "Paket bul"
+
+msgid "Finish"
+msgstr "Bitirmek"
+
+msgid "Firewall - Custom Rules"
+msgstr "Güvenlik Duvarı - Özel kurallar"
+
+msgid "Firewall - Port Forwarding"
+msgstr "Güvenlik Duvarı - Port Yönlendirme"
+
+msgid "Firewall - Port Forwards"
+msgstr "Güvenlik Duvarı - Yönlenen portlar"
+
+msgid "Firewall - Traffic Rules"
+msgstr "Güvenlik Duvarı - Trafik kuralları"
+
+msgid "Firewall - Zone Settings"
+msgstr "Güvenlik Duvarı - Alan Ayarları"
+
+msgid "Firewall Settings"
+msgstr "Güvenlik Duvarı Ayarları"
+
+msgid "Firewall Status"
+msgstr "Güvenlik Duvarı Durumu"
+
+msgid "Firewall configuration will be kept."
+msgstr "Güvenlik duvarı ayarları tutulacak"
+
+msgid "Firewall"
+msgstr "Güvenlik Duvarı"
+
+msgid "Firmware Version"
+msgstr "Yazılım Sürümü"
+
+msgid "Firmware upgrade - "
+msgstr "Yazılım güncelleme - "
+
+msgid "Firmware upgrade"
+msgstr "Yazılım güncelleme"
+
+msgid "First, let's change your router password from the default one."
+msgstr "Öncelikle varsayılan router şifresini değiştirmelisiniz"
+
+msgid "First, let's change your routerd password from the default one."
+msgstr "Öncelikle varsayılan router şifresini değiştirmelisiniz"
+
+msgid "Fixed source port for outbound DNS queries"
+msgstr "Dış DNS sorguları için ayarlanmış kaynak port"
+
+msgid "Fixed"
+msgstr "Sabit"
+
+msgid "Flags"
+msgstr "İşaretler"
+
+msgid "Flash Firmware"
+msgstr "Flash Yazılımı"
+
+msgid "Flash image..."
+msgstr "Flash image..."
+
+msgid "Flash memory"
+msgstr "Flash Hafızası"
+
+msgid "Flash new firmware image"
+msgstr "Flash new firmware image"
+
+msgid "Flash operations"
+msgstr "Flash operasyonları"
+
+msgid "Flashing..."
+msgstr "Flashing..."
+
+msgid "Forbidden"
+msgstr "Yasaklanmış"
+
+msgid "Force CCMP (AES)"
+msgstr "CCMP (AES) Zorlaması"
+
+msgid "Force DHCP on this network even if another server is detected."
+msgstr "Başka sunucu algılansa bile bu ağ için DHCP zorla"
+
+msgid "Force IP renew (min)"
+msgstr "IP yenilemeye zorla (dak)"
+
+msgid "Force TKIP and CCMP (AES)"
+msgstr "TKIP ve CCMP (AES) için zorla"
+
+msgid "Force TKIP"
+msgstr "TKIP için Zorla"
+
+msgid "Force connection tracking"
+msgstr "Bağlantı izlemeye zorla"
+
+msgid "Force"
+msgstr "Zorla"
+
+msgid "Forward DHCP traffic"
+msgstr "DHCP trafiğini yönlendir"
+
+msgid "Forward broadcast traffic"
+msgstr "Broadcast trafiğini yönlendir"
+
+msgid "Forward to %s in %s"
+msgstr "Buraya yönlendir %s in %s"
+
+msgid "Forward to %s, %s in %s"
+msgstr "Buraya yönlendir %s, %s in %s"
+
+msgid "Forward"
+msgstr "İlet"
+
+msgid "Forwarding mode"
+msgstr "Yönlendirme modu"
+
+msgid "Fragmentation Threshold"
+msgstr "Fragmentasyon Eşiği"
+
+msgid "Frame Bursting"
+msgstr "Frame Bursting"
+
+msgid "Free space"
+msgstr "Boş alan"
+
+msgid "Free"
+msgstr "Boş"
+
+msgid "Frequency Hopping"
+msgstr "Frekans Değişimi"
+
+msgid "Fri."
+msgstr "Cuma"
+
+msgid "Friday"
+msgstr "Cuma"
+
+msgid "From %s in %s with source %s and %s"
+msgstr "den %s in %s kaynak: %s ve %s"
+
+msgid "From %s in %s with source %s"
+msgstr "den %s in %s kaynak %s"
+
+msgid "From %s in %s"
+msgstr "den %s in %s"
+
+msgid "GRE Tunnel"
+msgstr "GRE Tünel"
+
+msgid "GRE tunneling over TCP/IP network settings"
+msgstr "TCP IP üzerinde GRE Tünel"
+
+msgid "GRE"
+msgstr "GRE"
+
+msgid "Gateway ports"
+msgstr "Gateway portları"
+
+msgid "Gateway"
+msgstr "Gateway"
+
+msgid "General Settings"
+msgstr "Genel Ayarları"
+
+msgid "General Setup"
+msgstr "Genel Kurulum"
+
+msgid "General settings allows you to set up default firewall policy."
+msgstr "Genel izinler varsayılan güvenlik duvarı ayarlarına izin verir"
+
+msgid "General"
+msgstr "Genel"
+
+msgid "Generate archive"
+msgstr "Arşiv oluştur"
+
+msgid "Generic 802.11%s Wireless Controller"
+msgstr "802.11%s Kablosuz ağ kartı"
+
+msgid "Get %s data limit via SMS"
+msgstr "%s Veri limitini SMS ile al"
+
+msgid "Get network status via SMS"
+msgstr "Ağ durumunu SMS ile öğren"
+
+msgid "Get status"
+msgstr "Durum bilgisi alma"
+
+msgid "Given password confirmation did not match, password not changed!"
+msgstr "Şifre bilgileri hataları, şifre değişmedi!"
+
+msgid "Go to password configuration..."
+msgstr "Şifre ayarlarına git"
+
+msgid "Go to relevant configuration page"
+msgstr "İlgili ayar sayfasına git"
+
+msgid "HE.net password"
+msgstr "HE.net şifresi"
+
+msgid "HE.net user ID"
+msgstr "HE.net Kullanıcı ID"
+
+msgid "HT capabilities"
+msgstr "HT özellikleri"
+
+msgid "HT mode"
+msgstr "HT modu"
+
+msgid "HTTP Web Server port"
+msgstr "HTTP Web sunucu portu"
+
+msgid "HTTPS Web Server port"
+msgstr "HTTPS Web sunucu portu"
+
+msgid "Handler"
+msgstr "İşleyici"
+
+msgid "Hang Up"
+msgstr "Takılı kalma"
+
+msgid "Hardware Revision"
+msgstr "Donanım uyarlama"
+
+msgid "Hash algorithm"
+msgstr "Sağlama algoritması"
+
+msgid "Health Monitor ICMP Host(s)"
+msgstr "ICMP Sağlık durumu kontrol"
+
+msgid "Health Monitor ICMP Timeout"
+msgstr "Sağlık control ICMP zaman aşımı"
+
+msgid "Health Monitor Interval"
+msgstr "Sağlık kontrolü zaman aralığı"
+
+msgid "Here you can configure host blocking list"
+msgstr "Engellenecek hostların listesini buradan ayarlayabilirsiniz"
+
+msgid "Here you can configure web content filtering"
+msgstr "Web içerik filtreleme ayarlarını buradan yapınız"
+
+msgid "Here you can configure your %s data limit settings."
+msgstr "%s veri limiti ayarlarını buradan yapınız."
+
+msgid "Here you can configure your %s settings."
+msgstr " %s Ayarlarını buradan yapınız."
+
+msgid "Here you can configure your %s traffic settings."
+msgstr " %s trafik ayarlarını buradan yapınız"
+
+msgid "Here you can configure your 3G settings."
+msgstr "3G ayarlarını buradan yapınız"
+
+msgid "Here you can configure your WiMAX settings."
+msgstr "WiMax ayarlarını buradan yapınız"
+
+msgid "Here you can disable WiMAX connection or reboot the modem."
+msgstr "WiMAX bağlantsını buradan kapatıp yeniden başlatabilirsiniz"
+
+msgid "Hermes 802.11b Wireless Controller"
+msgstr "Hermes 802.11b Wireless Controller"
+
+msgid "Hide <abbr title=\"Extended Service Set Identifier\">ESSID</abbr>"
+msgstr " <abbr title=\"Extended Service Set Identifier\">ESSID</abbr> Gizleme"
+
+msgid "Hide ESSID"
+msgstr "ESSID Gizleme"
+
+msgid "Host entries"
+msgstr "Host girdileri"
+
+msgid "Host expiry timeout"
+msgstr "Host zaman aşımı bitimi"
+
+msgid "Host name"
+msgstr "Host adı"
+
+msgid "Host-<abbr title=\"Internet Protocol Address\">IP</abbr> or Network"
+msgstr "Host-<abbr title=\"Internet Protocol Address\">IP</abbr> veya Ağ"
+
+msgid "Host-IP or Network"
+msgstr "Host-IP veya Ağ"
+
+msgid "Hostname to send when requesting DHCP"
+msgstr "DHCP istediğinde host adını gönder"
+
+msgid "Hostname"
+msgstr "Bilgisayar Adı"
+
+msgid "Hostnames"
+msgstr "Bilgisayar Adları"
+
+msgid "Hotspot name"
+msgstr "Erişim Noktası Adı"
+
+msgid "Hour"
+msgstr "Saat"
+
+msgid "Http"
+msgstr "Http"
+
+msgid "Https"
+msgstr "Https"
+
+msgid "ICMP host"
+msgstr "ICMP host"
+
+msgid "IMEI"
+msgstr "IMEI"
+
+msgid "IN USE"
+msgstr "Kullanımda"
+
+msgid "IP address expected in \"My identifier\" field"
+msgstr "\"My identifier\" alanında IP adresi bekleniyor"
+
+msgid "IP address"
+msgstr "IP adresi"
+
+msgid "IP address. Leave blank for anonymous"
+msgstr "IP adresi. Bilinmeyenler için boş bırakın"
+
+msgid "IP renew interval (min)"
+msgstr "IP yenileme aralığı interval (dk)"
+
+msgid "IP-Aliases"
+msgstr "IP-Aliases"
+
+msgid "IPSec key exchange mode"
+msgstr "IPSec key exchange mode"
+
+msgid "IPsec"
+msgstr "IPsec"
+
+msgid "IPv4 Firewall"
+msgstr "IPv4 Güvenlik Duvarı"
+
+msgid "IPv4 WAN Status"
+msgstr "IPv4 WAN Durumu"
+
+msgid "IPv4 address"
+msgstr "IPv4 adresi"
+
+msgid "IPv4 and IPv6"
+msgstr "IPv4 ve IPv6"
+
+msgid "IPv4 broadcast"
+msgstr "IPv4 broadcast"
+
+msgid "IPv4 gateway"
+msgstr "IPv4 gateway"
+
+msgid "IPv4 netmask"
+msgstr "IPv4 netmask"
+
+msgid "IPv4 only"
+msgstr "IPv4 sadece"
+
+msgid "IPv4"
+msgstr "IPv4"
+
+msgid "IPv4-Address"
+msgstr "IPv4-Adresi"
+
+msgid "IPv4-Broadcast"
+msgstr "IPv4-Broadcast"
+
+msgid "IPv4-Gateway"
+msgstr "IPv4-Gateway"
+
+msgid "IPv4-Netmask"
+msgstr "IPv4-Netmask"
+
+msgid "IPv6 Address"
+msgstr "IPv6 Adresi"
+
+msgid "IPv6 Firewall"
+msgstr "IPv6 Güvenlik Duvarı"
+
+msgid "IPv6 Setup"
+msgstr "IPv6 Kurulumu"
+
+msgid "IPv6 WAN Status"
+msgstr "IPv6 WAN Durumu"
+
+msgid "IPv6 address"
+msgstr "IPv6 adresi"
+
+msgid "IPv6 gateway"
+msgstr "IPv6 gateway"
+
+msgid "IPv6 only"
+msgstr "IPv6 sadece"
+
+msgid "IPv6"
+msgstr "IPv6"
+
+msgid "IPv6-Address or Network (CIDR)"
+msgstr "IPv6-Adresi veya Ağ (CIDR)"
+
+msgid "IPv6-Address"
+msgstr "IPv6-Adresi"
+
+msgid "IPv6-Gateway"
+msgstr "IPv6-Ağ Geçidi"
+
+msgid "IPv6-in-IPv4 (RFC4213)"
+msgstr "IPv6-in-IPv4 (RFC4213)"
+
+msgid "IPv6-over-IPv4"
+msgstr "IPv6-over-IPv4"
+
+msgid "Identity"
+msgstr "Kimlik"
+
+msgid "If checked, router will not perform NAT (Masquerade) on this interface"
+msgstr "İşaretlenirse bu arabirim üzerinde NAT çalışmaz"
+
+msgid "If unchecked, no default route is configured"
+msgstr "Eğer işaretli değilse varsayılan yönlendirme çalışmaz"
+
+msgid "If unchecked, the advertised DNS server addresses are ignored"
+msgstr "Eğer işaretli değilse yayınlanmış DNS sunucu adresi yoksayılır"
+
+msgid "Ignore Hosts files"
+msgstr "Host dosyalarını yoksay"
+
+msgid "Ignore interface"
+msgstr "Arabirimi yoksay"
+
+msgid "Ignore resolve file"
+msgstr "Dosya çözümlümeyi yoksay"
+
+msgid "Image"
+msgstr "Imaj"
+
+msgid "In"
+msgstr "In"
+
+msgid "Inactivity timeout"
+msgstr "Hareketsizlik zamanaşımı"
+
+msgid "Inbound:"
+msgstr "Gelen:"
+
+msgid "Include Chat script information"
+msgstr "Chat script bilgilerini dahil et"
+
+msgid "Include GSMD information"
+msgstr "GSMD bilgilerini dahil et"
+
+msgid "Include PPPD information"
+msgstr "PPPD bilgilerini dahil et"
+
+msgid "Info"
+msgstr "Bilgi"
+
+msgid "Initscript"
+msgstr "Initscript"
+
+msgid "Initscripts"
+msgstr "Initscripts"
+
+msgid "Input"
+msgstr "Giriş"
+
+msgid "Install package %q"
+msgstr "Paketi yükle %q"
+
+msgid "Install protocol extensions..."
+msgstr "Protokol uzantılarını yükle"
+
+msgid "Install"
+msgstr "Yükle"
+
+msgid "Installed packages"
+msgstr "Yüklü paketler"
+
+msgid "Inter-Zone Forwarding"
+msgstr "Inter-Zone Yönlendirme"
+
+msgid "Interface Configuration"
+msgstr "Arabirim  yapılandırma"
+
+msgid "Interface Overview"
+msgstr "Arabirim genel bakış"
+
+msgid "Interface is reconnecting..."
+msgstr "Arabirim yeniden bağlanıyor..."
+
+msgid "Interface is shutting down..."
+msgstr "Arabirim kapatılıyor..."
+
+msgid "Interface not present or not connected yet."
+msgstr "Arabirim hazır değil veya bağlanmadı"
+
+msgid "Interface reconnected"
+msgstr "Arabirim yeniden bağlandı"
+
+msgid "Interface shut down"
+msgstr "Arabirim kapat"
+
+msgid "Interface"
+msgstr "Arabirim"
+
+msgid "Interfaces"
+msgstr "Arabirimler"
+
+msgid "Internal IP address"
+msgstr "İç IP Adresi"
+
+msgid "Internal port"
+msgstr "Dahili port"
+
+msgid "Internal zone"
+msgstr "Dahili alan"
+
+msgid "Interval between pings"
+msgstr "Pingler arası bekleme süresi"
+
+msgid "Interval between records (sec)"
+msgstr "Kayıtlar arası bekleme süresi (sn.)"
+
+msgid "Interval"
+msgstr "Bekleme süresi"
+
+msgid "Invalid VLAN ID given! Only IDs between %d and %d are allowed."
+msgstr ""
+"Hatalı VLAN ID verildi! Sadece %d ve %d arasındaki değerler Kabul edilir"
+
+msgid "Invalid VLAN ID given! Only unique IDs are allowed"
+msgstr "Hatalı VLAN ID verildi. Sadece benzersiz ID'ler Kabul edilir"
+
+msgid "Invalid username and/or password! Please try again."
+msgstr "Hatalı kullanıcı adı veya şifre. Tekrar deneyin"
+
+msgid "Invalid"
+msgstr "Hatalı"
+
+msgid "Ipsec settings: Successfully changed"
+msgstr "IPsec ayarları başarıyla değiştirildi."
+
+msgid "Jan."
+msgstr "Ocak"
+
+msgid "Java Script required!"
+msgstr "Java Script gerekli!"
+
+msgid "Join Network"
+msgstr "Ağa katıl"
+
+msgid "Join Network: Settings"
+msgstr "Ağa katıl: Ayarlar"
+
+msgid "Join Network: Wireless Scan"
+msgstr "Ağa katıl: Kablosuz Ağ Arama"
+
+msgid "Join Network: \"%s\""
+msgstr "Ağa katıl: \"%s\""
+
+msgid "July."
+msgstr "Ağustos"
+
+msgid "June."
+msgstr "Haziran"
+
+msgid "Keep LAN settings"
+msgstr "LAN ayarlarını kaydet"
+
+msgid "Keep OpenVPN settings"
+msgstr "Open VPN ayarlarını kaydet"
+
+msgid "Keep all network settings"
+msgstr "Tüm ağ ayarlarını kaydet"
+
+msgid "Keep all settings"
+msgstr "Tüm ayarları kaydet"
+
+msgid "Keep cellular settings"
+msgstr "Hücresel ağ ayarlarını kaydet"
+
+msgid "Keep dynamic DNS settings"
+msgstr "Dinamik DNS ayarlarını kaydet"
+
+msgid "Keep firewall settings"
+msgstr "Güvenlik duvarı ayarlarını kaydet"
+
+msgid "Keep settings"
+msgstr "Ayarları kaydet"
+
+msgid "Keep wireless settings"
+msgstr "Kablosuz Ağ ayarlarını kaydet"
+
+msgid "Kernel Log"
+msgstr "Kernel Log"
+
+msgid "Kernel Version"
+msgstr "Kernel Sürümü"
+
+msgid "Key #%d"
+msgstr "Key #%d"
+
+msgid "Key"
+msgstr "Key"
+
+msgid "Kill"
+msgstr "Durdur"
+
+msgid "LAN configuration will be kept."
+msgstr "LAN ayarları kaydedilecek"
+
+msgid "LAN"
+msgstr "LAN"
+
+msgid "LAN+WAN"
+msgstr "LAN+WAN"
+
+msgid "LCP echo failure threshold"
+msgstr "LCP Yankı hata sınrıı"
+
+msgid "LCP echo interval"
+msgstr "LCP echo zaman aşımı"
+
+msgid "LED Configuration"
+msgstr "LED yapılandırma"
+
+msgid "LED Name"
+msgstr "LED isimleri"
+
+msgid "LLC"
+msgstr "LLC"
+
+msgid "LTE"
+msgstr "LTE"
+
+msgid "Label"
+msgstr "Label"
+
+msgid "Landing page"
+msgstr "Ana Sayfa"
+
+msgid "Language and Style"
+msgstr "Dil ve görünüm"
+
+msgid "Language"
+msgstr "Dil"
+
+msgid "Last connection"
+msgstr "Son bağlantı"
+
+msgid "Lease validity time"
+msgstr "Kira doğrulama zamanı"
+
+msgid "Leasefile"
+msgstr "Kira süresi"
+
+msgid "Leasetime remaining"
+msgstr "Kalan kira süresi"
+
+msgid "Leasetime"
+msgstr "Kira süresi"
+
+msgid "Leave empty to autodetect"
+msgstr "Otomatik algılamala için boş bırak"
+
+msgid "Leave empty to use the current WAN address"
+msgstr "Mevcut WAN adresini kullanmak için boş bırak"
+
+msgid "Legend"
+msgstr "Gösterge"
+
+msgid "Legend:"
+msgstr "Gösterge:"
+
+msgid "Length of fragment"
+msgstr "Bölümleme uzunluğu"
+
+msgid "Lifetime (sec)"
+msgstr "Ömür (sn.)"
+
+msgid "Limit log messages"
+msgstr "LOG mesajları limiti"
+
+msgid "Limit"
+msgstr "Limit"
+
+msgid "Link On"
+msgstr "Bağlantı açık"
+
+msgid "Link address"
+msgstr "Link adresi"
+
+msgid "Link title"
+msgstr "Link başlığı"
+
+msgid "Link"
+msgstr "Link"
+
+msgid "List of DNS servers to forward requests to"
+msgstr "İsteklerin yönlendirileceği DNS sunucu adresleri"
+
+msgid "List of domains to allow RFC1918 responses for"
+msgstr "İzin verilen RFC1918 istekleri için domain listesi"
+
+msgid "List of hosts that supply bogus NX domain results"
+msgstr "Sahte NX domain cevaplarını destekleyen host listesi"
+
+msgid "Listen only on the given interface or, if unspecified, on all"
+msgstr "Sadece belirtilen arayüzü dinle veya belirtilmediyse hepsini"
+
+msgid "Listening port for inbound DNS queries"
+msgstr "Gelen DNS istekleri için dinleme portu"
+
+msgid "Load Average"
+msgstr "Yük ortalaması"
+
+msgid "Load Balancer(Compatibility)"
+msgstr "Yük dengeleyici (uyumluluk)"
+
+msgid "Load Balancer(Performance)"
+msgstr "Yük denegeleme (performans)"
+
+msgid "Load"
+msgstr "Yük"
+
+msgid "Loading"
+msgstr "Yükleniyor"
+
+msgid "Local Device Time"
+msgstr "Yerel cihaz zamanı"
+
+msgid "Local IPv4 address"
+msgstr "Yerel IPv4 adresi"
+
+msgid "Local IPv6 address"
+msgstr "Yerel IPv6 adresi"
+
+msgid "Local Startup"
+msgstr "Yerel başlangıç"
+
+msgid "Local Time"
+msgstr "Yerel zaman"
+
+msgid "Local certificate"
+msgstr "Yerel sertifika"
+
+msgid "Local domain suffix appended to DHCP names and hosts file entries"
+msgstr "DHCP adlarına ve hosts dosyası girişlerine eklenecek domain sonekleri"
+
+msgid "Local domain"
+msgstr "Yerel domain"
+
+msgid "Local private key"
+msgstr "Yerel özel şifre"
+
+msgid "Local server"
+msgstr "Yerel sunucu"
+
+msgid "Local tunnel CIDR"
+msgstr "Yerel tünel CIDR"
+
+msgid "Local tunnel IP"
+msgstr "Yerel tünel IP"
+
+msgid "Localise queries"
+msgstr "Sorgu sınırı"
+
+msgid "Location"
+msgstr "Yer"
+
+msgid "Locked to channel %d used by %s"
+msgstr "Kanal kilitli %d used by %s"
+
+msgid "Log output level"
+msgstr "LOG detay seviyesi"
+
+msgid "Log queries"
+msgstr "LOG sorguları"
+
+msgid "Logging Settings"
+msgstr "Log kaydı tutma ayarları"
+
+msgid "Logging information and configuration"
+msgstr "Log bilgileri ve ayarları"
+
+msgid "Logging"
+msgstr "Loglama"
+
+msgid "Login"
+msgstr "Giriş"
+
+msgid "Logo image"
+msgstr "Logo resmi"
+
+msgid "Logout"
+msgstr "Çıkış"
+
+msgid "Lowest leased address as offset from the network address."
+msgstr "Network adresinden uzak olarak kiralanan en düşük adres"
+
+msgid "MAC Address"
+msgstr "MAC Adresi"
+
+msgid "MAC address"
+msgstr "MAC adresi"
+
+msgid "MAC"
+msgstr "MAC"
+
+msgid "MAC-Address Filter"
+msgstr "MAC-Adres Filtresi"
+
+msgid "MAC-Address"
+msgstr "MAC-Adresi"
+
+msgid "MAC-Filter"
+msgstr "MAC-Filtresi"
+
+msgid "MAC-List"
+msgstr "MAC-Listesi"
+
+msgid "MSS clamping"
+msgstr "MSS clamping"
+
+msgid "MTU value [0-1500]"
+msgstr "MTU değeri [0-1500]"
+
+msgid "MTU"
+msgstr "MTU"
+
+msgid "Make tun device IPv6 capable"
+msgstr "Tun cihazını IPv6 ya uygun yap"
+
+msgid "Manage SMS Messages"
+msgstr "SMS Mesajlarını Yönet"
+
+msgid "Manual"
+msgstr "Manuel"
+
+msgid "Mar."
+msgstr "Mart"
+
+msgid "Masquerading"
+msgstr "Sahte Ağ Geçidi"
+
+msgid "Match ICMP type"
+msgstr "ICMP tipini eşleştir"
+
+msgid "Match forwarded traffic to the given destination port or port range."
+msgstr ""
+"İletilen veri akışını to the verilen hedef portu ya da  port aralığıyla "
+"eşleştir"
+
+msgid "Max. DHCP leases"
+msgstr "Max. DHCP kiralaması"
+
+msgid "Max. EDNS0 paket size"
+msgstr "Max. EDNS0 paket boyutu"
+
+msgid "Max. concurrent queries"
+msgstr "Maks. eşzamanlı sorgu"
+
+msgid "Maximum Rate"
+msgstr "Maksimum Oran"
+
+msgid "Maximum allowed number of active DHCP leases"
+msgstr "İzin verilen makisimum aktif DHCP kiraları"
+
+msgid "Maximum allowed number of concurrent DNS queries"
+msgstr "İzin verilen maksimum eşzamanlı DNS sorgusu"
+
+msgid "Maximum allowed size of EDNS.0 UDP packets"
+msgstr "İzin verilen maksimum EDNS.0 UDP paket boyutu"
+
+msgid "Maximum amount of seconds to wait for the modem to become ready"
+msgstr "Maximum amount of seconds to wait for the modem to become ready"
+
+msgid "Maximum hold time"
+msgstr "Maksimum bekleme zamanı"
+
+msgid "Maximum number of leased addresses."
+msgstr "Maksimum kiralanan adres sayısı"
+
+msgid "May."
+msgstr "Mayıs"
+
+msgid "Memory usage (%)"
+msgstr "Hafıza kullanımı (%)"
+
+msgid "Memory"
+msgstr "Hafıza"
+
+msgid "Message"
+msgstr "Mesaj"
+
+msgid "Metric"
+msgstr "Metrik"
+
+msgid "Minimum 60s"
+msgstr "Minimum 60s"
+
+msgid "Minimum Rate"
+msgstr "Minimum Oran"
+
+msgid "Minimum hold time"
+msgstr "Minimum beklem zamanı"
+
+msgid "Minute"
+msgstr "Dakika"
+
+msgid "Missing protocol extension for proto %q"
+msgstr " %q protokolü için bilinmeyen uzantı"
+
+msgid "Missing protocol extension for proto %s"
+msgstr "%s protokolü için bilinmeyen uzantı"
+
+msgid "Mode edited"
+msgstr "Mod düzenlendi"
+
+msgid "Mode"
+msgstr "Mod"
+
+msgid "Mode:"
+msgstr "Mod:"
+
+msgid "Modem device"
+msgstr "Modem cihazı"
+
+msgid "Modem init timeout"
+msgstr "Modem ilk zaman aşımı"
+
+msgid "Mon."
+msgstr "Pazartesi"
+
+msgid "Monday"
+msgstr "Pazartesi"
+
+msgid "Monitor"
+msgstr "İzle"
+
+msgid "Monitoring Service"
+msgstr "İzleme Servisi"
+
+msgid "Monitoring service cannot not be enabled."
+msgstr "İzleme servisi aktif edilemiyor."
+
+msgid "Month usage"
+msgstr "Aylık kullanım"
+
+msgid "Month"
+msgstr "Ay"
+
+msgid "Monthly"
+msgstr "Aylık"
+
+msgid "Mothly data usage"
+msgstr "Aylık veri kullanımı"
+
+msgid "Mount Entry"
+msgstr "Mount Girişi"
+
+msgid "Mount Point"
+msgstr "Mount Noktası"
+
+msgid "Mount Points - Mount Entry"
+msgstr "Mount Noktası - Mount Girişi"
+
+msgid "Mount Points - Swap Entry"
+msgstr "Mount Noktası - Swap Girişi"
+
+msgid "Mount Points"
+msgstr "Mount Noktaları"
+
+msgid "Mount options"
+msgstr "Mount seçenekleri"
+
+msgid "Mount point"
+msgstr "Mount noktası"
+
+msgid "Mounted file systems"
+msgstr "Mounted dosya sistemleri"
+
+msgid "Move down"
+msgstr "Aşağı"
+
+msgid "Move up"
+msgstr "Yukarı"
+
+msgid "Multi-WAN Traffic Rules"
+msgstr "Multi-WAN veri akışı kuralları"
+
+msgid "Multi-WAN"
+msgstr "Multi-WAN"
+
+msgid "Multicast Rate"
+msgstr "Multicast Oranı"
+
+msgid "Multicast address"
+msgstr "Multicast adresi"
+
+msgid "My identifier type"
+msgstr "Tanıtıcı tipi"
+
+msgid "My identifier"
+msgstr "Tanıtıcı"
+
+msgid "NAS ID"
+msgstr "NAS ID"
+
+msgid "NOT READY"
+msgstr "HAZIR DEĞİL"
+
+msgid "NTP server candidates"
+msgstr "NTP sunucu adayı"
+
+msgid "NTP"
+msgstr "NTP"
+
+msgid "Name of the new interface"
+msgstr "Yeni arabirim adı"
+
+msgid "Name of the new network"
+msgstr "Yeni ağ adı"
+
+msgid "Name"
+msgstr "Ad"
+
+msgid "Navigation"
+msgstr "Navigasyon"
+
+msgid "Netmask"
+msgstr "Netmask"
+
+msgid "Network Information"
+msgstr "Ağ Bilgisi"
+
+msgid "Network Operators"
+msgstr "Ağ Operatörleri"
+
+msgid "Network Utilities"
+msgstr "Ağ Hizmetleri"
+
+msgid "Network access type"
+msgstr "Ağ Erişim Tipi"
+
+msgid "Network boot image"
+msgstr "Ağ başlangıç imajı"
+
+msgid "Network configuration will be kept."
+msgstr "Network yapılandırma kaydedilecek."
+
+msgid "Network information"
+msgstr "Ağ bilgisi"
+
+msgid "Network operators"
+msgstr "Ağ Operatörleri"
+
+msgid "Network"
+msgstr "Ağ"
+
+msgid "Networking"
+msgstr "Ağ Sistemi"
+
+msgid "Networks"
+msgstr "Ağlar"
+
+msgid "New configuration name:"
+msgstr "Yeni yapılandırma adı:"
+
+msgid "New"
+msgstr "Yeni"
+
+msgid "Next »"
+msgstr "İleri »"
+
+msgid "Next"
+msgstr "İleri"
+
+msgid "No DHCP Server configured for this interface"
+msgstr "Bu arabirim için DHCP sunucu yapılandırılmadı"
+
+msgid "No Encryption"
+msgstr "Şifreleme yok"
+
+msgid "No chains in this table"
+msgstr "Bu tabloda zincir yok"
+
+msgid "No files found"
+msgstr "Dosya bulunamadı"
+
+msgid "No information available"
+msgstr "Uygun bilgi yok"
+
+msgid "No key required"
+msgstr "Key gerekli değil"
+
+msgid "No messages"
+msgstr "Mesaj yok"
+
+msgid "No negative cache"
+msgstr "Negatif önbellek yok"
+
+msgid "No network configured on this device"
+msgstr "Bu cihazda yapılandırılmış ağ yok"
+
+msgid "No network name specified"
+msgstr "Ağ adı belirtilmedi"
+
+msgid "No operators!"
+msgstr "Operatör yok!"
+
+msgid "No package lists available"
+msgstr "Uygun paket listesi yok"
+
+msgid "No password set!"
+msgstr "Şifre Ayarlanmadı!"
+
+msgid "No rules in this chain"
+msgstr "Bu zincirde kural yok"
+
+msgid "No such device"
+msgstr "Böyle bir cihaz yok"
+
+msgid "No such interface"
+msgstr "Böyle bir arabirim yok"
+
+msgid "No such radio"
+msgstr "Böyle bir radyo yok"
+
+msgid "No zone assigned"
+msgstr "Atanan bölge yok"
+
+msgid "Noise"
+msgstr "Gürültü"
+
+msgid "Noise:"
+msgstr "Gürültü:"
+
+msgid "None"
+msgstr "Hiçbiri"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Not associated"
+msgstr "İlişkilendirilmemiş"
+
+msgid "Not connected via WAN."
+msgstr "WAN ile bağlı değil."
+
+msgid "Not connected"
+msgstr "Bağlı Değil"
+
+msgid "Not inserted"
+msgstr "Eklenmemiş"
+
+msgid "Note: All configuration files will be erased."
+msgstr "Not: Bütün yapılandırma dosyaları silinecek."
+
+msgid "Note: Configuration files will be erased."
+msgstr "Not: Yapılandırma dosyaları silinecek."
+
+msgid "Notice"
+msgstr "Uyarı"
+
+msgid "Nov."
+msgstr "Kasım"
+
+msgid "Nslookup"
+msgstr "Nslookup"
+
+msgid "Numeric name"
+msgstr "Numerik ad"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "OMA-XML"
+msgstr "OMA-XML"
+
+msgid "OPKG-Configuration"
+msgstr "OPKG-Yapılandırma"
+
+msgid "Oct."
+msgstr "Ekim"
+
+msgid "Off-State Delay"
+msgstr "Off-State Delay"
+
+msgid "Offset frequency"
+msgstr "Offset frekansı"
+
+msgid "On this page you can configure your LAN settings."
+msgstr "Bu sayfada LAN ayarlarını değiştirebilirsiniz."
+
+msgid "On-State Delay"
+msgstr "On-State Delay"
+
+msgid "One or more fields contain invalid values!"
+msgstr "Bir ya da daha fazla alan geçersiz değerler içeriyor!"
+
+msgid "One or more required fields have no value!"
+msgstr "Bir ya da daha fazla gerekli alan boş!"
+
+msgid "Only match incoming traffic directed at the given IP address."
+msgstr "Gelen veri akışını sadece yönlendirilmiş IP adresi ile eşleştir."
+
+msgid "Only match incoming traffic from these MACs."
+msgstr "Sadece bu MAClerden gelen trafiği eşleştir."
+
+msgid "Only match incoming traffic from this IP or range."
+msgstr "Sadece bu ip ya da aralıktan gelen veri akışını eşleştir."
+
+msgid "Open list..."
+msgstr "Listeyi aç..."
+
+msgid "Open"
+msgstr "Aç"
+
+msgid "OpenVPN configuration will be kept."
+msgstr "OpenVPN yapılandırması saklanacak."
+
+msgid "OpenVPN instances"
+msgstr "OpenVPN örnekleri"
+
+msgid "OpenVPN"
+msgstr "OpenVPN"
+
+msgid "Operating Mode"
+msgstr "Çalışma Modu"
+
+msgid "Operation Mode"
+msgstr "Operasyon Modu"
+
+msgid "Operator code field is empty!"
+msgstr "Operatör kodu alanı boş!"
+
+msgid "Operator code"
+msgstr "Operatör kodu"
+
+msgid "Operator name"
+msgstr "Operatör adı"
+
+msgid "Operator state"
+msgstr "Operatör durumu"
+
+msgid "Operator"
+msgstr "Operatör"
+
+msgid "Option changed"
+msgstr "Seçenek değişti"
+
+msgid "Option removed"
+msgstr "Seçenek kaldırıldı"
+
+msgid "Options"
+msgstr "Seçenekler"
+
+msgid "Other:"
+msgstr "Diğer:"
+
+msgid "Out"
+msgstr "Dış"
+
+msgid "Outbound:"
+msgstr "Harici:"
+
+msgid "Outdoor Channels"
+msgstr "Dış Kanallar"
+
+msgid "Output"
+msgstr "Çıktı"
+
+msgid "Override MAC address"
+msgstr "MAC adresini reddet"
+
+msgid "Override MTU"
+msgstr "MTU reddet"
+
+msgid "Override the gateway in DHCP responses"
+msgstr "DHCP cevaplarında gatewayi reddet"
+
+msgid "Override the table used for internal routes"
+msgstr "Dahili yönler için kullanılan tabloyu reddet"
+
+msgid "Overview"
+msgstr "Genel Bakış"
+
+msgid "Owner"
+msgstr "Sahip"
+
+msgid "PAP"
+msgstr "PAP"
+
+msgid "PAP/CHAP password"
+msgstr "PAP/CHAP şifresi"
+
+msgid "PAP/CHAP username"
+msgstr "PAP/CHAP kullancı adı"
+
+msgid "PFS group"
+msgstr "PFS grubu"
+
+msgid "PID"
+msgstr "PID"
+
+msgid "PIN number"
+msgstr "PIN numarası"
+
+msgid "PIN required"
+msgstr "PIN gerekli"
+
+msgid "PIN required. %d attempts left."
+msgstr "PIN gerekli. %d deneme kaldı."
+
+msgid "PIN"
+msgstr "PIN"
+
+msgid "PIN2 required"
+msgstr "PIN2 gerekli"
+
+msgid "PKCS#12 file containing keys"
+msgstr "PKCS#12 dosya key içeriyor"
+
+msgid "PKM Enable"
+msgstr "PKM Aktif"
+
+msgid "PMTUD"
+msgstr "PMTUD"
+
+msgid "PPP"
+msgstr "PPP"
+
+msgid "PPPoA Encapsulation"
+msgstr "PPPoA Enkapsülasyon"
+
+msgid "PPPoATM"
+msgstr "PPPoATM"
+
+msgid "PPPoE"
+msgstr "PPPoE"
+
+msgid "PPtP"
+msgstr "PPtP"
+
+msgid "PUK required"
+msgstr "PUK gerekli"
+
+msgid "PUK required. %d attempts left."
+msgstr "PUK gerekli. %d deneme kaldı."
+
+msgid "PUK2 required"
+msgstr "PUK2 gerekli"
+
+msgid "Package libiwinfo required!"
+msgstr "Paket libiwinfo gerekli!"
+
+msgid "Package lists are older than 24 hours"
+msgstr "Paket listeleri 24 Saatten eski"
+
+msgid "Package name"
+msgstr "Paket adı"
+
+msgid "Packet size"
+msgstr "Paket boyutu"
+
+msgid "Packets"
+msgstr "Paketler"
+
+msgid "Page title"
+msgstr "Sayfa başlığı"
+
+msgid "Part of zone %q"
+msgstr "Bölge parçası %q"
+
+msgid "Passes additional arguments to iptables. Use with care!"
+msgstr "İp tablosuna ilave ifadeler ekler. Dikkatli olun!"
+
+msgid "Password authentication"
+msgstr "Şifre doğrulama"
+
+msgid "Password of Private Key"
+msgstr "Özel anahtar şifresi"
+
+msgid "Password successfully changed!"
+msgstr "Şifre Değiştirildi!"
+
+msgid "Password"
+msgstr "Şifre"
+
+msgid "Path to CA-Certificate"
+msgstr "CA-Certificate için rota"
+
+msgid "Path to Client-Certificate"
+msgstr "Client-Certificate için rota"
+
+msgid "Path to Private Key"
+msgstr "Private Key için rota"
+
+msgid "Path to executable which handles the button event"
+msgstr "Çalıştırılabilir buton olayı için rota"
+
+msgid "Peak:"
+msgstr "Zirve:"
+
+msgid "Perform reboot"
+msgstr "Yeniden başlatmayı dene"
+
+msgid "Perform reset"
+msgstr "Sıfırlamayı dene"
+
+msgid "Period"
+msgstr "Periot"
+
+msgid "Phase 1"
+msgstr "Faz 1"
+
+msgid "Phase 2"
+msgstr "Faz 2"
+
+msgid "Phone Number"
+msgstr "Telefon Numarası"
+
+msgid "Phone number"
+msgstr "Telefon Numarası"
+
+msgid "Phrase"
+msgstr "Kalıp"
+
+msgid "Phy Rate:"
+msgstr "Phy Oranı:"
+
+msgid "Physical Settings"
+msgstr "Fiziksel Ayarlar"
+
+msgid "Ping IP address"
+msgstr "IP adresine ping at "
+
+msgid "Ping Reboot settings"
+msgstr "Ping ile Yeniden Başlatma ayarları"
+
+msgid "Ping Reboot"
+msgstr "Ping ile Yeniden Başlat"
+
+msgid "Ping period (seconds)"
+msgstr "Ping periodu (saniye)"
+
+msgid "Ping timeout (sec)"
+msgstr "Ping zamanaşımı (saniye)"
+
+msgid "Ping"
+msgstr "Ping"
+
+msgid "Pkts."
+msgstr "Paketler"
+
+msgid "Please enter your username and password."
+msgstr "Lütfen kullanıcı adı ve şifrenizi girin."
+
+msgid "Please wait..."
+msgstr "Lütfen bekleyin..."
+
+msgid "Please wait: Device rebooting..."
+msgstr "Lütfen bekleyin: Yeniden başlatılıyor..."
+
+msgid "Policy"
+msgstr "Kural"
+
+msgid "Port %d is untagged in multiple VLANs!"
+msgstr "%d Portu çoklu VLANlarda etiketizdir!"
+
+msgid "Port %d"
+msgstr "%d Portu"
+
+msgid "Port Forwarding"
+msgstr "Port Yönlendirme"
+
+msgid "Port to listen for SSH access."
+msgstr "SSH Erişimi için dinlenecek port."
+
+msgid "Port"
+msgstr "Port"
+
+msgid "Ports"
+msgstr "Portlar"
+
+msgid "Power"
+msgstr "Güç"
+
+msgid "Prefered network"
+msgstr "Tercih Edilen Ağ"
+
+msgid "Preshare Key"
+msgstr "Önpaylaşımlı Anahtar"
+
+msgid "Prevents client-to-client communication"
+msgstr "İstemciler arası erişimi engelle"
+
+msgid "Prism2/2.5/3 802.11b Wireless Controller"
+msgstr "Prism2/2.5/3 802.11b Kablosuz Denetleyicisi"
+
+msgid "Private password"
+msgstr "Özel Şifre"
+
+msgid "Proceed"
+msgstr "Devam Et"
+
+msgid "Processes"
+msgstr "Süreçler"
+
+msgid "Product Code"
+msgstr "Ürün Kodu"
+
+msgid "Profile name:"
+msgstr "Profil adı:"
+
+msgid "Profiles:"
+msgstr "Profiller:"
+
+msgid "Prot."
+msgstr "Prot."
+
+msgid "Protocol family"
+msgstr "Protokol ailesi"
+
+msgid "Protocol of the new interface"
+msgstr "Yeni arabirimin protokolü"
+
+msgid "Protocol support is not installed"
+msgstr "Protokol desteği yüklü değil"
+
+msgid "Protocol"
+msgstr "Protokol"
+
+msgid "Provide new network"
+msgstr "Yeni network sağla"
+
+msgid "Proxy port"
+msgstr "Proxy portu"
+
+msgid "Pseudo Ad-Hoc (ahdemo)"
+msgstr "Pseudo Ad-Hoc (ahdemo)"
+
+msgid "RAM memory"
+msgstr "RAM hafızası"
+
+msgid "READY"
+msgstr "HAZIR"
+
+msgid "RTS/CTS Threshold"
+msgstr "RTS/CTS Eşiği"
+
+msgid "RX Rate"
+msgstr "RX Oranı"
+
+msgid "RX"
+msgstr "RX"
+
+msgid "RaLink 802.11%s Wireless Controller"
+msgstr "RaLink 802.11%s Kablosuz Denetleyici"
+
+msgid "Radius server #1"
+msgstr "Radius server #1"
+
+msgid "Radius server #2"
+msgstr "Radius server #2"
+
+msgid "Radius-Accounting-Port"
+msgstr "Radius-Accounting-Portu"
+
+msgid "Radius-Accounting-Secret"
+msgstr "Radius-Accounting-Şifresi"
+
+msgid "Radius-Accounting-Server"
+msgstr "Radius-Accounting-Sunucusu"
+
+msgid "Radius-Authentication-Port"
+msgstr "Radius-Otantikasyon-Port"
+
+msgid "Radius-Authentication-Secret"
+msgstr "Radius-Otantikasyon-Şifresi"
+
+msgid "Radius-Authentication-Server"
+msgstr "Radius-Otantikasyon-Sunucusu"
+
+msgid "Read <code>/etc/ethers</code> to configure the DHCP-Server"
+msgstr "DHCP-Sunucusunu yapılandırmak için oku <code>/etc/ethers</code>"
+
+msgid "Read and delete sms messages"
+msgstr "Sms mesajlarını oku ve sil"
+
+msgid "Really reset all changes?"
+msgstr "Bütün ayarları sıfırlamak istediğinize emin misiniz?"
+
+msgid "Really switch modes?"
+msgstr "Modu değiştirmek istediğinize emin misiniz?"
+
+msgid "Really switch protocol?"
+msgstr "Protokolü değiştirmek istediğinize emin misiniz?"
+
+msgid "Realtime Connections"
+msgstr "Gerçek Zamanlı bağlantılar"
+
+msgid "Realtime Graphs"
+msgstr "Gerçek Zamanlı Grafikler"
+
+msgid "Realtime Load"
+msgstr "Gerçekzamanlı Yük"
+
+msgid "Realtime Traffic"
+msgstr "Gerçek Zamanlı Veri Akışı"
+
+msgid "Realtime Wireless"
+msgstr "Gerçek Zamanlı Kablosuz Ağ"
+
+msgid "Rebind protection"
+msgstr "Korumayı yeniden aç"
+
+msgid "Reboot WiMAX modem?"
+msgstr "WiMAX modemi yeniden başlatmak istiyor musunuz?"
+
+msgid "Reboot router if no echo received"
+msgstr "Echo alınmazsa routerı yeniden başlat"
+
+msgid "Reboot router via SMS message"
+msgstr "Routerı SMS mesajı ile yeniden başlat"
+
+msgid "Reboot"
+msgstr "Yeniden Başlat"
+
+msgid "Rebooting..."
+msgstr "Yeniden Başlıyor..."
+
+msgid "Reboots the operating system of your device"
+msgstr "Cihazınızın işletim sistemini yeniden başlatır"
+
+msgid "Receive"
+msgstr "Al"
+
+msgid "Received:"
+msgstr "Alındı:"
+
+msgid "Receiver Antenna"
+msgstr "Alıcı Anten"
+
+msgid "Reconnect this interface"
+msgstr "Bu arabirimi yeniden bağla"
+
+msgid "Reconnected"
+msgstr "Yeniden Bağlandı"
+
+msgid "Reconnecting interface"
+msgstr "Arabirim yeniden bağlanıyor"
+
+msgid "Redirect matched incoming traffic to the specified internal host"
+msgstr "Belirli dahili kullanıcıya gelen veri akışını yeniden yönlendir"
+
+msgid "References"
+msgstr "Referanslar"
+
+msgid "Refresh"
+msgstr "Yenile"
+
+msgid "Regulatory Domain"
+msgstr "Düzenleyici Alan"
+
+msgid "Rejected"
+msgstr "Reddedildi"
+
+msgid "Relay Bridge"
+msgstr "Anahtar Köprüsü"
+
+msgid "Relay between networks"
+msgstr "Ağlar arası anahtarlama"
+
+msgid "Relay bridge"
+msgstr "Anahtar Köprüsü"
+
+msgid "Relay"
+msgstr "Anahtar"
+
+msgid "Remote HTTP Access"
+msgstr "Uzak HTTP Erişimi"
+
+msgid "Remote HTTPS Access"
+msgstr "Uzak HTTPS Erişimi"
+
+msgid "Remote IPv4 address"
+msgstr "Uzak IPv4 adresi"
+
+msgid "Remote SSH Access"
+msgstr "Uzak SSH Erişimi"
+
+msgid "Remote VPN endpoint"
+msgstr "Uzak VPN noktası"
+
+msgid "Remote endpoint IP address"
+msgstr "Uzak nokta IP adresi"
+
+msgid "Remote host name or ip address"
+msgstr "Uzak kullanıcı adı ya da ip adresi"
+
+msgid "Remote network CIDR"
+msgstr "Uzak Ağ CIDR"
+
+msgid "Remote network IP"
+msgstr "Uzak Ağ IP"
+
+msgid "Remote network secure group"
+msgstr "Uzak Ağ Güvenlik Grubu"
+
+msgid "Remove"
+msgstr "Kaldır"
+
+msgid "Repeat scan"
+msgstr "Taramayı tekrar et"
+
+msgid "Replace entry"
+msgstr "Girişi değiştir"
+
+msgid "Replace wireless configuration"
+msgstr "Kablosuz yapılandırmayı değiştir"
+
+msgid "Request time out!"
+msgstr "İstek zaman aşımına uğradı!"
+
+msgid "Required for certain ISPs, e.g. Charter with DOCSIS 3"
+msgstr "Kesin ISPler için gerekli, e.g. DOCSIS 3 ile "
+
+msgid "Reset Counters"
+msgstr "Sayaçları sıfırla"
+
+msgid "Reset all data"
+msgstr "Bütün veriyi sıfırla"
+
+msgid "Reset data"
+msgstr "Veriyi Sıfırla"
+
+msgid "Reset to defaults"
+msgstr "Fabrika Ayarlarına Al"
+
+msgid "Reset"
+msgstr "Sıfırla"
+
+msgid "Resolv and Hosts Files"
+msgstr "Dosyaları çöz ve sun"
+
+msgid "Resolve file"
+msgstr "Dosyayı çöz"
+
+msgid "Restart Firewall"
+msgstr "Güvenlik Duvarını Yeniden Başlat"
+
+msgid "Restart"
+msgstr "Yeniden Başlat"
+
+msgid "Restore backup"
+msgstr "Yedek Yükle"
+
+msgid "Restore configuration"
+msgstr "Yapılandırmayı Yükle"
+
+msgid "Restrict Masquerading to given destination subnets"
+msgstr "Belirtilen hedef subnetleri sahte gateway ile kısıtla"
+
+msgid "Restrict Masquerading to given source subnets"
+msgstr "Belirtilen kaynak subnetleri sahte gateway ile kısıtla"
+
+msgid "Restrict to address family"
+msgstr "Adres ailesi ile sınırlandır"
+
+msgid "Retry count"
+msgstr "Yeniden say"
+
+msgid "Reveal/hide password"
+msgstr "Şifreyi Göster/Gizle "
+
+msgid "Revert"
+msgstr "Değiştir"
+
+msgid "Rewrite matched traffic to the given address."
+msgstr "Veri akışını verilen adrese yeniden gönder"
+
+msgid "Rewrite to source %s"
+msgstr "Kaynağa yeniden yaz %s"
+
+msgid "Rewrite to source %s, %s"
+msgstr "Kaynağa yeniden yaz %s, %s"
+
+msgid "Role:"
+msgstr "Rol:"
+
+msgid "Root directory for files served via TFTP"
+msgstr "TFTP tarafından sunulan dosyalar için kök dizin"
+
+msgid "Root"
+msgstr "Kök"
+
+msgid "Router Model"
+msgstr "Router Modeli"
+
+msgid "Router Name"
+msgstr "Router Adı"
+
+msgid "Router Password"
+msgstr "Router Şifresi"
+
+msgid "Routes"
+msgstr "Rotalar"
+
+msgid "Rule #"
+msgstr "Kural #"
+
+msgid "Run NTP client on startup"
+msgstr "Başlangıçta NTP istemcisini çalıştır"
+
+msgid "Run a filesystem check before mounting the device"
+msgstr "Cihazı kurmadan önce dosya sistemi kontrolünü çalıştır"
+
+msgid "Run filesystem check"
+msgstr "Dosya Sistemi Kontrolü"
+
+msgid "SIM PIN"
+msgstr "SIM PIN"
+
+msgid "SIM error"
+msgstr "SIM hatası"
+
+msgid "SMS Reboot"
+msgstr "SMS Yeniden Başlat"
+
+msgid "SMS Utilities"
+msgstr "SMS Hizmetleri"
+
+msgid "SMS text"
+msgstr "SMS metni"
+
+msgid "SNAT IP address"
+msgstr "SNAT IP adresi"
+
+msgid "SNAT port"
+msgstr "SNAT portu"
+
+msgid "SNMP configuration settings"
+msgstr "SNMP yapılandırma ayarları"
+
+msgid "SNMP configuration"
+msgstr "SNMP yapılandırma"
+
+msgid "SNMP service settings"
+msgstr "SNMP servis ayarları"
+
+msgid "SNMP"
+msgstr "SNMP"
+
+msgid "SSH Access control"
+msgstr "SSH Erişim kontrolü"
+
+msgid "SSH Access"
+msgstr "SSH Erişimi"
+
+msgid "SSH-Keys"
+msgstr "SSH-Keys"
+
+msgid "SSID"
+msgstr "SSID"
+
+msgid "Sat."
+msgstr "Cumartesi"
+
+msgid "Saturday"
+msgstr "Cumartesi"
+
+msgid "Save & Apply"
+msgstr "Kaydet & Uygula"
+
+msgid "Save &#38; Apply"
+msgstr "Kaydet &#38; Uygula"
+
+msgid "Save log in"
+msgstr "Oturumu Kaydet"
+
+msgid "Save time to flash"
+msgstr "Zamanı belleğe kaydet"
+
+msgid "Save"
+msgstr "Kaydet"
+
+msgid "Scan for a new network"
+msgstr "Yeni ağ için tara"
+
+msgid "Scan"
+msgstr "Tara"
+
+msgid "Scheduled Tasks"
+msgstr "Programlanmış Görevler"
+
+msgid "Secret key"
+msgstr "Gizli Anahtar"
+
+msgid "Section added"
+msgstr "Bölüm Eklendi"
+
+msgid "Section removed"
+msgstr "Bölüm Kaldırıldı"
+
+msgid "See \"mount\" manpage for details"
+msgstr "Ayrıntılar için \"mount\" anasayfasına bakın "
+
+msgid "Send SMS"
+msgstr "SMS Gönder"
+
+msgid "Send router solicitations"
+msgstr "Router Taleplerini Gönder"
+
+msgid "Send sms message"
+msgstr "SMS mesajı gönder"
+
+msgid "Send"
+msgstr "Gönder"
+
+msgid "Sender phone number"
+msgstr "Gönderen telefon numarası"
+
+msgid "Sender"
+msgstr "Gönderen"
+
+msgid "Separate Clients"
+msgstr "İstemcileri Ayır"
+
+msgid "Separate WDS"
+msgstr "WDS'i ayır"
+
+msgid "Sept."
+msgstr "Eylül"
+
+msgid "Serial Number"
+msgstr "Seri Numarası"
+
+msgid "Server Root CA"
+msgstr "Kök Sunucu CA "
+
+msgid "Server Settings"
+msgstr "Sunucu Ayarları"
+
+msgid "Server address"
+msgstr "Sunucu Adresi"
+
+msgid "Server to ping"
+msgstr "Ping için sunucu"
+
+msgid "Service Name"
+msgstr "Servis Adı"
+
+msgid "Service Type"
+msgstr "Servis Tipi"
+
+msgid "Service mode"
+msgstr "Servis modu"
+
+msgid "Service"
+msgstr "Servis"
+
+msgid "Services"
+msgstr "Servisler"
+
+msgid "Set output verbosity"
+msgstr "Gereksiz Çıkışı Ayarla"
+
+msgid "Set tun/tap adapter parameters"
+msgstr "Tun/Tap bağdaştırıcı parametrelerini ayarla"
+
+msgid "Settings for SMS Utilities"
+msgstr "SMS Hizmetleri için ayarlar"
+
+msgid "Setup DHCP Server"
+msgstr "DHCP Sunucusunu Ayarla"
+
+msgid "Setup Time Synchronization"
+msgstr "Zaman Senkronizasyonunu Ayarla"
+
+msgid "Short name"
+msgstr "Kısa Ad"
+
+msgid "Show %s info at login page"
+msgstr "Grirş ekranında %s bilgisini göster "
+
+msgid "Show current backup file list"
+msgstr "Mevcut yedek dosya listesini göster"
+
+msgid "Show"
+msgstr "Göster"
+
+msgid "Shutdown this interface"
+msgstr "Bu arabirimi kapat"
+
+msgid "Shutdown this network"
+msgstr "Bu ağı kapat"
+
+msgid "Shutdown"
+msgstr "Kapat"
+
+msgid "Signal Quality"
+msgstr "Sinyal Kalitesi"
+
+msgid "Signal strength"
+msgstr "Sinyal gücü"
+
+msgid "Signal"
+msgstr "Sinyal"
+
+msgid "Signal:"
+msgstr "Sinyal:"
+
+msgid "Sim card state"
+msgstr "Sim kart durumu"
+
+msgid "Singal Strength"
+msgstr "Sinyal Gücü"
+
+msgid "Site Survey"
+msgstr "Site Haritası"
+
+msgid "Site blocking"
+msgstr "Site bloklama"
+
+msgid "Size"
+msgstr "Boyut"
+
+msgid "Skip Wizard"
+msgstr "Sihirbazı Atla"
+
+msgid "Skip to content"
+msgstr "İçeriğe Atla"
+
+msgid "Skip to navigation"
+msgstr "Navigasyona Atla"
+
+msgid "Skip"
+msgstr "Atla"
+
+msgid "Slot time"
+msgstr "Slot Zamanı"
+
+msgid "Software"
+msgstr "Yazılım"
+
+msgid "Some fields are empty, cannot send message!"
+msgstr "Bazı alanlar boş, mesaj gönderilemez!"
+
+msgid "Some fields are invalid, cannot save values!"
+msgstr "Bazı alanlar geçersiz, değerler kaydedilemez!"
+
+msgid "Sorry, unknown error."
+msgstr "Üzgünüz, bilinmeyen hata."
+
+msgid "Sort"
+msgstr "Sırala"
+
+msgid "Source Address"
+msgstr "Kaynak Adres"
+
+msgid "Source IP address"
+msgstr "Kaynak IP Adresi"
+
+msgid "Source MAC address"
+msgstr "Kaynak MAC Adresi"
+
+msgid "Source NAT"
+msgstr "Kaynak NAT"
+
+msgid "Source port"
+msgstr "Kaynak port"
+
+msgid "Source zone"
+msgstr "Kaynak zone"
+
+msgid "Source"
+msgstr "Kaynak"
+
+msgid "Specifies the advertised preferred prefix lifetime in seconds"
+msgstr "Tanıtılmış tercih edilen prefixlerin saniye olarak ömrünü belirtir"
+
+msgid "Specifies the advertised valid prefix lifetime in seconds"
+msgstr "Tanıtılmış geçerli prefixlerin saniye olarak ömrünü belirtir"
+
+msgid "Specifies the button state to handle"
+msgstr "Kullanmak için buton durumunu belirtir"
+
+msgid "Specifies the directory the device is attached to"
+msgstr "Cihazın ilgili olduğu dizini belirtir"
+
+msgid "Specifies the listening port of this <em>Dropbear</em> instance"
+msgstr "Bu <em>Dropbear</em> örneğinin dinleme portunu belirtir"
+
+msgid "Specify the secret encryption key here."
+msgstr "Gizli şifreleme anahtarını burada beliirtir."
+
+msgid "Start day"
+msgstr "Başlangıç Günü"
+
+msgid "Start hour"
+msgstr "Başlangıç Saati"
+
+msgid "Start priority"
+msgstr "Başlangıç Önceliği"
+
+msgid "Start scan"
+msgstr "Taramaya Başla"
+
+msgid "Start servers"
+msgstr "Sunucuları Başlat"
+
+msgid "Start"
+msgstr "Başlat"
+
+msgid "Start/Stop"
+msgstr "Başlat/Durdur"
+
+msgid "Started"
+msgstr "Başlatıldı"
+
+msgid "Startup"
+msgstr "Başlangıç"
+
+msgid "State"
+msgstr "Durum"
+
+msgid "Static IPv4 Routes"
+msgstr "Statik IPv4 Rotaları"
+
+msgid "Static IPv6 Routes"
+msgstr "Statik IPv6 Rotaları"
+
+msgid "Static Leases"
+msgstr "Statik Kiralamalar"
+
+msgid "Static Routes"
+msgstr "Statik Rotalar"
+
+msgid "Static WDS"
+msgstr "Statik WDS"
+
+msgid "Static address"
+msgstr "Statik Adres"
+
+msgid "Status via SMS"
+msgstr "SMS ile Durum"
+
+msgid "Status"
+msgstr "Durum"
+
+msgid "Step - %s"
+msgstr "Adım - %s"
+
+msgid "Step - Password"
+msgstr "Adım - Şifre"
+
+msgid "Step 1 - Password"
+msgstr "Adım 1 - Şifre"
+
+msgid "Step 1"
+msgstr "Adım 1"
+
+msgid "Step 2 - 3G"
+msgstr "Adım 2 - 3G"
+
+msgid "Step 2 - LAN"
+msgstr "Adım 2 - LAN"
+
+msgid "Step 2 - LTE"
+msgstr "Adım 2 - LTE"
+
+msgid "Step 2"
+msgstr "Adım 2"
+
+msgid "Step 3 - LAN"
+msgstr "Adım 3 - LAN"
+
+msgid "Step 3 - WiFi"
+msgstr "Adım 3 - WiFi"
+
+msgid "Step 4 - WiFi"
+msgstr "Adım 4 - WiFi"
+
+msgid "Stop"
+msgstr "Durdur"
+
+msgid "Strict order"
+msgstr "Kesin Kural"
+
+msgid "Sub CA #1"
+msgstr "Alt CA #1"
+
+msgid "Sub CA #2"
+msgstr "Alt CA #2"
+
+msgid "Submit"
+msgstr "Onayla"
+
+msgid "Subnet mask"
+msgstr "Alt Ağ Maskesi"
+
+msgid "Sun."
+msgstr "Pazar"
+
+msgid "Sunday"
+msgstr "Pazar"
+
+msgid "Swap Entry"
+msgstr "Takas Girişi"
+
+msgid "Switch %q (%s)"
+msgstr "%q (%s) Değiştir"
+
+msgid "Switch %q"
+msgstr "%q Değiştir"
+
+msgid "Switch mode"
+msgstr "Modu Değiştir"
+
+msgid "Switch protocol"
+msgstr "Protokolü Değiştir"
+
+msgid "Switch to advanced configuration »"
+msgstr "Gelişmiş yapılandırmaya atla »"
+
+msgid "Switch"
+msgstr "Değiştir"
+
+msgid "Sync with browser"
+msgstr "Tarayıcı ile senkronize et"
+
+msgid "Synchronizes the system time"
+msgstr "Sistem Zamanını Senkronize Eder"
+
+msgid "Synchronizing..."
+msgstr "Senkronize ediyor..."
+
+msgid "System Information"
+msgstr "Sistem Bilgisi"
+
+msgid "System Log"
+msgstr "Sistem Log"
+
+msgid "System Properties"
+msgstr "Sistem Özellikleri"
+
+msgid "System information"
+msgstr "Sistem Bilgisi"
+
+msgid "System log buffer size"
+msgstr "Sistem log arabellek boyutu"
+
+msgid "System log level"
+msgstr "Sistem log seviyesi"
+
+msgid "System"
+msgstr "Sistem"
+
+msgid "TCP/UDP port # for both local and remote"
+msgstr "Yerel ve uzak için TCP/UDP portu #"
+
+msgid "TCP:"
+msgstr "TCP:"
+
+msgid "TFTP Settings"
+msgstr "TFTP Ayarları"
+
+msgid "TFTP server root"
+msgstr "TFTP sunucu kaynağı"
+
+msgid "TLS"
+msgstr "TLS"
+
+msgid "TTL"
+msgstr "TTL"
+
+msgid "TTLS-CHAP"
+msgstr "TTLS-CHAP"
+
+msgid "TTLS-MSCHAPV2"
+msgstr "TTLS-MSCHAPV2"
+
+msgid "TX Rate"
+msgstr "TX Oranı"
+
+msgid "TX"
+msgstr "TX"
+
+msgid "Table"
+msgstr "Tablo"
+
+msgid "Target"
+msgstr "Hedef"
+
+msgid "Temperature"
+msgstr "Sıcaklık"
+
+msgid "Terminate"
+msgstr "Sonlandır"
+
+msgid "The IP address of the router on the hotspot network."
+msgstr "Hotspot ağında routerın IP adresi."
+
+msgid "The access point you are connecting to has no password protection."
+msgstr "Bağlanmaya çalıştğınız access pointin parola koruması yok ."
+
+msgid "The following changes have been committed"
+msgstr "Aşağıdaki değişiklikler gerçekleştirildi"
+
+msgid "The following changes have been reverted"
+msgstr "Aşağıdaki değişiklikler geri alındı"
+
+msgid "The following rules are currently active on this system."
+msgstr "Aşağıdaki kurallar bu sistem üzerinde aktif"
+
+msgid "The given network name is not unique"
+msgstr "Ağ Adı benzersiz değil"
+
+msgid "The selected protocol needs a device assigned"
+msgstr "Seçilen protokol için cihaz atanması gerekli"
+
+msgid "The uploaded image file does not contain a supported format."
+msgstr "Yüklenen imaj dosyası desteklenen formatta değil."
+
+msgid "There are no active leases."
+msgstr "Aktif kiralama yok"
+
+msgid "There are no pending changes to apply!"
+msgstr "Uygulanacak bekleyen değişiklik yok!"
+
+msgid "There are no pending changes to revert!"
+msgstr "Geri alınacak bekleyen değişiklik yok!"
+
+msgid "There are no pending changes!"
+msgstr "Bekleyen değişiklik yok!"
+
+msgid "This is the 32 byte hex encoded user ID, not the login name"
+msgstr "Bu 32 byte hex kodlanmış kullancı ID'sidir , oturum açma değildir"
+
+msgid "This is the only DHCP in the local network"
+msgstr "Bu yerel ağdaki tek DHCP "
+
+msgid "This is the system crontab in which scheduled tasks can be defined."
+msgstr "Bu sistem crontabı içinde programlanmış görevler tanımlanabilir."
+
+msgid "This page allows the configuration of custom button actions"
+msgstr "Bu sayfada özel buton aksiyonlarını yapılandırılır"
+
+msgid "This page gives an overview over currently active network connections."
+msgstr "Bu sayfa aktif network bağlantıları için bir genel bakış sağlar"
+
+msgid "This section contains no values yet"
+msgstr "Bu bölüm henüz değer içermiyor"
+
+msgid "Thu."
+msgstr "Perşembe"
+
+msgid "Thursday"
+msgstr "Perşembe"
+
+msgid "Time Server"
+msgstr "Zaman Sunucusu"
+
+msgid "Time Servers"
+msgstr "Zaman Sunucuları"
+
+msgid "Time Synchronisation"
+msgstr "Zaman Senkronizasyonu"
+
+msgid "Time Synchronization is not configured yet."
+msgstr "Zaman Senkronizasyonu henüz ayarlanmadı."
+
+msgid "Time Synchronization"
+msgstr "Zaman Senkronizasyonu"
+
+msgid "Time zone"
+msgstr "Zaman Dilimi"
+
+msgid "Timezone"
+msgstr "Zaman Dilimi"
+
+msgid "Timing & other parameters"
+msgstr "Zamanlama & diğer parametreler"
+
+msgid "To %s at %s on <var>this device</var>"
+msgstr "To %s at %s on <var>this device</var>"
+
+msgid "To %s at %s"
+msgstr "e %s de %s"
+
+msgid "To %s in %s"
+msgstr "e %s içinde %s"
+
+msgid "To %s on <var>this device</var>"
+msgstr "e %s üstünde <var>bu cihaz</var>"
+
+msgid "To %s"
+msgstr "e %s"
+
+msgid "To %s, %s in %s"
+msgstr "e %s, %s içinde %s"
+
+msgid "Total Available"
+msgstr "Toplam Kullanılabilir Miktar"
+
+msgid "Traceroute"
+msgstr "Traceroute"
+
+msgid "Traffic Rules"
+msgstr "Veri Akışı Kuralları"
+
+msgid "Traffic"
+msgstr "Veri Akışı"
+
+msgid "Transfer"
+msgstr "Aktar"
+
+msgid "Transfered:"
+msgstr "Aktarıldı:"
+
+msgid "Transmission Rate"
+msgstr "İletim Oranı"
+
+msgid "Transmit Power"
+msgstr "İletim Gücü"
+
+msgid "Transmit"
+msgstr "İletim"
+
+msgid "Transmitter Antenna"
+msgstr "Verici Anten"
+
+msgid "Trigger Mode"
+msgstr "Tetikleyici Modu"
+
+msgid "Trigger"
+msgstr "Tetikleyici"
+
+msgid "Troubleshoot package"
+msgstr "Sorun Giderme Paketi"
+
+msgid "Tue."
+msgstr "Salı"
+
+msgid "Tuesday"
+msgstr "Salı"
+
+msgid "Tunnel ID"
+msgstr "Tünel ID"
+
+msgid "Tunnel Interface"
+msgstr "Tünel Arabirimi"
+
+msgid "Tunnel Name"
+msgstr "Tünel Adı"
+
+msgid "Tunnel keep alive"
+msgstr "Tünel keep alive"
+
+msgid "Turbo Mode"
+msgstr "Turbo Mod"
+
+msgid "Turn off"
+msgstr "Kapat"
+
+msgid "Turn on"
+msgstr "Aç"
+
+msgid "Turn on/off WiMAX"
+msgstr " WiMAX Aç/Kapa"
+
+msgid "Tx-Power"
+msgstr "Tx-Gücü"
+
+msgid "Type of used device"
+msgstr "Kullanılan cihazın tipi"
+
+msgid "Type"
+msgstr "Tip"
+
+msgid "UDP:"
+msgstr "UDP:"
+
+msgid "UMTS/GPRS/EV-DO"
+msgstr "UMTS/GPRS/EV-DO"
+
+msgid "URL content"
+msgstr "URL içeriği"
+
+msgid "USB Device"
+msgstr "USB Cihazı"
+
+msgid "UUID"
+msgstr "UUID"
+
+msgid "Unknown Error, password not changed!"
+msgstr "Bilinmeyen Hata, şifre değişmedi!"
+
+msgid "Unknown"
+msgstr "Bilinmeyen"
+
+msgid "Unmanaged"
+msgstr "Yönetilmeyen"
+
+msgid "Unsaved Changes"
+msgstr "Kaydedilmemiş Değişiklikler"
+
+msgid "Unsupported protocol type."
+msgstr "Desteklenmeyen protokol tipi."
+
+msgid "Update interval (in seconds)"
+msgstr "Güncelleme aralığı (saniye)"
+
+msgid "Update lists"
+msgstr "Listeleri Güncelle"
+
+msgid "Upgrade"
+msgstr "YazılımYükseltme"
+
+msgid "Upgrading..."
+msgstr "Yükseltiliyor..."
+
+msgid "Uplink Modulation"
+msgstr "Bağlanı Modülasyonu"
+
+msgid "Upload archive"
+msgstr "Arşivi yükle"
+
+msgid "Upload archive..."
+msgstr "Arşivi yükle..."
+
+msgid "Upload interval"
+msgstr "Aralığı yükle"
+
+msgid "Uploaded File"
+msgstr "Yüklenen Dosya"
+
+msgid "Uptime"
+msgstr "Çalışma Süresi"
+
+msgid "Use <code>/etc/ethers</code>"
+msgstr " <code>/etc/ethers</code> kullan"
+
+msgid "Use @ delimiter"
+msgstr "@ Sınırlayıcı kullan "
+
+msgid "Use DHCP gateway"
+msgstr "DHCP Ağ Geçidi Kullan"
+
+msgid "Use DNS servers advertised by peer"
+msgstr "Peer tarafından tanıtılan DNS sunucularını kullan"
+
+msgid "Use ISO/IEC 3166 alpha2 country codes."
+msgstr "ISO/IEC 3166 alpha2 ülke kodlarını kullan."
+
+msgid "Use MTU on tunnel interface"
+msgstr "Bu tünel arabiriminde MTU kullan"
+
+msgid "Use NDIS mode"
+msgstr "NDIS modunu kullan"
+
+msgid "Use TTL on tunnel interface"
+msgstr "Bu tünel arabiriminde TTL kullan"
+
+msgid "Use as root filesystem"
+msgstr "Kök Dosya sistemi olarak kullan"
+
+msgid "Use bridge mode"
+msgstr "Köprü modunu kullan"
+
+msgid "Use broadcast flag"
+msgstr "Broadcast flag kullan"
+
+msgid "Use custom DNS servers"
+msgstr "Özel DNS sunucuları kullan"
+
+msgid "Use default gateway"
+msgstr "Varsayılan Ağ geçidini kullan"
+
+msgid "Use fast LZO compression"
+msgstr "Hızlı LZO sıkıştırma kullan"
+
+msgid "Use gateway metric"
+msgstr "Ağ geçidi metriği kullan"
+
+msgid "Use pppd mode"
+msgstr "Pppd modunu kullan"
+
+msgid "Use preferred lifetime"
+msgstr "Tercih edilen işlem ömrünü kullan"
+
+msgid "Use protocol"
+msgstr "Protokolü kullan"
+
+msgid "Use routing table"
+msgstr "Yönlendirme kablosunu kullan"
+
+msgid "Use valid lifetime"
+msgstr "Geçerli işlem süresini kullan"
+
+msgid "Used Key Slot"
+msgstr "Key Slot Kullan"
+
+msgid "Used"
+msgstr "Kullanılan"
+
+msgid "User ID"
+msgstr "Kullanıcı ID"
+
+msgid "User password"
+msgstr "Kullanıcı şifresi"
+
+msgid "Username"
+msgstr "Kullanıcı Adı"
+
+msgid "VC-Mux"
+msgstr "VC-Mux"
+
+msgid "VLAN Interface"
+msgstr "VLAN Arabirimi"
+
+msgid "VLANs on %q (%s)"
+msgstr "%q (%s) üzerinde VLAN lar"
+
+msgid "VLANs on %q"
+msgstr "%q üzerinde VLAN lar"
+
+msgid "VPN Server"
+msgstr "VPN Sunucusu"
+
+msgid "VPN TAP"
+msgstr "VPN TAP"
+
+msgid "VPN Tunnel"
+msgstr "VPN Tünel"
+
+msgid "VPN"
+msgstr "VPN"
+
+msgid "Value [0-255]"
+msgstr "Değer [0-255]"
+
+msgid "Vendor Class to send when requesting DHCP"
+msgstr "DHCP talep ederken Satıcı Sınıfını(Vendor Class) gönder"
+
+msgid "Verify"
+msgstr "Doğrula"
+
+msgid "Version"
+msgstr "Versiyon"
+
+msgid "Via"
+msgstr "İle"
+
+msgid "WAN (Wired)"
+msgstr "WAN (Kablolu)"
+
+msgid "WAN Gateway"
+msgstr "WAN Ağ Geçidi"
+
+msgid "WAN Uplink"
+msgstr "WAN Uplink"
+
+msgid "WAN failover link is disabled"
+msgstr "WAN yedek bağlantı kapalı "
+
+msgid "WAN not connected."
+msgstr "WAN bağlı değil."
+
+msgid "WAN"
+msgstr "WAN"
+
+msgid "WDS"
+msgstr "WDS"
+
+msgid "WEP Open System"
+msgstr "WEP Open System"
+
+msgid "WEP Shared Key"
+msgstr "WEP Paylaşımlı Anahtar"
+
+msgid "WEP passphrase"
+msgstr "WEP parola"
+
+msgid "WLAN-Scan"
+msgstr "WLAN-Tarama"
+
+msgid "WMM Mode"
+msgstr "WMM Modu"
+
+msgid "WPA passphrase"
+msgstr "WPA parola"
+
+msgid "WPA-EAP"
+msgstr "WPA-EAP"
+
+msgid "WPA-PSK"
+msgstr "WPA-PSK"
+
+msgid "WPA-PSK/WPA2-PSK Mixed Mode"
+msgstr "WPA-PSK/WPA2-PSK Mixed Mod"
+
+msgid "WPA2-EAP"
+msgstr "WPA2-EAP"
+
+msgid "WPA2-PSK"
+msgstr "WPA2-PSK"
+
+msgid "WRP100 configuration"
+msgstr "WRP100 yapılandırma"
+
+msgid "Waiting for router..."
+msgstr "Router bekleniyor..."
+
+msgid "Wan Mode"
+msgstr "Wan Modu"
+
+msgid "Wan selection"
+msgstr "Wan seçimi"
+
+msgid "Warning threshold (%)"
+msgstr "Uyarı Eşiği (%)"
+
+msgid "Warning"
+msgstr "Uyarı"
+
+msgid "Warning: There are unsaved changes that will be lost while rebooting!"
+msgstr "Uyarı: Yeniden başlatmadan önce kaydedilmemiş değişiklikler var!"
+
+msgid "Web Access control"
+msgstr "Web Erişim Kontrolü"
+
+msgid "Web filter"
+msgstr "Web filtresi"
+
+msgid "Wed."
+msgstr "Çarşamba"
+
+msgid "Wednesday"
+msgstr "Çarşamba"
+
+msgid "Week usage:"
+msgstr "Haftalık Kullanım:"
+
+msgid "Week"
+msgstr "Hafta"
+
+msgid "Weekdays"
+msgstr "Haftanın Günleri"
+
+msgid "Weekly data usage"
+msgstr "Haftalık veri kullanımı"
+
+msgid "Weekly"
+msgstr "Haftalık"
+
+msgid "WiFi"
+msgstr "WiFi"
+
+msgid "WiMAX Configuration"
+msgstr "WiMAX yapılandırma"
+
+msgid "WiMAX Management"
+msgstr "WiMAX Yönetimi"
+
+msgid "WiMAX certificates"
+msgstr "WiMAX Sertifikaları"
+
+msgid "WiMAX selected as wan - cannot enable failover link."
+msgstr "WiMAX wan olarak seçildi - yedek bağlantı açılamaz."
+
+msgid "WiMAX settings"
+msgstr "WiMAX ayarları"
+
+msgid "WiMAX"
+msgstr "WiMAX"
+
+msgid "Wifi networks in your local environment"
+msgstr "Yerel ortamınızdaki Wifi ağları"
+
+msgid "Wifi"
+msgstr "Wifi"
+
+msgid "Wired"
+msgstr "Kablolu"
+
+msgid "Wireless Access Point"
+msgstr "Kablosuz Erişim Noktası"
+
+msgid "Wireless Adapter"
+msgstr "Kablosuz Bağdaştırıcı"
+
+msgid "Wireless Configuration"
+msgstr "Kablouz yapılandırması"
+
+msgid "Wireless Network"
+msgstr "Kablosuz Ağ"
+
+msgid "Wireless Overview"
+msgstr "Kaablosuz Genel Bakış"
+
+msgid "Wireless SSID is not set - cannot enable failover link."
+msgstr "Kablosuz SSID ayarlanmadı - yedek bağlantı açılamaz."
+
+msgid "Wireless Security"
+msgstr "Kablosuz Güvenliği"
+
+msgid "Wireless Station"
+msgstr "Kablosuz İstasyon"
+
+msgid "Wireless configuration will be kept."
+msgstr "Kablosuz yapılandırma kaydedilecek."
+
+msgid "Wireless hotspot configuration"
+msgstr "Kablosuz Hotspot yapılandırma"
+
+msgid "Wireless hotspot"
+msgstr "Kablosuz Hotspot"
+
+msgid "Wireless is disabled or not associated"
+msgstr "Kablosuz Ağ kapalı ya da ilişkilendirilmedi"
+
+msgid "Wireless is restarting..."
+msgstr "Kablosuz ağ yeniden başlıyor..."
+
+msgid "Wireless network is disabled"
+msgstr "Kablosuz Ağ Kapalı"
+
+msgid "Wireless network is enabled"
+msgstr "Kablosuz Ağ Açık"
+
+msgid "Wireless restarted"
+msgstr "Kablosuz yeniden başlatıldı"
+
+msgid "Wireless shut down"
+msgstr "Kablosuz Ağ Kapalı"
+
+msgid "Wireless"
+msgstr "Kablosuz"
+
+msgid "Write received DNS requests to syslog"
+msgstr "DNS isteklerini Syslog a yaz"
+
+msgid "XR Support"
+msgstr "XR Desteği"
+
+msgid "You can add an additional link, example yoursite.com"
+msgstr "İlave link girebilirsiniz,örnek yoursite.com"
+
+msgid "You can configure your landing page here."
+msgstr "Giriş sayfanızı buradan ayarlayabilirsiniz."
+
+msgid "You can enable the <b>Teltonika Monitoring Service</b> here."
+msgstr " Burada <b>Teltonika İzleme Servisi</b> ni aktif edebilirsiniz"
+
+msgid "Zone %q"
+msgstr "Bölge %q"
+
+msgid "\"Remote network secure group\" should differ from device LAN IP (%s)"
+msgstr "\"Uzak Ağ Güvenlik Grubu\" cihazın  LAN IP (%s) 'sinden farklı olmalı"
+
+msgid "accept"
+msgstr "Kabul Et"
+
+msgid "address"
+msgstr "Adres"
+
+msgid "aggressive"
+msgstr "aggressive"
+
+msgid "all"
+msgstr "Hepsi"
+
+msgid "any host"
+msgstr "Her host"
+
+msgid "any router IP"
+msgstr "Her router IP"
+
+msgid "any zone"
+msgstr "Her bölge"
+
+msgid "any"
+msgstr "Her"
+
+msgid "auto"
+msgstr "Otomatik"
+
+msgid "automatic"
+msgstr "Otomatik"
+
+msgid "base"
+msgstr "Temel"
+
+msgid "bridged"
+msgstr "Bağlantı"
+
+msgid "creates a bridge over specified interface(s)"
+msgstr "Belirtilen arabirimler üzernde bağlantı yaratır(s)"
+
+msgid "custom"
+msgstr "Özel"
+
+msgid "disable"
+msgstr "Devre Dışı Bırak"
+
+msgid "don't track"
+msgstr "Devam Etme"
+
+msgid "drop"
+msgstr "Bırak"
+
+msgid "e.g. +37012345678"
+msgstr "ör: +37012345678"
+
+msgid "e.g. 192.168.1.1 (or www.host.com if DNS server configured correctly)"
+msgstr "ör: 192.168.1.1 (ya da www.host.com DNS sunucu doğru ayarlandıysa)"
+
+msgid "empty = infinite"
+msgstr "boş = sonsuz"
+
+msgid "err: 3G data limit field is empty!"
+msgstr "Hata: 3G veri limiti alanı boş!"
+
+msgid "err: 3G data limit value is empty!"
+msgstr "Hata: 3G veri limiti değeri boş!"
+
+msgid "err: 3G data limit value is incorrect!"
+msgstr "Hata: 3G veri limiti değeri yanlış!"
+
+msgid "err: Error: could not add firewall rule!"
+msgstr "Hata: Güvenlik duvarı kuralı eklenemedi!"
+
+msgid "err: Length of fragment is incorrect!"
+msgstr "Hata: Parça Uzunluğu Doğru Değil!"
+
+msgid "err: Phone number %s is incorrect!"
+msgstr "Hata: %s Telefon numarası yanlış!"
+
+msgid "err: Please specify SNMP port!"
+msgstr "Hata: Lütfen SNMP portunu girin!"
+
+msgid "err: SMS Reboot sender phone number %s is incorrect!"
+msgstr "Hata: SMS ile Yeniden Başlat gönderici telefon numarası %s yanlış!"
+
+msgid "err: SMS Reboot text and Status via SMS text must be different!"
+msgstr ""
+"Hata: SMS Yeniden Başlat metni ve SMS yolu ile Durum metni farklı olmalı!"
+
+msgid "err: SMS Reboot text and Status via SMS text must not match!"
+msgstr ""
+"Hata: SMS Yeniden Başlat metni ve SMS yolu ile Durum metni eşleşmemeli!"
+
+msgid "err: SMS Reboot text field is empty!"
+msgstr "Hata: SMS Yeniden Başlat metni alanı boş!"
+
+msgid "err: SMS Reboot text is incorrect!"
+msgstr "Hata: SMS Yeniden Başlat metni yanlış!"
+
+msgid "err: SMS Status text is incorrect!"
+msgstr "Hata: SMS Durum metni yanlış!"
+
+msgid "err: Status via SMS sender phone number %s is incorrect!"
+msgstr "Hata:SMS ile Durum gönderici telefon numarası %s yanlış!"
+
+msgid "err: Status via SMS text field is empty!"
+msgstr "Hata: SMS text ile Durum alanı boş!"
+
+msgid "err:Click Save to take effect"
+msgstr "Hata:Değişikliğin etkin olması için kaydete basın"
+
+msgid "err:Given password confirmation did not match, password not changed!"
+msgstr "Hata:Verilen şifre doğrulama eşleşmedi,şifre değiştirilmedi!"
+
+msgid "err:Unknown Error, password not changed!"
+msgstr "Hata:Bilinmeyen Hata, Şifre Değişmedi!"
+
+msgid "example.com"
+msgstr "example.com"
+
+msgid "expired"
+msgstr "Sürre Doldu"
+
+msgid "fashion"
+msgstr "Biçim"
+
+msgid "file where given DHCP-leases will be stored"
+msgstr "file where given DHCP-kiralamalarının kaydedileceği dosya"
+
+msgid "forward"
+msgstr "İlet"
+
+msgid "fqdn"
+msgstr "fqdn"
+
+msgid "google.*:80/.*(fashion|eshop)"
+msgstr "google.*:80/.*(fashion|eshop)"
+
+msgid "help"
+msgstr "Yardım"
+
+msgid "hidden"
+msgstr "Gizle"
+
+msgid "if target is a network"
+msgstr "Eğer hedef bir ağ ise"
+
+msgid "input"
+msgstr "Giriş"
+
+msgid "last 1 min: %d%%, 5 mins: %d%%, 15 mins: %d%%"
+msgstr "last 1 min: %d%%, 5 mins: %d%%, 15 mins: %d%%"
+
+msgid "local <abbr title=\"Domain Name System\">DNS</abbr> file"
+msgstr "yerel <abbr title=\"Domain Name System\">DNS</abbr> dosya"
+
+msgid "local DNS file"
+msgstr "yerel DNS dosyası"
+
+msgid "main"
+msgstr "Temel"
+
+msgid "no"
+msgstr "Hayır"
+
+msgid "none"
+msgstr "Hiçbiri"
+
+msgid "off"
+msgstr "Kapalı"
+
+msgid "on"
+msgstr "Açık"
+
+msgid "private"
+msgstr "private"
+
+msgid "public"
+msgstr "public"
+
+msgid "reject"
+msgstr "Reddet"
+
+msgid "routed"
+msgstr "Yönlendirilmiş"
+
+msgid "scs: Settings will take effect after router reboot."
+msgstr "scs: Ayarlar router yeniden başladıktan sonra etkin olacak."
+
+msgid "scs: You must reboot the router for the changes to take effect."
+msgstr "scs: Ayarların etkin oması için routerı yeniden başlatmalısınız."
+
+msgid "scs:Password successfully changed!"
+msgstr "scs:Şifre Başarıyla Değiştirildi!"
+
+msgid "since %s"
+msgstr "%s den beri"
+
+msgid "tagged"
+msgstr "Etiketli"
+
+msgid "unlimited"
+msgstr "Sınırsız"
+
+msgid "unspecified -or- create:"
+msgstr "Belirlenmemiş -ya da- yarat:"
+
+msgid "unspecified"
+msgstr "Belirlenmemiş"
+
+msgid "untagged"
+msgstr "Etiketsiz"
+
+msgid "user fqdn"
+msgstr "user fqdn"
+
+msgid "verification failed"
+msgstr "Kontrol Başarısız"
+
+msgid "verification succeeded"
+msgstr "Kontrol Başarılı"
+
+msgid "wrn:%s selected as wan - cannot enable failover link."
+msgstr "wrn:%s wan olarak seçildi - failover açılamaz."
+
+msgid "wrn:No 3G module detected!"
+msgstr "wrn: 3G modülü algılanmadı!"
+
+msgid "wrn:WiMAX selected as wan - cannot enable failover link."
+msgstr "wrn:WiMAX wan olarak seçildi - yedek bağlantı açılamaz."
+
+msgid "yes"
+msgstr "Evet"
+
+msgid "« Back"
+msgstr "« Geri"
+
+msgid "« Switch to basic configuration"
+msgstr "« Basit yapılandırmaya geçiş"
+
+msgid "Language settings"
+msgstr ""
+
+msgid "Changes the administration password, log level and provides SSH access control."
+msgstr ""
+
+msgid "This page allows you to upgrade routers firmware. Also it lets you backup your configuration or reset it to factory defaults."
+msgstr ""
+
+msgid "Here we will configure the basic settings of a typical Lan configuration. The wizard will cover 2 basic configurations: static IP address LAN and DHCP client."
+msgstr ""
+
+msgid "Expiry time of leased addresses, minimum is 2 Minutes (2m). "
+msgstr ""
+
+msgid "wrn:Configuration applied. If there are no error you can proccedd to the next step."
+msgstr ""
+
+msgid "Expiry time of leased addresses, minimum is 2 Minutes (<code>2m</code>)."
+msgstr ""
+
+msgid "Important note: Do not disable if the only way to reach the router is your wireless network."
+msgstr ""
+
+msgid "Now let's configure your wireless radio. (Note: if you are currently connecting via wireless and you change parameters, like SSID, encryption, etc. your connection will be dropped and you will have to reconnect with a new set of parametes.)"
+msgstr ""
+
+msgid "New OpenVPN instance created successfully, configure it"
+msgstr ""
+
+msgid "To create new OpenVPN instance, name should be specified!"
+msgstr ""
+
+msgid "err: Only alphanumeric characters allowed."
+msgstr ""
+
+msgid "Only one VPN instance is allowed."
+msgstr ""
+
+msgid "Main settings"
+msgstr ""
+
+msgid "OpenVPN instance: %s"
+msgstr ""
+
+msgid "Helper directive to simplify the expression of --ping and --ping-restart"
+msgstr ""
+
+msgid "Keep alive value is not correct! Must be two integer values, e.g.: 10 120"
+msgstr ""
+
+msgid "Remote host/IP address"
+msgstr ""
+
+msgid "Tun/Tap"
+msgstr ""
+
+msgid "TCP/UDP port for both, local and remote "
+msgstr ""
+
+msgid "Resolve Retry"
+msgstr ""
+
+msgid "Keep alive"
+msgstr ""
+
+msgid "Static pre-shared key"
+msgstr ""
+
+msgid "Local tunnel endpoint IP"
+msgstr ""
+
+msgid "Remote tunnel endpoint IP"
+msgstr ""
+
+msgid "Remote network IP address"
+msgstr ""
+
+msgid "Remote network netmask"
+msgstr ""
+
+msgid "Client to client"
+msgstr ""
+
+msgid "Virtual network IP address"
+msgstr ""
+
+msgid "Virtual network netmask"
+msgstr ""
+
+msgid "Here you can add your VPN clients so that they may be reachable from the server."
+msgstr ""
+
+msgid "TLS Clients"
+msgstr ""
+
+msgid "VPN Instance name"
+msgstr ""
+
+msgid "With what openVPN Instance should this entry be associated with. It is automatically set to your current openVPN instance."
+msgstr ""
+
+msgid "Dynamic DNS allows that your router can be reached with a fixed hostname while having a dynamically changing IP address."
+msgstr ""
+
+msgid "Here you can configure all the essential settings needed for a wireless hotspot."
+msgstr ""
+
+msgid "You can configure your timing settings for the log upload via FTP feature here."
+msgstr ""
+
+msgid "Enter 3 letter weekday keys separated by commas. E.g. Monday, Tuesday and Friday would be %s"
+msgstr ""
+
+msgid "Make sure you enter full address of yoursite.com, example http://www.yoursite.com"
+msgstr ""
+
+msgid "On this page you can configure your WAN settings. Your WAN configuration determines how the router will be connecting to the internet."
+msgstr ""
+
+msgid "Define additional DHCP options, for example \"<code>6,192.168.2.1,192.168.2.2</code>\" which advertises different DNS servers to clients."
+msgstr ""
+
+msgid "DHCP Logging"
+msgstr ""
+
+msgid "Here you can configure your wireless settings like radio frequency, mode, encryption etc..."
+msgstr ""
+
+msgid "Before changing Transmit Power value please save the settings with your Country Code applied."
+msgstr ""
+
+msgid "Here you can setup your failover link. If your conventional WAN connection, such as wired Ethernet or Wifi, fails, the failover link will enable and take over to keep the router connected."
+msgstr ""
+
+msgid "Timing & other parameters will indicate how and when it will be determined that your conventional connection has gone down."
+msgstr ""
+
+msgid "A remote host that will be used to test wether your failover link is alive."
+msgstr ""
+
+msgid "Port forwarding allows remote computers on the Internet to connect to a specific computer or service within the private LAN."
+msgstr ""
+
+msgid "Traffic rules define policies for packets traveling between different zones, for example to reject traffic between certain hosts or to open WAN ports on the router."
+msgstr ""
+
+msgid "Open ports on router:"
+msgstr ""
+
+msgid "Source NAT is a specific form of masquerading which allows fine grained control over the source IP used for outgoing traffic, for example to map multiple WAN addresses to internal subnets."
+msgstr ""
+
+msgid "New source NAT:"
+msgstr ""
+
+msgid "Custom rules allow you to execute arbritary iptables commands which are not otherwise covered by the firewall framework. The commands are executed after each firewall restart, right after the default ruleset has been loaded."
+msgstr ""
+
+msgid "Proxy based content blocker"
+msgstr ""
+
+msgid "Routes specify over which interface and gateway a certain host or network can be reached."
+msgstr ""
+
+msgid "Warning! During scan wireless will be temporariliy shutdown. If you are connecting to the router via its wireless Access Point or via its wireless WAN you will lose the connection and wont be able to inspect the result of the scan."
+msgstr ""
+
+msgid "Profile name cannot be more than 10 characters."
+msgstr ""
+
+msgid "Profile name cannot be empty."
+msgstr ""
+
+msgid "Profile name should contain only alphanumeric characters."
+msgstr ""
+
+msgid "The system is erasing the configuration partition now and will reboot itself when finished."
+msgstr ""
+
+msgid "<b>MD5 verification failed. This means that flash image is either damaged or not compatible with this router.</b> <br />Ensure to get a correct flash image and try to upgrade again."
+msgstr ""
+
+msgid "The flash image was uploaded and MD5 verification was successful. <b>This is the last chance to abort flashing if required.</b> <br />Click \"Proceed\" below to start the flash procedure."
+msgstr ""
+
+msgid "The system is upgrading now.<br /> <b>DO NOT POWER OFF THE DEVICE!</b><br /> It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
+msgstr ""
+

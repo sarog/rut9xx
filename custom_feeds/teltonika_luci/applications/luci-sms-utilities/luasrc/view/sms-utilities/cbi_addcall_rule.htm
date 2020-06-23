@@ -1,0 +1,33 @@
+<%
+local uci = require "luci.model.uci".cursor()
+local in_out = uci:get("hwinfo","hwinfo","in_out") or "0"
+local is_io = uci:get("hwinfo","hwinfo","4pin_io") or "0"
+
+%>
+<div class="cbi-section-create cbi-tblsection-create">
+	<legend><%=translate("New Call Rule")%></legend>
+	<br />
+	<table class="cbi-section-table" style="width:100%; margin-left:5px">
+		<tr class="cbi-section-table-descr">
+			<th class="cbi-section-table-cell"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('The action to be performed when a rule is met')%>')"</span><%=translate("Action")%></th>
+			<th class="cbi-section-table-cell"></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td class="cbi-section-table-cell" style="width:110px">
+				<select class="cbi-input-select" id="_newinput.action" name="_newinput.action" style="float:left;">
+					<option value="reboot"><%=translate("Reboot")%></option>
+					<option value="send_status"><%=translate("Get status")%></option>
+					<option value="wifi"><%=translate("Turn WiFi on/off")%></option>
+					<option value="mobile"><%=translate("Turn mobile data on/off")%></option>
+					<% if in_out == "1" or is_io == "1" then %>
+						<option value="dout"><%=translate("Turn Output on/off")%></option>
+					<% end %>
+				</select>
+			</td>
+			<td class="cbi-section-table-cell">
+				<input type="submit" class="cbi-button cbi-button-add" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" value="<%:Add%>" />
+			</td>
+		</tr>
+	</table>
+
+</div>

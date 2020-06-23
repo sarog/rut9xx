@@ -1,0 +1,36 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -270,11 +270,11 @@
+ 	set(OPENSSL_PLATFORM_DIR ${OPENSSL_INTERNAL_ROOT}/osx64)
+ else ()
+ 	MESSAGE(STATUS "Dynamically locating OpenSSL")
+-	find_package(OpenSSL) # Last resort
++	#find_package(OpenSSL) # Last last resort
+ endif()
+ 
+ # Has the caller specified an external include path?
+-if ("$ENV{THINGWORX_CSDK_OPENSSL_INCLUDE_DIR}" STREQUAL "")
++if ("${THINGWORX_CSDK_OPENSSL_INCLUDE_DIR}" STREQUAL "")
+ 	if (NOT ${OPENSSL_PLATFORM_DIR} STREQUAL "")
+ 		if (${PLATFORM} STREQUAL "win64")
+ 			# Win64 will use the same includes as the 32-bit Windows build
+@@ -285,16 +285,16 @@
+ 		endif ()
+ 	endif ()
+ else()
+-	set (OPENSSL_INCLUDE_DIR "$ENV{THINGWORX_CSDK_OPENSSL_INCLUDE_DIR}")
++	set (OPENSSL_INCLUDE_DIR "${THINGWORX_CSDK_OPENSSL_INCLUDE_DIR}")
+ endif()
+ 
+ # Has the caller specified an external library path?
+-if ("$ENV{THINGWORX_CSDK_OPENSSL_LIB_DIR}" STREQUAL "")
++if ("${THINGWORX_CSDK_OPENSSL_LIB_DIR}" STREQUAL "")
+ 	if (NOT ${OPENSSL_PLATFORM_DIR} STREQUAL "")
+ 		set (OPENSSL_LIB_DIR ${OPENSSL_PLATFORM_DIR}/lib)
+ 	endif()
+ else()
+-	set(OPENSSL_LIB_DIR "$ENV{THINGWORX_CSDK_OPENSSL_LIB_DIR}")
++	set(OPENSSL_LIB_DIR "${THINGWORX_CSDK_OPENSSL_LIB_DIR}")
+ endif()
+ 
+ # Here the platform-dependent name of the SSL and encryption libraries are specified

@@ -1,0 +1,47 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: reboot.htm 5448 2009-10-31 15:54:11Z jow $
+
+-%>
+<%+header%>
+<h2><a class="content"><%=translate("Router Reboot")%></a></h2>
+<div class="cbi-section-descr"><!--<%:This button reboots the system.%>--></div>
+<div class="alert-message warning"><%=translate("Warning! During reboot you will temporarily lose the connection.")%></div>
+<%-
+local c = require("luci.model.uci").cursor():changes()
+if c and next(c) and false then -- remove 'and false' if you want warning
+-%>
+	<p class="warning"><%=translate("Warning: There are unsaved changes that will be lost while rebooting!")%></p> 
+<%-
+end
+if not reboot then 
+-%>
+<br />
+<form method="post" action="<%=controller%>/admin/system/reboot?reboot=1" enctype="multipart/form-data">
+<input class="cbi-button " type="submit" name="reboot" value="<%=translate('Reboot')%>" />
+</form>
+<%- else -%>
+<p><%=translate("Please wait: Device rebooting...")%></p>
+<script type="text/javascript">//<![CDATA[
+	var interval = window.setInterval(function() {
+		var img = new Image();
+
+		img.onload = function() {
+			window.clearInterval(interval);
+			location.href = 'http://<%=addr or luci.http.getenv("SERVER_NAME")%>/';
+		};
+
+		img.src = 'http://<%=addr or luci.http.getenv("SERVER_NAME")%><%=resource%>/icons/loading.gif?' + Math.random();
+	}, 20000);
+//]]></script>
+<%- end -%>
+<%+footer%>

@@ -1,0 +1,33 @@
+--- a/libblkid-tiny/libblkid-tiny.c
++++ b/libblkid-tiny/libblkid-tiny.c
+@@ -84,19 +84,17 @@
+ 	int ret;
+ 	unsigned char *buf;
+ 
+-	if (len > probe_buffer_size) {
+-		buf = realloc(probe_buffer, len);
+-
+-		if (!buf) {
+-			fprintf(stderr, "failed to allocate %d byte buffer\n",
+-			        (int)len);
+-
+-			return NULL;
+-		}
+-
+-		probe_buffer = buf;
+-		probe_buffer_size = len;
+-	}
++	buf = realloc(NULL, len);
++
++	if (!buf) {
++		fprintf(stderr, "failed to allocate %d byte buffer\n",
++		        (int)len);
++
++		return NULL;
++	}
++
++	probe_buffer = buf;
++	probe_buffer_size = len;
+ 
+ 	memset(probe_buffer, 0, probe_buffer_size);
+ 

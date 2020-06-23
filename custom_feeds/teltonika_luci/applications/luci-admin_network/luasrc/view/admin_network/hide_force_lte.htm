@@ -1,0 +1,44 @@
+<script type="text/javascript">
+    function show_force_lte_network_options(sim) {
+        var service = document.getElementById("cbid.simcard.sim1.service" + sim);
+
+        if (service == null) {
+            return false;
+        }
+
+        if (service.value == "lte-only" || service.value == "auto"
+            || service.value == "gprs-lte" || service.value == "umts-lte") {
+            return true;
+        }
+        return false;
+    }
+
+    function toggle_force_lte() {
+        var e = document.getElementById("cbi-reregister");
+
+        if (e == null) {
+            return;
+        }
+
+        if (show_force_lte_network_options("") == true
+            || show_force_lte_network_options("2") == true) {
+            e.style.display = "block";
+        } else {
+            e.style.display = "none";
+        }
+    }
+
+    var e = document.getElementById("cbid.simcard.sim1.service");
+
+    if (e != null) {
+        e.addEventListener("change", toggle_force_lte);
+    }
+
+    e = document.getElementById("cbid.simcard.sim1.service2");
+
+    if (e != null) {
+        e.addEventListener("change", toggle_force_lte);
+    }
+
+    window.addEventListener("load", toggle_force_lte);
+</script>

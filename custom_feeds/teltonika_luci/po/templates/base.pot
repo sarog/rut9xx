@@ -1,0 +1,9798 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+msgid "(%d minute window, %d second interval)"
+msgstr ""
+
+msgid "(%s available)"
+msgstr ""
+
+msgid "(empty)"
+msgstr ""
+
+msgid "(no interfaces attached)"
+msgstr ""
+
+msgid "-- Additional Field --"
+msgstr ""
+
+msgid "-- Please choose --"
+msgstr ""
+
+msgid "-- custom --"
+msgstr ""
+
+msgid "1 Minute Load:"
+msgstr ""
+
+msgid "15 Minute Load:"
+msgstr ""
+
+msgid "40MHz 2nd channel above"
+msgstr ""
+
+msgid "40MHz 2nd channel below"
+msgstr ""
+
+msgid "5 Minute Load:"
+msgstr ""
+
+msgid "<abbr title=\"Basic Service Set Identifier\">BSSID</abbr>"
+msgstr ""
+
+msgid ""
+"<abbr title=\"Classless Inter-Domain Routing\">CIDR</abbr>-Notation: address/"
+"prefix"
+msgstr ""
+
+msgid "<abbr title=\"Domain Name System\">DNS</abbr> query port"
+msgstr ""
+
+msgid "<abbr title=\"Domain Name System\">DNS</abbr> server port"
+msgstr ""
+
+msgid ""
+"<abbr title=\"Domain Name System\">DNS</abbr> servers will be queried in the "
+"order of the resolvfile"
+msgstr ""
+
+msgid "<abbr title=\"Domain Name System\">DNS</abbr>-Server"
+msgstr ""
+
+msgid "<abbr title=\"Encrypted\">Encr.</abbr>"
+msgstr ""
+
+msgid "<abbr title=\"Extended Service Set Identifier\">ESSID</abbr>"
+msgstr ""
+
+msgid "<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Address"
+msgstr ""
+
+msgid "<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Broadcast"
+msgstr ""
+
+msgid "<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Gateway"
+msgstr ""
+
+msgid "<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Netmask"
+msgstr ""
+
+msgid "<abbr title=\"Internet Protocol Version 6\">IPv6</abbr>-Address"
+msgstr ""
+
+msgid ""
+"<abbr title=\"Internet Protocol Version 6\">IPv6</abbr>-Address or Network "
+"(CIDR)"
+msgstr ""
+
+msgid "<abbr title=\"Internet Protocol Version 6\">IPv6</abbr>-Gateway"
+msgstr ""
+
+msgid "<abbr title=\"Light Emitting Diode\">LED</abbr> Configuration"
+msgstr ""
+
+msgid "<abbr title=\"Light Emitting Diode\">LED</abbr> Name"
+msgstr ""
+
+msgid "<abbr title=\"Media Access Control\">MAC</abbr>-Address"
+msgstr ""
+
+msgid "<abbr title=\"Wireless Local Area Network\">WLAN</abbr>-Scan"
+msgstr ""
+
+msgid ""
+"<abbr title=\"maximal\">Max.</abbr> <abbr title=\"Dynamic Host Configuration "
+"Protocol\">DHCP</abbr> leases"
+msgstr ""
+
+msgid ""
+"<abbr title=\"maximal\">Max.</abbr> <abbr title=\"Extension Mechanisms for "
+"Domain Name System\">EDNS0</abbr> paket size"
+msgstr ""
+
+msgid "<abbr title=\"maximal\">Max.</abbr> concurrent queries"
+msgstr ""
+
+msgid "APN"
+msgstr ""
+
+msgid "AR Support"
+msgstr ""
+
+msgid "ARP retry threshold"
+msgstr ""
+
+msgid "ATM Bridges"
+msgstr ""
+
+msgid "ATM Virtual Channel Identifier (VCI)"
+msgstr ""
+
+msgid "ATM Virtual Path Identifier (VPI)"
+msgstr ""
+
+msgid ""
+"ATM bridges expose encapsulated ethernet in AAL5 connections as virtual "
+"Linux network interfaces which can be used in conjunction with DHCP or PPP "
+"to dial into the provider network."
+msgstr ""
+
+msgid "ATM device number"
+msgstr ""
+
+msgid "Accept router advertisements"
+msgstr ""
+
+msgid "Access Concentrator"
+msgstr ""
+
+msgid "Access Point"
+msgstr ""
+
+msgid "Action"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Activate this network"
+msgstr ""
+
+msgid "Active <abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Routes"
+msgstr ""
+
+msgid "Active <abbr title=\"Internet Protocol Version 6\">IPv6</abbr>-Routes"
+msgstr ""
+
+msgid "Active Connections"
+msgstr ""
+
+msgid "Active Leases"
+msgstr ""
+
+msgid "Ad-Hoc"
+msgstr ""
+
+msgid "Add"
+msgstr ""
+
+msgid "Add local domain suffix to names served from hosts files"
+msgstr ""
+
+msgid "Add new interface..."
+msgstr ""
+
+msgid "Additional Hosts files"
+msgstr ""
+
+msgid "Address"
+msgstr ""
+
+msgid "Address to access local relay bridge"
+msgstr ""
+
+msgid "Administration"
+msgstr ""
+
+msgid "Advanced Settings"
+msgstr ""
+
+msgid "Advertise IPv6 on network"
+msgstr ""
+
+msgid "Advertised network ID"
+msgstr ""
+
+msgid "Alert"
+msgstr ""
+
+msgid "Allow <abbr title=\"Secure Shell\">SSH</abbr> password authentication"
+msgstr ""
+
+msgid "Allow all except listed"
+msgstr ""
+
+msgid "Allow listed only"
+msgstr ""
+
+msgid "Allow localhost"
+msgstr ""
+
+msgid "Allow remote hosts to connect to local SSH forwarded ports"
+msgstr ""
+
+msgid "Allow root logins with password"
+msgstr ""
+
+msgid "Allow the <em>root</em> user to login with password"
+msgstr ""
+
+msgid "Allow upstream responses in the 127.0.0.0/8 range, e.g. for RBL services"
+msgstr ""
+
+msgid "Allowed range is 1 to 65535"
+msgstr ""
+
+msgid "An additional network will be created if you leave this unchecked."
+msgstr ""
+
+msgid "Antenna 1"
+msgstr ""
+
+msgid "Antenna 2"
+msgstr ""
+
+msgid "Any zone"
+msgstr ""
+
+msgid "Apply"
+msgstr ""
+
+msgid "Applying changes"
+msgstr ""
+
+msgid "Associated Stations"
+msgstr ""
+
+msgid "Authentication"
+msgstr ""
+
+msgid "Authoritative"
+msgstr ""
+
+msgid "Authorization Required"
+msgstr ""
+
+msgid "Auto Refresh"
+msgstr ""
+
+msgid "Available"
+msgstr ""
+
+msgid "Available packages"
+msgstr ""
+
+msgid "Average:"
+msgstr ""
+
+msgid "BSSID"
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Back to Overview"
+msgstr ""
+
+msgid "Back to configuration"
+msgstr ""
+
+msgid "Back to overview"
+msgstr ""
+
+msgid "Back to scan results"
+msgstr ""
+
+msgid "Background Scan"
+msgstr ""
+
+msgid "Backup / Flash Firmware"
+msgstr ""
+
+msgid "Backup / Restore"
+msgstr ""
+
+msgid "Backup file list"
+msgstr ""
+
+msgid "Bad address specified!"
+msgstr ""
+
+msgid ""
+"Below is the determined list of files to backup. It consists of changed "
+"configuration files marked by opkg, essential base files and the user "
+"defined backup patterns."
+msgstr ""
+
+msgid "Bit Rate"
+msgstr ""
+
+msgid "Bitrate"
+msgstr ""
+
+msgid "Bogus NX Domain Override"
+msgstr ""
+
+msgid "Bridge"
+msgstr ""
+
+msgid "Bridge interfaces"
+msgstr ""
+
+msgid "Bridge unit number"
+msgstr ""
+
+msgid "Bring up on boot"
+msgstr ""
+
+msgid "Buffered"
+msgstr ""
+
+msgid "Buttons"
+msgstr ""
+
+msgid "CPU"
+msgstr ""
+
+msgid "CPU usage (%)"
+msgstr ""
+
+msgid "Cached"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Chain"
+msgstr ""
+
+msgid "Changes"
+msgstr ""
+
+msgid "Changes applied."
+msgstr ""
+
+msgid "Changes the administrator password for accessing the device"
+msgstr ""
+
+msgid "Channel"
+msgstr ""
+
+msgid "Check"
+msgstr ""
+
+msgid "Checksum"
+msgstr ""
+
+msgid "Choose the firewall zone you want to assign to this interface. Select <em>unspecified</em> to remove the interface from the associated zone or fill out the <em>create</em> field to define a new zone and attach the interface to it."
+msgstr ""
+
+msgid "Choose the network you want to attach to this wireless interface. Select <em>unspecified</em> to not attach any network or fill out the <em>create</em> field to define a new network."
+msgstr ""
+
+msgid "Cipher"
+msgstr ""
+
+msgid ""
+"Click \"Generate archive\" to download a tar archive of the current "
+"configuration files. To reset the firmware to its initial state, click "
+"\"Perform reset\" (only possible with squashfs images)."
+msgstr ""
+
+msgid "Client"
+msgstr ""
+
+msgid "Client ID to send when requesting DHCP"
+msgstr ""
+
+msgid ""
+"Close inactive connection after the given amount of seconds, use 0 to "
+"persist connection"
+msgstr ""
+
+msgid "Close list..."
+msgstr ""
+
+msgid "Collecting data..."
+msgstr ""
+
+msgid "Command"
+msgstr ""
+
+msgid "Common Configuration"
+msgstr ""
+
+msgid "Compression"
+msgstr ""
+
+msgid "Configuration"
+msgstr ""
+
+msgid "Configuration / Apply"
+msgstr ""
+
+msgid "Configuration / Changes"
+msgstr ""
+
+msgid "Configuration / Revert"
+msgstr ""
+
+msgid "Configuration applied."
+msgstr ""
+
+msgid "Configuration files will be kept."
+msgstr ""
+
+msgid "Configures this mount as overlay storage for block-extroot"
+msgstr ""
+
+msgid "Confirmation"
+msgstr ""
+
+msgid "Connect"
+msgstr ""
+
+msgid "Connected"
+msgstr ""
+
+msgid "Connection Limit"
+msgstr ""
+
+msgid "Connections"
+msgstr ""
+
+msgid "Country"
+msgstr ""
+
+msgid "Country Code"
+msgstr ""
+
+msgid "Cover the following interface"
+msgstr ""
+
+msgid "Cover the following interfaces"
+msgstr ""
+
+msgid "Create / Assign firewall-zone"
+msgstr ""
+
+msgid "Create Interface"
+msgstr ""
+
+msgid "Create Network"
+msgstr ""
+
+msgid "Create a bridge over multiple interfaces"
+msgstr ""
+
+msgid "Critical"
+msgstr ""
+
+msgid "Cron Log Level"
+msgstr ""
+
+msgid "Custom Interface"
+msgstr ""
+
+msgid ""
+"Customizes the behaviour of the device <abbr title=\"Light Emitting Diode"
+"\">LED</abbr>s if possible."
+msgstr ""
+
+msgid "DHCP Leases"
+msgstr ""
+
+msgid "DHCP Server"
+msgstr ""
+
+msgid "DHCP and DNS"
+msgstr ""
+
+msgid "DHCP client"
+msgstr ""
+
+msgid "DHCP-Options"
+msgstr ""
+
+msgid "DNS"
+msgstr ""
+
+msgid "DNS forwardings"
+msgstr ""
+
+msgid "Debug"
+msgstr ""
+
+msgid "Default %d"
+msgstr ""
+
+msgid "Default gateway"
+msgstr ""
+
+msgid "Default state"
+msgstr ""
+
+msgid "Define a name for this network."
+msgstr ""
+
+msgid ""
+"Define additional DHCP options, for example "
+"\"<code>6,192.168.2.1,192.168.2.2</code>\" which advertises different DNS "
+"servers to clients."
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Delete this interface"
+msgstr ""
+
+msgid "Delete this network"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Design"
+msgstr ""
+
+msgid "Destination"
+msgstr ""
+
+msgid "Device"
+msgstr ""
+
+msgid "Device Configuration"
+msgstr ""
+
+msgid "Diagnostics"
+msgstr ""
+
+msgid "Directory"
+msgstr ""
+
+msgid "Disable"
+msgstr ""
+
+msgid "Disable <abbr title=\"Dynamic Host Configuration Protocol\">DHCP</abbr> for this interface."
+msgstr ""
+
+msgid "Disable DNS setup"
+msgstr ""
+
+msgid "Disable HW-Beacon timer"
+msgstr ""
+
+msgid "Disabled"
+msgstr ""
+
+msgid "Discard upstream RFC1918 responses"
+msgstr ""
+
+msgid "Displaying only packages containing"
+msgstr ""
+
+msgid "Distance Optimization"
+msgstr ""
+
+msgid "Distance to farthest network member in meters."
+msgstr ""
+
+msgid "Diversity"
+msgstr ""
+
+msgid ""
+"Dnsmasq is a combined <abbr title=\"Dynamic Host Configuration Protocol"
+"\">DHCP</abbr>-Server and <abbr title=\"Domain Name System\">DNS</abbr>-"
+"Forwarder for <abbr title=\"Network Address Translation\">NAT</abbr> "
+"firewalls"
+msgstr ""
+
+msgid "Do not cache negative replies, e.g. for not existing domains"
+msgstr ""
+
+msgid "Do not forward requests that cannot be answered by public name servers"
+msgstr ""
+
+msgid "Do not forward reverse lookups for local networks"
+msgstr ""
+
+msgid "Do not send probe responses"
+msgstr ""
+
+msgid "Domain required"
+msgstr ""
+
+msgid "Domain whitelist"
+msgstr ""
+
+msgid ""
+"Don't forward <abbr title=\"Domain Name System\">DNS</abbr>-Requests without "
+"<abbr title=\"Domain Name System\">DNS</abbr>-Name"
+msgstr ""
+
+msgid "Download and install package"
+msgstr ""
+
+msgid "Download backup"
+msgstr ""
+
+msgid "Dropbear Instance"
+msgstr ""
+
+msgid ""
+"Dropbear offers <abbr title=\"Secure Shell\">SSH</abbr> network shell access "
+"and an integrated <abbr title=\"Secure Copy\">SCP</abbr> server"
+msgstr ""
+
+msgid "Dynamic <abbr title=\"Dynamic Host Configuration Protocol\">DHCP</abbr>"
+msgstr ""
+
+msgid "Dynamic tunnel"
+msgstr ""
+
+msgid ""
+"Dynamically allocate DHCP addresses for clients. If disabled, only clients "
+"having static leases will be served."
+msgstr ""
+
+msgid "EAP-Method"
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "Edit this interface"
+msgstr ""
+
+msgid "Edit this network"
+msgstr ""
+
+msgid "Emergency"
+msgstr ""
+
+msgid "Enable"
+msgstr ""
+
+msgid "Enable <abbr title=\"Spanning Tree Protocol\">STP</abbr>"
+msgstr ""
+
+msgid "Enable HE.net dynamic endpoint update"
+msgstr ""
+
+msgid "Enable IPv6 negotiation on the PPP link"
+msgstr ""
+
+msgid "Enable Jumbo Frame passthrough"
+msgstr ""
+
+msgid "Enable TFTP server"
+msgstr ""
+
+msgid "Enable VLAN functionality"
+msgstr ""
+
+msgid "Enable buffering"
+msgstr ""
+
+msgid "Enable builtin NTP server"
+msgstr ""
+
+msgid "Enable learning and aging"
+msgstr ""
+
+msgid "Enable this mount"
+msgstr ""
+
+msgid "Enable this swap"
+msgstr ""
+
+msgid "Enable/Disable"
+msgstr ""
+
+msgid "Enabled"
+msgstr ""
+
+msgid "Enables the Spanning Tree Protocol on this bridge"
+msgstr ""
+
+msgid "Encapsulation mode"
+msgstr ""
+
+msgid "Encryption"
+msgstr ""
+
+msgid "Erasing..."
+msgstr ""
+
+msgid "Error"
+msgstr ""
+
+msgid "Ethernet Adapter"
+msgstr ""
+
+msgid "Ethernet Switch"
+msgstr ""
+
+msgid "Expand hosts"
+msgstr ""
+
+msgid "Expires"
+msgstr ""
+
+msgid "Expiry time of leased addresses, minimum is 2 Minutes (<code>2m</code>)."
+msgstr ""
+
+msgid "External system log server"
+msgstr ""
+
+msgid "External system log server port"
+msgstr ""
+
+msgid "Fast Frames"
+msgstr ""
+
+msgid "File"
+msgstr ""
+
+msgid "Filename of the boot image advertised to clients"
+msgstr ""
+
+msgid "Filesystem"
+msgstr ""
+
+msgid "Filter"
+msgstr ""
+
+msgid "Filter private"
+msgstr ""
+
+msgid "Filter useless"
+msgstr ""
+
+msgid "Find and join network"
+msgstr ""
+
+msgid "Find package"
+msgstr ""
+
+msgid "Finish"
+msgstr ""
+
+msgid "Firewall"
+msgstr ""
+
+msgid "Firewall Settings"
+msgstr ""
+
+msgid "Firewall Status"
+msgstr ""
+
+msgid "Firmware Version"
+msgstr ""
+
+msgid "Fixed source port for outbound DNS queries"
+msgstr ""
+
+msgid "Flags"
+msgstr ""
+
+msgid "Flash Firmware"
+msgstr ""
+
+msgid "Flash image..."
+msgstr ""
+
+msgid "Flash new firmware image"
+msgstr ""
+
+msgid "Flash operations"
+msgstr ""
+
+msgid "Flashing..."
+msgstr ""
+
+msgid "Force"
+msgstr ""
+
+msgid "Force CCMP (AES)"
+msgstr ""
+
+msgid "Force DHCP on this network even if another server is detected."
+msgstr ""
+
+msgid "Force TKIP"
+msgstr ""
+
+msgid "Force TKIP and CCMP (AES)"
+msgstr ""
+
+msgid "Forward DHCP traffic"
+msgstr ""
+
+msgid "Forward broadcast traffic"
+msgstr ""
+
+msgid "Forwarding mode"
+msgstr ""
+
+msgid "Fragmentation Threshold"
+msgstr ""
+
+msgid "Frame Bursting"
+msgstr ""
+
+msgid "Free"
+msgstr ""
+
+msgid "Free space"
+msgstr ""
+
+msgid "Frequency Hopping"
+msgstr ""
+
+msgid "Gateway"
+msgstr ""
+
+msgid "Gateway ports"
+msgstr ""
+
+msgid "General Settings"
+msgstr ""
+
+msgid "General Setup"
+msgstr ""
+
+msgid "Generate archive"
+msgstr ""
+
+msgid "Given password confirmation did not match, password not changed!"
+msgstr ""
+
+msgid "Go to password configuration..."
+msgstr ""
+
+msgid "Go to relevant configuration page"
+msgstr ""
+
+msgid "HE.net password"
+msgstr ""
+
+msgid "HE.net user ID"
+msgstr ""
+
+msgid "HT capabilities"
+msgstr ""
+
+msgid "HT mode"
+msgstr ""
+
+msgid "Handler"
+msgstr ""
+
+msgid "Hang Up"
+msgstr ""
+
+msgid "Here you can configure the basic aspects of your device like its hostname or the timezone."
+msgstr ""
+
+msgid "Here you can paste public SSH-Keys (one per line) for SSH public-key authentication."
+msgstr ""
+
+msgid "Hide <abbr title=\"Extended Service Set Identifier\">ESSID</abbr>"
+msgstr ""
+
+msgid "Host entries"
+msgstr ""
+
+msgid "Host expiry timeout"
+msgstr ""
+
+msgid "Host-<abbr title=\"Internet Protocol Address\">IP</abbr> or Network"
+msgstr ""
+
+msgid "Hostname"
+msgstr ""
+
+msgid "Hostname to send when requesting DHCP"
+msgstr ""
+
+msgid "Hostnames"
+msgstr ""
+
+msgid "IP address"
+msgstr ""
+
+msgid "IP-Aliases"
+msgstr ""
+
+msgid "IPv4"
+msgstr ""
+
+msgid "IPv4 Firewall"
+msgstr ""
+
+msgid "IPv4 WAN Status"
+msgstr ""
+
+msgid "IPv4 address"
+msgstr ""
+
+msgid "IPv4 and IPv6"
+msgstr ""
+
+msgid "IPv4 broadcast"
+msgstr ""
+
+msgid "IPv4 gateway"
+msgstr ""
+
+msgid "IPv4 netmask"
+msgstr ""
+
+msgid "IPv4 only"
+msgstr ""
+
+msgid "IPv4-Address"
+msgstr ""
+
+msgid "IPv6"
+msgstr ""
+
+msgid "IPv6 Firewall"
+msgstr ""
+
+msgid "IPv6 Setup"
+msgstr ""
+
+msgid "IPv6 WAN Status"
+msgstr ""
+
+msgid "IPv6 address"
+msgstr ""
+
+msgid "IPv6 gateway"
+msgstr ""
+
+msgid "IPv6 only"
+msgstr ""
+
+msgid "IPv6-in-IPv4 (RFC4213)"
+msgstr ""
+
+msgid "IPv6-over-IPv4"
+msgstr ""
+
+msgid "Identity"
+msgstr ""
+
+msgid "If specified, mount the device by its UUID instead of a fixed device node"
+msgstr ""
+
+msgid "If specified, mount the device by the partition label instead of a fixed device node"
+msgstr ""
+
+msgid "If unchecked, no default route is configured"
+msgstr ""
+
+msgid "If unchecked, the advertised DNS server addresses are ignored"
+msgstr ""
+
+msgid ""
+"If your physical memory is insufficient unused data can be temporarily "
+"swapped to a swap-device resulting in a higher amount of usable <abbr title="
+"\"Random Access Memory\">RAM</abbr>. Be aware that swapping data is a very "
+"slow process as the swap-device cannot be accessed with the high datarates "
+"of the <abbr title=\"Random Access Memory\">RAM</abbr>."
+msgstr ""
+
+msgid "Ignore Hosts files"
+msgstr ""
+
+msgid "Ignore interface"
+msgstr ""
+
+msgid "Ignore resolve file"
+msgstr ""
+
+msgid "Image"
+msgstr ""
+
+msgid "In"
+msgstr ""
+
+msgid "Inactivity timeout"
+msgstr ""
+
+msgid "Inbound:"
+msgstr ""
+
+msgid "Info"
+msgstr ""
+
+msgid "Initscript"
+msgstr ""
+
+msgid "Initscripts"
+msgstr ""
+
+msgid "Install"
+msgstr ""
+
+msgid "Install package %q"
+msgstr ""
+
+msgid "Install protocol extensions..."
+msgstr ""
+
+msgid "Installed packages"
+msgstr ""
+
+msgid "Interface"
+msgstr ""
+
+msgid "Interface Configuration"
+msgstr ""
+
+msgid "Interface Overview"
+msgstr ""
+
+msgid "Interface is reconnecting..."
+msgstr ""
+
+msgid "Interface is shutting down..."
+msgstr ""
+
+msgid "Interface not present or not connected yet."
+msgstr ""
+
+msgid "Interface reconnected"
+msgstr ""
+
+msgid "Interface shut down"
+msgstr ""
+
+msgid "Interfaces"
+msgstr ""
+
+msgid "Invalid"
+msgstr ""
+
+msgid "Invalid VLAN ID given! Only IDs between %d and %d are allowed."
+msgstr ""
+
+msgid "Invalid VLAN ID given! Only unique IDs are allowed"
+msgstr ""
+
+msgid "Invalid username and/or password! Please try again."
+msgstr ""
+
+msgid "It appears that you try to flash an image that does not fit into the flash memory, please verify the image file!"
+msgstr ""
+
+msgid "Java Script required!"
+msgstr ""
+
+msgid "Join Network"
+msgstr ""
+
+msgid "Join Network: Settings"
+msgstr ""
+
+msgid "Join Network: Wireless Scan"
+msgstr ""
+
+msgid "Keep settings"
+msgstr ""
+
+msgid "Kernel Log"
+msgstr ""
+
+msgid "Kernel Version"
+msgstr ""
+
+msgid "Key"
+msgstr ""
+
+msgid "Key #%d"
+msgstr ""
+
+msgid "Kill"
+msgstr ""
+
+msgid "LCP echo failure threshold"
+msgstr ""
+
+msgid "LCP echo interval"
+msgstr ""
+
+msgid "LLC"
+msgstr ""
+
+msgid "Label"
+msgstr ""
+
+msgid "Language"
+msgstr ""
+
+msgid "Language and Style"
+msgstr ""
+
+msgid "Lease validity time"
+msgstr ""
+
+msgid "Leasefile"
+msgstr ""
+
+msgid "Leasetime"
+msgstr ""
+
+msgid "Leasetime remaining"
+msgstr ""
+
+msgid "Leave empty to autodetect"
+msgstr ""
+
+msgid "Leave empty to use the current WAN address"
+msgstr ""
+
+msgid "Legend:"
+msgstr ""
+
+msgid "Limit"
+msgstr ""
+
+msgid "Link"
+msgstr ""
+
+msgid "Link On"
+msgstr ""
+
+msgid "List of <abbr title=\"Domain Name System\">DNS</abbr> servers to forward requests to"
+msgstr ""
+
+msgid "List of domains to allow RFC1918 responses for"
+msgstr ""
+
+msgid "List of hosts that supply bogus NX domain results"
+msgstr ""
+
+msgid "Listen only on the given interface or, if unspecified, on all"
+msgstr ""
+
+msgid "Listening port for inbound DNS queries"
+msgstr ""
+
+msgid "Load"
+msgstr ""
+
+msgid "Load Average"
+msgstr ""
+
+msgid "Loading"
+msgstr ""
+
+msgid "Local IPv4 address"
+msgstr ""
+
+msgid "Local IPv6 address"
+msgstr ""
+
+msgid "Local Startup"
+msgstr ""
+
+msgid "Local Time"
+msgstr ""
+
+msgid "Local domain"
+msgstr ""
+
+msgid ""
+"Local domain specification. Names matching this domain are never forwared "
+"and resolved from DHCP or hosts files only"
+msgstr ""
+
+msgid "Local domain suffix appended to DHCP names and hosts file entries"
+msgstr ""
+
+msgid "Local server"
+msgstr ""
+
+msgid "Localise hostname depending on the requesting subnet if multiple IPs are available"
+msgstr ""
+
+msgid "Localise queries"
+msgstr ""
+
+msgid "Locked to channel %d used by %s"
+msgstr ""
+
+msgid "Log output level"
+msgstr ""
+
+msgid "Log queries"
+msgstr ""
+
+msgid "Logging"
+msgstr ""
+
+msgid "Login"
+msgstr ""
+
+msgid "Logout"
+msgstr ""
+
+msgid "Lowest leased address as offset from the network address."
+msgstr ""
+
+msgid "MAC"
+msgstr ""
+
+msgid "MAC Address"
+msgstr ""
+
+msgid "MAC-Address"
+msgstr ""
+
+msgid "MAC-Address Filter"
+msgstr ""
+
+msgid "MAC-Filter"
+msgstr ""
+
+msgid "MAC-List"
+msgstr ""
+
+msgid "MTU"
+msgstr ""
+
+msgid "Maximum Rate"
+msgstr ""
+
+msgid "Maximum allowed number of active DHCP leases"
+msgstr ""
+
+msgid "Maximum allowed number of concurrent DNS queries"
+msgstr ""
+
+msgid "Maximum allowed size of EDNS.0 UDP packets"
+msgstr ""
+
+msgid "Maximum amount of seconds to wait for the modem to become ready"
+msgstr ""
+
+msgid "Maximum hold time"
+msgstr ""
+
+msgid "Maximum number of leased addresses."
+msgstr ""
+
+msgid "Memory"
+msgstr ""
+
+msgid "Memory usage (%)"
+msgstr ""
+
+msgid "Metric"
+msgstr ""
+
+msgid "Minimum Rate"
+msgstr ""
+
+msgid "Minimum hold time"
+msgstr ""
+
+msgid "Missing protocol extension for proto %q"
+msgstr ""
+
+msgid "Mode"
+msgstr ""
+
+msgid "Modem device"
+msgstr ""
+
+msgid "Modem init timeout"
+msgstr ""
+
+msgid "Monitor"
+msgstr ""
+
+msgid "Mount Entry"
+msgstr ""
+
+msgid "Mount Point"
+msgstr ""
+
+msgid "Mount Points"
+msgstr ""
+
+msgid "Mount Points - Mount Entry"
+msgstr ""
+
+msgid "Mount Points - Swap Entry"
+msgstr ""
+
+msgid ""
+"Mount Points define at which point a memory device will be attached to the "
+"filesystem"
+msgstr ""
+
+msgid "Mount options"
+msgstr ""
+
+msgid "Mount point"
+msgstr ""
+
+msgid "Mounted file systems"
+msgstr ""
+
+msgid "Move down"
+msgstr ""
+
+msgid "Move up"
+msgstr ""
+
+msgid "Multicast Rate"
+msgstr ""
+
+msgid "Multicast address"
+msgstr ""
+
+msgid "NAS ID"
+msgstr ""
+
+msgid "NTP server candidates"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "Name of the new interface"
+msgstr ""
+
+msgid "Name of the new network"
+msgstr ""
+
+msgid "Navigation"
+msgstr ""
+
+msgid "Netmask"
+msgstr ""
+
+msgid "Network"
+msgstr ""
+
+msgid "Network Utilities"
+msgstr ""
+
+msgid "Network boot image"
+msgstr ""
+
+msgid "Networks"
+msgstr ""
+
+msgid "Next »"
+msgstr ""
+
+msgid "No DHCP Server configured for this interface"
+msgstr ""
+
+msgid "No chains in this table"
+msgstr ""
+
+msgid "No files found"
+msgstr ""
+
+msgid "No information available"
+msgstr ""
+
+msgid "No negative cache"
+msgstr ""
+
+msgid "No network configured on this device"
+msgstr ""
+
+msgid "No network name specified"
+msgstr ""
+
+msgid "No package lists available"
+msgstr ""
+
+msgid "No password set!"
+msgstr ""
+
+msgid "No rules in this chain"
+msgstr ""
+
+msgid "No zone assigned"
+msgstr ""
+
+msgid "Noise"
+msgstr ""
+
+msgid "Noise:"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Normal"
+msgstr ""
+
+msgid "Not associated"
+msgstr ""
+
+msgid "Not connected"
+msgstr ""
+
+msgid "Note: Configuration files will be erased."
+msgstr ""
+
+msgid ""
+"Note: If you choose an interface here which is part of another network, it "
+"will be moved into this network."
+msgstr ""
+
+msgid "Notice"
+msgstr ""
+
+msgid "OK"
+msgstr ""
+
+msgid "OPKG-Configuration"
+msgstr ""
+
+msgid "Off-State Delay"
+msgstr ""
+
+msgid ""
+"On this page you can configure the network interfaces. You can bridge "
+"several interfaces by ticking the \"bridge interfaces\" field and enter the "
+"names of several network interfaces separated by spaces. You can also use "
+"<abbr title=\"Virtual Local Area Network\">VLAN</abbr> notation "
+"<samp>INTERFACE.VLANNR</samp> (<abbr title=\"for example\">e.g.</abbr>: "
+"<samp>eth0.1</samp>)."
+msgstr ""
+
+msgid "On-State Delay"
+msgstr ""
+
+msgid "One or more fields contain invalid values!"
+msgstr ""
+
+msgid "One or more required fields have no value!"
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Open list..."
+msgstr ""
+
+msgid "Option changed"
+msgstr ""
+
+msgid "Option removed"
+msgstr ""
+
+msgid "Options"
+msgstr ""
+
+msgid "Other:"
+msgstr ""
+
+msgid "Out"
+msgstr ""
+
+msgid "Outbound:"
+msgstr ""
+
+msgid "Outdoor Channels"
+msgstr ""
+
+msgid "Override MAC address"
+msgstr ""
+
+msgid "Override MTU"
+msgstr ""
+
+msgid "Override the gateway in DHCP responses"
+msgstr ""
+
+msgid ""
+"Override the netmask sent to clients. Normally it is calculated from the "
+"subnet that is served."
+msgstr ""
+
+msgid "Override the table used for internal routes"
+msgstr ""
+
+msgid "Overview"
+msgstr ""
+
+msgid "Owner"
+msgstr ""
+
+msgid "PAP/CHAP password"
+msgstr ""
+
+msgid "PAP/CHAP username"
+msgstr ""
+
+msgid "PID"
+msgstr ""
+
+msgid "PIN"
+msgstr ""
+
+msgid "PPP"
+msgstr ""
+
+msgid "PPPoA Encapsulation"
+msgstr ""
+
+msgid "PPPoATM"
+msgstr ""
+
+msgid "PPPoE"
+msgstr ""
+
+msgid "PPtP"
+msgstr ""
+
+msgid "Package libiwinfo required!"
+msgstr ""
+
+msgid "Package lists are older than 24 hours"
+msgstr ""
+
+msgid "Package name"
+msgstr ""
+
+msgid "Packets"
+msgstr ""
+
+msgid "Part of zone %q"
+msgstr ""
+
+msgid "Password"
+msgstr ""
+
+msgid "Password authentication"
+msgstr ""
+
+msgid "Password of Private Key"
+msgstr ""
+
+msgid "Password successfully changed!"
+msgstr ""
+
+msgid "Path to CA-Certificate"
+msgstr ""
+
+msgid "Path to Client-Certificate"
+msgstr ""
+
+msgid "Path to Private Key"
+msgstr ""
+
+msgid "Path to executable which handles the button event"
+msgstr ""
+
+msgid "Peak:"
+msgstr ""
+
+msgid "Perform reboot"
+msgstr ""
+
+msgid "Perform reset"
+msgstr ""
+
+msgid "Phy Rate:"
+msgstr ""
+
+msgid "Physical Settings"
+msgstr ""
+
+msgid "Pkts."
+msgstr ""
+
+msgid "Please enter your username and password."
+msgstr ""
+
+msgid "Please wait: Device rebooting..."
+msgstr ""
+
+msgid "Policy"
+msgstr ""
+
+msgid "Port"
+msgstr ""
+
+msgid "Port %d"
+msgstr ""
+
+msgid "Port %d is untagged in multiple VLANs!"
+msgstr ""
+
+msgid "Power"
+msgstr ""
+
+msgid ""
+"Presume peer to be dead after given amount of LCP echo failures, use 0 to "
+"ignore failures"
+msgstr ""
+
+msgid "Prevents client-to-client communication"
+msgstr ""
+
+msgid "Proceed"
+msgstr ""
+
+msgid "Processes"
+msgstr ""
+
+msgid "Prot."
+msgstr ""
+
+msgid "Protocol"
+msgstr ""
+
+msgid "Protocol family"
+msgstr ""
+
+msgid "Protocol of the new interface"
+msgstr ""
+
+msgid "Protocol support is not installed"
+msgstr ""
+
+msgid "Provide new network"
+msgstr ""
+
+msgid "Pseudo Ad-Hoc (ahdemo)"
+msgstr ""
+
+msgid "RTS/CTS Threshold"
+msgstr ""
+
+msgid "RX"
+msgstr ""
+
+msgid "RX Rate"
+msgstr ""
+
+msgid "Radius-Accounting-Port"
+msgstr ""
+
+msgid "Radius-Accounting-Secret"
+msgstr ""
+
+msgid "Radius-Accounting-Server"
+msgstr ""
+
+msgid "Radius-Authentication-Port"
+msgstr ""
+
+msgid "Radius-Authentication-Secret"
+msgstr ""
+
+msgid "Radius-Authentication-Server"
+msgstr ""
+
+msgid ""
+"Read <code>/etc/ethers</code> to configure the <abbr title=\"Dynamic Host "
+"Configuration Protocol\">DHCP</abbr>-Server"
+msgstr ""
+
+msgid ""
+"Really delete this interface? The deletion cannot be undone!\n"
+"You might lose access to this router if you are connected via this interface."
+msgstr ""
+
+msgid ""
+"Really delete this wireless network? The deletion cannot be undone!\n"
+"You might lose access to this router if you are connected via this network."
+msgstr ""
+
+msgid "Really reset all changes?"
+msgstr ""
+
+msgid ""
+"Really shutdown interface \"%s\" ?\n"
+"You might lose access to this router if you are connected via this interface."
+msgstr ""
+
+msgid ""
+"Really shutdown network ?\n"
+"You might lose access to this router if you are connected via this interface."
+msgstr ""
+
+msgid "Really switch protocol?"
+msgstr ""
+
+msgid "Realtime Connections"
+msgstr ""
+
+msgid "Realtime Graphs"
+msgstr ""
+
+msgid "Realtime Load"
+msgstr ""
+
+msgid "Realtime Traffic"
+msgstr ""
+
+msgid "Realtime Wireless"
+msgstr ""
+
+msgid "Rebind protection"
+msgstr ""
+
+msgid "Reboot"
+msgstr ""
+
+msgid "Rebooting..."
+msgstr ""
+
+msgid "Reboots the operating system of your device"
+msgstr ""
+
+msgid "Receive"
+msgstr ""
+
+msgid "Receiver Antenna"
+msgstr ""
+
+msgid "Reconnect this interface"
+msgstr ""
+
+msgid "Reconnecting interface"
+msgstr ""
+
+msgid "References"
+msgstr ""
+
+msgid "Regulatory Domain"
+msgstr ""
+
+msgid "Relay"
+msgstr ""
+
+msgid "Relay Bridge"
+msgstr ""
+
+msgid "Relay between networks"
+msgstr ""
+
+msgid "Relay bridge"
+msgstr ""
+
+msgid "Remote IPv4 address"
+msgstr ""
+
+msgid "Remove"
+msgstr ""
+
+msgid "Repeat scan"
+msgstr ""
+
+msgid "Replace entry"
+msgstr ""
+
+msgid "Replace wireless configuration"
+msgstr ""
+
+msgid "Required for certain ISPs, e.g. Charter with DOCSIS 3"
+msgstr ""
+
+msgid "Reset"
+msgstr ""
+
+msgid "Reset Counters"
+msgstr ""
+
+msgid "Reset to defaults"
+msgstr ""
+
+msgid "Resolv and Hosts Files"
+msgstr ""
+
+msgid "Resolve file"
+msgstr ""
+
+msgid "Restart"
+msgstr ""
+
+msgid "Restart Firewall"
+msgstr ""
+
+msgid "Restore backup"
+msgstr ""
+
+msgid "Reveal/hide password"
+msgstr ""
+
+msgid "Revert"
+msgstr ""
+
+msgid "Root"
+msgstr ""
+
+msgid "Root directory for files served via TFTP"
+msgstr ""
+
+msgid "Router Model"
+msgstr ""
+
+msgid "Router Name"
+msgstr ""
+
+msgid "Router Password"
+msgstr ""
+
+msgid "Routes"
+msgstr ""
+
+msgid ""
+"Routes specify over which interface and gateway a certain host or network "
+"can be reached."
+msgstr ""
+
+msgid "Rule #"
+msgstr ""
+
+msgid "Run a filesystem check before mounting the device"
+msgstr ""
+
+msgid "Run filesystem check"
+msgstr ""
+
+msgid "SSH Access"
+msgstr ""
+
+msgid "SSH-Keys"
+msgstr ""
+
+msgid "SSID"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Save & Apply"
+msgstr ""
+
+msgid "Save &#38; Apply"
+msgstr ""
+
+msgid "Scan"
+msgstr ""
+
+msgid "Scheduled Tasks"
+msgstr ""
+
+msgid "Section added"
+msgstr ""
+
+msgid "Section removed"
+msgstr ""
+
+msgid "See \"mount\" manpage for details"
+msgstr ""
+
+msgid ""
+"Send LCP echo requests at the given interval in seconds, only effective in "
+"conjunction with failure threshold"
+msgstr ""
+
+msgid "Send router solicitations"
+msgstr ""
+
+msgid "Separate Clients"
+msgstr ""
+
+msgid "Separate WDS"
+msgstr ""
+
+msgid "Server Settings"
+msgstr ""
+
+msgid "Service Name"
+msgstr ""
+
+msgid "Service Type"
+msgstr ""
+
+msgid "Services"
+msgstr ""
+
+msgid "Setup DHCP Server"
+msgstr ""
+
+msgid "Setup Time Synchronization"
+msgstr ""
+
+msgid "Show current backup file list"
+msgstr ""
+
+msgid "Shutdown this interface"
+msgstr ""
+
+msgid "Shutdown this network"
+msgstr ""
+
+msgid "Signal"
+msgstr ""
+
+msgid "Signal:"
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+msgid "Skip"
+msgstr ""
+
+msgid "Skip to content"
+msgstr ""
+
+msgid "Skip to navigation"
+msgstr ""
+
+msgid "Slot time"
+msgstr ""
+
+msgid "Software"
+msgstr ""
+
+msgid "Some fields are invalid, cannot save values!"
+msgstr ""
+
+msgid ""
+"Sorry, there is no sysupgrade support present, a new firmware image must be "
+"flashed manually. Please refer to the OpenWrt wiki for device specific "
+"install instructions."
+msgstr ""
+
+msgid "Sort"
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid "Specifies the advertised preferred prefix lifetime in seconds"
+msgstr ""
+
+msgid "Specifies the advertised valid prefix lifetime in seconds"
+msgstr ""
+
+msgid "Specifies the button state to handle"
+msgstr ""
+
+msgid "Specifies the directory the device is attached to"
+msgstr ""
+
+msgid "Specifies the listening port of this <em>Dropbear</em> instance"
+msgstr ""
+
+msgid ""
+"Specifies the maximum amount of failed ARP requests until hosts are presumed "
+"to be dead"
+msgstr ""
+
+msgid ""
+"Specifies the maximum amount of seconds after which hosts are presumed to be "
+"dead"
+msgstr ""
+
+msgid "Specify the secret encryption key here."
+msgstr ""
+
+msgid "Start"
+msgstr ""
+
+msgid "Start priority"
+msgstr ""
+
+msgid "Startup"
+msgstr ""
+
+msgid "Static IPv4 Routes"
+msgstr ""
+
+msgid "Static IPv6 Routes"
+msgstr ""
+
+msgid "Static Leases"
+msgstr ""
+
+msgid "Static Routes"
+msgstr ""
+
+msgid "Static WDS"
+msgstr ""
+
+msgid "Static address"
+msgstr ""
+
+msgid ""
+"Static leases are used to assign fixed IP addresses and symbolic hostnames "
+"to DHCP clients. They are also required for non-dynamic interface "
+"configurations where only hosts with a corresponding lease are served."
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Stop"
+msgstr ""
+
+msgid "Strict order"
+msgstr ""
+
+msgid "Submit"
+msgstr ""
+
+msgid "Swap Entry"
+msgstr ""
+
+msgid "Switch"
+msgstr ""
+
+msgid "Switch %q"
+msgstr ""
+
+msgid "Switch %q (%s)"
+msgstr ""
+
+msgid "Switch protocol"
+msgstr ""
+
+msgid "Sync with browser"
+msgstr ""
+
+msgid "Synchronizing..."
+msgstr ""
+
+msgid "System"
+msgstr ""
+
+msgid "System Log"
+msgstr ""
+
+msgid "System Properties"
+msgstr ""
+
+msgid "System log buffer size"
+msgstr ""
+
+msgid "TCP:"
+msgstr ""
+
+msgid "TFTP Settings"
+msgstr ""
+
+msgid "TFTP server root"
+msgstr ""
+
+msgid "TX"
+msgstr ""
+
+msgid "TX Rate"
+msgstr ""
+
+msgid "Table"
+msgstr ""
+
+msgid "Target"
+msgstr ""
+
+msgid "Terminate"
+msgstr ""
+
+msgid ""
+"The <em>Device Configuration</em> section covers physical settings of the "
+"radio hardware such as channel, transmit power or antenna selection which is "
+"shared among all defined wireless networks (if the radio hardware is multi-"
+"SSID capable). Per network settings like encryption or operation mode are "
+"grouped in the <em>Interface Configuration</em>."
+msgstr ""
+
+msgid ""
+"The <em>libiwinfo-lua</em> package is not installed. You must install this "
+"component for working wireless configuration!"
+msgstr ""
+
+msgid ""
+"The allowed characters are: <code>A-Z</code>, <code>a-z</code>, <code>0-9</"
+"code> and <code>_</code>"
+msgstr ""
+
+msgid ""
+"The device file of the memory or partition (<abbr title=\"for example\">e.g."
+"</abbr> <code>/dev/sda1</code>)"
+msgstr ""
+
+msgid ""
+"The filesystem that was used to format the memory (<abbr title=\"for example"
+"\">e.g.</abbr> <samp><abbr title=\"Third Extended Filesystem\">ext3</abbr></"
+"samp>)"
+msgstr ""
+
+msgid ""
+"The flash image was uploaded. Below is the checksum and file size listed, "
+"compare them with the original file to ensure data integrity.<br /> Click "
+"\"Proceed\" below to start the flash procedure."
+msgstr ""
+
+msgid "The following changes have been committed"
+msgstr ""
+
+msgid "The following changes have been reverted"
+msgstr ""
+
+msgid "The following rules are currently active on this system."
+msgstr ""
+
+msgid "The given network name is not unique"
+msgstr ""
+
+msgid ""
+"The hardware is not multi-SSID capable and existing configuration will be "
+"replaced if you proceed."
+msgstr ""
+
+msgid "The network ports on your router can be combined to several <abbr title=\"Virtual Local Area Network\">VLAN</abbr>s in which computers can communicate directly with each other. <abbr title=\"Virtual Local Area Network\">VLAN</abbr>s are often used to separate different network segments. Often there is by default one Uplink port for a connection to the next greater network like the internet and other ports for a local network."
+msgstr ""
+
+msgid "The selected protocol needs a device assigned"
+msgstr ""
+
+msgid "The system is erasing the configuration partition now and will reboot itself when finished."
+msgstr ""
+
+msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes until you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
+msgstr ""
+
+msgid ""
+"The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
+msgstr ""
+
+msgid "There are no active leases."
+msgstr ""
+
+msgid "There are no pending changes to apply!"
+msgstr ""
+
+msgid "There are no pending changes to revert!"
+msgstr ""
+
+msgid "There are no pending changes!"
+msgstr ""
+
+msgid "There is no device assigned yet, please attach a network device in the \"Physical Settings\" tab"
+msgstr ""
+
+msgid ""
+"There is no password set on this router. Please configure a root password to "
+"protect the web interface and enable SSH."
+msgstr ""
+
+msgid ""
+"This is a list of shell glob patterns for matching files and directories to "
+"include during sysupgrade. Modified files in /etc/config/ and certain other "
+"configurations are automatically preserved."
+msgstr ""
+
+msgid "This is the 32 byte hex encoded user ID, not the login name"
+msgstr ""
+
+msgid ""
+"This is the content of /etc/rc.local. Insert your own commands here (in "
+"front of 'exit 0') to execute them at the end of the boot process."
+msgstr ""
+
+msgid ""
+"This is the local endpoint address assigned by the tunnel broker, it usually "
+"ends with <code>:2</code>"
+msgstr ""
+
+msgid ""
+"This is the only <abbr title=\"Dynamic Host Configuration Protocol\">DHCP</"
+"abbr> in the local network"
+msgstr ""
+
+msgid "This is the system crontab in which scheduled tasks can be defined."
+msgstr ""
+
+msgid ""
+"This is usually the address of the nearest PoP operated by the tunnel broker"
+msgstr ""
+
+msgid ""
+"This list gives an overview over currently running system processes and "
+"their status."
+msgstr ""
+
+msgid "This page allows the configuration of custom button actions"
+msgstr ""
+
+msgid "This page gives an overview over currently active network connections."
+msgstr ""
+
+msgid "This section contains no values yet"
+msgstr ""
+
+msgid "Time Synchronization"
+msgstr ""
+
+msgid "Time Synchronization is not configured yet."
+msgstr ""
+
+msgid "Timezone"
+msgstr ""
+
+msgid ""
+"To restore configuration files, you can upload a previously generated backup "
+"archive here."
+msgstr ""
+
+msgid "Total Available"
+msgstr ""
+
+msgid "Traffic"
+msgstr ""
+
+msgid "Transfer"
+msgstr ""
+
+msgid "Transmission Rate"
+msgstr ""
+
+msgid "Transmit"
+msgstr ""
+
+msgid "Transmit Power"
+msgstr ""
+
+msgid "Transmitter Antenna"
+msgstr ""
+
+msgid "Trigger"
+msgstr ""
+
+msgid "Trigger Mode"
+msgstr ""
+
+msgid "Tunnel ID"
+msgstr ""
+
+msgid "Tunnel Interface"
+msgstr ""
+
+msgid "Turbo Mode"
+msgstr ""
+
+msgid "Tx-Power"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "UDP:"
+msgstr ""
+
+msgid "UMTS/GPRS/EV-DO"
+msgstr ""
+
+msgid "USB Device"
+msgstr ""
+
+msgid "UUID"
+msgstr ""
+
+msgid "Unknown"
+msgstr ""
+
+msgid "Unknown Error, password not changed!"
+msgstr ""
+
+msgid "Unmanaged"
+msgstr ""
+
+msgid "Unsaved Changes"
+msgstr ""
+
+msgid "Unsupported protocol type."
+msgstr ""
+
+msgid "Update lists"
+msgstr ""
+
+msgid ""
+"Upload a sysupgrade-compatible image here to replace the running firmware. "
+"Check \"Keep settings\" to retain the current configuration (requires an "
+"OpenWrt compatible firmware image)."
+msgstr ""
+
+msgid "Upload archive..."
+msgstr ""
+
+msgid "Uploaded File"
+msgstr ""
+
+msgid "Uptime"
+msgstr ""
+
+msgid "Use <code>/etc/ethers</code>"
+msgstr ""
+
+msgid "Use DHCP gateway"
+msgstr ""
+
+msgid "Use DNS servers advertised by peer"
+msgstr ""
+
+msgid "Use ISO/IEC 3166 alpha2 country codes."
+msgstr ""
+
+msgid "Use MTU on tunnel interface"
+msgstr ""
+
+msgid "Use TTL on tunnel interface"
+msgstr ""
+
+msgid "Use as root filesystem"
+msgstr ""
+
+msgid "Use broadcast flag"
+msgstr ""
+
+msgid "Use custom DNS servers"
+msgstr ""
+
+msgid "Use default gateway"
+msgstr ""
+
+msgid "Use gateway metric"
+msgstr ""
+
+msgid "Use preferred lifetime"
+msgstr ""
+
+msgid "Use routing table"
+msgstr ""
+
+msgid ""
+"Use the <em>Add</em> Button to add a new lease entry. The <em>MAC-Address</"
+"em> indentifies the host, the <em>IPv4-Address</em> specifies to the fixed "
+"address to use and the <em>Hostname</em> is assigned as symbolic name to the "
+"requesting host."
+msgstr ""
+
+msgid "Use valid lifetime"
+msgstr ""
+
+msgid "Used"
+msgstr ""
+
+msgid "Used Key Slot"
+msgstr ""
+
+msgid "Username"
+msgstr ""
+
+msgid "VC-Mux"
+msgstr ""
+
+msgid "VLAN Interface"
+msgstr ""
+
+msgid "VLANs on %q"
+msgstr ""
+
+msgid "VLANs on %q (%s)"
+msgstr ""
+
+msgid "VPN Server"
+msgstr ""
+
+msgid "Vendor Class to send when requesting DHCP"
+msgstr ""
+
+msgid "Verify"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "WDS"
+msgstr ""
+
+msgid "WEP Open System"
+msgstr ""
+
+msgid "WEP Shared Key"
+msgstr ""
+
+msgid "WEP passphrase"
+msgstr ""
+
+msgid "WMM Mode"
+msgstr ""
+
+msgid "WPA passphrase"
+msgstr ""
+
+msgid ""
+"WPA-Encryption requires wpa_supplicant (for client mode) or hostapd (for AP "
+"and ad-hoc mode) to be installed."
+msgstr ""
+
+msgid "Waiting for router..."
+msgstr ""
+
+msgid "Warning"
+msgstr ""
+
+msgid "Warning: There are unsaved changes that will be lost while rebooting!"
+msgstr ""
+
+msgid "Wifi"
+msgstr ""
+
+msgid "Wifi networks in your local environment"
+msgstr ""
+
+msgid "Wireless"
+msgstr ""
+
+msgid "Wireless Adapter"
+msgstr ""
+
+msgid "Wireless Network"
+msgstr ""
+
+msgid "Wireless Overview"
+msgstr ""
+
+msgid "Wireless Security"
+msgstr ""
+
+msgid "Wireless is disabled or not associated"
+msgstr ""
+
+msgid "Wireless is restarting..."
+msgstr ""
+
+msgid "Wireless network is disabled"
+msgstr ""
+
+msgid "Wireless network is enabled"
+msgstr ""
+
+msgid "Wireless restarted"
+msgstr ""
+
+msgid "Wireless shut down"
+msgstr ""
+
+msgid "Write received DNS requests to syslog"
+msgstr ""
+
+msgid "XR Support"
+msgstr ""
+
+msgid ""
+"You can enable or disable installed init scripts here. Changes will applied "
+"after a device reboot.<br /><strong>Warning: If you disable essential init "
+"scripts like \"network\", your device might become inaccesable!</strong>"
+msgstr ""
+
+msgid ""
+"You must enable Java Script in your browser or LuCI will not work properly."
+msgstr ""
+
+msgid "any"
+msgstr ""
+
+msgid "auto"
+msgstr ""
+
+msgid "bridged"
+msgstr ""
+
+msgid "creates a bridge over specified interface(s)"
+msgstr ""
+
+msgid "disable"
+msgstr ""
+
+msgid "expired"
+msgstr ""
+
+msgid ""
+"file where given <abbr title=\"Dynamic Host Configuration Protocol\">DHCP</"
+"abbr>-leases will be stored"
+msgstr ""
+
+msgid "forward"
+msgstr ""
+
+msgid "help"
+msgstr ""
+
+msgid "if target is a network"
+msgstr ""
+
+msgid "input"
+msgstr ""
+
+msgid "local <abbr title=\"Domain Name System\">DNS</abbr> file"
+msgstr ""
+
+msgid "no"
+msgstr ""
+
+msgid "none"
+msgstr ""
+
+msgid "off"
+msgstr ""
+
+msgid "on"
+msgstr ""
+
+msgid "routed"
+msgstr ""
+
+msgid "tagged"
+msgstr ""
+
+msgid "unlimited"
+msgstr ""
+
+msgid "unspecified"
+msgstr ""
+
+msgid "unspecified -or- create:"
+msgstr ""
+
+msgid "untagged"
+msgstr ""
+
+msgid "yes"
+msgstr ""
+
+msgid "« Back"
+msgstr ""
+
+msgid "Configuration Wizard"
+msgstr ""
+
+msgid "Step %d - Password"
+msgstr ""
+
+msgid "Step %d - %s"
+msgstr ""
+
+msgid "Step %d - LAN"
+msgstr ""
+
+msgid "Step %d - WiFi"
+msgstr ""
+
+msgid " %s Configuration"
+msgstr ""
+
+msgid "Next, let's configure your %s settings so you can start using internet right away."
+msgstr ""
+
+msgid "PIN number"
+msgstr ""
+
+msgid "Dialing number"
+msgstr ""
+
+msgid "%s authentication method"
+msgstr ""
+
+msgid "CHAP"
+msgstr ""
+
+msgid "PAP"
+msgstr ""
+
+msgid "Service mode"
+msgstr ""
+
+msgid "2G only"
+msgstr ""
+
+msgid "2G preferred"
+msgstr ""
+
+msgid "3G only"
+msgstr ""
+
+msgid "3G preferred"
+msgstr ""
+
+msgid "4G(LTE) only"
+msgstr ""
+
+msgid "4G(LTE) preferred"
+msgstr ""
+
+msgid "automatic"
+msgstr ""
+
+msgid "Step - %s"
+msgstr ""
+
+msgid " %s authentication method"
+msgstr ""
+
+msgid "Prefered network"
+msgstr ""
+
+msgid "2G"
+msgstr ""
+
+msgid "3G"
+msgstr ""
+
+msgid "Step - LAN"
+msgstr ""
+
+msgid "Here we will configure the basic settings of a typical LAN configuration. The wizard will cover 2 basic configurations: static IP address LAN and DHCP client."
+msgstr ""
+
+msgid "wrn:Configuration applied. If there are no error you can proccedd to the next step."
+msgstr ""
+
+msgid "DCHP Client"
+msgstr ""
+
+msgid "Step - Password"
+msgstr ""
+
+msgid "First, let's change your router password from the default one."
+msgstr ""
+
+msgid "scs:Password successfully changed!"
+msgstr ""
+
+msgid "err:Unknown Error, password not changed!"
+msgstr ""
+
+msgid "err:Given password confirmation did not match, password not changed!"
+msgstr ""
+
+msgid "Now let's configure your wireles and bring it up to rudimentary functionality."
+msgstr ""
+
+msgid "Step 1"
+msgstr ""
+
+msgid "ESSID"
+msgstr ""
+
+msgid "No Encryption"
+msgstr ""
+
+msgid "WPA-PSK"
+msgstr ""
+
+msgid "WPA2-PSK"
+msgstr ""
+
+msgid "WPA-PSK/WPA2-PSK Mixed Mode"
+msgstr ""
+
+msgid "WPA-EAP"
+msgstr ""
+
+msgid "WPA2-EAP"
+msgstr ""
+
+msgid "WPA-Encryption requires wpa_supplicant (for client mode) or hostapd (for AP and ad-hoc mode) to be installed."
+msgstr ""
+
+msgid "TLS"
+msgstr ""
+
+msgid "TTLS"
+msgstr ""
+
+msgid "PEAP"
+msgstr ""
+
+msgid "MSCHAP"
+msgstr ""
+
+msgid "MSCHAPV2"
+msgstr ""
+
+msgid "Wan selection"
+msgstr ""
+
+msgid "Select wan thing."
+msgstr ""
+
+msgid "Wan Mode"
+msgstr ""
+
+msgid "Wired"
+msgstr ""
+
+msgid "WiMAX"
+msgstr ""
+
+msgid "WiFi"
+msgstr ""
+
+msgid "Next"
+msgstr ""
+
+msgid "You have chosen the wired wan option. Here we will configure the basic settings of a typical wire wan configuration. The wizard will cover 2 basic configurations: static IP WAN and DHCP client. If you get your wired internet from some other configuration type, then after the wizard please follow through to Network->LAN->Edit as it covers many more options."
+msgstr ""
+
+msgid "First, let's change your routerd password from the default one."
+msgstr ""
+
+msgid "Step 2"
+msgstr ""
+
+msgid "Next, let's configure your 3G settings so you can start using internet right away."
+msgstr ""
+
+msgid "3G authentication method"
+msgstr ""
+
+msgid "Tinyproxy"
+msgstr ""
+
+msgid "Tinyproxy is a small and fast non-caching HTTP(S)-Proxy"
+msgstr ""
+
+msgid "Privacy settings"
+msgstr ""
+
+msgid "Filtering and ACLs"
+msgstr ""
+
+msgid "Server limits"
+msgstr ""
+
+msgid "Enable Tinyproxy server"
+msgstr ""
+
+msgid "Listen port"
+msgstr ""
+
+msgid "Specifies the HTTP port Tinyproxy is listening on for requests"
+msgstr ""
+
+msgid "Listen address"
+msgstr ""
+
+msgid "Specifies the addresses Tinyproxy is listening on for requests"
+msgstr ""
+
+msgid "Bind address"
+msgstr ""
+
+msgid "Specifies the address Tinyproxy binds to for outbound forwarded requests"
+msgstr ""
+
+msgid "Error page"
+msgstr ""
+
+msgid "Statistics page"
+msgstr ""
+
+msgid "Use syslog"
+msgstr ""
+
+msgid "Log file"
+msgstr ""
+
+msgid "Log level"
+msgstr ""
+
+msgid "User"
+msgstr ""
+
+msgid "Specifies the user name the Tinyproxy process is running as"
+msgstr ""
+
+msgid "Group"
+msgstr ""
+
+msgid "Specifies the group name the Tinyproxy process is running as"
+msgstr ""
+
+msgid "X-Tinyproxy header"
+msgstr ""
+
+msgid "Adds an \"X-Tinyproxy\" HTTP header with the client IP address to forwarded requests"
+msgstr ""
+
+msgid "Via hostname"
+msgstr ""
+
+msgid "Specifies the Tinyproxy hostname to use in the Via HTTP header"
+msgstr ""
+
+msgid "Header whitelist"
+msgstr ""
+
+msgid "Specifies HTTP header names which are allowed to pass-through, all others are discarded. Leave empty to disable header filtering"
+msgstr ""
+
+msgid "Allowed clients"
+msgstr ""
+
+msgid "List of IP addresses or ranges which are allowed to use the proxy server"
+msgstr ""
+
+msgid "Allowed connect ports"
+msgstr ""
+
+msgid "List of allowed ports for the CONNECT method. A single value \"0\" allows all ports"
+msgstr ""
+
+msgid "Filter file"
+msgstr ""
+
+msgid "Plaintext file with URLs or domains to filter. One entry per line"
+msgstr ""
+
+msgid "Filter by URLs"
+msgstr ""
+
+msgid "By default, filtering is done based on domain names. Enable this to match against URLs instead"
+msgstr ""
+
+msgid "Filter by RegExp"
+msgstr ""
+
+msgid "By default, basic POSIX expressions are used for filtering. Enable this to activate extended regular expressions"
+msgstr ""
+
+msgid "Filter case-sensitive"
+msgstr ""
+
+msgid "By default, filter strings are treated as case-insensitive. Enable this to make the matching case-sensitive"
+msgstr ""
+
+msgid "Default deny"
+msgstr ""
+
+msgid "By default, the filter rules act as blacklist. Enable this option to only allow matched URLs or domain names"
+msgstr ""
+
+msgid "Connection timeout"
+msgstr ""
+
+msgid "Maximum number of seconds an inactive connection is held open"
+msgstr ""
+
+msgid "Max. clients"
+msgstr ""
+
+msgid "Maximum allowed number of concurrently connected clients"
+msgstr ""
+
+msgid "Min. spare servers"
+msgstr ""
+
+msgid "Minimum number of prepared idle processes"
+msgstr ""
+
+msgid "Max. spare servers"
+msgstr ""
+
+msgid "Maximum number of prepared idle processes"
+msgstr ""
+
+msgid "Start spare servers"
+msgstr ""
+
+msgid "Number of idle processes to start when launching Tinyproxy"
+msgstr ""
+
+msgid "Max. requests per server"
+msgstr ""
+
+msgid "Maximum allowed number of requests per process. If it is exeeded, the process is restarted. Zero means unlimited."
+msgstr ""
+
+msgid "Upstream Proxies"
+msgstr ""
+
+msgid "<em>Via proxy</em> routes requests to the given target via the specifed upstream proxy, <em>Reject access</em> disables any upstream proxy for the target"
+msgstr ""
+
+msgid "Via proxy"
+msgstr ""
+
+msgid "Reject access"
+msgstr ""
+
+msgid "Target host"
+msgstr ""
+
+msgid "Can be either an IP address or range, a domain name or \".\" for any host without domain"
+msgstr ""
+
+msgid "Specifies the upstream proxy to use for accessing the target host. Format is <code>address:port</code>"
+msgstr ""
+
+msgid "Tinyproxy Status"
+msgstr ""
+
+msgid "Failed to retrieve statistics from url:"
+msgstr ""
+
+msgid "Port Forwarding"
+msgstr ""
+
+msgid "Traffic Rules"
+msgstr ""
+
+msgid "Custom Rules"
+msgstr ""
+
+msgid "Firewall - Custom Rules"
+msgstr ""
+
+msgid "Custom rules allow you to execute arbritary iptables commands which are not otherwise covered by the firewall framework. The commands are executed after each firewall restart, right after the default ruleset has been loaded."
+msgstr ""
+
+msgid "Firewall - Port Forwarding"
+msgstr ""
+
+msgid "This page allows you to change advanced properties of the port forwarding entry. Although, in most cases there is no need to modify those settings."
+msgstr ""
+
+msgid "(Unnamed Entry)"
+msgstr ""
+
+msgid "Firewall - Port Forwards"
+msgstr ""
+
+msgid "TCP+UDP"
+msgstr ""
+
+msgid "TCP"
+msgstr ""
+
+msgid "UDP"
+msgstr ""
+
+msgid "ICMP"
+msgstr ""
+
+msgid "Source zone"
+msgstr ""
+
+msgid "Source MAC address"
+msgstr ""
+
+msgid "Only match incoming traffic from these MACs."
+msgstr ""
+
+msgid "Source IP address"
+msgstr ""
+
+msgid "Only match incoming traffic from this IP or range."
+msgstr ""
+
+msgid "Source port"
+msgstr ""
+
+msgid "Only match incoming traffic originating from the given source port or port range on the client host"
+msgstr ""
+
+msgid "External IP address"
+msgstr ""
+
+msgid "Only match incoming traffic directed at the given IP address."
+msgstr ""
+
+msgid "External port"
+msgstr ""
+
+msgid "Match incoming traffic directed at the given destination port or port range on this host"
+msgstr ""
+
+msgid "Redirect matched incoming traffic to the specified internal host"
+msgstr ""
+
+msgid "Internal zone"
+msgstr ""
+
+msgid "Internal IP address"
+msgstr ""
+
+msgid "Internal port"
+msgstr ""
+
+msgid "Redirect matched incoming traffic to the given port on the internal host"
+msgstr ""
+
+msgid "Enable NAT Loopback"
+msgstr ""
+
+msgid "Extra arguments"
+msgstr ""
+
+msgid "Passes additional arguments to iptables. Use with care!"
+msgstr ""
+
+msgid "Port forwarding allows remote computers on the Internet to connect to a specific computer or service within the private LAN."
+msgstr ""
+
+msgid "From %s in %s with source %s and %s"
+msgstr ""
+
+msgid "From %s in %s with source %s"
+msgstr ""
+
+msgid "From %s in %s"
+msgstr ""
+
+msgid "Via"
+msgstr ""
+
+msgid "any router IP"
+msgstr ""
+
+msgid "To %s at %s"
+msgstr ""
+
+msgid "To %s"
+msgstr ""
+
+msgid "any zone"
+msgstr ""
+
+msgid "any host"
+msgstr ""
+
+msgid "Forward to %s, %s in %s"
+msgstr ""
+
+msgid "Forward to %s in %s"
+msgstr ""
+
+msgid "Firewall - Traffic Rules"
+msgstr ""
+
+msgid "This page allows you to change advanced properties of the traffic rule entry, such as matched source and destination hosts."
+msgstr ""
+
+msgid "(Unnamed SNAT)"
+msgstr ""
+
+msgid "You may specify multiple by selecting \"-- custom --\" and then entering protocols separated by space."
+msgstr ""
+
+msgid "All protocols"
+msgstr ""
+
+msgid "Match incoming traffic originating from the given source port or port range on the client host."
+msgstr ""
+
+msgid "Destination zone"
+msgstr ""
+
+msgid "Destination IP address"
+msgstr ""
+
+msgid "Destination port"
+msgstr ""
+
+msgid "Match forwarded traffic to the given destination port or port range."
+msgstr ""
+
+msgid "SNAT IP address"
+msgstr ""
+
+msgid "Rewrite matched traffic to the given address."
+msgstr ""
+
+msgid "SNAT port"
+msgstr ""
+
+msgid "Rewrite matched traffic to the given source port. May be left empty to only rewrite the IP address."
+msgstr ""
+
+msgid "Do not rewrite"
+msgstr ""
+
+msgid "Restrict to address family"
+msgstr ""
+
+msgid "Match ICMP type"
+msgstr ""
+
+msgid "Source address"
+msgstr ""
+
+msgid "Destination address"
+msgstr ""
+
+msgid "drop"
+msgstr ""
+
+msgid "accept"
+msgstr ""
+
+msgid "reject"
+msgstr ""
+
+msgid "don't track"
+msgstr ""
+
+msgid "Traffic rules define policies for packets traveling between different zones, for example to reject traffic between certain hosts or to open WAN ports on the router."
+msgstr ""
+
+msgid "Family"
+msgstr ""
+
+msgid "To %s, %s in %s"
+msgstr ""
+
+msgid "To %s in %s"
+msgstr ""
+
+msgid "To %s at %s on <var>this device</var>"
+msgstr ""
+
+msgid "To %s on <var>this device</var>"
+msgstr ""
+
+msgid "<var>%s</var> and limit to %s"
+msgstr ""
+
+msgid "Source NAT"
+msgstr ""
+
+msgid "Source NAT is a specific form of masquerading which allows fine grained control over the source IP used for outgoing traffic, for example to map multiple WAN addresses to internal subnets."
+msgstr ""
+
+msgid "SNAT"
+msgstr ""
+
+msgid "Rewrite to source %s, %s"
+msgstr ""
+
+msgid "Rewrite to source %s"
+msgstr ""
+
+msgid "Firewall - Zone Settings"
+msgstr ""
+
+msgid "Zone %q"
+msgstr ""
+
+msgid "This section defines common properties of %q. The <em>input</em> and <em>output</em> options set the default policies for traffic entering and leaving this zone while the <em>forward</em> option describes the policy for forwarded traffic between different networks within the zone. <em>Covered networks</em> specifies which available networks are member of this zone."
+msgstr ""
+
+msgid "Input"
+msgstr ""
+
+msgid "Output"
+msgstr ""
+
+msgid "Forward"
+msgstr ""
+
+msgid "Masquerading"
+msgstr ""
+
+msgid "MSS clamping"
+msgstr ""
+
+msgid "Covered networks"
+msgstr ""
+
+msgid "Restrict Masquerading to given source subnets"
+msgstr ""
+
+msgid "Restrict Masquerading to given destination subnets"
+msgstr ""
+
+msgid "Force connection tracking"
+msgstr ""
+
+msgid "Enable logging on this zone"
+msgstr ""
+
+msgid "Limit log messages"
+msgstr ""
+
+msgid "The options below control the forwarding policies betweenthis zone (%s) and other zones. <em>Destination zones</em> coveforwarded traffic <strong>originating from %q</strong>.<em>Source zones</em> match forwarded traffic from other zones<strong>targeted at %q</strong>. The forwarding rule is<em>unidirectional</em>, e.g. a forward from lan to wan does<em>not</em> imply a permission to forward from wan to lan as well."
+msgstr ""
+
+msgid "Allow forward to <em>destination zones</em>:"
+msgstr ""
+
+msgid "Allow forward from <em>source zones</em>:"
+msgstr ""
+
+msgid "General settings allows you to set up default firewall policy."
+msgstr ""
+
+msgid "Enable SYN-flood protection"
+msgstr ""
+
+msgid "Drop invalid packets"
+msgstr ""
+
+msgid "DMZ configuration"
+msgstr ""
+
+msgid "DMZ host IP address"
+msgstr ""
+
+msgid "Other..."
+msgstr ""
+
+msgid "Open ports on router"
+msgstr ""
+
+msgid "New input rule"
+msgstr ""
+
+msgid "Add and edit..."
+msgstr ""
+
+msgid "New forward rule"
+msgstr ""
+
+msgid "New source NAT"
+msgstr ""
+
+msgid "To source IP"
+msgstr ""
+
+msgid "To source port"
+msgstr ""
+
+msgid "New SNAT rule"
+msgstr ""
+
+msgid "SNMP"
+msgstr ""
+
+msgid "SNMP configuration"
+msgstr ""
+
+msgid "SNMP service settings"
+msgstr ""
+
+msgid "Enable SNMP service"
+msgstr ""
+
+msgid "Enable remote access"
+msgstr ""
+
+msgid "Community"
+msgstr ""
+
+msgid "Community name"
+msgstr ""
+
+msgid "err: Please specify SNMP port!"
+msgstr ""
+
+msgid "err: Error: could not add firewall rule!"
+msgstr ""
+
+msgid "SNMP configuration settings"
+msgstr ""
+
+msgid "Location"
+msgstr ""
+
+msgid "Contact"
+msgstr ""
+
+msgid "Ping Reboot"
+msgstr ""
+
+msgid "Ping Reboot settings"
+msgstr ""
+
+msgid "Enable Ping Reboot"
+msgstr ""
+
+msgid "Reboot router if no echo received"
+msgstr ""
+
+msgid "Interval between pings"
+msgstr ""
+
+msgid "Ping timeout (sec)"
+msgstr ""
+
+msgid "Packet size"
+msgstr ""
+
+msgid "Retry count"
+msgstr ""
+
+msgid "Server to ping"
+msgstr ""
+
+msgid "e.g. 192.168.1.1 (or www.host.com if DNS server configured correctly)"
+msgstr ""
+
+msgid "Here you can configure your %s settings."
+msgstr ""
+
+msgid "Mobile configuration"
+msgstr ""
+
+msgid "Primary SIM card"
+msgstr ""
+
+msgid "Secondary SIM card"
+msgstr ""
+
+msgid "%s connection"
+msgstr ""
+
+msgid "Use pppd mode"
+msgstr ""
+
+msgid "Use NDIS mode"
+msgstr ""
+
+msgid "Use bridge mode"
+msgstr ""
+
+msgid "Default SIM card"
+msgstr ""
+
+msgid "Primary"
+msgstr ""
+
+msgid "Secondary"
+msgstr ""
+
+msgid "Switch to other SIM card when connection fails"
+msgstr ""
+
+msgid "Switch to default SIM card after timeout"
+msgstr ""
+
+msgid "Initial Timeout (min)"
+msgstr ""
+
+msgid "Subsequent Timeout (min)"
+msgstr ""
+
+msgid "3G Configuration"
+msgstr ""
+
+msgid "Here you can configure your 3G settings."
+msgstr ""
+
+msgid "Show %s signal strength at login page"
+msgstr ""
+
+msgid "%s data limit  configuration"
+msgstr ""
+
+msgid "Here you can configure your %s data limit settings."
+msgstr ""
+
+msgid "Enable %s data limit"
+msgstr ""
+
+msgid "%s data limit (Mb)"
+msgstr ""
+
+msgid "err: 3G data limit value is incorrect!"
+msgstr ""
+
+msgid "err: 3G data limit value is empty!"
+msgstr ""
+
+msgid "Start day"
+msgstr ""
+
+msgid "Start hour"
+msgstr ""
+
+msgid "Monday"
+msgstr ""
+
+msgid "Tuesday"
+msgstr ""
+
+msgid "Wednesday"
+msgstr ""
+
+msgid "Thursday"
+msgstr ""
+
+msgid "Friday"
+msgstr ""
+
+msgid "Saturday"
+msgstr ""
+
+msgid "Sunday"
+msgstr ""
+
+msgid "Month"
+msgstr ""
+
+msgid "Week"
+msgstr ""
+
+msgid "Day"
+msgstr ""
+
+msgid "%s data warning"
+msgstr ""
+
+msgid "Get %s data limit via SMS"
+msgstr ""
+
+msgid "Enable %s limit warninig"
+msgstr ""
+
+msgid "3G data limit (Mb)"
+msgstr ""
+
+msgid "Warning threshold (%)"
+msgstr ""
+
+msgid "Per cent of Data Limit, which if is exceeded, then the router sends SMS warninig."
+msgstr ""
+
+msgid "Phone number"
+msgstr ""
+
+msgid "e.g. +37012345678"
+msgstr ""
+
+msgid "err: Phone number %d is incorrect!"
+msgstr ""
+
+msgid "err: 3G data limit field is empty!"
+msgstr ""
+
+msgid "Period"
+msgstr ""
+
+msgid "Show %s info at login page"
+msgstr ""
+
+msgid "Dnsmasq is a combined DHCP-Server and DNS-Forwarder for NAT firewalls"
+msgstr ""
+
+msgid "Don't forward DNS-Requests without DNS-Name"
+msgstr ""
+
+msgid "This is the only DHCP in the local network"
+msgstr ""
+
+msgid "Read <code>/etc/ethers</code> to configure the DHCP-Server"
+msgstr ""
+
+msgid "file where given DHCP-leases will be stored"
+msgstr ""
+
+msgid "local DNS file"
+msgstr ""
+
+msgid "Localise hostname depending on the requesting subnet if multiple IPs are available"
+msgstr ""
+
+msgid "Local domain specification. Names matching this domain are never forwared and resolved from DHCP or hosts files only"
+msgstr ""
+
+msgid "DNS servers will be queried in the order of the resolvfile"
+msgstr ""
+
+msgid "List of DNS servers to forward requests to"
+msgstr ""
+
+msgid "DNS server port"
+msgstr ""
+
+msgid "DNS query port"
+msgstr ""
+
+msgid "Max. DHCP leases"
+msgstr ""
+
+msgid "Max. EDNS0 paket size"
+msgstr ""
+
+msgid "Max. concurrent queries"
+msgstr ""
+
+msgid "Static leases are used to assign fixed IP addresses and symbolic hostnames to DHCP clients. They are also required for non-dynamic interface configurations where only hosts with a corresponding lease are served."
+msgstr ""
+
+msgid "Use the <em>Add</em> Button to add a new lease entry. The <em>MAC-Address</em> indentifies the host, the <em>IPv4-Address</em> specifies to the fixed address to use and the <em>Hostname</em> is assigned as symbolic name to the requesting host."
+msgstr ""
+
+msgid "The allowed characters are: <code>A-Z</code>, <code>a-z</code>, <code>0-9</code> and <code>_</code>"
+msgstr ""
+
+msgid "Note: If you choose an interface here which is part of another network, it will be moved into this network."
+msgstr ""
+
+msgid "On this page you can configure the network interfaces. You can bridge several interfaces by ticking the \"bridge interfaces\" field and enter the names of several network interfaces separated by spaces. You can also use VLAN notation <samp>INTERFACE.VLANNR</samp> (e.g.: <samp>eth0.1</samp>)."
+msgstr ""
+
+msgid "Enable STP"
+msgstr ""
+
+msgid "Choose the firewall zone you want to assign to this interface. Select <em>unspecified</em> to remove the interface from the associated zone or fill out the <em>create</em> field to define a new zone and attach the interface to it."
+msgstr ""
+
+msgid "IPv4-Netmask"
+msgstr ""
+
+msgid "IPv4-Gateway"
+msgstr ""
+
+msgid "IPv6-Address"
+msgstr ""
+
+msgid "CIDR-Notation: address/prefix"
+msgstr ""
+
+msgid "IPv6-Gateway"
+msgstr ""
+
+msgid "IPv4-Broadcast"
+msgstr ""
+
+msgid "DNS-Server"
+msgstr ""
+
+msgid "Disable DHCP for this interface."
+msgstr ""
+
+msgid "Dynamically allocate DHCP addresses for clients. If disabled, only clients having static leases will be served."
+msgstr ""
+
+msgid "Override the netmask sent to clients. Normally it is calculated from the subnet that is served."
+msgstr ""
+
+msgid "Define additional DHCP options, for example \"<code>6,192.168.2.1, 192.168.2.2</code>\" which advertises different DNS servers to clients."
+msgstr ""
+
+msgid "On this page you can configure your LAN settings."
+msgstr ""
+
+msgid "Really switch modes?"
+msgstr ""
+
+msgid "Switch mode"
+msgstr ""
+
+msgid "Expire time of leased addresses, minimum is 2 Minutes (<code>2m</code>)."
+msgstr ""
+
+msgid "DHCP"
+msgstr ""
+
+msgid "On this page you can configure your WAN settings. Your WAN configuration determines how the router will be connecting to the internet."
+msgstr ""
+
+msgid "wrn: Warning! You won't be able to access router web interface via Wired WAN in DHCP protocol mode. Please ensure that you still can reach web interface via WiFi before saving changes."
+msgstr ""
+
+msgid "Operation Mode"
+msgstr ""
+
+msgid "<u><a href='3g'>Bridge mode</a></u> is enabled"
+msgstr ""
+
+msgid "Disable NAT"
+msgstr ""
+
+msgid "If checked, router will not perform NAT (Masquerade) on this interface"
+msgstr ""
+
+msgid "Here you can disable WiMAX connection or reboot the modem."
+msgstr ""
+
+msgid "WiMAX Management"
+msgstr ""
+
+msgid "Reboot WiMAX modem?"
+msgstr ""
+
+msgid "Turn on/off WiMAX"
+msgstr ""
+
+msgid "Turn off"
+msgstr ""
+
+msgid "Turn on"
+msgstr ""
+
+msgid "Static"
+msgstr ""
+
+msgid "On this page you can configure the network interfaces. You can bridge several interfaces by ticking the \"bridge interfaces\" field and enter the names of several network interfaces separated by spaces. You can also use <abbr title=\"Virtual Local Area Network\">VLAN</abbr> notation <samp>INTERFACE.VLANNR</samp> (<abbr title=\"exempli gratia (which is latin for 'for example', in case you wondered...)\">e.g.</abbr>: <samp>eth0.1</samp>)."
+msgstr ""
+
+msgid "<abbr title=\"Classless Inter-Domain Routing\">CIDR</abbr>-Notation: address/prefix"
+msgstr ""
+
+msgid "ATM bridges expose encapsulated ethernet in AAL5 connections as virtual Linux network interfaces which can be used in conjunction with DHCP or PPP to dial into the provider network."
+msgstr ""
+
+msgid "Routes specify over which interface and gateway a certain host or network can be reached."
+msgstr ""
+
+msgid "Host-IP or Network"
+msgstr ""
+
+msgid "IPv6-Address or Network (CIDR)"
+msgstr ""
+
+msgid "The network ports on your router can be combined to several VLANs in which computers can communicate directly with each other. VLANs are often used to separate different network segments. Often there is by default one Uplink port for a connection to the next greater network like the internet and other ports for a local network."
+msgstr ""
+
+msgid "VLAN ID"
+msgstr ""
+
+msgid "Site blocking"
+msgstr ""
+
+msgid "Here you can configure host blocking list"
+msgstr ""
+
+msgid "Enable site blocking"
+msgstr ""
+
+msgid "Block DNS forwarding"
+msgstr ""
+
+msgid "Whitelist"
+msgstr ""
+
+msgid "Blacklist"
+msgstr ""
+
+msgid "example.com"
+msgstr ""
+
+msgid "Host name"
+msgstr ""
+
+msgid "Proxy based content blocker"
+msgstr ""
+
+msgid "Here you can configure web content filtering"
+msgstr ""
+
+msgid "Proxy port"
+msgstr ""
+
+msgid "Filter URL rules"
+msgstr ""
+
+msgid "URL content"
+msgstr ""
+
+msgid "example.com, example.*, *.example.com"
+msgstr ""
+
+msgid "Here you can configure your wireless settings like radio frequency, mode, encryption etc..."
+msgstr ""
+
+msgid "err:Click Save to take effect"
+msgstr ""
+
+msgid "Wireless Access Point"
+msgstr ""
+
+msgid "Wireless Station"
+msgstr ""
+
+msgid "Wireless Configuration"
+msgstr ""
+
+msgid "Scan for a new network"
+msgstr ""
+
+msgid "Don't forget to save before toggling the wireless radio on and off."
+msgstr ""
+
+msgid "802.11b"
+msgstr ""
+
+msgid "802.11b"
+msgstr ""
+
+msgid "802.11a"
+msgstr ""
+
+msgid "802.11g+n"
+msgstr ""
+
+msgid "802.11a+n"
+msgstr ""
+
+msgid "20MHz"
+msgstr ""
+
+msgid "Before changing Transmit Power value please save the settings with your Country Code applied."
+msgstr ""
+
+msgid "802.11b+g"
+msgstr ""
+
+msgid "802.11g + Turbo"
+msgstr ""
+
+msgid "802.11a + Turbo"
+msgstr ""
+
+msgid "Hide ESSID"
+msgstr ""
+
+msgid "WRP100 configuration"
+msgstr ""
+
+msgid "Connect WRP100 automatically"
+msgstr ""
+
+msgid "Encr."
+msgstr ""
+
+msgid "WLAN-Scan"
+msgstr ""
+
+msgid "Join Network: \"%s\""
+msgstr ""
+
+msgid "No key required"
+msgstr ""
+
+msgid "The access point you are connecting to has no password protection."
+msgstr ""
+
+msgid "WiMAX Configuration"
+msgstr ""
+
+msgid "Here you can configure your WiMAX settings."
+msgstr ""
+
+msgid "WiMAX settings"
+msgstr ""
+
+msgid "PKM Enable"
+msgstr ""
+
+msgid "EAP Type"
+msgstr ""
+
+msgid "TTLS-CHAP"
+msgstr ""
+
+msgid "TTLS-MSCHAPV2"
+msgstr ""
+
+msgid "User ID"
+msgstr ""
+
+msgid "User password"
+msgstr ""
+
+msgid "Anonymous ID"
+msgstr ""
+
+msgid "Private password"
+msgstr ""
+
+msgid "Length of fragment"
+msgstr ""
+
+msgid "Disable EAP TLS session ticket"
+msgstr ""
+
+msgid "Device certificate NULL"
+msgstr ""
+
+msgid "CA certificate NULL"
+msgstr ""
+
+msgid "Use @ delimiter"
+msgstr ""
+
+msgid "err: Length of fragment is incorrect!"
+msgstr ""
+
+msgid "scs: Settings will take effect after router reboot."
+msgstr ""
+
+msgid "WiMAX certificates"
+msgstr ""
+
+msgid "OMA-XML"
+msgstr ""
+
+msgid "Device Cert"
+msgstr ""
+
+msgid "Server Root CA"
+msgstr ""
+
+msgid "Sub CA #1"
+msgstr ""
+
+msgid "Sub CA #2"
+msgstr ""
+
+msgid "Combined CA"
+msgstr ""
+
+msgid "%s traffic configuration"
+msgstr ""
+
+msgid "Here you can configure your %s traffic settings."
+msgstr ""
+
+msgid "Enable %s traffic"
+msgstr ""
+
+msgid "Interval between records (sec)"
+msgstr ""
+
+msgid "Minimum 60s"
+msgstr ""
+
+msgid "This list gives an overview over currently running system processes and their status."
+msgstr ""
+
+msgid "Administration properties"
+msgstr ""
+
+msgid "Changes the administration password, log level and provides SSH access control."
+msgstr ""
+
+msgid "Administrator Password"
+msgstr ""
+
+msgid "scs: You must reboot the router for the changes to take effect."
+msgstr ""
+
+msgid "scs: Password successfully changed!"
+msgstr ""
+
+msgid "err: Unknown Error, password not changed!"
+msgstr ""
+
+msgid "System log level"
+msgstr ""
+
+msgid "Save log in"
+msgstr ""
+
+msgid "RAM memory"
+msgstr ""
+
+msgid "Flash memory"
+msgstr ""
+
+msgid "Include GSMD information"
+msgstr ""
+
+msgid "Include PPPD information"
+msgstr ""
+
+msgid "Include Chat script information"
+msgstr ""
+
+msgid "Show"
+msgstr ""
+
+msgid "SSH Access control"
+msgstr ""
+
+msgid "Port to listen for SSH access."
+msgstr ""
+
+msgid "Remote SSH Access"
+msgstr ""
+
+msgid "Web Access control"
+msgstr ""
+
+msgid "HTTP Web Server port"
+msgstr ""
+
+msgid "Remote HTTP Access"
+msgstr ""
+
+msgid "HTTPS Web Server port"
+msgstr ""
+
+msgid "Remote HTTPS Access"
+msgstr ""
+
+msgid "This is a list of shell glob patterns for matching files and directories to include during sysupgrade. Modified files in /etc/config/ and certain other configurations are automatically preserved."
+msgstr ""
+
+msgid "Below is the determined list of files to backup. It consists of changed configuration files marked by opkg, essential base files and the user defined backup patterns."
+msgstr ""
+
+msgid "Mount Points define at which point a memory device will be attached to the filesystem"
+msgstr ""
+
+msgid "If your physical memory is insufficient unused data can be temporarily swapped to a swap-device resulting in a higher amount of usable RAM. Be aware that swapping data is a very slow process as the swap-device cannot be accessed with the high datarates of the RAM."
+msgstr ""
+
+msgid "LED Configuration"
+msgstr ""
+
+msgid "Customizes the behaviour of the device LEDs if possible."
+msgstr ""
+
+msgid "LED Name"
+msgstr ""
+
+msgid "You can enable or disable installed init scripts here. Changes will applied after a device reboot.<br /><strong>Warning: If you disable essential init scripts like \"network\", your device might become inaccesable!</strong>"
+msgstr ""
+
+msgid "This is the content of /etc/rc.local. Insert your own commands here (in front of 'exit 0') to execute them at the end of the boot process."
+msgstr ""
+
+msgid "The device file of the memory or partition (e.g. <code>/dev/sda1</code>)"
+msgstr ""
+
+msgid "The filesystem that was used to format the memory (e.g. <samp>ext3</samp>)"
+msgstr ""
+
+msgid "Network Operators"
+msgstr ""
+
+msgid "%s data limit"
+msgstr ""
+
+msgid "WAN"
+msgstr ""
+
+msgid "LAN"
+msgstr ""
+
+msgid "Site Survey"
+msgstr ""
+
+msgid "Web filter"
+msgstr ""
+
+msgid "No such device"
+msgstr ""
+
+msgid "Reconnected"
+msgstr ""
+
+msgid "No such interface"
+msgstr ""
+
+msgid "Shutdown"
+msgstr ""
+
+msgid "System Information"
+msgstr ""
+
+msgid "Network Information"
+msgstr ""
+
+msgid "3G traffic"
+msgstr ""
+
+msgid "Daily"
+msgstr ""
+
+msgid "Weekly"
+msgstr ""
+
+msgid "Monthly"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Can't connect"
+msgstr ""
+
+msgid "Gsmd is not running, try again."
+msgstr ""
+
+msgid "Content-Disposition"
+msgstr ""
+
+msgid "Upgrading..."
+msgstr ""
+
+msgid "The system is upgrading now.<br /> <b>DO NOT POWER OFF THE DEVICE!</b><br /> It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
+msgstr ""
+
+msgid "Ping"
+msgstr ""
+
+msgid "Traceroute"
+msgstr ""
+
+msgid "Nslookup"
+msgstr ""
+
+msgid "Really delete this interface? The deletion cannot be undone!\nYou might lose access to this router if you are connected via this interface."
+msgstr ""
+
+msgid "Really shutdown interface \"%s\" ?\nYou might lose access to this router if you are connected via this interface."
+msgstr ""
+
+msgid "Operator code field is empty!"
+msgstr ""
+
+msgid "You will lose current 3G connection. Are you sure you want to scan operators?"
+msgstr ""
+
+msgid "Request time out!"
+msgstr ""
+
+msgid "Operator name"
+msgstr ""
+
+msgid "Short name"
+msgstr ""
+
+msgid "Numeric name"
+msgstr ""
+
+msgid "Network access type"
+msgstr ""
+
+msgid "No operators!"
+msgstr ""
+
+msgid "Connecting..."
+msgstr ""
+
+msgid "Operator code"
+msgstr ""
+
+msgid "Warning! During scan wireless will be temporariliy shutdown. If you are connecting to the router via its wireless Access Point or via its wireless WAN you will lose the connection and wont be able to inspect the result of the scan."
+msgstr ""
+
+msgid "Channel:"
+msgstr ""
+
+msgid "Mode:"
+msgstr ""
+
+msgid "BSSID:"
+msgstr ""
+
+msgid "Encryption:"
+msgstr ""
+
+msgid "Broadcom 802.11%s Wireless Controller"
+msgstr ""
+
+msgid "The <em>libiwinfo-lua</em> package is not installed. You must install this component for working wireless configuration!"
+msgstr ""
+
+msgid "Really shutdown network ?\nYou might lose access to this router if you are connected via this interface."
+msgstr ""
+
+msgid "Really delete this wireless network? The deletion cannot be undone!\nYou might lose access to this router if you are connected via this network."
+msgstr ""
+
+msgid "LTE"
+msgstr ""
+
+msgid "LAN+WAN"
+msgstr ""
+
+msgid "WAN (Wired)"
+msgstr ""
+
+msgid "VPN Tunnel"
+msgstr ""
+
+msgid "VPN TAP"
+msgstr ""
+
+msgid "GRE"
+msgstr ""
+
+msgid "Could not reset database."
+msgstr ""
+
+msgid "Mothly data usage"
+msgstr ""
+
+msgid "Reset all data"
+msgstr ""
+
+msgid "Month usage:"
+msgstr ""
+
+msgid "Transfered:"
+msgstr ""
+
+msgid "Received:"
+msgstr ""
+
+msgid "Daily data usage"
+msgstr ""
+
+msgid "Reset data"
+msgstr ""
+
+msgid "Day usage:"
+msgstr ""
+
+msgid "Rule"
+msgstr ""
+
+msgid "Bridge mode"
+msgstr ""
+
+msgid "WAN not connected."
+msgstr ""
+
+msgid "Not connected via WAN."
+msgstr ""
+
+msgid "Signal quality"
+msgstr ""
+
+msgid "State"
+msgstr ""
+
+msgid "IMEI"
+msgstr ""
+
+msgid "Sim card state"
+msgstr ""
+
+msgid "Signal strength"
+msgstr ""
+
+msgid "Operator"
+msgstr ""
+
+msgid "Operator state"
+msgstr ""
+
+msgid "Connection type"
+msgstr ""
+
+msgid "Bytes recieved"
+msgstr ""
+
+msgid "Bytes sent"
+msgstr ""
+
+msgid "BS MAC address"
+msgstr ""
+
+msgid "Uplink Modulation"
+msgstr ""
+
+msgid "Downlink Modulation"
+msgstr ""
+
+msgid "Ports"
+msgstr ""
+
+msgid "Rejected"
+msgstr ""
+
+msgid "PUK required. %d attempts left."
+msgstr ""
+
+msgid "Blocked"
+msgstr ""
+
+msgid "PIN required. %d attempts left."
+msgstr ""
+
+msgid "PIN required"
+msgstr ""
+
+msgid "PUK required"
+msgstr ""
+
+msgid "PIN2 required"
+msgstr ""
+
+msgid "PUK2 required"
+msgstr ""
+
+msgid "SIM error"
+msgstr ""
+
+msgid "Not inserted"
+msgstr ""
+
+msgid "ARP"
+msgstr ""
+
+msgid "Active IPv4-Routes"
+msgstr ""
+
+msgid "Sat."
+msgstr ""
+
+msgid "Fri."
+msgstr ""
+
+msgid "Thu."
+msgstr ""
+
+msgid "Wed."
+msgstr ""
+
+msgid "Tue."
+msgstr ""
+
+msgid "Mon."
+msgstr ""
+
+msgid "Sun."
+msgstr ""
+
+msgid "Weekly data usage"
+msgstr ""
+
+msgid "Week usage:"
+msgstr ""
+
+msgid "Jan."
+msgstr ""
+
+msgid "Feb."
+msgstr ""
+
+msgid "Mar."
+msgstr ""
+
+msgid "Apr."
+msgstr ""
+
+msgid "May."
+msgstr ""
+
+msgid "June."
+msgstr ""
+
+msgid "July."
+msgstr ""
+
+msgid "Aug."
+msgstr ""
+
+msgid "Sept."
+msgstr ""
+
+msgid "Oct."
+msgstr ""
+
+msgid "Nov."
+msgstr ""
+
+msgid "Dec."
+msgstr ""
+
+msgid "All usage:"
+msgstr ""
+
+msgid "All data usage"
+msgstr ""
+
+msgid "Backup and Firmware"
+msgstr ""
+
+msgid "This page allows you to upgrade routers firmware. Also it lets you backup your configuration or reset it to factory defaults."
+msgstr ""
+
+msgid "Backup and reset configuration"
+msgstr ""
+
+msgid "Backup archive"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Troubleshoot package"
+msgstr ""
+
+msgid "Logging information and configuration"
+msgstr ""
+
+msgid "Restore configuration"
+msgstr ""
+
+msgid "Upload archive"
+msgstr ""
+
+msgid "Firmware upgrade"
+msgstr ""
+
+msgid "Keep all network settings"
+msgstr ""
+
+msgid "Keep cellular settings"
+msgstr ""
+
+msgid "Keep LAN settings"
+msgstr ""
+
+msgid "Keep dynamic DNS settings"
+msgstr ""
+
+msgid "Keep wireless settings"
+msgstr ""
+
+msgid "Keep firewall settings"
+msgstr ""
+
+msgid "Keep OpenVPN settings"
+msgstr ""
+
+msgid "The uploaded image file does not contain a supported format."
+msgstr ""
+
+msgid "Sorry, unknown error."
+msgstr ""
+
+msgid "Click to reboot"
+msgstr ""
+
+msgid "Firmware upgrade - "
+msgstr ""
+
+msgid "verification failed"
+msgstr ""
+
+msgid "verification succeeded"
+msgstr ""
+
+msgid "<b>MD5 verification failed. This means that flash image is either damaged or not compatible with this router.</b> <br />Ensure to get a correct flash image and try to upgrade again."
+msgstr ""
+
+msgid "The flash image was uploaded and MD5 verification was successful. <b>This is the last chance to abort flashing if required.</b> <br />Click \"Proceed\" below to start the flash procedure."
+msgstr ""
+
+msgid "It appears that you try to flash an image that does not fit into the flash memory, please verifythe image file! "
+msgstr ""
+
+msgid "All configuration files will be kept."
+msgstr ""
+
+msgid "Note: All configuration files will be erased."
+msgstr ""
+
+msgid "Network configuration will be kept."
+msgstr ""
+
+msgid "Cellular configuration will be kept."
+msgstr ""
+
+msgid "LAN configuration will be kept."
+msgstr ""
+
+msgid "Dynamic DNS configuration will be kept."
+msgstr ""
+
+msgid "Wireless configuration will be kept."
+msgstr ""
+
+msgid "Firewall configuration will be kept."
+msgstr ""
+
+msgid "OpenVPN configuration will be kept."
+msgstr ""
+
+msgid "Applying configuration"
+msgstr ""
+
+msgid "404 Not Found"
+msgstr ""
+
+msgid "Sorry, the object you requested was not found."
+msgstr ""
+
+msgid "Unable to dispatch: "
+msgstr ""
+
+msgid "500 Internal Server Error"
+msgstr ""
+
+msgid "Sorry, the server encountered an unexpected error."
+msgstr ""
+
+msgid "DHCP-Server"
+msgstr ""
+
+msgid "Essentials"
+msgstr ""
+
+msgid "General"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Admin Password"
+msgstr ""
+
+msgid "Starting luci-flash...\n"
+msgstr ""
+
+msgid "First leased address"
+msgstr ""
+
+msgid "Number of leased addresses"
+msgstr ""
+
+msgid "Web UI"
+msgstr ""
+
+msgid "Here you can customize the settings and the functionality of LuCI."
+msgstr ""
+
+msgid "Hardware Address"
+msgstr ""
+
+msgid "transmitted / received"
+msgstr ""
+
+msgid "TX / RX"
+msgstr ""
+
+msgid "Errors"
+msgstr ""
+
+msgid "Local Network"
+msgstr ""
+
+msgid " (optional)"
+msgstr ""
+
+msgid "Internet Connection"
+msgstr ""
+
+msgid "manual"
+msgstr ""
+
+msgid "You need to install \"ppp-mod-pppoe\" for PPPoE or \"pptp\" for PPtP support"
+msgstr ""
+
+msgid "Clamp Segment Size"
+msgstr ""
+
+msgid "Fixes problems with unreachable websites, submitting forms or other unexpected behaviour for some ISPs."
+msgstr ""
+
+msgid "automatically reconnect"
+msgstr ""
+
+msgid "disconnect when idle for"
+msgstr ""
+
+msgid "PPTP-Server"
+msgstr ""
+
+msgid "Change the password of the system administrator (User <code>root</code>)"
+msgstr ""
+
+msgid "Unknown Error"
+msgstr ""
+
+msgid "Processor"
+msgstr ""
+
+msgid "cached"
+msgstr ""
+
+msgid "buffered"
+msgstr ""
+
+msgid "free"
+msgstr ""
+
+msgid "Here you can configure your wireless network."
+msgstr ""
+
+msgid "Link Quality"
+msgstr ""
+
+msgid "Frequency"
+msgstr ""
+
+msgid "Devices"
+msgstr ""
+
+msgid "Network Name (ESSID)"
+msgstr ""
+
+msgid "Provide (Access Point)"
+msgstr ""
+
+msgid "Independent (Ad-Hoc)"
+msgstr ""
+
+msgid "Join (Client)"
+msgstr ""
+
+msgid "WEP"
+msgstr ""
+
+msgid "Radius-Server"
+msgstr ""
+
+msgid "Radius-Port"
+msgstr ""
+
+msgid "AP-Isolation"
+msgstr ""
+
+msgid "Prevents Client to Client communication"
+msgstr ""
+
+msgid "AHCP Server"
+msgstr ""
+
+msgid "AHCP is an autoconfiguration protocol for IPv6 and dual-stack IPv6/IPv4 networks designed to be used in place of router discovery and DHCP on networks where it is difficult or impossible to configure a server within every link-layer broadcast domain, for example mobile ad-hoc networks."
+msgstr ""
+
+msgid "Served interfaces"
+msgstr ""
+
+msgid "Announced prefixes"
+msgstr ""
+
+msgid "Specifies the announced IPv4 and IPv6 network prefixes in CIDR notation"
+msgstr ""
+
+msgid "Announced DNS servers"
+msgstr ""
+
+msgid "Specifies the announced IPv4 and IPv6 name servers"
+msgstr ""
+
+msgid "Announced NTP servers"
+msgstr ""
+
+msgid "Lease directory"
+msgstr ""
+
+msgid "Unique ID file"
+msgstr ""
+
+msgid "Active AHCP Leases"
+msgstr ""
+
+msgid "Age"
+msgstr ""
+
+msgid "Asterisk"
+msgstr ""
+
+msgid "Voice Functions"
+msgstr ""
+
+msgid "Meetme Conferences"
+msgstr ""
+
+msgid "IAX Connections"
+msgstr ""
+
+msgid "SIP Connections"
+msgstr ""
+
+msgid "Dial Plans"
+msgstr ""
+
+msgid "Modules"
+msgstr ""
+
+msgid "Applications"
+msgstr ""
+
+msgid "Call Detail Records"
+msgstr ""
+
+msgid "Channels"
+msgstr ""
+
+msgid "Codecs"
+msgstr ""
+
+msgid "Functions"
+msgstr ""
+
+msgid "PBX"
+msgstr ""
+
+msgid "Resources"
+msgstr ""
+
+msgid "Feature Module Configuration"
+msgstr ""
+
+msgid "Phones"
+msgstr ""
+
+msgid "Trunks"
+msgstr ""
+
+msgid "Voicemail"
+msgstr ""
+
+msgid "Mailboxes"
+msgstr ""
+
+msgid "MeetMe"
+msgstr ""
+
+msgid "Rooms"
+msgstr ""
+
+msgid "Call Routing"
+msgstr ""
+
+msgid "Dial Zones"
+msgstr ""
+
+msgid "Dialzone: %s"
+msgstr ""
+
+msgid "Incoming: %s"
+msgstr ""
+
+msgid "Edit Dialplan Entry"
+msgstr ""
+
+msgid "Back to dialplan overview"
+msgstr ""
+
+msgid "Number matches"
+msgstr ""
+
+msgid "Intl. prefix matches (optional)"
+msgstr ""
+
+msgid "Used trunk"
+msgstr ""
+
+msgid "Add prefix to dial out (optional)"
+msgstr ""
+
+msgid "Effective countrycode (optional)"
+msgstr ""
+
+msgid "Dialzone for local numbers"
+msgstr ""
+
+msgid "no special treatment of local numbers"
+msgstr ""
+
+msgid "Prefix for local calls (optional)"
+msgstr ""
+
+msgid "Registered Trunks"
+msgstr ""
+
+msgid "SIP Trunks"
+msgstr ""
+
+msgid "Dialplan"
+msgstr ""
+
+msgid "Registered"
+msgstr ""
+
+msgid "Delay"
+msgstr ""
+
+msgid "Zone Overview"
+msgstr ""
+
+msgid " Dial zones hold patterns of dialed numbers to match. Each zone has one or more trunks assigned. If the first trunk is congested, Asterisk will try to use the next available connection. If all trunks fail, then the following zones in the parent dialplan are tried. "
+msgstr ""
+
+msgid "Edit Dialzone"
+msgstr ""
+
+msgid "Back to dialzone overview"
+msgstr ""
+
+msgid "Used trunks"
+msgstr ""
+
+msgid "MeetMe - Rooms"
+msgstr ""
+
+msgid "MeetMe Rooms"
+msgstr ""
+
+msgid "Short room description"
+msgstr ""
+
+msgid "Unique room identifier"
+msgstr ""
+
+msgid "Room Number"
+msgstr ""
+
+msgid "PIN required to access"
+msgstr ""
+
+msgid "Admin PIN"
+msgstr ""
+
+msgid "PIN required for administration"
+msgstr ""
+
+msgid "MeetMe - Common Settings"
+msgstr ""
+
+msgid "Common settings for MeetMe phone conferences."
+msgstr ""
+
+msgid "General MeetMe Options"
+msgstr ""
+
+msgid "Number of 20ms audio buffers to use for conferences"
+msgstr ""
+
+msgid "Dialplan: %s"
+msgstr ""
+
+msgid "SIP Phone Information"
+msgstr ""
+
+msgid "SIP Phone %q"
+msgstr ""
+
+msgid "Edit SIP Client"
+msgstr ""
+
+msgid "Back to phone overview"
+msgstr ""
+
+msgid "Account enabled"
+msgstr ""
+
+msgid "Extension Number"
+msgstr ""
+
+msgid "Display Name"
+msgstr ""
+
+msgid "Authorization ID"
+msgstr ""
+
+msgid "Authorization Password"
+msgstr ""
+
+msgid "Registration Time Value"
+msgstr ""
+
+msgid "SIP Port"
+msgstr ""
+
+msgid "Linekey Mode (broken)"
+msgstr ""
+
+msgid "Trunk Appearance"
+msgstr ""
+
+msgid "Call Appearance"
+msgstr ""
+
+msgid "Assign Dialplan"
+msgstr ""
+
+msgid "Receive incoming calls from"
+msgstr ""
+
+msgid "SIP Phones"
+msgstr ""
+
+msgid "Registered Phones"
+msgstr ""
+
+msgid "Extension"
+msgstr ""
+
+msgid "SIP Trunk Information"
+msgstr ""
+
+msgid "SIP Trunk %q"
+msgstr ""
+
+msgid "Edit SIP Trunk"
+msgstr ""
+
+msgid "Back to trunk overview"
+msgstr ""
+
+msgid "SIP Domain"
+msgstr ""
+
+msgid "SIP Port"
+msgstr ""
+
+msgid "Outbound Proxy"
+msgstr ""
+
+msgid "Outbound Proxy Port"
+msgstr ""
+
+msgid "Register with peer"
+msgstr ""
+
+msgid "Extension to register (optional)"
+msgstr ""
+
+msgid "Number of assigned DID numbers"
+msgstr ""
+
+msgid "Dialplan Context"
+msgstr ""
+
+msgid "Voicemail - Mailboxes"
+msgstr ""
+
+msgid "Voicemail Boxes"
+msgstr ""
+
+msgid "Context"
+msgstr ""
+
+msgid "Mailbox Number"
+msgstr ""
+
+msgid "Unique mailbox identifier"
+msgstr ""
+
+msgid "Ownername"
+msgstr ""
+
+msgid "Human readable display name"
+msgstr ""
+
+msgid "Access protection"
+msgstr ""
+
+msgid "eMail"
+msgstr ""
+
+msgid "Where to send voice messages"
+msgstr ""
+
+msgid "Pager"
+msgstr ""
+
+msgid "Pager number"
+msgstr ""
+
+msgid "Used time format"
+msgstr ""
+
+msgid "Voicemail - Common Settings"
+msgstr ""
+
+msgid "General Voicemail Options", "Common settings for all mailboxes are defined here. Most of them are optional. The storage format should never be changed once set."
+msgstr ""
+
+msgid "Used storage formats"
+msgstr ""
+
+msgid "Enable sending of emails"
+msgstr ""
+
+msgid "Attach voice messages to emails"
+msgstr ""
+
+msgid "Used email sender address"
+msgstr ""
+
+msgid "Date format used in emails"
+msgstr ""
+
+msgid "Max. failed login attempts"
+msgstr ""
+
+msgid "Max. allowed messages per mailbox"
+msgstr ""
+
+msgid "Min. number of seconds for voicemail"
+msgstr ""
+
+msgid "Max. number of seconds for voicemail"
+msgstr ""
+
+msgid "Seconds of silence until stop recording"
+msgstr ""
+
+msgid "Max. number of seconds for greetings"
+msgstr ""
+
+msgid "Milliseconds to skip for rew./ff."
+msgstr ""
+
+msgid "Threshold to detect silence"
+msgstr ""
+
+msgid "Time Zones"
+msgstr ""
+
+msgid "Time zones define how dates and times are expressen when used in an voice mails. Refer to the asterisk manual for placeholder values."
+msgstr ""
+
+msgid "Date Format"
+msgstr ""
+
+msgid "Asterisk General Options"
+msgstr ""
+
+msgid "AGI directory"
+msgstr ""
+
+msgid "Cache recorded sound files during recording"
+msgstr ""
+
+msgid "Debug Level"
+msgstr ""
+
+msgid "Disable some warnings"
+msgstr ""
+
+msgid "Dump core on crash"
+msgstr ""
+
+msgid "High Priority"
+msgstr ""
+
+msgid "Initialise Crypto"
+msgstr ""
+
+msgid "Use Internal Timing"
+msgstr ""
+
+msgid "Log directory"
+msgstr ""
+
+msgid "Maximum number of calls allowed"
+msgstr ""
+
+msgid "Maximum load to stop accepting new calls"
+msgstr ""
+
+msgid "Disable console colors"
+msgstr ""
+
+msgid "Sound files Cache directory"
+msgstr ""
+
+msgid "The Group to run as"
+msgstr ""
+
+msgid "The User to run as"
+msgstr ""
+
+msgid "Voicemail Spool directory"
+msgstr ""
+
+msgid "Prefix UniquID with system name"
+msgstr ""
+
+msgid "Build transcode paths via SLINEAR, not directly"
+msgstr ""
+
+msgid "Transmit SLINEAR silence while recording a channel"
+msgstr ""
+
+msgid "Verbose Level"
+msgstr ""
+
+msgid "Time Zone"
+msgstr ""
+
+msgid "Reload Hardware Config"
+msgstr ""
+
+msgid "Reboot Method"
+msgstr ""
+
+msgid "Web URL (wget)"
+msgstr ""
+
+msgid "program to run"
+msgstr ""
+
+msgid "Parameter"
+msgstr ""
+
+msgid "IAX General Options"
+msgstr ""
+
+msgid "Allow Codecs"
+msgstr ""
+
+msgid "Reinvite/redirect media connections"
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid "Yes when not behind NAT"
+msgstr ""
+
+msgid "Use UPDATE rather than INVITE for path redirection"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
+msgid "Write Protect"
+msgstr ""
+
+msgid "Section sipgeneral"
+msgstr ""
+
+msgid "SIP realm"
+msgstr ""
+
+msgid "Music On Hold"
+msgstr ""
+
+msgid "Application"
+msgstr ""
+
+msgid "Directory of Music"
+msgstr ""
+
+msgid "Option mode"
+msgstr ""
+
+msgid "Read files from directory"
+msgstr ""
+
+msgid "Quite MP3"
+msgstr ""
+
+msgid "Loud MP3"
+msgstr ""
+
+msgid "unbuffered MP3"
+msgstr ""
+
+msgid "Quiet Unbuffered MP3"
+msgstr ""
+
+msgid "Run a custom application"
+msgstr ""
+
+msgid "Random Play"
+msgstr ""
+
+msgid "Section dialplan"
+msgstr ""
+
+msgid "Include zones and plans"
+msgstr ""
+
+msgid "Dialplan Extension"
+msgstr ""
+
+msgid "Dialplan General Options"
+msgstr ""
+
+msgid "Allow transfer"
+msgstr ""
+
+msgid "Clear global vars"
+msgstr ""
+
+msgid "Dialplan Goto"
+msgstr ""
+
+msgid "Dialplan Conference"
+msgstr ""
+
+msgid "Dialplan Time"
+msgstr ""
+
+msgid "Dialplan Voicemail"
+msgstr ""
+
+msgid "Dial Zones for Dialplan"
+msgstr ""
+
+msgid "Prefix to add matching dialplans"
+msgstr ""
+
+msgid "Match International prefix"
+msgstr ""
+
+msgid "Prefix (0) to add/remove to/from intl. numbers"
+msgstr ""
+
+msgid "Dialzone for intl. numbers matched as local"
+msgstr ""
+
+msgid "Match plan"
+msgstr ""
+
+msgid "Connection to use"
+msgstr ""
+
+msgid "IAX Connection"
+msgstr ""
+
+msgid "Always Dial International"
+msgstr ""
+
+msgid "Context to use"
+msgstr ""
+
+msgid "Country Code for connection"
+msgstr ""
+
+msgid "Add as Extension"
+msgstr ""
+
+msgid "Host name (or blank)"
+msgstr ""
+
+msgid "International Dial Prefix"
+msgstr ""
+
+msgid "Dial Prefix (for external line)"
+msgstr ""
+
+msgid "Secret"
+msgstr ""
+
+msgid "Dial Timeout (sec)"
+msgstr ""
+
+msgid "Option type"
+msgstr ""
+
+msgid "Friend (outbound/inbound)"
+msgstr ""
+
+msgid "User (inbound - authenticate by \"from\")"
+msgstr ""
+
+msgid "Peer (outbound - match by host)"
+msgstr ""
+
+msgid "User name"
+msgstr ""
+
+msgid "Meetme Conference General Options"
+msgstr ""
+
+msgid "Number of 20ms audio buffers to be used"
+msgstr ""
+
+msgid "Meetme Conference"
+msgstr ""
+
+msgid "Meeting PIN"
+msgstr ""
+
+msgid "Do Not Load"
+msgstr ""
+
+msgid "Load as Required"
+msgstr ""
+
+msgid "Alarm Receiver Application"
+msgstr ""
+
+msgid "Authentication Application"
+msgstr ""
+
+msgid "Make sure asterisk doesnt save CDR"
+msgstr ""
+
+msgid "Check if channel is available"
+msgstr ""
+
+msgid "Listen in on any channel"
+msgstr ""
+
+msgid "Control Playback Application"
+msgstr ""
+
+msgid "Cuts up variables"
+msgstr ""
+
+msgid "Database access functions"
+msgstr ""
+
+msgid "Dialing Application"
+msgstr ""
+
+msgid "Virtual Dictation Machine Application"
+msgstr ""
+
+msgid "Directed Call Pickup Support"
+msgstr ""
+
+msgid "Extension Directory"
+msgstr ""
+
+msgid "DISA (Direct Inward System Access) Application"
+msgstr ""
+
+msgid "Dump channel variables Application"
+msgstr ""
+
+msgid "Simple Echo Application"
+msgstr ""
+
+msgid "ENUM Lookup"
+msgstr ""
+
+msgid "Reevaluates strings"
+msgstr ""
+
+msgid "Executes applications"
+msgstr ""
+
+msgid "External IVR application interface"
+msgstr ""
+
+msgid "Fork The CDR into 2 seperate entities"
+msgstr ""
+
+msgid "Get ADSI CPE ID"
+msgstr ""
+
+msgid "Group Management Routines"
+msgstr ""
+
+msgid "Encode and Stream via icecast and ices"
+msgstr ""
+
+msgid "Image Transmission Application"
+msgstr ""
+
+msgid "Look up Caller*ID name/number from black"
+msgstr ""
+
+msgid "Look up CallerID Name from local database"
+msgstr ""
+
+msgid "Extension Macros"
+msgstr ""
+
+msgid "A simple math Application"
+msgstr ""
+
+msgid "MD5 checksum Application"
+msgstr ""
+
+msgid "Digital Milliwatt (mu-law) Test Application"
+msgstr ""
+
+msgid "Record a call and mix the audio during the recording"
+msgstr ""
+
+msgid "Call Parking and Announce Application"
+msgstr ""
+
+msgid "Trivial Playback Application"
+msgstr ""
+
+msgid "Require phone number to be entered"
+msgstr ""
+
+msgid "True Call Queueing"
+msgstr ""
+
+msgid "Random goto"
+msgstr ""
+
+msgid "Read Variable Application"
+msgstr ""
+
+msgid "Read in a file"
+msgstr ""
+
+msgid "Realtime Data Lookup/Rewrite"
+msgstr ""
+
+msgid "Trivial Record Application"
+msgstr ""
+
+msgid "Say time"
+msgstr ""
+
+msgid "Send DTMF digits Application"
+msgstr ""
+
+msgid "Send Text Applications"
+msgstr ""
+
+msgid "Set CallerID Application"
+msgstr ""
+
+msgid "CDR user field apps"
+msgstr ""
+
+msgid "load => .so ; Set CallerID Name"
+msgstr ""
+
+msgid "load => .so ; Set CallerID Number"
+msgstr ""
+
+msgid "Set RDNIS Number"
+msgstr ""
+
+msgid "Set ISDN Transfer Capability"
+msgstr ""
+
+msgid "SMS/PSTN handler"
+msgstr ""
+
+msgid "Hangs up the requested channel"
+msgstr ""
+
+msgid "Stack Routines"
+msgstr ""
+
+msgid "Generic System() application"
+msgstr ""
+
+msgid "Playback with Talk Detection"
+msgstr ""
+
+msgid "Interface Test Application"
+msgstr ""
+
+msgid "TXTCIDName"
+msgstr ""
+
+msgid "Send URL Applications"
+msgstr ""
+
+msgid "Custom User Event Application"
+msgstr ""
+
+msgid "Send verbose output"
+msgstr ""
+
+msgid "Waits until first ring after time"
+msgstr ""
+
+msgid "Wait For Silence Application"
+msgstr ""
+
+msgid "While Loops and Conditional Execution"
+msgstr ""
+
+msgid "Comma Separated Values CDR Backend"
+msgstr ""
+
+msgid "Customizable Comma Separated Values CDR Backend"
+msgstr ""
+
+msgid "Asterisk Call Manager CDR Backend"
+msgstr ""
+
+msgid "MySQL CDR Backend"
+msgstr ""
+
+msgid "PostgreSQL CDR Backend"
+msgstr ""
+
+msgid "SQLite CDR Backend"
+msgstr ""
+
+msgid "Agent Proxy Channel"
+msgstr ""
+
+msgid "Channel driver for GTalk"
+msgstr ""
+
+msgid "Option chan_iax2"
+msgstr ""
+
+msgid "Local Proxy Channel"
+msgstr ""
+
+msgid "Session Initiation Protocol (SIP)"
+msgstr ""
+
+msgid "A-law and Mulaw direct Coder/Decoder"
+msgstr ""
+
+msgid "A-law Coder/Decoder"
+msgstr ""
+
+msgid "ITU G.726-32kbps G726 Transcoder"
+msgstr ""
+
+msgid "GSM/PCM16 (signed linear) Codec Translation"
+msgstr ""
+
+msgid "Speex/PCM16 (signed linear) Codec Translator"
+msgstr ""
+
+msgid "Mu-law Coder/Decoder"
+msgstr ""
+
+msgid "Sun Microsystems AU format (signed linear)"
+msgstr ""
+
+msgid "G.723.1 Simple Timestamp File Format"
+msgstr ""
+
+msgid "Raw G.726 (16/24/32/40kbps) data"
+msgstr ""
+
+msgid "Raw G729 data"
+msgstr ""
+
+msgid "Raw GSM data"
+msgstr ""
+
+msgid "Raw h263 data"
+msgstr ""
+
+msgid "JPEG (Joint Picture Experts Group) Image"
+msgstr ""
+
+msgid "Raw uLaw 8khz Audio support (PCM)"
+msgstr ""
+
+msgid "load => .so ; Raw aLaw 8khz PCM Audio support"
+msgstr ""
+
+msgid "Raw Signed Linear Audio support (SLN)"
+msgstr ""
+
+msgid "Dialogic VOX (ADPCM) File Format"
+msgstr ""
+
+msgid "Microsoft WAV format (8000hz Signed Line)"
+msgstr ""
+
+msgid "Microsoft WAV format (Proprietary GSM)"
+msgstr ""
+
+msgid "Caller ID related dialplan functions"
+msgstr ""
+
+msgid "ENUM Functions"
+msgstr ""
+
+msgid "URI encoding / decoding functions"
+msgstr ""
+
+msgid "Asterisk Extension Language Compiler"
+msgstr ""
+
+msgid "Text Extension Configuration"
+msgstr ""
+
+msgid "load => .so ; Builtin dialplan functions"
+msgstr ""
+
+msgid "Loopback Switch"
+msgstr ""
+
+msgid "Realtime Switch"
+msgstr ""
+
+msgid "Outgoing Spool Support"
+msgstr ""
+
+msgid "Wil Cal U (Auto Dialer)"
+msgstr ""
+
+msgid "MySQL Config Resource"
+msgstr ""
+
+msgid "ODBC Config Resource"
+msgstr ""
+
+msgid "PGSQL Module"
+msgstr ""
+
+msgid "Cryptographic Digital Signatures"
+msgstr ""
+
+msgid "Call Parking Resource"
+msgstr ""
+
+msgid "Indications Configuration"
+msgstr ""
+
+msgid "Call Monitoring Resource"
+msgstr ""
+
+msgid "Music On Hold Resource"
+msgstr ""
+
+msgid "ODBC Resource"
+msgstr ""
+
+msgid "SMDI Module"
+msgstr ""
+
+msgid "SNMP Module"
+msgstr ""
+
+msgid "Feature Key maps"
+msgstr ""
+
+msgid "Attended transfer key"
+msgstr ""
+
+msgid "Blind transfer key"
+msgstr ""
+
+msgid "Key to Disconnect call"
+msgstr ""
+
+msgid "Key to Park call"
+msgstr ""
+
+msgid "Parking Feature"
+msgstr ""
+
+msgid "Enable Parking"
+msgstr ""
+
+msgid "ADSI Park"
+msgstr ""
+
+msgid "Attended transfer timeout (sec)"
+msgstr ""
+
+msgid "One touch record key"
+msgstr ""
+
+msgid "Name of call context for parking"
+msgstr ""
+
+msgid "Sound file to play to parked caller"
+msgstr ""
+
+msgid "Max time (ms) between digits for feature activation"
+msgstr ""
+
+msgid "Method to Find Parking slot"
+msgstr ""
+
+msgid "First available slot"
+msgstr ""
+
+msgid "Next free parking space"
+msgstr ""
+
+msgid "Music on Hold class for the parked channel"
+msgstr ""
+
+msgid "Play courtesy tone to"
+msgstr ""
+
+msgid "Caller"
+msgstr ""
+
+msgid "Parked user"
+msgstr ""
+
+msgid "Both"
+msgstr ""
+
+msgid "Extension to dial to park"
+msgstr ""
+
+msgid "Parking time (secs)"
+msgstr ""
+
+msgid "Range of extensions for call parking"
+msgstr ""
+
+msgid "Pickup extension"
+msgstr ""
+
+msgid "Seconds to wait bewteen digits when transferring"
+msgstr ""
+
+msgid "Sound when attended transfer is complete"
+msgstr ""
+
+msgid "Sound when attended transfer fails"
+msgstr ""
+
+msgid "SIP Connection"
+msgstr ""
+
+msgid "DTMF mode"
+msgstr ""
+
+msgid "Use RFC2833 or INFO for the BudgeTone"
+msgstr ""
+
+msgid "Use RFC2833 for the BudgeTone"
+msgstr ""
+
+msgid "Use Inband (only with ulaw/alaw)"
+msgstr ""
+
+msgid "Primary domain identity for From: headers"
+msgstr ""
+
+msgid "From user (required by many SIP providers)"
+msgstr ""
+
+msgid "Ring on incoming dialplan contexts"
+msgstr ""
+
+msgid "Allow Insecure for"
+msgstr ""
+
+msgid "Allow mismatched port number"
+msgstr ""
+
+msgid "Do not require auth of incoming INVITE"
+msgstr ""
+
+msgid "Allow mismatched port and Do not require auth of incoming INVITE"
+msgstr ""
+
+msgid "Mailbox for MWI"
+msgstr ""
+
+msgid "NAT between phone and Asterisk"
+msgstr ""
+
+msgid "Check tags in headers"
+msgstr ""
+
+msgid "Reply Timeout (ms) for down connection"
+msgstr ""
+
+msgid "Register connection"
+msgstr ""
+
+msgid "Dial own extension for mailbox"
+msgstr ""
+
+msgid "Client Type"
+msgstr ""
+
+msgid "Voicemail general options"
+msgstr ""
+
+msgid "From Email address of server"
+msgstr ""
+
+msgid "Voice Mail boxes"
+msgstr ""
+
+msgid "Email contains attachment"
+msgstr ""
+
+msgid "Email"
+msgstr ""
+
+msgid "Voice Zone"
+msgstr ""
+
+msgid "Voice Zone settings"
+msgstr ""
+
+msgid "Message Format"
+msgstr ""
+
+msgid "Outgoing Call Routing"
+msgstr ""
+
+msgid "Here you can manage your dial plans which are used to route outgoing calls from your local extensions.<br /><br /> Related tasks:<br />"
+msgstr ""
+
+msgid "Manage dialzones"
+msgstr ""
+
+msgid "Manage voicemail boxes"
+msgstr ""
+
+msgid "Manage meetme rooms"
+msgstr ""
+
+msgid "Remove this dialplan"
+msgstr ""
+
+msgid "Dialzone"
+msgstr ""
+
+msgid "Remove from this dialplan"
+msgstr ""
+
+msgid "Voicemailbox"
+msgstr ""
+
+msgid "Manage mailboxes ..."
+msgstr ""
+
+msgid "MeetMe Room"
+msgstr ""
+
+msgid "Manage conferences ..."
+msgstr ""
+
+msgid "-- please select --"
+msgstr ""
+
+msgid "as extension"
+msgstr ""
+
+msgid "Add MeetMe Conference:"
+msgstr ""
+
+msgid "Add Voicemailbox:"
+msgstr ""
+
+msgid "Add item ..."
+msgstr ""
+
+msgid "Create a new dialplan"
+msgstr ""
+
+msgid "The name is required and must be unique. It may only contain the characters A-Z, a-z, 0-9 and _ ."
+msgstr ""
+
+msgid "Add Dialzone:"
+msgstr ""
+
+msgid "Invalid name given!"
+msgstr ""
+
+msgid "Add dialplan"
+msgstr ""
+
+msgid "Dial Zone Management"
+msgstr ""
+
+msgid "Here you can manage your dial zones. The zones are used to route outgoing calls to the destination. Each zone groups multiple trunks and number matches to represent a logical destination. Zones can also be used to enforce certain dial restrictions on selected extensions."
+msgstr ""
+
+msgid "Dialzone Overview"
+msgstr ""
+
+msgid "Prepend"
+msgstr ""
+
+msgid "- Match"
+msgstr ""
+
+msgid "Trunk"
+msgstr ""
+
+msgid "Edit entry"
+msgstr ""
+
+msgid "Delete entry"
+msgstr ""
+
+msgid "Create a new dialzone"
+msgstr ""
+
+msgid "You can specifiy multiple number matches by separating them with spaces."
+msgstr ""
+
+msgid "1) Name"
+msgstr ""
+
+msgid "2) Number Match"
+msgstr ""
+
+msgid "3) Trunks"
+msgstr ""
+
+msgid "Dynamic DNS"
+msgstr ""
+
+msgid "Dynamic DNS allows that your router can be reached with a fixed hostname while having a dynamically changing IP address."
+msgstr ""
+
+msgid "Custom update-URL"
+msgstr ""
+
+msgid "custom"
+msgstr ""
+
+msgid "URL"
+msgstr ""
+
+msgid "IP renew interval (min)"
+msgstr ""
+
+msgid "Force IP renew (min)"
+msgstr ""
+
+msgid "Configure Diagnostics"
+msgstr ""
+
+msgid "The entries in the menu allow you to perform diagnostic tests on your system to aid in troubleshooting."
+msgstr ""
+
+msgid "The diagnostics available under this menu depend on what modules you have installed on your device."
+msgstr ""
+
+msgid "With this menu you can configure network diagnostics, such as network device scans and ping tests."
+msgstr ""
+
+msgid "No SIP devices"
+msgstr ""
+
+msgid "No devices detected"
+msgstr ""
+
+msgid "check other networks"
+msgstr ""
+
+msgid "SIP devices discovered for"
+msgstr ""
+
+msgid "Devices discovered for"
+msgstr ""
+
+msgid "Vendor"
+msgstr ""
+
+msgid "Device Type"
+msgstr ""
+
+msgid "Link to Device"
+msgstr ""
+
+msgid "Raw"
+msgstr ""
+
+msgid "Subnet"
+msgstr ""
+
+msgid "Timeout"
+msgstr ""
+
+msgid "Time to wait for responses in seconds (default 10"
+msgstr ""
+
+msgid "Repeat Count"
+msgstr ""
+
+msgid "Number of times to send requests (default 1)"
+msgstr ""
+
+msgid "Sleep Between Requests"
+msgstr ""
+
+msgid "Milliseconds to sleep between requests (default 100)"
+msgstr ""
+
+msgid "SIP Devices on Network"
+msgstr ""
+
+msgid "Network Device Scan"
+msgstr ""
+
+msgid "SIP Device Scan"
+msgstr ""
+
+msgid "Devices on Network"
+msgstr ""
+
+msgid "MAC Device Info Overrides"
+msgstr ""
+
+msgid "Phone Scan"
+msgstr ""
+
+msgid "Config Phone Scan"
+msgstr ""
+
+msgid "Device Scan Config"
+msgstr ""
+
+msgid "Configure Scans"
+msgstr ""
+
+msgid "Repeat Scans (this can take a few minutes)"
+msgstr ""
+
+msgid "Override the information returned by the MAC to Device Info Script (mac-to-devinfo) for a specified range of MAC Addresses"
+msgstr ""
+
+msgid "MAC Device Override"
+msgstr ""
+
+msgid "MAC range and information used to override system and IEEE databases"
+msgstr ""
+
+msgid "Beginning of MAC address range"
+msgstr ""
+
+msgid "End of MAC address range"
+msgstr ""
+
+msgid "OUI Owner"
+msgstr ""
+
+msgid "Network Device Scanning Configuration"
+msgstr ""
+
+msgid "Configure scanning for devices on specified networks. Decreasing \'Timeout\', \'Repeat Count\', and/or \'Sleep Between Requests\' may speed up scans, but also may fail to find some devices."
+msgstr ""
+
+msgid "Use Configuration"
+msgstr ""
+
+msgid "Perform Scans (this can take a few minutes)"
+msgstr ""
+
+msgid "Scanning Configuration"
+msgstr ""
+
+msgid "Networks to scan for devices"
+msgstr ""
+
+msgid "Scan for devices on specified networks."
+msgstr ""
+
+msgid "SIP Device Information"
+msgstr ""
+
+msgid "Scan for supported SIP devices on specified networks."
+msgstr ""
+
+msgid "SIP Device Scanning Configuration"
+msgstr ""
+
+msgid "Configure scanning for supported SIP devices on specified networks. Decreasing \'Timeout\', \'Repeat Count\', and/or \'Sleep Between Requests\' may speed up scans, but also may fail to find some devices."
+msgstr ""
+
+msgid "Networks to scan for supported devices"
+msgstr ""
+
+msgid "Phone Information"
+msgstr ""
+
+msgid "Policy Routing"
+msgstr ""
+
+msgid "These pages can be used to setup policy routing for certain firewall zones. This is useful if you need to use your own internet connection for yourself but you don't want to share it with others (thats why it can also be called 'Ego Mode'). Your own traffic is then sent via your internet connection while traffic originating from the mesh will use another gateway in the mesh. "
+msgstr ""
+
+msgid "Enable Policy Routing"
+msgstr ""
+
+msgid "Strict Filtering"
+msgstr ""
+
+msgid "If no default route is received from the mesh network then traffic which belongs to the selected firewall zones is routed via your internet connection as a fallback. If you do not want this and instead block that traffic then you should select this option."
+msgstr ""
+
+msgid "All traffic from interfaces belonging to these zones will be sent via a gateway in the mesh network."
+msgstr ""
+
+msgid "GRE Tunnel"
+msgstr ""
+
+msgid "GRE tunneling over TCP/IP network settings"
+msgstr ""
+
+msgid "Enable GRE Tunnel"
+msgstr ""
+
+msgid "TTL"
+msgstr ""
+
+msgid "Value [0-255]"
+msgstr ""
+
+msgid "PMTUD"
+msgstr ""
+
+msgid "Remote network IP"
+msgstr ""
+
+msgid "Remote network CIDR"
+msgstr ""
+
+msgid "CIDR (netmask) value [0-32]"
+msgstr ""
+
+msgid "Local tunnel IP"
+msgstr ""
+
+msgid "Local tunnel CIDR"
+msgstr ""
+
+msgid "Remote endpoint IP address"
+msgstr ""
+
+msgid "MTU value [0-1500]"
+msgstr ""
+
+msgid "hd-idle is a utility program for spinning-down external disks after a period of idle time."
+msgstr ""
+
+msgid "Disk"
+msgstr ""
+
+msgid "Idle-time"
+msgstr ""
+
+msgid "Idle-time unit"
+msgstr ""
+
+msgid "min"
+msgstr ""
+
+msgid "h"
+msgstr ""
+
+msgid "Enable debug"
+msgstr ""
+
+msgid "Idle"
+msgstr ""
+
+msgid "Calling"
+msgstr ""
+
+msgid "Realm"
+msgstr ""
+
+msgid "VoIP"
+msgstr ""
+
+msgid "Account"
+msgstr ""
+
+msgid "Here You can specify the SIP account that you want to use."
+msgstr ""
+
+msgid "Here You can specify the SIP contacts that you want to use."
+msgstr ""
+
+msgid "Shortdial"
+msgstr ""
+
+msgid "Dial"
+msgstr ""
+
+msgid "SIP"
+msgstr ""
+
+msgid "Landline"
+msgstr ""
+
+msgid "Current Telephony State"
+msgstr ""
+
+msgid "Uplink"
+msgstr ""
+
+msgid "Port1"
+msgstr ""
+
+msgid "Port2"
+msgstr ""
+
+msgid "Mesh Wizard"
+msgstr ""
+
+msgid "This wizard will assist you in setting up your router for Freifunk or another similar wireless community network."
+msgstr ""
+
+msgid "Configure this interface"
+msgstr ""
+
+msgid "Mesh IP address"
+msgstr ""
+
+msgid "This is a unique address in the mesh (e.g. 10.1.1.1) and has to be registered at your local community."
+msgstr ""
+
+msgid "The given IP address is not inside the mesh network range "
+msgstr ""
+
+msgid "Enable DHCP"
+msgstr ""
+
+msgid "DHCP will automatically assign ip addresses to clients"
+msgstr ""
+
+msgid "DHCP IP range"
+msgstr ""
+
+msgid "The IP range from which clients are assigned ip addresses (e.g. 10.1.2.1/28). If this is a range inside your mesh network range, then it will be announced as HNA. Any other range will use NAT. If left empty then the defaults from the community profile will be used."
+msgstr ""
+
+msgid "Your device and neighbouring nodes have to use the same channel."
+msgstr ""
+
+msgid "Virtual Access Point (VAP)"
+msgstr ""
+
+msgid "This will setup a new virtual wireless interface in Access Point mode."
+msgstr ""
+
+msgid "Cleanup config"
+msgstr ""
+
+msgid "If this is selected then config is cleaned before setting new config options."
+msgstr ""
+
+msgid "Protect LAN"
+msgstr ""
+
+msgid "Check this to protect your LAN from other nodes or clients"
+msgstr ""
+
+msgid "recommended"
+msgstr ""
+
+msgid "Share your internet connection"
+msgstr ""
+
+msgid "Select this to allow others to use your connection to access the internet."
+msgstr ""
+
+msgid "miniDLNA"
+msgstr ""
+
+msgid "MiniDLNA is server software with the aim of being fully compliant with DLNA/UPnP-AV clients."
+msgstr ""
+
+msgid "miniDLNA Settings"
+msgstr ""
+
+msgid "Enable:"
+msgstr ""
+
+msgid "Port:"
+msgstr ""
+
+msgid "Port for HTTP (descriptions, SOAP, media transfer) traffic."
+msgstr ""
+
+msgid "Network interfaces to serve."
+msgstr ""
+
+msgid "Interfaces:"
+msgstr ""
+
+msgid "Friendly name:"
+msgstr ""
+
+msgid "Set this if you want to customize the name that shows up on your clients."
+msgstr ""
+
+msgid "OpenWrt DLNA Server"
+msgstr ""
+
+msgid "Database directory:"
+msgstr ""
+
+msgid "Set this if you would like to specify the directory where you want MiniDLNA to store its database and album art cache."
+msgstr ""
+
+msgid "Log directory:"
+msgstr ""
+
+msgid "Set this if you would like to specify the directory where you want MiniDLNA to store its log file."
+msgstr ""
+
+msgid "Enable inotify:"
+msgstr ""
+
+msgid "Set this to enable inotify monitoring to automatically discover new files."
+msgstr ""
+
+msgid "Enable TIVO:"
+msgstr ""
+
+msgid "Set this to enable support for streaming .jpg and .mp3 files to a TiVo supporting HMO."
+msgstr ""
+
+msgid "Strict to DLNA standard:"
+msgstr ""
+
+msgid "Set this to strictly adhere to DLNA standards. This will allow server-side downscaling of very large JPEG images, which may hurt JPEG serving performance on (at least) Sony DLNA products."
+msgstr ""
+
+msgid "Presentation URL:"
+msgstr ""
+
+msgid "Notify interval:"
+msgstr ""
+
+msgid "Announced serial number:"
+msgstr ""
+
+msgid "Serial number the miniDLNA daemon will report to clients in its XML description."
+msgstr ""
+
+msgid "Announced model number:"
+msgstr ""
+
+msgid "Model number the miniDLNA daemon will report to clients in its XML description."
+msgstr ""
+
+msgid "miniSSDP socket:"
+msgstr ""
+
+msgid "Specify the path to the MiniSSDPd socket."
+msgstr ""
+
+msgid "Root container:"
+msgstr ""
+
+msgid "Standard container"
+msgstr ""
+
+msgid "Browse directory"
+msgstr ""
+
+msgid "Music"
+msgstr ""
+
+msgid "Video"
+msgstr ""
+
+msgid "Pictures"
+msgstr ""
+
+msgid "Media directories:"
+msgstr ""
+
+msgid "Set this to the directory you want scanned. If you want to restrict the directory to a specific content type, you can prepend the type ('A' for audio, 'V' for video, 'P' for images), followed by a comma, to the directory (eg. media_dir=A,/mnt/media/Music). Multiple directories can be specified."
+msgstr ""
+
+msgid "Album art names:"
+msgstr ""
+
+msgid "This is a list of file names to check for when searching for album art."
+msgstr ""
+
+msgid "The miniDLNA service is active, serving %d audio, %d video and %d image files."
+msgstr ""
+
+msgid "The miniDLNA service is not running."
+msgstr ""
+
+msgid "miniDLNA Status"
+msgstr ""
+
+msgid "MMC/SD driver configuration"
+msgstr ""
+
+msgid "DI_pin"
+msgstr ""
+
+msgid "DO_pin"
+msgstr ""
+
+msgid "CLK_pin"
+msgstr ""
+
+msgid "CS_pin"
+msgstr ""
+
+msgid "WAN Failover"
+msgstr ""
+
+msgid "Failover Link"
+msgstr ""
+
+msgid "Here you can setup your failover link. If your conventional WAN connection, such as wired Ethernet or Wifi, fails, the failover link will enable and take over to keep the router connected."
+msgstr ""
+
+msgid "%s selected as wan - cannot enable failover link."
+msgstr ""
+
+msgid "WiMAX selected as wan - cannot enable failover link."
+msgstr ""
+
+msgid "Wireless SSID is not set - cannot enable failover link."
+msgstr ""
+
+msgid "Cannot enable failover link at bridge mode."
+msgstr ""
+
+msgid "wrn:%s selected as wan - cannot enable failover link."
+msgstr ""
+
+msgid "wrn:WiMAX selected as wan - cannot enable failover link."
+msgstr ""
+
+msgid "wrn:No 3G module detected!"
+msgstr ""
+
+msgid "Timing & other parameters"
+msgstr ""
+
+msgid "Timing & other parameters will indicate how and when it will be determined that your conventional connection has gone down."
+msgstr ""
+
+msgid "Health Monitor Interval"
+msgstr ""
+
+msgid "5 sec."
+msgstr ""
+
+msgid "10 sec."
+msgstr ""
+
+msgid "20 sec."
+msgstr ""
+
+msgid "30 sec."
+msgstr ""
+
+msgid "60 sec."
+msgstr ""
+
+msgid "120 sec."
+msgstr ""
+
+msgid "Health Monitor ICMP Host(s)"
+msgstr ""
+
+msgid "DNS Server(s)"
+msgstr ""
+
+msgid "WAN Gateway"
+msgstr ""
+
+msgid "Health Monitor ICMP Timeout"
+msgstr ""
+
+msgid "1 sec."
+msgstr ""
+
+msgid "2 sec."
+msgstr ""
+
+msgid "3 sec."
+msgstr ""
+
+msgid "4 sec."
+msgstr ""
+
+msgid "Attempts Before WAN Failover"
+msgstr ""
+
+msgid "Attempts Before WAN Recovery"
+msgstr ""
+
+msgid "Backup ICMP host"
+msgstr ""
+
+msgid "A remote host that will be used to test wether your failover link is alive."
+msgstr ""
+
+msgid "ICMP host"
+msgstr ""
+
+msgid "Multi-WAN"
+msgstr ""
+
+msgid "Multi-WAN allows for the use of multiple uplinks for load balancing and failover."
+msgstr ""
+
+msgid "Multi-WAN Traffic Rules"
+msgstr ""
+
+msgid "Configure rules for directing outbound traffic through specified WAN Uplinks.Source Address"
+msgstr ""
+
+msgid "all"
+msgstr ""
+
+msgid "WAN Uplink"
+msgstr ""
+
+msgid "Load Balancer(Performance)"
+msgstr ""
+
+msgid "Load Balancer(Compatibility)"
+msgstr ""
+
+msgid "Default Route"
+msgstr ""
+
+msgid "WAN Failover Status"
+msgstr ""
+
+msgid "WAN failover link is disabled"
+msgstr ""
+
+msgid "NOT READY"
+msgstr ""
+
+msgid "READY"
+msgstr ""
+
+msgid "IN USE"
+msgstr ""
+
+msgid "NTP"
+msgstr ""
+
+msgid "Time Synchronisation"
+msgstr ""
+
+msgid "Synchronizes the system time"
+msgstr ""
+
+msgid "Current system time"
+msgstr ""
+
+msgid "UTC"
+msgstr ""
+
+msgid "Run NTP client on startup"
+msgstr ""
+
+msgid "Update interval (in seconds)"
+msgstr ""
+
+msgid "Save time to flash"
+msgstr ""
+
+msgid "Count of time measurements"
+msgstr ""
+
+msgid "empty = infinite"
+msgstr ""
+
+msgid "Clock Adjustment"
+msgstr ""
+
+msgid "Offset frequency"
+msgstr ""
+
+msgid "Time Servers"
+msgstr ""
+
+msgid "Time Server"
+msgstr ""
+
+msgid "Hostname, NTP and timezone configuration."
+msgstr ""
+
+msgid "Enable builtin NTP"
+msgstr ""
+
+msgid "OLSR"
+msgstr ""
+
+msgid "Neighbours"
+msgstr ""
+
+msgid "Topology"
+msgstr ""
+
+msgid "HNA"
+msgstr ""
+
+msgid "MID"
+msgstr ""
+
+msgid "SmartGW"
+msgstr ""
+
+msgid "HNA Announcements"
+msgstr ""
+
+msgid "Plugins"
+msgstr ""
+
+msgid "Display"
+msgstr ""
+
+msgid "LoadPlugin"
+msgstr ""
+
+msgid "OLSR Daemon"
+msgstr ""
+
+msgid "The OLSR daemon is an implementation of the Optimized Link State Routing protocol. As such it allows mesh routing for any network equipment. It runs on any wifi card that supports ad-hoc mode and of course on any ethernet device. Visit <a href='http://www.olsr.org'>olsrd.org</a> for help and documentation."
+msgstr ""
+
+msgid "Link Quality Settings"
+msgstr ""
+
+msgid "Warning: kmod-ipip is not installed. Without kmod-ipip SmartGateway will not work, please install it."
+msgstr ""
+
+msgid "Internet protocol"
+msgstr ""
+
+msgid "IP-version to use. If 6and4 is selected then one olsrd instance is started for each protocol."
+msgstr ""
+
+msgid "Pollrate"
+msgstr ""
+
+msgid "Polling rate for OLSR sockets in seconds. Default is 0.05."
+msgstr ""
+
+msgid "Nic changes poll interval"
+msgstr ""
+
+msgid "Interval to poll network interfaces for configuration changes (in seconds). Default is \"2.5\"."
+msgstr ""
+
+msgid "TOS value"
+msgstr ""
+
+msgid "Type of service value for the IP header of control traffic. Default is \"16\"."
+msgstr ""
+
+msgid "FIBMetric controls the metric value of the host-routes OLSRd sets. \"flat\" means that the metric value is always 2. This is the preferred value because it helps the linux kernel routing to clean up older routes. \"correct\" uses the hopcount as the metric value. \"approx\" use the hopcount as the metric value too, but does only update the hopcount if the nexthop changes too. Default is \"flat\"."
+msgstr ""
+
+msgid "LQ level"
+msgstr ""
+
+msgid "Link quality level switch between hopcount and cost-based (mostly ETX) routing.<br /><b>0</b> = do not use link quality<br /><b>2</b> = use link quality for MPR selection and routing<br />Default is \"2\""
+msgstr ""
+
+msgid "LQ aging"
+msgstr ""
+
+msgid "Link quality aging factor (only for lq level 2). Tuning parameter for etx_float and etx_fpm, smaller values mean slower changes of ETX value. (allowed values are between 0.01 and 1.0)"
+msgstr ""
+
+msgid "LQ algorithm"
+msgstr ""
+
+msgid "Link quality algorithm (only for lq level 2).<br /><b>etx_float</b>: floating point ETX with exponential aging<br /><b>etx_fpm</b>  : same as etx_float, but with integer arithmetic<br /><b>etx_ff</b>   : ETX freifunk, an etx variant which use all OLSR traffic (instead of only hellos) for ETX calculation<br /><b>etx_ffeth</b>: incompatible variant of etx_ff that allows ethernet links with ETX 0.1.<br />Defaults to \"etx_ff\""
+msgstr ""
+
+msgid "LQ fisheye"
+msgstr ""
+
+msgid "Fisheye mechanism for TCs (checked means on). Default is \"on\""
+msgstr ""
+
+msgid "Use hysteresis"
+msgstr ""
+
+msgid "Hysteresis for link sensing (only for hopcount metric). Hysteresis adds more robustness to the link sensing but delays neighbor registration. Defaults is \"yes\""
+msgstr ""
+
+msgid "The port OLSR uses. This should usually stay at the IANA assigned port 698. It can have a value between 1 and 65535."
+msgstr ""
+
+msgid "Main IP"
+msgstr ""
+
+msgid "Sets the main IP (originator ip) of the router. This IP will NEVER change during the uptime of olsrd. Default is 0.0.0.0, which triggers usage of the IP of the first interface."
+msgstr ""
+
+msgid "Enable SmartGateway. If it is disabled, then all other SmartGateway parameters are ignored. Default is \"no\"."
+msgstr ""
+
+msgid "Allow gateways with NAT"
+msgstr ""
+
+msgid "Allow the selection of an outgoing ipv4 gateway with NAT"
+msgstr ""
+
+msgid "Announce uplink"
+msgstr ""
+
+msgid "Which kind of uplink is exported to the other mesh nodes. An uplink is detected by looking for a local HNA of 0.0.0.0/0, ::ffff:0:0/96 or 2000::/3. Default setting is \"both\"."
+msgstr ""
+
+msgid "Uplink uses NAT"
+msgstr ""
+
+msgid "If this Node uses NAT for connections to the internet. Default is \"yes\"."
+msgstr ""
+
+msgid "Speed of the uplink"
+msgstr ""
+
+msgid "Specifies the speed of the uplink in kilobits/s. First parameter is upstream, second parameter is downstream. Default is \"128 1024\"."
+msgstr ""
+
+msgid "IPv6-Prefix of the uplink"
+msgstr ""
+
+msgid "This can be used to signal the external IPv6 prefix of the uplink to the clients. This might allow a client to change it's local IPv6 address to use the IPv6 gateway without any kind of address translation. The maximum prefix length is 64 bits. Default is \"::/0\" (no prefix)."
+msgstr ""
+
+msgid "Willingness"
+msgstr ""
+
+msgid "The fixed willingness to use. If not set willingness will be calculated dynamically based on battery/power status. Default is \"3\"."
+msgstr ""
+
+msgid "NAT threshold"
+msgstr ""
+
+msgid "If the route to the current gateway is to be changed, the ETX value of this gateway is multiplied with this value before it is compared to the new one. The parameter can be a value between 0.1 and 1.0, but should be close to 1.0 if changed.<br /><b>WARNING:</b> This parameter should not be used together with the etx_ffeth metric!<br />Defaults to \"1.0\"."
+msgstr ""
+
+msgid "Interfaces Defaults"
+msgstr ""
+
+msgid "Timing and Validity"
+msgstr ""
+
+msgid "Interface Mode is used to prevent unnecessary packet forwarding on switched ethernet interfaces. valid Modes are \"mesh\" and \"ether\". Default is \"mesh\"."
+msgstr ""
+
+msgid "Weight"
+msgstr ""
+
+msgid "When multiple links exist between hosts the weight of interface is used to determine the link to use. Normally the weight is automatically calculated by olsrd based on the characteristics of the interface, but here you can specify a fixed value. Olsrd will choose links with the lowest value.<br /><b>Note:</b> Interface weight is used only when LinkQualityLevel is set to 0. For any other value of LinkQualityLevel, the interface ETX value is used instead."
+msgstr ""
+
+msgid "Multiply routes with the factor given here. Allowed values are between 0.01 and 1. It is only used when LQ-Level is greater than 0. Examples:<br />reduce LQ to 192.168.0.1 by half: 192.168.0.1 0.5<br />reduce LQ to all nodes on this interface by 20%: default 0.8"
+msgstr ""
+
+msgid "IPv4 broadcast address for outgoing OLSR packets. One useful example would be 255.255.255.255. Default is \"0.0.0.0\", which triggers the usage of the interface broadcast IP."
+msgstr ""
+
+msgid "IPv6 multicast"
+msgstr ""
+
+msgid "IPv6 multicast address. Default is \"FF02::6D\", the manet-router linklocal multicast."
+msgstr ""
+
+msgid "IPv4 source"
+msgstr ""
+
+msgid "IPv4 src address for outgoing OLSR packages. Default is \"0.0.0.0\", which triggers usage of the interface IP."
+msgstr ""
+
+msgid "IPv6 source"
+msgstr ""
+
+msgid "IPv6 src prefix. OLSRd will choose one of the interface IPs which matches the prefix of this parameter. Default is \"0::/0\", which triggers the usage of a not-linklocal interface IP."
+msgstr ""
+
+msgid "Hello interval"
+msgstr ""
+
+msgid "Hello validity time"
+msgstr ""
+
+msgid "TC interval"
+msgstr ""
+
+msgid "TC validity time"
+msgstr ""
+
+msgid "MID interval"
+msgstr ""
+
+msgid "MID validity time"
+msgstr ""
+
+msgid "HNA interval"
+msgstr ""
+
+msgid "HNA validity time"
+msgstr ""
+
+msgid "Hello"
+msgstr ""
+
+msgid "TC"
+msgstr ""
+
+msgid "OLSR - Display Options"
+msgstr ""
+
+msgid "Resolve hostnames on status pages. It is generally safe to allow this, but if you use public IPs and have unstable DNS-Setup then those pages will load really slow. In this case disable it here."
+msgstr ""
+
+msgid "OLSR - HNA-Announcements"
+msgstr ""
+
+msgid "Hosts in a OLSR routed network can announce connecitivity to external networks using HNA messages."
+msgstr ""
+
+msgid "Both values must use the dotted decimal notation."
+msgstr ""
+
+msgid "IPv6 network must be given in full notation, prefix must be in CIDR notation."
+msgstr ""
+
+msgid "Network address"
+msgstr ""
+
+msgid "Prefix"
+msgstr ""
+
+msgid "OLSR Daemon - Interface"
+msgstr ""
+
+msgid "Enable this interface."
+msgstr ""
+
+msgid "The interface OLSRd should serve."
+msgstr ""
+
+msgid "LinkQuality Multiplicator"
+msgstr ""
+
+msgid "OLSR - Plugins"
+msgstr ""
+
+msgid "Plugin configuration"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Unable to connect to the OLSR daemon!"
+msgstr ""
+
+msgid "Make sure that OLSRd is running, the "txtinfo" plugin is loaded, configured on port 2006 and accepts connections from "127.0.0.1"."
+msgstr ""
+
+msgid "Active host net announcements"
+msgstr ""
+
+msgid "Overview of currently active OLSR host net announcements"
+msgstr ""
+
+msgid "Announced network"
+msgstr ""
+
+msgid "OLSR gateway"
+msgstr ""
+
+msgid "Overview of interfaces where OLSR is running"
+msgstr ""
+
+msgid "Broadcast address"
+msgstr ""
+
+msgid "Secondary OLSR interfaces"
+msgstr ""
+
+msgid "OLSR node"
+msgstr ""
+
+msgid "Overview of known multiple interface announcements"
+msgstr ""
+
+msgid "Active MID announcements"
+msgstr ""
+
+msgid "Remote IP"
+msgstr ""
+
+msgid "Local IP"
+msgstr ""
+
+msgid "Local Device"
+msgstr ""
+
+msgid "Neighbour IP"
+msgstr ""
+
+msgid "Local interface IP"
+msgstr ""
+
+msgid "Success rate of packages received from the neighbour"
+msgstr ""
+
+msgid "Success rate of packages sent to the neighbour"
+msgstr ""
+
+msgid "Expected retransmission count"
+msgstr ""
+
+msgid "OLSRD"
+msgstr ""
+
+msgid "OLSRD IPv6"
+msgstr ""
+
+msgid "OpenWrt"
+msgstr ""
+
+msgid "Download Config"
+msgstr ""
+
+msgid "Links per node (average)"
+msgstr ""
+
+msgid "Links total"
+msgstr ""
+
+msgid "Nodes"
+msgstr ""
+
+msgid "Neighbors"
+msgstr ""
+
+msgid "Known OLSR routes"
+msgstr ""
+
+msgid "Overview of currently known routes to other OLSR nodes"
+msgstr ""
+
+msgid "ETX"
+msgstr ""
+
+msgid "SmartGateway is not configured on this system."
+msgstr ""
+
+msgid "Hops"
+msgstr ""
+
+msgid "Downlink"
+msgstr ""
+
+msgid "Overview of smart gateways in this network"
+msgstr ""
+
+msgid "SmartGW announcements"
+msgstr ""
+
+msgid "Active OLSR nodes"
+msgstr ""
+
+msgid "Overview of currently known OLSR nodes"
+msgstr ""
+
+msgid "Last hop"
+msgstr ""
+
+msgid "LQ"
+msgstr ""
+
+msgid "NLQ"
+msgstr ""
+
+msgid "No services can be shown, because olsrd is not running or the olsrd-nameservice Plugin is not loaded."
+msgstr ""
+
+msgid "Internal services"
+msgstr ""
+
+msgid "OLSR-Viz"
+msgstr ""
+
+msgid "You need to allow javascript in your browser to show this page."
+msgstr ""
+
+msgid "OpenVPN"
+msgstr ""
+
+msgid "OpenVPN instances"
+msgstr ""
+
+msgid "Below is a list of configured OpenVPN instances and their current state"
+msgstr ""
+
+msgid "Start/Stop"
+msgstr ""
+
+msgid "Set output verbosity"
+msgstr ""
+
+msgid "Disable Paging"
+msgstr ""
+
+msgid "Disable options consistency check"
+msgstr ""
+
+msgid "Change to directory before initialization"
+msgstr ""
+
+msgid "Chroot to directory after initialization"
+msgstr ""
+
+msgid "TOS passthrough (applies to IPv4 only)"
+msgstr ""
+
+msgid "Write log to file"
+msgstr ""
+
+msgid "Append log to file"
+msgstr ""
+
+msgid "Don't log timestamps"
+msgstr ""
+
+msgid "Change process priority"
+msgstr ""
+
+msgid "Optimize TUN/TAP/UDP writes"
+msgstr ""
+
+msgid "Echo parameters to log"
+msgstr ""
+
+msgid "Remap SIGUSR1 signals"
+msgstr ""
+
+msgid "Write status to file every n seconds"
+msgstr ""
+
+msgid "Status file format version"
+msgstr ""
+
+msgid "Limit repeated log messages"
+msgstr ""
+
+msgid "Shell cmd to execute after tun device open"
+msgstr ""
+
+msgid "Delay tun/tap open and up script execution"
+msgstr ""
+
+msgid "Shell cmd to run after tun device close"
+msgstr ""
+
+msgid "Call down cmd/script before TUN/TAP close"
+msgstr ""
+
+msgid "Run up/down scripts for all restarts"
+msgstr ""
+
+msgid "Execute shell cmd after routes are added"
+msgstr ""
+
+msgid "Execute shell command on remote ip change"
+msgstr ""
+
+msgid "Pass environment variables to script"
+msgstr ""
+
+msgid "Shell command to verify X509 name"
+msgstr ""
+
+msgid "Run script cmd on client connection"
+msgstr ""
+
+msgid "Run script cmd on client disconnection"
+msgstr ""
+
+msgid "Executed in server mode whenever an IPv4 address/route or MAC address is added to OpenVPN's internal routing table"
+msgstr ""
+
+msgid "Executed in server mode on new client connections, when the client is still untrusted"
+msgstr ""
+
+msgid "Policy level over usage of external programs and scripts"
+msgstr ""
+
+msgid "Major mode"
+msgstr ""
+
+msgid "Local host name or ip address"
+msgstr ""
+
+msgid "TCP/UDP port # for both local and remote"
+msgstr ""
+
+msgid "TCP/UDP port # for local (default=1194)"
+msgstr ""
+
+msgid "TCP/UDP port # for remote (default=1194)"
+msgstr ""
+
+msgid "Allow remote to change its IP or port"
+msgstr ""
+
+msgid "Do not bind to local address and port"
+msgstr ""
+
+msgid "tun/tap device"
+msgstr ""
+
+msgid "Type of used device"
+msgstr ""
+
+msgid "Use tun/tap device node"
+msgstr ""
+
+msgid "Make tun device IPv6 capable"
+msgstr ""
+
+msgid "Set tun/tap adapter parameters"
+msgstr ""
+
+msgid "Don't actually execute ifconfig"
+msgstr ""
+
+msgid "Don't warn on ifconfig inconsistencies"
+msgstr ""
+
+msgid "Add route after establishing connection"
+msgstr ""
+
+msgid "Specify a default gateway for routes"
+msgstr ""
+
+msgid "Delay n seconds after connection"
+msgstr ""
+
+msgid "Don't add routes automatically"
+msgstr ""
+
+msgid "Enable Path MTU discovery"
+msgstr ""
+
+msgid "Empirically measure MTU"
+msgstr ""
+
+msgid "Use fast LZO compression"
+msgstr ""
+
+msgid "Don't use adaptive lzo compression"
+msgstr ""
+
+msgid "Set TCP/UDP MTU"
+msgstr ""
+
+msgid "Set tun/tap device MTU"
+msgstr ""
+
+msgid "Set tun/tap device overhead"
+msgstr ""
+
+msgid "Enable internal datagram fragmentation"
+msgstr ""
+
+msgid "Set the TCP/UDP send buffer size"
+msgstr ""
+
+msgid "Set the TCP/UDP receive buffer size"
+msgstr ""
+
+msgid "Set tun/tap TX queue length"
+msgstr ""
+
+msgid "Shaping for peer bandwidth"
+msgstr ""
+
+msgid "tun/tap inactivity timeout"
+msgstr ""
+
+msgid "Helper directive to simplify the expression of --ping and --ping-restart in server mode configurations"
+msgstr ""
+
+msgid "Ping remote every n seconds over TCP/UDP port"
+msgstr ""
+
+msgid "Remote ping timeout"
+msgstr ""
+
+msgid "Restart after remote ping timeout"
+msgstr ""
+
+msgid "Only process ping timeouts if routes exist"
+msgstr ""
+
+msgid "Keep tun/tap device open on restart"
+msgstr ""
+
+msgid "Don't re-read key on restart"
+msgstr ""
+
+msgid "Keep local IP address on restart"
+msgstr ""
+
+msgid "Keep remote IP address on restart"
+msgstr ""
+
+msgid "Enable management interface on <em>IP</em> <em>port</em>"
+msgstr ""
+
+msgid "Query management channel for private key"
+msgstr ""
+
+msgid "Start OpenVPN in a hibernating state"
+msgstr ""
+
+msgid "Number of lines for log file history"
+msgstr ""
+
+msgid "'net30', 'p2p', or 'subnet'"
+msgstr ""
+
+msgid "Configure server mode"
+msgstr ""
+
+msgid "Configure server bridge"
+msgstr ""
+
+msgid "Push options to peer"
+msgstr ""
+
+msgid "Don't inherit global push options"
+msgstr ""
+
+msgid "Client is disabled"
+msgstr ""
+
+msgid "Set aside a pool of subnets"
+msgstr ""
+
+msgid "Persist/unpersist ifconfig-pool"
+msgstr ""
+
+msgid "Push an ifconfig option to remote"
+msgstr ""
+
+msgid "Route subnet to client"
+msgstr ""
+
+msgid "Allow client-to-client traffic"
+msgstr ""
+
+msgid "Allow multiple clients with same certificate"
+msgstr ""
+
+msgid "Directory for custom client config files"
+msgstr ""
+
+msgid "Refuse connection if no custom client config"
+msgstr ""
+
+msgid "Temporary directory for client-connect return file"
+msgstr ""
+
+msgid "Set size of real and virtual address hash tables"
+msgstr ""
+
+msgid "Number of allocated broadcast buffers"
+msgstr ""
+
+msgid "Maximum number of queued TCP output packets"
+msgstr ""
+
+msgid "Allowed maximum of connected clients"
+msgstr ""
+
+msgid "Allowed maximum of internal"
+msgstr ""
+
+msgid "Allowed maximum of new connections"
+msgstr ""
+
+msgid "Don't require client certificate"
+msgstr ""
+
+msgid "Use username as common name"
+msgstr ""
+
+msgid "Configure client mode"
+msgstr ""
+
+msgid "Accept options pushed from server"
+msgstr ""
+
+msgid "Authenticate using username/password"
+msgstr ""
+
+msgid "Handling of authentication failures"
+msgstr ""
+
+msgid "Send notification to peer on disconnect"
+msgstr ""
+
+msgid "Remote host name or ip address"
+msgstr ""
+
+msgid "Randomly choose remote server"
+msgstr ""
+
+msgid "Use protocol"
+msgstr ""
+
+msgid "Connection retry interval"
+msgstr ""
+
+msgid "Connect to remote host through an HTTP proxy"
+msgstr ""
+
+msgid "Retry indefinitely on HTTP proxy errors"
+msgstr ""
+
+msgid "Proxy timeout in seconds"
+msgstr ""
+
+msgid "Set extended HTTP proxy options"
+msgstr ""
+
+msgid "Connect through Socks5 proxy"
+msgstr ""
+
+msgid "Retry indefinitely on Socks proxy errors"
+msgstr ""
+
+msgid "If hostname resolve fails, retry"
+msgstr ""
+
+msgid "Automatically redirect default route"
+msgstr ""
+
+msgid "Enable Static Key encryption mode (non-TLS)"
+msgstr ""
+
+msgid "HMAC authentication for packets"
+msgstr ""
+
+msgid "Encryption cipher for packets"
+msgstr ""
+
+msgid "Size of cipher key"
+msgstr ""
+
+msgid "Enable OpenSSL hardware crypto engines"
+msgstr ""
+
+msgid "Disable replay protection"
+msgstr ""
+
+msgid "Replay protection sliding window size"
+msgstr ""
+
+msgid "Silence the output of replay warnings"
+msgstr ""
+
+msgid "Persist replay-protection state"
+msgstr ""
+
+msgid "Disable cipher initialisation vector"
+msgstr ""
+
+msgid "Enable TLS and assume server role"
+msgstr ""
+
+msgid "Enable TLS and assume client role"
+msgstr ""
+
+msgid "Certificate authority"
+msgstr ""
+
+msgid "Diffie Hellman parameters"
+msgstr ""
+
+msgid "Local certificate"
+msgstr ""
+
+msgid "Local private key"
+msgstr ""
+
+msgid "PKCS#12 file containing keys"
+msgstr ""
+
+msgid "TLS cipher"
+msgstr ""
+
+msgid "Retransmit timeout on TLS control channel"
+msgstr ""
+
+msgid "Renegotiate data chan. key after bytes"
+msgstr ""
+
+msgid "Renegotiate data chan. key after packets"
+msgstr ""
+
+msgid "Renegotiate data chan. key after seconds"
+msgstr ""
+
+msgid "Timeframe for key exchange"
+msgstr ""
+
+msgid "Key transition window"
+msgstr ""
+
+msgid "Allow only one session"
+msgstr ""
+
+msgid "Exit on TLS negotiation failure"
+msgstr ""
+
+msgid "Additional authentication over TLS"
+msgstr ""
+
+msgid "Don't cache --askpass or --auth-user-pass passwords"
+msgstr ""
+
+msgid "Only accept connections from given X509 name"
+msgstr ""
+
+msgid "Require explicit designation on certificate"
+msgstr ""
+
+msgid "Require explicit key usage on certificate"
+msgstr ""
+
+msgid "Check peer certificate against a CRL"
+msgstr ""
+
+msgid "-- remove --"
+msgstr ""
+
+msgid "Cryptography"
+msgstr ""
+
+msgid "VPN"
+msgstr ""
+
+msgid "Configuration category"
+msgstr ""
+
+msgid "« Switch to basic configuration"
+msgstr ""
+
+msgid "Switch to advanced configuration »"
+msgstr ""
+
+msgid "IPsec"
+msgstr ""
+
+msgid "OpenVPN instance: %s"
+msgstr ""
+
+msgid "Main settings"
+msgstr ""
+
+msgid "Tun/Tap"
+msgstr ""
+
+msgid "Tun (tunnel)"
+msgstr ""
+
+msgid "Tap (bridged)"
+msgstr ""
+
+msgid "TCP/UDP port for both, local and remote"
+msgstr ""
+
+msgid "Remote host/IP address"
+msgstr ""
+
+msgid "Resolve Retry"
+msgstr ""
+
+msgid "Keep alive"
+msgstr ""
+
+msgid "Helper directive to simplify the expression of --ping and --ping-restart"
+msgstr ""
+
+msgid "Keep alive value is not correct! Must be two integer values, e.g.: 10 120"
+msgstr ""
+
+msgid "Local tunnel endpoint IP"
+msgstr ""
+
+msgid "Remote tunnel endpoint IP"
+msgstr ""
+
+msgid "Remote network IP address"
+msgstr ""
+
+msgid "Remote network IP netmask"
+msgstr ""
+
+msgid "Client to client"
+msgstr ""
+
+msgid "err: Remote network IP address or Remote network netmask is incorrect!"
+msgstr ""
+
+msgid "Virtual network IP address"
+msgstr ""
+
+msgid "Virtual network netmask"
+msgstr ""
+
+msgid "Allow duplicate certificates"
+msgstr ""
+
+msgid "Client certificate"
+msgstr ""
+
+msgid "Client key"
+msgstr ""
+
+msgid "Static pre-shared key"
+msgstr ""
+
+msgid "Server certificate"
+msgstr ""
+
+msgid "Server key"
+msgstr ""
+
+msgid "TLS Clients"
+msgstr ""
+
+msgid "Here you can add your VPN clients so that they may be reachable from the server."
+msgstr ""
+
+msgid "err: Bad Private Network, please input another one"
+msgstr ""
+
+msgid "VPN Instance name"
+msgstr ""
+
+msgid "With what openVPN Instance should this entry be associated with. It is automatically set to your current openVPN instance."
+msgstr ""
+
+msgid "Endpoint Name"
+msgstr ""
+
+msgid "Your endpoint name. E.g.: \"MyHomeComputer\""
+msgstr ""
+
+msgid "Common Name (CN)"
+msgstr ""
+
+msgid "Client certificate CN field. E.g.: \" name.surname@domain.com\""
+msgstr ""
+
+msgid "Virtual Local Endpoint"
+msgstr ""
+
+msgid "E.g.: \"10.8.1.10\""
+msgstr ""
+
+msgid "Virtual Remote Endpoint"
+msgstr ""
+
+msgid "E.g.: \"10.8.1.9\""
+msgstr ""
+
+msgid "Private Network"
+msgstr ""
+
+msgid "The IP of the private <b>NETWORK</b>. E.g.: \"192.168.1.0\""
+msgstr ""
+
+msgid "Private Netmask"
+msgstr ""
+
+msgid "The Netmask of the private network. E.g.: \"255.255.255.0\""
+msgstr ""
+
+msgid "Basic ipsec configuration"
+msgstr ""
+
+msgid "Enable IPsec"
+msgstr ""
+
+msgid "IPSec key exchange mode"
+msgstr ""
+
+msgid "Auto Key (IKE)"
+msgstr ""
+
+msgid "Enable NAT traversal"
+msgstr ""
+
+msgid "Enable initial contact"
+msgstr ""
+
+msgid "My identifier type"
+msgstr ""
+
+msgid "My identifier"
+msgstr ""
+
+msgid "IP address expected in \"My identifier\" field"
+msgstr ""
+
+msgid "Preshare Key"
+msgstr ""
+
+msgid "(Length [6-32])"
+msgstr ""
+
+msgid "Remote VPN endpoint"
+msgstr ""
+
+msgid "Domain name or IP address. Leave blank for anonymous"
+msgstr ""
+
+msgid "DPD enable"
+msgstr ""
+
+msgid "Dead peer detection"
+msgstr ""
+
+msgid "Delay (sec)"
+msgstr ""
+
+msgid "Delay between requesting peer acknowledgement"
+msgstr ""
+
+msgid "Phase 1"
+msgstr ""
+
+msgid "Encryption algorithm"
+msgstr ""
+
+msgid "Hash algorithm"
+msgstr ""
+
+msgid "DH group"
+msgstr ""
+
+msgid "Lifetime (sec)"
+msgstr ""
+
+msgid "Phase 2"
+msgstr ""
+
+msgid "PFS group"
+msgstr ""
+
+msgid "Remote network secure group"
+msgstr ""
+
+msgid "(Number [0-32])"
+msgstr ""
+
+msgid "Subnet mask"
+msgstr ""
+
+msgid "\"Remote network secure group\" should differ from device LAN IP (%s)"
+msgstr ""
+
+msgid "Tunnel keep alive"
+msgstr ""
+
+msgid "Enable keep alive"
+msgstr ""
+
+msgid "Ping IP address"
+msgstr ""
+
+msgid "Ping period (seconds)"
+msgstr ""
+
+msgid "Ipsec settings: Successfully changed"
+msgstr ""
+
+msgid "Tunnel Name"
+msgstr ""
+
+msgid "Only one VPN instance is allowed."
+msgstr ""
+
+msgid "err: Only alphanumeric characters allowed."
+msgstr ""
+
+msgid "New OpenVPN instance created successfully, configure it"
+msgstr ""
+
+msgid "To create new OpenVPN instance, name should be specified!"
+msgstr ""
+
+msgid "New configuration name:-"
+msgstr ""
+
+msgid "Role:-"
+msgstr ""
+
+msgid "Add New"
+msgstr ""
+
+msgid "P2P-Block"
+msgstr ""
+
+msgid "P2P-Block is a greylisting mechanism to block various peer-to-peer protocols for non-whitelisted clients."
+msgstr ""
+
+msgid "Enable P2P-Block"
+msgstr ""
+
+msgid "Portrange"
+msgstr ""
+
+msgid "Block Time"
+msgstr ""
+
+msgid "Whitelisted IPs"
+msgstr ""
+
+msgid "Layer7-Protocols"
+msgstr ""
+
+msgid "AIM Chat"
+msgstr ""
+
+msgid "Bittorrent"
+msgstr ""
+
+msgid "eDonkey, eMule, Kademlia"
+msgstr ""
+
+msgid "Fasttrack Protocol"
+msgstr ""
+
+msgid "Gnutella"
+msgstr ""
+
+msgid "File Transfer Protocol"
+msgstr ""
+
+msgid "Hypertext Transfer Protocol"
+msgstr ""
+
+msgid "Ident Protocol"
+msgstr ""
+
+msgid "Internet Relay Chat"
+msgstr ""
+
+msgid "Jabber/XMPP"
+msgstr ""
+
+msgid "MSN Messenger"
+msgstr ""
+
+msgid "Network Time Protocol"
+msgstr ""
+
+msgid "POP3 Protocol"
+msgstr ""
+
+msgid "SMTP Protocol"
+msgstr ""
+
+msgid "SSL Protocol"
+msgstr ""
+
+msgid "VNC Protocol"
+msgstr ""
+
+msgid "IP-P2P"
+msgstr ""
+
+msgid "KaZaA, FastTrack"
+msgstr ""
+
+msgid "Direct Connect"
+msgstr ""
+
+msgid "BitTorrent, extended BT"
+msgstr ""
+
+msgid "AppleJuice"
+msgstr ""
+
+msgid "WinMX"
+msgstr ""
+
+msgid "SoulSeek"
+msgstr ""
+
+msgid "AresLite"
+msgstr ""
+
+msgid "p910nd - Printer server"
+msgstr ""
+
+msgid "First you have to install the packages to get support for USB (kmod-usb-printer) or parallel port (kmod-lp)."
+msgstr ""
+
+msgid "TCP listener port."
+msgstr ""
+
+msgid "Bidirectional mode"
+msgstr ""
+
+msgid "Google Accounts"
+msgstr ""
+
+msgid "SIP Accounts"
+msgstr ""
+
+msgid "User Accounts"
+msgstr ""
+
+msgid "Error: No indices to format specified.\n"
+msgstr ""
+
+msgid "PBX Main Page"
+msgstr ""
+
+msgid "This configuration page allows you to configure a phone system (PBX) service which \
+      permits making phone calls through multiple Google and SIP (like Sipgate, \
+      SipSorcery, and Betamax) accounts and sharing them among many SIP devices. \
+      Note that Google accounts, SIP accounts, and local user accounts are configured in the \
+      \"Google Accounts\", \"SIP Accounts\", and \"User Accounts\" sub-sections. \
+      You must add at least one User Account to this PBX, and then configure a SIP device or \
+      softphone to use the account, in order to make and receive calls with your Google/SIP \
+      accounts. Configuring multiple users will allow you to make free calls between all users, \
+      and share the configured Google and SIP accounts. If you have more than one Google and SIP \
+      accounts set up, you should probably configure how calls to and from them are routed in \
+      the \"Call Routing\" page. If you're interested in using your own PBX from anywhere in the \
+      world, then visit the \"Remote Usage\" section in the \"Advanced Settings\" page."
+msgstr ""
+
+msgid "PBX Service Status"
+msgstr ""
+
+msgid "Service Status"
+msgstr ""
+
+msgid "Freeswitch is not supported yet.\n"
+msgstr ""
+
+msgid "Neither Asterisk nor FreeSwitch discovered, please install Asterisk, as Freeswitch is not supported yet.\n"
+msgstr ""
+
+msgid "This section contains settings that do not need to be changed under normal circumstances. In addition, here you can configure your system for use with remote SIP devices, and resolve call quality issues by enabling the insertion of QoS rules."
+msgstr ""
+
+msgid "Remote Usage"
+msgstr ""
+
+msgid "You can use your SIP devices/softphones with this system from a remote location as well, as long as your Internet Service Provider gives you a public IP. You will be able to call other local users for free (e.g. other Analog Telephone Adapters (ATAs)) and use your VoIP providers to make calls as if you were local to the PBX. After configuring this tab, go back to where users are configured and see the new Server and Port setting you need to configure the remote SIP devices with. Please note that if this PBX is not running on your router/gateway, you will need to configure port forwarding (NAT) on your router/gateway. Please forward the ports below (SIP port and RTP range) to the IP address of the device running this PBX."
+msgstr ""
+
+msgid "QoS Settings"
+msgstr ""
+
+msgid "If you experience jittery or high latency audio during heavy downloads, you may want to enable QoS. QoS prioritizes traffic to and from your network for specified ports and IP addresses, resulting in better latency and throughput for sound in our case. If enabled below, a QoS rule for this service will be configured by the PBX automatically, but you must visit the QoS configuration page (Network->QoS) to configure other critical QoS settings like Download and Upload speed."
+msgstr ""
+
+msgid "Number of Seconds to Ring"
+msgstr ""
+
+msgid "Set the number of seconds to ring users upon incoming calls before hanging up or going to voicemail, if the voicemail is installed and enabled."
+msgstr ""
+
+msgid "User Agent String"
+msgstr ""
+
+msgid "This is the name that the VoIP server will use to identify itself when registering to VoIP (SIP) providers. Some providers require this to a specific string matching a hardware SIP device."
+msgstr ""
+
+msgid "Domain/IP Address/Dynamic Domain"
+msgstr ""
+
+msgid "You can enter your domain name, external IP address, or dynamic domain name here Please keep in mind that if your IP address is dynamic and it changes your configuration will become invalid. Hence, it's recommended to set up Dynamic DNS in this case."
+msgstr ""
+
+msgid "External SIP Port"
+msgstr ""
+
+msgid "Pick a random port number between 6500 and 9500 for the service to listen on. Do not pick the standard 5060, because it is often subject to brute-force attacks. When finished, (1) click \"Save and Apply\", and (2) click the \"Restart VoIP Service\" button above. Finally, (3) look in the \"SIP Device/Softphone Accounts\" section for updated Server and Port settings for your SIP Devices/Softphones."
+msgstr ""
+
+msgid "RTP Port Range Start"
+msgstr ""
+
+msgid "RTP traffic carries actual voice packets. This is the start of the port range that will be used for setting up RTP communication. It's usually OK to leave this at the default value."
+msgstr ""
+
+msgid "RTP Port Range End"
+msgstr ""
+
+msgid "Insert QoS Rules"
+msgstr ""
+
+msgid "This is where you indicate which Google/SIP accounts are used to call what \
+                   country/area codes, which users can use what SIP/Google accounts, how incoming \
+                   calls are routed, what numbers can get into this PBX with a password, and what \
+                   numbers are blacklisted."
+msgstr ""
+
+msgid "NOTE: There are no Google or SIP provider accounts configured."
+msgstr ""
+
+msgid "NOTE: There are no Google or SIP provider accounts enabled for outgoing calls."
+msgstr ""
+
+msgid "If you have more than one account that can make outgoing calls, you \
+   should enter a list of phone numbers and/or prefixes in the following fields for each \
+   provider listed. Invalid prefixes are removed silently, and only 0-9, X, Z, N, #, *, \
+   and + are valid characters. The letter X matches 0-9, Z matches 1-9, and N matches 2-9. \
+   For example to make calls to Germany through a provider, you can enter 49. To make calls \
+   to North America, you can enter 1NXXNXXXXXX. If one of your providers can make \"local\" \
+   calls to an area code like New York's 646, you can enter 646NXXXXXX for that \
+   provider. You should leave one account with an empty list to make calls with \
+   it by default, if no other provider's prefixes match. The system will automatically \
+   replace an empty list with a message that the provider dials all numbers not matched by another \
+   provider's prefixes. Be as specific as possible (i.e. 1NXXNXXXXXX is better than 1). Please note \
+   all international dial codes are discarded (e.g. 00, 011, 010, 0011). Entries can be made in a \
+   space-separated list, and/or one per line by hitting enter after every one."
+msgstr ""
+
+msgid "Outgoing Calls"
+msgstr ""
+
+msgid "Dials numbers unmatched elsewhere"
+msgstr ""
+
+msgid "NOTE: There are no Google or SIP provider accounts enabled for incoming calls."
+msgstr ""
+
+msgid "For each provider enabled for incoming calls, here you can restrict which users to\
+                ring on incoming calls. If the list is empty, the system will indicate that all users \
+                enabled for incoming calls will ring. Invalid usernames will be rejected \
+                silently. Also, entering a username here overrides the user's setting to not receive \
+                incoming calls. This way, you can make certain users ring only for specific providers. \
+                Entries can be made in a space-separated list, and/or one per line by hitting enter after \
+                every one."
+msgstr ""
+
+msgid "Incoming Calls"
+msgstr ""
+
+msgid "Rings users enabled for incoming calls"
+msgstr ""
+
+msgid "NOTE: There are no local user accounts configured."
+msgstr ""
+
+msgid "NOTE: There are no local user accounts enabled for outgoing calls."
+msgstr ""
+
+msgid "For each user enabled for outgoing calls you can restrict what providers the user \
+        can use for outgoing calls. By default all users can use all providers. To show up in the list \
+        below the user should be allowed to make outgoing calls in the \"User Accounts\" page. Enter VoIP \
+        providers in the format username@some.host.name, as listed in \"Outgoing Calls\" above. It's \
+        easiest to copy and paste the providers from above. Invalid entries, including providers not \
+        enabled for outgoing calls, will be rejected silently. Entries can be made in a space-separated \
+        list, and/or one per line by hitting enter after every one."
+msgstr ""
+
+msgid "Providers Used for Outgoing Calls"
+msgstr ""
+
+msgid "Uses providers enabled for outgoing calls"
+msgstr ""
+
+msgid "Call-through Numbers"
+msgstr ""
+
+msgid "Designate numbers that are allowed to call through this system and which user's privileges it will have."
+msgstr ""
+
+msgid "User Name"
+msgstr ""
+
+msgid "The number(s) specified above will be able to dial out with this user's providers. Invalid usernames, including users not enabled for outgoing calls, are dropped silently. Please verify that the entry was accepted."
+msgstr ""
+
+msgid "Your PIN disappears when saved for your protection. It will be changed only when you enter a value different from the saved one. Leaving the PIN empty is possible, but please beware of the security implications."
+msgstr ""
+
+msgid "Enter phone numbers that you want to decline calls from automatically. You should probably omit the country code and any leading zeroes, but please experiment to make sure you are blocking numbers from your desired area successfully."
+msgstr ""
+
+msgid "Dynamic List of Blacklisted Numbers"
+msgstr ""
+
+msgid "Specify numbers individually here. Press enter to add more numbers."
+msgstr ""
+
+msgid "Space-Separated List of Blacklisted Numbers"
+msgstr ""
+
+msgid "Copy-paste large lists of numbers here."
+msgstr ""
+
+msgid "This is where you set up your Google (Talk and Voice) Accounts, in order to start using them for dialing and receiving calls (voice chat and real phone calls). Please make at least one voice call using the Google Talk plugin installable through the GMail interface, and then log out from your account everywhere. Click \"Add\" to add as many accounts as you wish."
+msgstr ""
+
+msgid "Google Voice/Talk Accounts"
+msgstr ""
+
+msgid "When your password is saved, it disappears from this field and is not displayed for your protection. The previously saved password will be changed only when you enter a value different from the saved one."
+msgstr ""
+
+msgid "Enable Incoming Calls (set Status below)"
+msgstr ""
+
+msgid "When somebody starts voice chat with your GTalk account or calls the GVoice, number (if you have Google Voice), the call will be forwarded to any users that are online (registered using a SIP device or softphone) and permitted to receive the call. If you have Google Voice, you must go to your GVoice settings and forward calls to Google chat in order to actually receive calls made to your GVoice number. If you have trouble receiving calls from GVoice, experiment with the Call Screening option in your GVoice Settings. Finally, make sure no other client is online with this account (browser in gmail, mobile/desktop Google Talk App) as it may interfere."
+msgstr ""
+
+msgid "Enable Outgoing Calls"
+msgstr ""
+
+msgid "Use this account to make outgoing calls as configured in the \"Call Routing\" section."
+msgstr ""
+
+msgid "Google Talk Status"
+msgstr ""
+
+msgid "Do Not Disturb"
+msgstr ""
+
+msgid "Away"
+msgstr ""
+
+msgid "Google Talk Status Message"
+msgstr ""
+
+msgid "Avoid using anything but alpha-numeric characters, space, comma, and period."
+msgstr ""
+
+msgid "Here you must configure at least one SIP account, that you will use to register with this service. Use this account either in an Analog Telephony Adapter (ATA), or in a SIP software like CSipSimple, Linphone, or Sipdroid on your smartphone, or Ekiga, Linphone, or X-Lite on your computer. By default, all SIP accounts will ring simultaneously if a call is made to one of your VoIP provider accounts or GV numbers."
+msgstr ""
+
+msgid "Server Setting"
+msgstr ""
+
+msgid "(IP address not static)"
+msgstr ""
+
+msgid "Server Setting for Local SIP Devices"
+msgstr ""
+
+msgid "Enter this IP (or IP:port) in the Server/Registrar setting of SIP devices you will use ONLY locally and never from a remote location."
+msgstr ""
+
+msgid "Server Setting for Remote SIP Devices"
+msgstr ""
+
+msgid "Enter this hostname (or hostname:port) in the Server/Registrar setting of SIP devices you will use from a remote location (they will work locally too)."
+msgstr ""
+
+msgid "Port Setting for SIP Devices"
+msgstr ""
+
+msgid "If setting Server/Registrar to %s or %s does not work for you, try setting it to %s or %s and entering this port number in a separate field that specifies the Server/Registrar port number. Beware that some devices have a confusing setting that sets the port where SIP requests originate from on the SIP device itself (the bind port). The port specified on this page is NOT this bind port  but the port this service listens on."
+msgstr ""
+
+msgid "SIP Device/Softphone Accounts"
+msgstr ""
+
+msgid "Full Name"
+msgstr ""
+
+msgid "You can specify a real name to show up in the Caller ID here."
+msgstr ""
+
+msgid "Use (four to five digit) numeric user name if you are connecting normal telephones with ATAs to this system (so they can dial user names)."
+msgstr ""
+
+msgid "Your password disappears when saved for your protection. It will be changed only when you enter a value different from the saved one."
+msgstr ""
+
+msgid "Receives Incoming Calls"
+msgstr ""
+
+msgid "Makes Outgoing Calls"
+msgstr ""
+
+msgid "This is where you set up your SIP (VoIP) accounts ts like Sipgate, SipSorcery, the popular Betamax providers, and any other providers with SIP settings in order to start using them for dialing and receiving calls (SIP uri and real phone calls). Click \"Add\" to add as many accounts as you wish."
+msgstr ""
+
+msgid "SIP Provider Accounts"
+msgstr ""
+
+msgid "his option should be set to \"Yes\" if you have a DID \(real telephone number\) associated with this SIP account or want to receive SIP uri calls through this provider."
+msgstr ""
+
+msgid "Enable Incoming Calls (Register via SIP)"
+msgstr ""
+
+msgid "SIP Server/Registrar"
+msgstr ""
+
+msgid "Use this account to make outgoing calls."
+msgstr ""
+
+msgid "SIP Realm (needed by some providers)"
+msgstr ""
+
+msgid "SIP Server/Registrar Port"
+msgstr ""
+
+msgid "Here you can configure a global voicemail for this PBX. Since this system is intended to run on embedded systems like routers, there is no local storage of voicemail - it must be sent out by email. Therefore you need to configure an outgoing mail (SMTP) server (for example your ISP's, Google's, or Yahoo's SMTP server), and provide a list of addresses that receive recorded voicemail."
+msgstr ""
+
+msgid "Voicemail Setup"
+msgstr ""
+
+msgid "When you enable voicemail, you will have the opportunity to specify email addresses that receive recorded voicemail. You must also set up an SMTP server below."
+msgstr ""
+
+msgid "Global Voicemail Setup"
+msgstr ""
+
+msgid "Enable Voicemail"
+msgstr ""
+
+msgid "Email Addresses that Receive Voicemail"
+msgstr ""
+
+msgid "Local Storage Directory"
+msgstr ""
+
+msgid "You can also retain copies of voicemail messages on the device running your PBX. The path specified here will be created if it doesn't exist. Beware of limited space on embedded devices like routers, and enable this option only if you know what you are doing."
+msgstr ""
+
+msgid "NOTE: Found a voicemail greeting. To check or change your voicemail greeting, dial *789 and the system will play your current message. You have 5 seconds to hangup, otherwise a new recording will begin and your old message will be overwritten. Hang up or press # to stop recording. When you press #, the system will play back the new recording."
+msgstr ""
+
+msgid "WARNING: Could not find voicemail greeting. Callers will hear only a beep before recording starts. To record a greeting, dial *789 and record a greeting after the beep. Hang up or press # to stop recording. When # is pressed the system will play back the recording."
+msgstr ""
+
+msgid "Outgoing mail (SMTP) Server"
+msgstr ""
+
+msgid "In order for this PBX to send emails containing voicemail recordings, you need to set up an SMTP server here. Your ISP usually provides an SMTP server for that purpose. You can also set up a third party SMTP server such as the one provided by Google or Yahoo."
+msgstr ""
+
+msgid "SMTP Server Hostname or IP Address"
+msgstr ""
+
+msgid "SMTP Port Number"
+msgstr ""
+
+msgid "Secure Connection Using TLS"
+msgstr ""
+
+msgid "SMTP Server Authentication"
+msgstr ""
+
+msgid "SMTP User Name"
+msgstr ""
+
+msgid "SMTP Password"
+msgstr ""
+
+msgid "Your real SMTP password is not shown for your protection. It will be changed only when you change the value in this box."
+msgstr ""
+
+msgid "Password Not Displayed"
+msgstr ""
+
+msgid "Last Sent Voicemail Log"
+msgstr ""
+
+msgid "No errors or messages reported."
+msgstr ""
+
+msgid "Polipo"
+msgstr ""
+
+msgid "Polipo is a small and fast caching web proxy."
+msgstr ""
+
+msgid "DNS and Query Settings"
+msgstr ""
+
+msgid "Parent Proxy"
+msgstr ""
+
+msgid "Logging and RAM"
+msgstr ""
+
+msgid "The interface on which Polipo will listen. To listen on all interfaces use 0.0.0.0 or :: (IPv6)."
+msgstr ""
+
+msgid "Port on which Polipo will listen"
+msgstr ""
+
+msgid "When listen address is set to 0.0.0.0 or :: (IPv6), you must list clients that are allowed to connect. The format is IP address or network address (192.168.1.123, 192.168.1.0/24, 2001:660:116::/48 (IPv6))"
+msgstr ""
+
+msgid "DNS server address"
+msgstr ""
+
+msgid "Set the DNS server address to use, if you want Polipo to use different DNS server than the host system."
+msgstr ""
+
+msgid "Query DNS for IPv6"
+msgstr ""
+
+msgid "Query only IPv6"
+msgstr ""
+
+msgid "Query IPv4 and IPv6, prefer IPv6"
+msgstr ""
+
+msgid "Query IPv4 and IPv6, prefer IPv4"
+msgstr ""
+
+msgid "Do not query IPv6"
+msgstr ""
+
+msgid "Query DNS by hostname"
+msgstr ""
+
+msgid "Always use system DNS resolver"
+msgstr ""
+
+msgid "Query DNS directly, for unknown hosts fall back to system resolver"
+msgstr ""
+
+msgid "Query DNS directly, fallback to system resolver"
+msgstr ""
+
+msgid "Never use system DNS resolver"
+msgstr ""
+
+msgid "Parent proxy address"
+msgstr ""
+
+msgid "Parent proxy address (in host:port format), to which Polipo will forward the requests."
+msgstr ""
+
+msgid "Parent proxy authentication"
+msgstr ""
+
+msgid "Basic HTTP authentication supported. Provide username and password in username:password format."
+msgstr ""
+
+msgid "Log to syslog"
+msgstr ""
+
+msgid "Syslog facility"
+msgstr ""
+
+msgid "Log file location"
+msgstr ""
+
+msgid "Use of external storage device is recommended, because the log file is written frequently and can grow considerably."
+msgstr ""
+
+msgid "In RAM cache size (in bytes)"
+msgstr ""
+
+msgid "How much RAM should Polipo use for its cache."
+msgstr ""
+
+msgid "On-Disk Cache"
+msgstr ""
+
+msgid "Disk cache location"
+msgstr ""
+
+msgid "Location where polipo will cache files permanently. Use of external storage devices is recommended, because the cache can grow considerably. Leave it empty to disable on-disk cache."
+msgstr ""
+
+msgid "Shared cache"
+msgstr ""
+
+msgid "Enable if cache (proxy) is shared by multiple users."
+msgstr ""
+
+msgid "Truncate cache files size (in bytes)"
+msgstr ""
+
+msgid "Size to which cached files should be truncated"
+msgstr ""
+
+msgid "Truncate cache files time"
+msgstr ""
+
+msgid "Time after which cached files will be truncated"
+msgstr ""
+
+msgid "Delete cache files time"
+msgstr ""
+
+msgid "Time after which cached files will be deleted"
+msgstr ""
+
+msgid "Poor Man's Multiplexing"
+msgstr ""
+
+msgid "Poor Man's Multiplexing (PMM) is a technique that simulates multiplexing by requesting an instance in multiple segments. It tries to lower the latency caused by the weakness of HTTP protocol. NOTE: some sites may not work with PMM enabled."
+msgstr ""
+
+msgid "PMM segments size (in bytes)"
+msgstr ""
+
+msgid "To enable PMM, PMM segment size must be set to some positive value."
+msgstr ""
+
+msgid "First PMM segment size (in bytes)"
+msgstr ""
+
+msgid "Size of the first PMM segment. If not defined, it defaults to twice the PMM segment size."
+msgstr ""
+
+msgid "Polipo Status"
+msgstr ""
+
+msgid "Configuration Profiles"
+msgstr ""
+
+msgid "Profile name cannot be more than 10 characters."
+msgstr ""
+
+msgid "Profile name cannot be empty."
+msgstr ""
+
+msgid "Profile name should contain only alphanumeric characters."
+msgstr ""
+
+msgid "Profile %s already exists."
+msgstr ""
+
+msgid "Create a new profile from current configuration:"
+msgstr ""
+
+msgid "Profile name:"
+msgstr ""
+
+msgid "Add profile"
+msgstr ""
+
+msgid "Profiles:"
+msgstr ""
+
+msgid "Created"
+msgstr ""
+
+msgid "Your device will be restarted.\nDo you want to continue?"
+msgstr ""
+
+msgid "Are you sure you want to delete \'%s\' profile?"
+msgstr ""
+
+msgid "QoS"
+msgstr ""
+
+msgid "Quality of Service"
+msgstr ""
+
+msgid "With QoS you can prioritize network traffic selected by addresses, ports or services."
+msgstr ""
+
+msgid "Classification group"
+msgstr ""
+
+msgid "Calculate overhead"
+msgstr ""
+
+msgid "Half-duplex"
+msgstr ""
+
+msgid "Download speed (kbit/s)"
+msgstr ""
+
+msgid "Upload speed (kbit/s)"
+msgstr ""
+
+msgid "Classification Rules"
+msgstr ""
+
+msgid "priority"
+msgstr ""
+
+msgid "express"
+msgstr ""
+
+msgid "normal"
+msgstr ""
+
+msgid "low"
+msgstr ""
+
+msgid "Source host"
+msgstr ""
+
+msgid "Destination host"
+msgstr ""
+
+msgid "Number of bytes"
+msgstr ""
+
+msgid "qos_connbytes"
+msgstr ""
+
+msgid "Radvd"
+msgstr ""
+
+msgid "Radvd is a router advertisement daemon for IPv6. It listens to router solicitations and sends router advertisements as described in RFC 4861."
+msgstr ""
+
+msgid "Multicast"
+msgstr ""
+
+msgid "Advertising"
+msgstr ""
+
+msgid "Max. interval"
+msgstr ""
+
+msgid "Mobile IPv6"
+msgstr ""
+
+msgid "Preference"
+msgstr ""
+
+msgid "Prefixes"
+msgstr ""
+
+msgid "Autonomous"
+msgstr ""
+
+msgid "On-link"
+msgstr ""
+
+msgid "Validity time"
+msgstr ""
+
+msgid "Lifetime"
+msgstr ""
+
+msgid "RDNSS"
+msgstr ""
+
+msgid "Suffix"
+msgstr ""
+
+msgid "DNSSL Configuration"
+msgstr ""
+
+msgid "Specifies the logical interface name this section belongs to"
+msgstr ""
+
+msgid "Interface required"
+msgstr ""
+
+msgid "Advertised Domain Suffixes"
+msgstr ""
+
+msgid "Specifies the maximum duration how long the DNSSL entries are used for name resolution."
+msgstr ""
+
+msgid "Radvd - Interface %q"
+msgstr ""
+
+msgid "Timing"
+msgstr ""
+
+msgid "Restrict communication to specified clients, leave empty to use multicast"
+msgstr ""
+
+msgid "Enable advertisements"
+msgstr ""
+
+msgid "Enables router advertisements and solicitations"
+msgstr ""
+
+msgid "Unicast only"
+msgstr ""
+
+msgid "Indicates that the underlying link is not broadcast capable, prevents unsolicited advertisements from being sent"
+msgstr ""
+
+msgid "Managed flag"
+msgstr ""
+
+msgid "Enables the additional stateful administered autoconfiguration protocol (RFC2462)"
+msgstr ""
+
+msgid "Configuration flag"
+msgstr ""
+
+msgid "Enables the autoconfiguration of additional, non address information (RFC2462)"
+msgstr ""
+
+msgid "Source link-layer address"
+msgstr ""
+
+msgid "Includes the link-layer address of the outgoing interface in the RA"
+msgstr ""
+
+msgid "Link MTU"
+msgstr ""
+
+msgid "Advertises the given link MTU in the RA if specified. 0 disables MTU advertisements"
+msgstr ""
+
+msgid "Current hop limit"
+msgstr ""
+
+msgid "Advertises the default Hop Count value for outgoing unicast packets in the RA. 0 disables hopcount advertisements"
+msgstr ""
+
+msgid "Default preference"
+msgstr ""
+
+msgid "Advertises the default router preference"
+msgstr ""
+
+msgid "Minimum advertisement interval"
+msgstr ""
+
+msgid "The minimum time allowed between sending unsolicited multicast router advertisements from the interface, in seconds"
+msgstr ""
+
+msgid "Maximum advertisement interval"
+msgstr ""
+
+msgid "The maximum time allowed between sending unsolicited multicast router advertisements from the interface, in seconds"
+msgstr ""
+
+msgid "Minimum advertisement delay"
+msgstr ""
+
+msgid "The minimum time allowed between sending multicast router advertisements from the interface, in seconds"
+msgstr ""
+
+msgid "Reachable time"
+msgstr ""
+
+msgid "Advertises assumed reachability time in milliseconds of neighbours in the RA if specified. 0 disables reachability advertisements"
+msgstr ""
+
+msgid "Retransmit timer"
+msgstr ""
+
+msgid "Advertises wait time in milliseconds between Neighbor Solicitation messages in the RA if specified. 0 disables retransmit advertisements"
+msgstr ""
+
+msgid "Default lifetime"
+msgstr ""
+
+msgid "Advertises the lifetime of the default router in seconds. 0 indicates that the node is no default router"
+msgstr ""
+
+msgid "Advertise Home Agent flag"
+msgstr ""
+
+msgid "Advertises Mobile IPv6 Home Agent capability (RFC3775)"
+msgstr ""
+
+msgid "Mobile IPv6 interval option"
+msgstr ""
+
+msgid "Include Mobile IPv6 Advertisement Interval option to RA"
+msgstr ""
+
+msgid "Home Agent information"
+msgstr ""
+
+msgid "Include Home Agent Information in the RA"
+msgstr ""
+
+msgid "Mobile IPv6 router registration"
+msgstr ""
+
+msgid "Advertises Mobile Router registration capability (NEMO Basic)"
+msgstr ""
+
+msgid "Home Agent lifetime"
+msgstr ""
+
+msgid "Advertises the time in seconds the router is offering Mobile IPv6 Home Agent services"
+msgstr ""
+
+msgid "Home Agent preference"
+msgstr ""
+
+msgid "The preference for the Home Agent sending this RA"
+msgstr ""
+
+msgid "Radvd - Prefix"
+msgstr ""
+
+msgid "Prefix Configuration"
+msgstr ""
+
+msgid "Advertised IPv6 prefixes. If empty, the current interface prefix is used"
+msgstr ""
+
+msgid "On-link determination"
+msgstr ""
+
+msgid "Indicates that this prefix can be used for on-link determination (RFC4861)"
+msgstr ""
+
+msgid "Indicates that this prefix can be used for autonomous address configuration (RFC4862)"
+msgstr ""
+
+msgid "Advertise router address"
+msgstr ""
+
+msgid "Indicates that the address of interface is sent instead of network prefix, as is required by Mobile IPv6"
+msgstr ""
+
+msgid "Valid lifetime"
+msgstr ""
+
+msgid "Advertises the length of time in seconds that the prefix is valid for the purpose of on-link determination."
+msgstr ""
+
+msgid "Preferred lifetime"
+msgstr ""
+
+msgid "Advertises the length of time in seconds that addresses generated from the prefix via stateless address autoconfiguration remain preferred."
+msgstr ""
+
+msgid "6to4 interface"
+msgstr ""
+
+msgid "Specifies a logical interface name to derive a 6to4 prefix from. The interfaces public IPv4 address is combined with 2002::/3 and the value of the prefix option"
+msgstr ""
+
+msgid "Radvd - RDNSS"
+msgstr ""
+
+msgid "RDNSS Configuration"
+msgstr ""
+
+msgid "Addresses"
+msgstr ""
+
+msgid "Advertised IPv6 RDNSS. If empty, the current IPv6 address of the interface is used"
+msgstr ""
+
+msgid "Specifies the maximum duration how long the RDNSS entries are used for name resolution."
+msgstr ""
+
+msgid "Radvd - Route"
+msgstr ""
+
+msgid "Route Configuration"
+msgstr ""
+
+msgid "Advertised IPv6 prefixes"
+msgstr ""
+
+msgid "Specifies the lifetime associated with the route in seconds."
+msgstr ""
+
+msgid "Specifies the preference associated with the default router"
+msgstr ""
+
+msgid "medium"
+msgstr ""
+
+msgid "high"
+msgstr ""
+
+msgid "Network Shares"
+msgstr ""
+
+msgid "Samba"
+msgstr ""
+
+msgid "Edit Template"
+msgstr ""
+
+msgid "Workgroup"
+msgstr ""
+
+msgid "Share home-directories"
+msgstr ""
+
+msgid "Allow system users to reach their home directories via network shares"
+msgstr ""
+
+msgid "Edit the template that is used for generating the samba configuration."
+msgstr ""
+
+msgid "This is the content of the file '/etc/samba/smb.conf.template' from which your samba configuration will be generated. Values enclosed by pipe symbols ('|') should not be changed. They get their values from the 'General Settings' tab."
+msgstr ""
+
+msgid "Shared Directories"
+msgstr ""
+
+msgid "Path"
+msgstr ""
+
+msgid "Allowed users"
+msgstr ""
+
+msgid "Read-only"
+msgstr ""
+
+msgid "Allow guests"
+msgstr ""
+
+msgid "Create mask"
+msgstr ""
+
+msgid "Mask for new files"
+msgstr ""
+
+msgid "Directory mask"
+msgstr ""
+
+msgid "Mask for new directories"
+msgstr ""
+
+msgid "SIIT 4over6 assistent"
+msgstr ""
+
+msgid "SIIT-Wizzard"
+msgstr ""
+
+msgid "This wizzard helps to setup SIIT (IPv4-over-IPv6) translation according to RFC2765."
+msgstr ""
+
+msgid "Mesh ULA address"
+msgstr ""
+
+msgid "IPv4 allocation pool"
+msgstr ""
+
+msgid "IPv4 LAN network prefix"
+msgstr ""
+
+msgid "Wireless device"
+msgstr ""
+
+msgid "LAN IPv4 subnet"
+msgstr ""
+
+msgid "IPv4 address is not the first host of subnet, expected "
+msgstr ""
+
+msgid "IPv4 address is not within the allocation pool"
+msgstr ""
+
+msgid "Invalid IPv4 address given"
+msgstr ""
+
+msgid "DNS server for LAN clients"
+msgstr ""
+
+msgid "Client-Splash"
+msgstr ""
+
+msgid "Splashtext"
+msgstr ""
+
+msgid "Client-Splash is a hotspot authentification system for wireless mesh networks."
+msgstr ""
+
+msgid "Clearance time"
+msgstr ""
+
+msgid "Clients that have accepted the splash are allowed to use the network for that many hours."
+msgstr ""
+
+msgid "Upload limit"
+msgstr ""
+
+msgid "Clients upload speed is limited to this value (kbyte/s"
+msgstr ""
+
+msgid "Download limit"
+msgstr ""
+
+msgid "Clients download speed is limited to this value (kbyte/s)"
+msgstr ""
+
+msgid "Bandwidth limit for clients is only activated when both up- and download limit are set. Use a value of 0 here to completely disable this limitation. Whitelisted clients are not limited."
+msgstr ""
+
+msgid "Interfaces that are used for Splash."
+msgstr ""
+
+msgid "Firewall zone"
+msgstr ""
+
+msgid "Splash rules are integrated in this firewall zone"
+msgstr ""
+
+msgid "Intercept client traffic on this Interface"
+msgstr ""
+
+msgid "MAC addresses of whitelisted clients. These do not need to accept the splash and are not bandwidth limited."
+msgstr ""
+
+msgid "MAC addresses in this list are blocked."
+msgstr ""
+
+msgid "Allowed hosts/subnets"
+msgstr ""
+
+msgid "Hosts and Networks that are listed here are excluded from splashing, i.e. they are always allowed."
+msgstr ""
+
+msgid "optional when using host addresses"
+msgstr ""
+
+msgid "You can enter your own text that is displayed to clients here.<br />It is possible to use the following markers: ###COMMUNITY###, ###COMMUNITY_URL###, ###CONTACTURL###, ###LEASETIME###, ###LIMIT### and ###ACCEPT###."
+msgstr ""
+
+msgid "Edit Splash text"
+msgstr ""
+
+msgid "No clients connected"
+msgstr ""
+
+msgid "whitelisted"
+msgstr ""
+
+msgid "splashed"
+msgstr ""
+
+msgid "temporarily blocked"
+msgstr ""
+
+msgid "blacklisted"
+msgstr ""
+
+msgid "Active Clients"
+msgstr ""
+
+msgid "Time remaining"
+msgstr ""
+
+msgid "Traffic in/out"
+msgstr ""
+
+msgid "Your access to this network has been blocked, most likely because you did something that our rules explicitly forbid."
+msgstr ""
+
+msgid "To ask for the reason why you have been blocked or ask for access again you can try to contact the owner of this access point:"
+msgstr ""
+
+msgid "Decline"
+msgstr ""
+
+msgid "Accept"
+msgstr ""
+
+msgid "Your bandwidth is limited to"
+msgstr ""
+
+msgid "KB/s (Download/Upload). You may be able to remove this limit by actively contributing to this project."
+msgstr ""
+
+msgid "Welcome"
+msgstr ""
+
+msgid "You are now connected to the free wireless mesh network"
+msgstr ""
+
+msgid "Please note that we are not an internet service provider but an experimental community network."
+msgstr ""
+
+msgid "Access to the internet might be possible nevertheless, because some activists of this project share their private	internet connections. These few connections are shared between all users. That means available bandwidth is limited and because of this we ask you not to do any of the following:"
+msgstr ""
+
+msgid "use filesharing applications on this network"
+msgstr ""
+
+msgid "waste bandwidth with unneccesary downloads or streams"
+msgstr ""
+
+msgid "perform any kind of illegal activities"
+msgstr ""
+
+msgid "If you use this network on a regular basis we ask for your support:"
+msgstr ""
+
+msgid "Become an active member of this community and help by operating your own node"
+msgstr ""
+
+msgid "the owner of this access point."
+msgstr ""
+
+msgid "Donate some money to help us keep this project alive."
+msgstr ""
+
+msgid "If you operate your own wifi equipment use channels different from ours."
+msgstr ""
+
+msgid "By accepting these rules you can use this network for"
+msgstr ""
+
+msgid "hour(s). After this time you need to accept these rules again."
+msgstr ""
+
+msgid "Statistics"
+msgstr ""
+
+msgid "Collectd"
+msgstr ""
+
+msgid "Graphs"
+msgstr ""
+
+msgid "Collectd is a small daeomon for collecting data from various sources through different plugins. On this page you can change general settings for the collectd daemon."
+msgstr ""
+
+msgid "Collectd Settings"
+msgstr ""
+
+msgid "Base Directory"
+msgstr ""
+
+msgid "Directory for sub-configurations"
+msgstr ""
+
+msgid "Directory for collectd plugins"
+msgstr ""
+
+msgid "Used PID file"
+msgstr ""
+
+msgid "Datasets definition file"
+msgstr ""
+
+msgid "Data collection interval"
+msgstr ""
+
+msgid "Seconds"
+msgstr ""
+
+msgid "Number of threads for data collection"
+msgstr ""
+
+msgid "Try to lookup fully qualified hostname"
+msgstr ""
+
+msgid "Conntrack Plugin Configuration"
+msgstr ""
+
+msgid "The conntrack plugin collects statistics about the number of tracked connections."
+msgstr ""
+
+msgid "Enable this plugin"
+msgstr ""
+
+msgid "CPU Plugin Configuration"
+msgstr ""
+
+msgid "The cpu plugin collects basic statistics about the processor usage."
+msgstr ""
+
+msgid "CSV Plugin Configuration"
+msgstr ""
+
+msgid "The csv plugin stores collected data in csv file format for further processing by external programs."
+msgstr ""
+
+msgid "Storage directory for the csv files"
+msgstr ""
+
+msgid "Store data values as rates instead of absolute values"
+msgstr ""
+
+msgid "DF Plugin Configuration"
+msgstr ""
+
+msgid "The df plugin collects statistics about the disk space usage on different devices, mount points or filesystem types."
+msgstr ""
+
+msgid "Monitor devices"
+msgstr ""
+
+msgid "Monitor mount points"
+msgstr ""
+
+msgid "Monitor filesystem types"
+msgstr ""
+
+msgid "Monitor all except specified"
+msgstr ""
+
+msgid "The disk plugin collects detailled usage statistics for selected partitions or whole disks."
+msgstr ""
+
+msgid "Monitor disks and partitions"
+msgstr ""
+
+msgid "The dns plugin collects detailled statistics about dns related traffic on selected interfaces."
+msgstr ""
+
+msgid "DNS Plugin Configuration"
+msgstr ""
+
+msgid "Monitor interfaces"
+msgstr ""
+
+msgid "Ignore source addresses"
+msgstr ""
+
+msgid "E-Mail Plugin Configuration"
+msgstr ""
+
+msgid "The email plugin creates a unix socket which can be used to transmit email-statistics to a running collectd daemon. This plugin is primarily intended to be used in conjunction with Mail::SpamAssasin::Plugin::Collectd but can be used in other ways as well."
+msgstr ""
+
+msgid "Socket file"
+msgstr ""
+
+msgid "Socket group"
+msgstr ""
+
+msgid "Socket permissions"
+msgstr ""
+
+msgid "Maximum allowed connections"
+msgstr ""
+
+msgid "Exec Plugin Configuration"
+msgstr ""
+
+msgid "The exec plugin starts external commands to read values from or to notify external processes when certain threshold values have been reached."
+msgstr ""
+
+msgid "Add command for reading values"
+msgstr ""
+
+msgid "Here you can define external commands which will be started by collectd in order to read certain values. The values will be read from stdout."
+msgstr ""
+
+msgid "Script"
+msgstr ""
+
+msgid "Add notification command"
+msgstr ""
+
+msgid "Here you can define external commands which will be started by collectd when certain threshold values have been reached. The values leading to invokation will be feeded to the the called programs stdin."
+msgstr ""
+
+msgid "The interface plugin collects traffic statistics on selected interfaces."
+msgstr ""
+
+msgid "Interface Plugin Configuration"
+msgstr ""
+
+msgid "Iptables Plugin Configuration"
+msgstr ""
+
+msgid "The iptables plugin will monitor selected firewall rules and collect informations about processed bytes and packets per rule."
+msgstr ""
+
+msgid "Add matching rule"
+msgstr ""
+
+msgid "Here you can define various criteria by which the monitored iptables rules are selected."
+msgstr ""
+
+msgid "max. 16 chars"
+msgstr ""
+
+msgid "Action (target)"
+msgstr ""
+
+msgid "Network protocol"
+msgstr ""
+
+msgid "Source ip range"
+msgstr ""
+
+msgid "Destination ip range"
+msgstr ""
+
+msgid "Incoming interface"
+msgstr ""
+
+msgid "e.g. br-lan"
+msgstr ""
+
+msgid "Outgoing interface"
+msgstr ""
+
+msgid "e.g. br-ff"
+msgstr ""
+
+msgid "e.g. reject-with tcp-reset"
+msgstr ""
+
+msgid "IRQ Plugin Configuration"
+msgstr ""
+
+msgid "The irq plugin will monitor the rate of issues per second for each selected interrupt. If no interrupt is selected then all interrupts are monitored."
+msgstr ""
+
+msgid "Monitor interrupts"
+msgstr ""
+
+msgid "Wireless iwinfo Plugin Configuration"
+msgstr ""
+
+msgid "The iwinfo plugin collects statistics about wireless signal strength, noise and quality."
+msgstr ""
+
+msgid "Leave unselected to automatically determine interfaces to monitor."
+msgstr ""
+
+msgid "Load Plugin Configuration"
+msgstr ""
+
+msgid "The load plugin collects statistics about the general system load."
+msgstr ""
+
+msgid "Memory Plugin Configuration"
+msgstr ""
+
+msgid "The memory plugin collects statistics about the memory usage."
+msgstr ""
+
+msgid "Netlink Plugin Configuration"
+msgstr ""
+
+msgid "The netlink plugin collects extended informations like qdisc-, class- and filter-statistics for selected interfaces."
+msgstr ""
+
+msgid "Basic monitoring"
+msgstr ""
+
+msgid "Verbose monitoring"
+msgstr ""
+
+msgid "Qdisc monitoring"
+msgstr ""
+
+msgid "Shaping class monitoring"
+msgstr ""
+
+msgid "Filter class monitoring"
+msgstr ""
+
+msgid "The network plugin provides network based communication between different collectd instances. Collectd can operate both in client and server mode. In client mode locally collected date is transferred to a collectd server instance, in server mode the local instance receives data from other hosts."
+msgstr ""
+
+msgid "Network Plugin Configuration"
+msgstr ""
+
+msgid "Listener interfaces"
+msgstr ""
+
+msgid "This section defines on which interfaces collectd will wait for incoming connections."
+msgstr ""
+
+msgid "Listen host"
+msgstr ""
+
+msgid "server interfaces"
+msgstr ""
+
+msgid "This section defines to which servers the locally collected data is sent to."
+msgstr ""
+
+msgid "TTL for network packets"
+msgstr ""
+
+msgid "Forwarding between listen and server addresses"
+msgstr ""
+
+msgid "Cache flush interval"
+msgstr ""
+
+msgid "OLSRd Plugin Configuration"
+msgstr ""
+
+msgid "The OLSRd plugin reads information about meshed networks from the txtinfo plugin of OLSRd."
+msgstr ""
+
+msgid "IP or hostname where to get the txtinfo output from"
+msgstr ""
+
+msgid "CollectLinks"
+msgstr ""
+
+msgid "Specifies what information to collect about links."
+msgstr ""
+
+msgid "CollectRoutes"
+msgstr ""
+
+msgid "Specifies what information to collect about routes."
+msgstr ""
+
+msgid "CollectTopology"
+msgstr ""
+
+msgid "Specifies what information to collect about the global topology."
+msgstr ""
+
+msgid "Ping Plugin Configuration"
+msgstr ""
+
+msgid "The ping plugin will send icmp echo replies to selected hosts and measure the roundtrip time for each host."
+msgstr ""
+
+msgid "Monitor hosts"
+msgstr ""
+
+msgid "Add multiple hosts separated by space."
+msgstr ""
+
+msgid "TTL for ping packets"
+msgstr ""
+
+msgid "Interval for pings"
+msgstr ""
+
+msgid "The processes plugin collects informations like cpu time, page faults and memory usage of selected processes."
+msgstr ""
+
+msgid "Processes Plugin Configuration"
+msgstr ""
+
+msgid "Monitor processes"
+msgstr ""
+
+msgid "Processes to monitor separated by space"
+msgstr ""
+
+msgid "RRDTool Plugin Configuration"
+msgstr ""
+
+msgid "The rrdtool plugin stores the collected data in rrd database files, the foundation of the diagrams.<br /><br /><strong>Warning: Setting the wrong values will result in a very high memory consumption in the temporary directory. This can render the device unusable!</strong>"
+msgstr ""
+
+msgid "Storage directory"
+msgstr ""
+
+msgid "RRD step interval"
+msgstr ""
+
+msgid "RRD heart beat interval"
+msgstr ""
+
+msgid "Only create average RRAs"
+msgstr ""
+
+msgid "reduces rrd size"
+msgstr ""
+
+msgid "Stored timespans"
+msgstr ""
+
+msgid "seconds; multiple separated by space"
+msgstr ""
+
+msgid "Rows per RRA"
+msgstr ""
+
+msgid "RRD XFiles Factor"
+msgstr ""
+
+msgid "Cache collected data for"
+msgstr ""
+
+msgid "Flush cache after"
+msgstr ""
+
+msgid "The tcpconns plugin collects informations about open tcp connections on selected ports."
+msgstr ""
+
+msgid "Monitor all local listen ports"
+msgstr ""
+
+msgid "Monitor local ports"
+msgstr ""
+
+msgid "Monitor remote ports"
+msgstr ""
+
+msgid "The unixsock plugin creates a unix socket which can be used to read collected data from a running collectd instance."
+msgstr ""
+
+msgid "Unixsock Plugin Configuration"
+msgstr ""
+
+msgid "Tracked connections"
+msgstr ""
+
+msgid "The statistics package is based on"
+msgstr ""
+
+msgid "and uses"
+msgstr ""
+
+msgid "RRD Tool"
+msgstr ""
+
+msgid " to render diagram images from collected data."
+msgstr ""
+
+msgid "Display Host »"
+msgstr ""
+
+msgid "Display timespan »"
+msgstr ""
+
+msgid "Transmission"
+msgstr ""
+
+msgid "Open Web Interface"
+msgstr ""
+
+msgid "Transmission daemon is a simple bittorrent client, here you can configure the settings."
+msgstr ""
+
+msgid "Global settings"
+msgstr ""
+
+msgid "Config file directory"
+msgstr ""
+
+msgid "Run daemon as user"
+msgstr ""
+
+msgid "Cache size in MB"
+msgstr ""
+
+msgid "Bandwidth settings"
+msgstr ""
+
+msgid "Alternative speed enabled"
+msgstr ""
+
+msgid "Alternative download speed"
+msgstr ""
+
+msgid "Alternative upload speed"
+msgstr ""
+
+msgid "Speed limit down enabled"
+msgstr ""
+
+msgid "Speed limit down"
+msgstr ""
+
+msgid "Speed limit up enabled"
+msgstr ""
+
+msgid "Speed limit up"
+msgstr ""
+
+msgid "Upload slots per torrent"
+msgstr ""
+
+msgid "Blocklists"
+msgstr ""
+
+msgid "Block list enabled"
+msgstr ""
+
+msgid "Blocklist URL"
+msgstr ""
+
+msgid "Files and Locations"
+msgstr ""
+
+msgid "Download directory"
+msgstr ""
+
+msgid "Incomplete directory enabled"
+msgstr ""
+
+msgid "Incomplete directory"
+msgstr ""
+
+msgid "preallocation"
+msgstr ""
+
+msgid "Prefetch enabled"
+msgstr ""
+
+msgid "Rename partial files"
+msgstr ""
+
+msgid "Automatically start added torrents"
+msgstr ""
+
+msgid "Trash original torrent files"
+msgstr ""
+
+msgid "Enable watch directory"
+msgstr ""
+
+msgid "Watch directory"
+msgstr ""
+
+msgid "Miscellaneous"
+msgstr ""
+
+msgid "DHT enabled"
+msgstr ""
+
+msgid "Preferred"
+msgstr ""
+
+msgid "Forced"
+msgstr ""
+
+msgid "Lazy bitfield enabled"
+msgstr ""
+
+msgid "LPD enabled"
+msgstr ""
+
+msgid "Message level"
+msgstr ""
+
+msgid "PEX enabled"
+msgstr ""
+
+msgid "Script torrent done enabled"
+msgstr ""
+
+msgid "Script torrent done filename"
+msgstr ""
+
+msgid "Idle seeding limit enabled"
+msgstr ""
+
+msgid "Idle seeding limit"
+msgstr ""
+
+msgid "uTP enabled"
+msgstr ""
+
+msgid "Peer settings"
+msgstr ""
+
+msgid "Binding address IPv4"
+msgstr ""
+
+msgid "Binding address IPv6"
+msgstr ""
+
+msgid "Peer congestion algorithm"
+msgstr ""
+
+msgid "Global peer limit"
+msgstr ""
+
+msgid "Peer limit per torrent"
+msgstr ""
+
+msgid "Peer socket tos"
+msgstr ""
+
+msgid "Peer Port settings"
+msgstr ""
+
+msgid "Peer port"
+msgstr ""
+
+msgid "Peer port random on start"
+msgstr ""
+
+msgid "Peer port random high"
+msgstr ""
+
+msgid "Peer port random low"
+msgstr ""
+
+msgid "Port forwarding enabled"
+msgstr ""
+
+msgid "RPC settings"
+msgstr ""
+
+msgid "RPC enabled"
+msgstr ""
+
+msgid "RPC port"
+msgstr ""
+
+msgid "RPC bind address"
+msgstr ""
+
+msgid "RPC URL"
+msgstr ""
+
+msgid "RPC whitelist enabled"
+msgstr ""
+
+msgid "RPC whitelist"
+msgstr ""
+
+msgid "RPC authentication required"
+msgstr ""
+
+msgid "RPC username"
+msgstr ""
+
+msgid "RPC password"
+msgstr ""
+
+msgid "Scheduling"
+msgstr ""
+
+msgid "Alternative speed timing enabled"
+msgstr ""
+
+msgid "Alternative speed time day"
+msgstr ""
+
+msgid "Number/bitfield. Start with 0, then for each day you want the scheduler enabled, add a value. For Sunday - 1, Monday - 2, Tuesday - 4, Wednesday - 8, Thursday - 16, Friday - 32, Saturday - 64"
+msgstr ""
+
+msgid "Alternative speed time begin"
+msgstr ""
+
+msgid "in minutes from midnight"
+msgstr ""
+
+msgid "Alternative speed time end"
+msgstr ""
+
+msgid "Ratio limit enabled"
+msgstr ""
+
+msgid "Ratio limit"
+msgstr ""
+
+msgid "Queueing"
+msgstr ""
+
+msgid "Download queue enabled"
+msgstr ""
+
+msgid "Download queue size"
+msgstr ""
+
+msgid "Queue stalled enabled"
+msgstr ""
+
+msgid "Queue stalled minutes"
+msgstr ""
+
+msgid "Seed queue enabled"
+msgstr ""
+
+msgid "Seed queue size"
+msgstr ""
+
+msgid "Scrape paused torrents enabled"
+msgstr ""
+
+msgid "UPNP"
+msgstr ""
+
+msgid "Bad request"
+msgstr ""
+
+msgid "Universal Plug & Play"
+msgstr ""
+
+msgid "UPnP allows clients in the local network to automatically configure the router."
+msgstr ""
+
+msgid "MiniUPnP settings"
+msgstr ""
+
+msgid "Start UPnP and NAT-PMP service"
+msgstr ""
+
+msgid "Enable UPnP functionality"
+msgstr ""
+
+msgid "Enable NAT-PMP functionality"
+msgstr ""
+
+msgid "Enable secure mode"
+msgstr ""
+
+msgid "Allow adding forwards only to requesting ip addresses"
+msgstr ""
+
+msgid "Enable additional logging"
+msgstr ""
+
+msgid "Puts extra debugging information into the system log"
+msgstr ""
+
+msgid "Value in KByte/s, informational only"
+msgstr ""
+
+msgid "Report system instead of daemon uptime"
+msgstr ""
+
+msgid "Device UUID"
+msgstr ""
+
+msgid "Announced serial number"
+msgstr ""
+
+msgid "Announced model number"
+msgstr ""
+
+msgid "Notify interval"
+msgstr ""
+
+msgid "Clean rules threshold"
+msgstr ""
+
+msgid "Clean rules interval"
+msgstr ""
+
+msgid "Presentation URL"
+msgstr ""
+
+msgid "UPnP lease file"
+msgstr ""
+
+msgid "MiniUPnP ACLs"
+msgstr ""
+
+msgid "ACLs specify which external ports may be redirected to which internal addresses and ports"
+msgstr ""
+
+msgid "Comment"
+msgstr ""
+
+msgid "External ports"
+msgstr ""
+
+msgid "Internal addresses"
+msgstr ""
+
+msgid "Internal ports"
+msgstr ""
+
+msgid "Delete Redirect"
+msgstr ""
+
+msgid "There are no active redirects."
+msgstr ""
+
+msgid "Active UPnP Redirects"
+msgstr ""
+
+msgid "Client Port"
+msgstr ""
+
+msgid "Client Address"
+msgstr ""
+
+msgid "uShare"
+msgstr ""
+
+msgid "Servername"
+msgstr ""
+
+msgid "Content directories"
+msgstr ""
+
+msgid "Disable webinterface"
+msgstr ""
+
+msgid "Disable telnet console"
+msgstr ""
+
+msgid "VnStat Traffic Monitor"
+msgstr ""
+
+msgid "VnStat"
+msgstr ""
+
+msgid "VnStat is a network traffic monitor for Linux that keeps a log of network traffic for the selected interface(s)."
+msgstr ""
+
+msgid "Restart VnStat"
+msgstr ""
+
+msgid "Monitor selected interfaces"
+msgstr ""
+
+msgid "No database has been set up yet. Go to the VnStat configuration and enable monitoring for one or more interfaces."
+msgstr ""
+
+msgid "Update »"
+msgstr ""
+
+msgid "Monthly traffic"
+msgstr ""
+
+msgid "Daily traffic"
+msgstr ""
+
+msgid "Hourly traffic"
+msgstr ""
+
+msgid "Top 10 display"
+msgstr ""
+
+msgid "Summary display"
+msgstr ""
+
+msgid "VnStat Graphs"
+msgstr ""
+
+msgid "Voice"
+msgstr ""
+
+msgid "In particular Asterisk configuration and information is displayed
+  here, as well as diagnostics that specifically apply to voice but are
+  not general networking diagnostics (e.g. includes SIP device scans, but not
+  ping tests).  Includes PSTN phones as well as VoIP and possibly
+  non-telephony related options."
+msgstr ""
+
+msgid "Here you can control OpenWRT voice-related settings and see
+  voice-related information from OpenWRT"
+msgstr ""
+
+msgid "Here you can control phone configuration and information in OpenWRT"
+msgstr ""
+
+msgid "You can control the setup of phone clients and servers and see
+  information such as diagnostics related to phone devices from this menu."
+msgstr ""
+
+msgid "Under this menu are options that allow you to configure and perform tests on the voice operations of your system.  These are known as diagnostics"
+msgstr ""
+
+msgid "The diagnostics available on your device depend on the modules that you have installed."
+msgstr ""
+
+msgid "Watchcat"
+msgstr ""
+
+msgid "Watchcat allows to configure a periodic reboot and/or when internet connection has been lost for a certain period of time."
+msgstr ""
+
+msgid "Operating mode"
+msgstr ""
+
+msgid "Reboot on internet connection lost"
+msgstr ""
+
+msgid "Periodic reboot"
+msgstr ""
+
+msgid "Forced reboot delay"
+msgstr ""
+
+msgid "When rebooting the system the watchcat will trigger a soft reboot, Entering a non zero value here, will trigger a delayed hard reboot if the soft reboot fails. Enter a number of seconds to enable, use 0 to disable"
+msgstr ""
+
+msgid "In periodic mode, it defines the reboot period. In internet mode, it defines the longest period of time without internet access before a reboot is engaged. Default unit is seconds, you can use the suffix 'm' for minutes, 'h' for hours or 'd' for days"
+msgstr ""
+
+msgid "Ping host"
+msgstr ""
+
+msgid "Host address to ping"
+msgstr ""
+
+msgid "Ping period"
+msgstr ""
+
+msgid "How often to check internet connection. Default unit is seconds, you can you use the suffix 'm' for minutes, 'h' for hours or 'd' for days"
+msgstr ""
+
+msgid "Wake on LAN"
+msgstr ""
+
+msgid "Wondershaper"
+msgstr ""
+
+msgid "Wake on LAN is a mechanism to remotely boot computers in the local network."
+msgstr ""
+
+msgid "WoL program"
+msgstr ""
+
+msgid "Sometimes only one of both tools work. If one of fails, try the other one"
+msgstr ""
+
+msgid "Etherwake"
+msgstr ""
+
+msgid "WoL"
+msgstr ""
+
+msgid "Network interface to use"
+msgstr ""
+
+msgid "Specifies the interface the WoL packet is sent on"
+msgstr ""
+
+msgid "Broadcast on all interfaces"
+msgstr ""
+
+msgid "Host to wake up"
+msgstr ""
+
+msgid "Choose the host to wake up or enter a custom MAC address to use"
+msgstr ""
+
+msgid "Starting WoL utility:"
+msgstr ""
+
+msgid "Wondershaper uses traffic shaping to ensure low latencies for interactive traffic even when your " ..
+	"internet connection is highly saturated."
+msgstr ""
+
+msgid "Wondershaper settings"
+msgstr ""
+
+msgid "Upstream bandwidth in kbit/s"
+msgstr ""
+
+msgid "Downstream bandwidth in kbit/s"
+msgstr ""
+
+msgid "Low priority hosts (Source)"
+msgstr ""
+
+msgid "Host or Network in CIDR notation."
+msgstr ""
+
+msgid "Low priority hosts (Destination)"
+msgstr ""
+
+msgid "Low priority source ports"
+msgstr ""
+
+msgid "Low priority destination ports"
+msgstr ""
+
+msgid "Teltonika solutions: "
+msgstr ""
+
+msgid "Warning! Router in bridge mode can be reached only by using static network settings."
+msgstr ""
+
+msgid "Profile in use: "
+msgstr ""
+
+msgid "There is no password set on this router. Please configure a root password to protect the web interface and enable SSH."
+msgstr ""
+
+msgid " (since %s)"
+msgstr ""
+
+msgid "last 1 min: %d%%; 5 mins: %d%%; 15 mins: %d%%;"
+msgstr ""
+
+msgid ""
+msgstr ""
+
+msgid ""
+msgstr ""
+

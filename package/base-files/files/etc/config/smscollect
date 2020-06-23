@@ -1,0 +1,3 @@
+config 'smscollect' 'config'
+	option enabled '0'
+

@@ -1,0 +1,25 @@
+<%+cbi/fvalue%>
+
+<script type="text/javascript">
+	function eventHandler(event) {
+		var e = document.getElementById("cbid.modbusgateway.gateway.enabled");
+		if (e.checked) {
+			var c = document.getElementById("cbi-modbusgateway");
+			var d = document.createElement("div");
+			d.id = "wrn_message";
+			d.className = "alert-message warning";
+			d.innerText = "Beware: only one gateway can connect to an MQTT broker under the same topic";
+			c.parentElement.insertBefore(d, c);
+		} else {
+			var x = document.getElementById("wrn_message");
+			while (x && x.parentElement) {
+				x.parentElement.removeChild(x);
+				document.getElementById("wrn_message");
+			}
+		}
+	}
+
+	eventHandler();
+	var a = document.getElementById("cbid.modbusgateway.gateway.enabled");
+	a.addEventListener('change', eventHandler);
+</script>

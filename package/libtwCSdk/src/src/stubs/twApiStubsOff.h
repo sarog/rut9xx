@@ -1,0 +1,399 @@
+#ifndef  TW_C_SDK_TWSTUBSOFF_H
+#define  TW_C_SDK_TWSTUBSOFF_H
+
+#define s_cfuhash_destroy cfuhash_destroy
+#define s_deleteCallbackInfo deleteCallbackInfo 
+#define s_bindListEntry_Create bindListEntry_Create 
+#define s_bindListEntry_Delete bindListEntry_Delete 
+#define s_notifyPropertyUpdateHandler notifyPropertyUpdateHandler 
+#define s_subscribedPropertyUpdateTask subscribedPropertyUpdateTask 
+#define s_isFileTransferService isFileTransferService 
+#define s_isTunnelService isTunnelService 
+#define s_convertMsgCodeToErrorCode convertMsgCodeToErrorCode 
+#define s_findRegisteredItem findRegisteredItem 
+#define s_getCallbackFromList getCallbackFromList 
+#define s_sendMessageBlocking sendMessageBlocking 
+#define s_makeRequest makeRequest 
+#define s_makePropertyRequest makePropertyRequest 
+#define s_twApi_SendResponse twApi_SendResponse 
+#define s_api_requesthandler api_requesthandler 
+#define s_getMetadataService getMetadataService 
+#define s_pong_handler pong_handler 
+#define s_makeAuthOrBindCallbacks makeAuthOrBindCallbacks
+#define s_makeSynchronizedStateCallbacks makeSynchronizedStateCallbacks
+#define s_registerServiceOrEvent registerServiceOrEvent
+#define s_AddAspectToEntity AddAspectToEntity 
+
+#define s_twApi_Delete twApi_Delete 
+#define s_twApi_SetProxyInfo twApi_SetProxyInfo 
+#define s_twApi_GetVersion twApi_GetVersion 
+#define s_twApi_BindAll twApi_BindAll 
+#define s_twApi_Authenticate twApi_Authenticate 
+#define s_twApi_Connect twApi_Connect 
+#define s_twApi_Disconnect twApi_Disconnect 
+#define s_twApi_isConnected twApi_isConnected 
+#define s_twApi_ConnectionInProgress twApi_ConnectionInProgress 
+#define s_twApi_StopConnectionAttempt twApi_StopConnectionAttempt 
+#define s_twApi_SetDutyCycle twApi_SetDutyCycle 
+#define s_twApi_SetPingRate twApi_SetPingRate 
+#define s_twApi_SetConnectTimeout twApi_SetConnectTimeout 
+#define s_twApi_SetConnectRetries twApi_SetConnectRetries 
+#define s_twApi_SetGatewayName twApi_SetGatewayName 
+#define s_twApi_SetGatewayType twApi_SetGatewayType 
+#define s_twApi_BindThing twApi_BindThing 
+#define s_twApi_UnbindThing twApi_UnbindThing 
+#define s_twApi_IsEntityBound twApi_IsEntityBound 
+#define s_twApi_TaskerFunction twApi_TaskerFunction 
+#define s_twApi_RegisterProperty twApi_RegisterProperty 
+#define s_twApi_UpdatePropertyMetaData twApi_UpdatePropertyMetaData 
+#define s_twApi_AddAspectToProperty twApi_AddAspectToProperty 
+#define s_twApi_RegisterService twApi_RegisterService 
+#define s_twApi_AddAspectToService twApi_AddAspectToService 
+#define s_twApi_RegisterEvent twApi_RegisterEvent 
+#define s_twApi_AddAspectToEvent twApi_AddAspectToEvent 
+#define s_twApi_RegisterPropertyCallback twApi_RegisterPropertyCallback 
+#define s_twApi_RegisterServiceCallback twApi_RegisterServiceCallback 
+#define s_twApi_UnregisterThing twApi_UnregisterThing 
+#define s_twApi_UnregisterCallback twApi_UnregisterCallback 
+#define s_twApi_UnregisterPropertyCallback twApi_UnregisterPropertyCallback 
+#define s_twApi_UnregisterServiceCallback twApi_UnregisterServiceCallback 
+#define s_twApi_RegisterDefaultRequestHandler twApi_RegisterDefaultRequestHandler 
+#define s_twApi_CreatePropertyList twApi_CreatePropertyList 
+#define s_twApi_DeletePropertyList twApi_DeletePropertyList 
+#define s_twApi_AddPropertyToList twApi_AddPropertyToList 
+#define s_twApi_ReadProperty twApi_ReadProperty 
+#define s_twApi_WriteProperty twApi_WriteProperty 
+#define s_twApi_SetSubscribedPropertyVTQ twApi_SetSubscribedPropertyVTQ 
+#define s_twApi_SetSubscribedProperty twApi_SetSubscribedProperty 
+#define s_twApi_PushSubscribedProperties twApi_PushSubscribedProperties 
+#define s_twApi_PushProperties twApi_PushProperties 
+#define s_twApi_InvokeService twApi_InvokeService 
+#define s_twApi_FireEvent twApi_FireEvent 
+#define s_twApi_RegisterConnectCallback twApi_RegisterConnectCallback 
+#define s_twApi_RegisterCloseCallback twApi_RegisterCloseCallback 
+#define s_twApi_RegisterPingCallback twApi_RegisterPingCallback 
+#define s_twApi_RegisterPongCallback twApi_RegisterPongCallback 
+#define s_twApi_RegisterBindEventCallback twApi_RegisterBindEventCallback 
+#define s_twApi_UnregisterBindEventCallback twApi_UnregisterBindEventCallback 
+#define s_twApi_RegisterOnAuthenticatedCallback twApi_RegisterOnAuthenticatedCallback 
+#define s_twApi_UnregisterOnAuthenticatedCallback twApi_UnregisterOnAuthenticatedCallback 
+#define s_twApi_CleanupOldMessages twApi_CleanupOldMessages 
+#define s_twApi_SendPing twApi_SendPing 
+#define s_twApi_CreateTask twApi_CreateTask 
+#define s_twApi_SetSelfSignedOk twApi_SetSelfSignedOk 
+#define s_twApi_DisableCertValidation twApi_DisableCertValidation 
+#define s_twApi_LoadCACert twApi_LoadCACert 
+#define s_twApi_LoadClientCert twApi_LoadClientCert 
+#define s_twApi_SetClientKey twApi_SetClientKey 
+#define s_twApi_EnableFipsMode twApi_EnableFipsMode 
+#define s_twApi_IsFipsModeEnabled twApi_IsFipsModeEnabled
+#define s_twApi_IsFIPSCompatible twApi_IsFIPSCompatible
+#define s_twApi_DisableEncryption twApi_DisableEncryption 
+#define s_twApi_SetX509Fields twApi_SetX509Fields 
+#define s_twApi_SetOfflineMsgStoreDir twApi_SetOfflineMsgStoreDir 
+#define s_twApi_GetConnectionInfo twApi_GetConnectionInfo 
+
+/* Properties */
+#define s_twPropertyDef_Create twPropertyDef_Create 
+#define s_twPropertyDef_Delete twPropertyDef_Delete 
+#define s_twProperty_Create twProperty_Create 
+#define s_twPropertyVTQ_Create twPropertyVTQ_Create 
+#define s_twProperty_CreateFromStream twProperty_CreateFromStream 
+#define s_twProperty_Delete twProperty_Delete 
+
+/* Services */
+#define s_twServiceDef_Create twServiceDef_Create 
+#define s_twServiceDef_Delete twServiceDef_Delete 
+
+/* Base Types */
+#define s_twStream_Create twStream_Create 
+#define s_twStream_CreateFromCharArray twStream_CreateFromCharArray 
+#define s_twStream_CreateFromCharArrayZeroCopy twStream_CreateFromCharArrayZeroCopy 
+#define s_twStream_Delete twStream_Delete 
+#define s_twStream_GetData twStream_GetData 
+#define s_twStream_GetIndex twStream_GetIndex 
+#define s_twStream_GetLength twStream_GetLength 
+#define s_twStream_AddBytes twStream_AddBytes 
+#define s_twStream_GetBytes twStream_GetBytes 
+#define s_twStream_Reset twStream_Reset 
+#define s_twStream_CreateFromFile twStream_CreateFromFile 
+#define s_swap4bytes swap4bytes 
+#define s_swap8bytes swap8bytes 
+#define s_stringToStream stringToStream 
+#define s_streamToString streamToString 
+#define s_baseTypeFromString baseTypeFromString 
+#define s_baseTypeToString baseTypeToString 
+#define s_twPrimitive_Create twPrimitive_Create 
+#define s_twPrimitive_CreateFromStream twPrimitive_CreateFromStream 
+#define s_twPrimitive_CreateFromStreamTyped twPrimitive_CreateFromStreamTyped 
+#define s_twPrimitive_ZeroCopy twPrimitive_ZeroCopy 
+#define s_twPrimitive_FullCopy twPrimitive_FullCopy 
+#define s_twPrimitive_Delete twPrimitive_Delete 
+#define s_twPrimitive_ToStream twPrimitive_ToStream 
+#define s_twPrimitive_DecoupleStringAndDelete twPrimitive_DecoupleStringAndDelete 
+#define s_twPrimitive_Compare twPrimitive_Compare 
+#define s_twPrimitive_IsTrue twPrimitive_IsTrue 
+#define s_twPrimitive_CreateFromLocation twPrimitive_CreateFromLocation 
+#define s_twPrimitive_CreateFromNumber twPrimitive_CreateFromNumber 
+#define s_twPrimitive_CreateFromInteger twPrimitive_CreateFromInteger 
+#define s_twPrimitive_CreateFromDatetime twPrimitive_CreateFromDatetime 
+#define s_twPrimitive_CreateFromCurrentTime twPrimitive_CreateFromCurrentTime 
+#define s_twPrimitive_CreateFromBoolean twPrimitive_CreateFromBoolean 
+#define s_twPrimitive_CreateFromInfoTable twPrimitive_CreateFromInfoTable 
+#define s_twPrimitive_CreateVariant twPrimitive_CreateVariant 
+#define s_twPrimitive_CreateFromString twPrimitive_CreateFromString 
+#define s_twPrimitive_CreateFromBlob twPrimitive_CreateFromBlob 
+#define s_twPrimitive_CreateFromVariable twPrimitive_CreateFromVariable 
+#define s_twPrimitive_ToJson twPrimitive_ToJson 
+#define s_twPrimitive_CreateFromJson twPrimitive_CreateFromJson 
+
+/* InfoTables */
+#define s_twDataShapeAspect_Create twDataShapeAspect_Create 
+#define s_twDataShapeAspect_CreateFromStream twDataShapeAspect_CreateFromStream 
+#define s_twDataShapeAspect_Delete twDataShapeAspect_Delete 
+#define s_twDataShapeEntry_Create twDataShapeEntry_Create 
+#define s_twDataShapeEntry_CreateFromStream twDataShapeEntry_CreateFromStream 
+#define s_twDataShapeEntry_Delete twDataShapeEntry_Delete 
+#define s_twDataShapeEntry_AddAspect twDataShapeEntry_AddAspect 
+#define s_twDataShapeEntry_GetLength twDataShapeEntry_GetLength 
+#define s_twDataShapeEntry_ToStream twDataShapeEntry_ToStream 
+#define s_twDataShape_Create twDataShape_Create 
+#define s_twDataShape_CreateFromStream twDataShape_CreateFromStream 
+#define s_twDataShape_Delete twDataShape_Delete 
+#define s_twDataShape_GetLength twDataShape_GetLength 
+#define s_twDataShape_ToStream twDataShape_ToStream 
+#define s_twDataShape_SetName twDataShape_SetName 
+#define s_twDataShape_AddEntry twDataShape_AddEntry 
+#define s_twDataShape_GetEntryIndex twDataShape_GetEntryIndex 
+#define s_twInfoTableRow_Create twInfoTableRow_Create 
+#define s_twInfoTableRow_CreateFromStream twInfoTableRow_CreateFromStream 
+#define s_twInfoTableRow_Delete twInfoTableRow_Delete 
+#define s_twInfoTableRow_GetCount twInfoTableRow_GetCount 
+#define s_twInfoTableRow_GetLength twInfoTableRow_GetLength 
+#define s_twInfoTableRow_AddEntry twInfoTableRow_AddEntry 
+#define s_twInfoTableRow_GetEntry twInfoTableRow_GetEntry 
+#define s_twInfoTableRow_ToStream twInfoTableRow_ToStream 
+#define s_twInfoTable_Create twInfoTable_Create 
+#define s_twInfoTable_CreateFromStream twInfoTable_CreateFromStream 
+#define s_twInfoTable_Delete twInfoTable_Delete 
+#define s_twInfoTable_FullCopy twInfoTable_FullCopy 
+#define s_twInfoTable_ZeroCopy twInfoTable_ZeroCopy 
+#define s_twInfoTable_Compare twInfoTable_Compare 
+#define s_twInfoTable_AddRow twInfoTable_AddRow 
+#define s_twInfoTable_GetEntry twInfoTable_GetEntry 
+#define s_twInfoTable_ToStream twInfoTable_ToStream 
+#define s_twInfoTable_CreateFromPrimitive twInfoTable_CreateFromPrimitive 
+#define s_twInfoTable_CreateFromString twInfoTable_CreateFromString 
+#define s_twInfoTable_CreateFromNumber twInfoTable_CreateFromNumber 
+#define s_twInfoTable_CreateFromInteger twInfoTable_CreateFromInteger 
+#define s_twInfoTable_CreateFromLocation twInfoTable_CreateFromLocation 
+#define s_twInfoTable_CreateFromBlob twInfoTable_CreateFromBlob 
+#define s_twInfoTable_CreateFromDatetime twInfoTable_CreateFromDatetime 
+#define s_twInfoTable_CreateFromBoolean twInfoTable_CreateFromBoolean 
+#define s_twInfoTable_GetString twInfoTable_GetString 
+#define s_twInfoTable_GetNumber twInfoTable_GetNumber 
+#define s_twInfoTable_GetInteger twInfoTable_GetInteger 
+#define s_twInfoTable_GetLocation twInfoTable_GetLocation 
+#define s_twInfoTable_GetBlob twInfoTable_GetBlob 
+#define s_twInfoTable_GetDatetime twInfoTable_GetDatetime 
+#define s_twInfoTable_GetBoolean twInfoTable_GetBoolean 
+#define s_twInfoTable_GetPrimitive twInfoTable_GetPrimitive 
+#define s_twInfoTable_CreateFromJson twInfoTable_CreateFromJson 
+#define s_twDataShape_ToJson twDataShape_ToJson 
+#define s_twInfoTable_ToJson twInfoTable_ToJson 
+
+/* Messages */
+#define s_twMessage_Create twMessage_Create 
+#define s_twMessage_CreateRequestMsg twMessage_CreateRequestMsg 
+#define s_twMessage_CreateResponseMsg twMessage_CreateResponseMsg 
+#define s_twMessage_CreateBindMsg twMessage_CreateBindMsg 
+#define s_twMessage_CreateAuthMsg twMessage_CreateAuthMsg 
+#define s_twMessage_CreateFromStream twMessage_CreateFromStream 
+#define s_twMessage_Delete twMessage_Delete 
+#define s_twMessage_Send twMessage_Send 
+#define s_twMessage_SetBody twMessage_SetBody 
+#define s_twRequestBody_Create twRequestBody_Create 
+#define s_twRequestBody_CreateFromStream twRequestBody_CreateFromStream 
+#define s_twRequestBody_Delete twRequestBody_Delete 
+#define s_twRequestBody_SetParams twRequestBody_SetParams 
+#define s_twRequestBody_SetEntity twRequestBody_SetEntity 
+#define s_twRequestBody_SetCharacteristic twRequestBody_SetCharacteristic
+#define s_twRequestBody_AddHeader twRequestBody_AddHeader 
+#define s_twRequestBody_ToStream twRequestBody_ToStream 
+#define s_twResponseBody_Create twResponseBody_Create 
+#define s_twResponseBody_CreateFromStream twResponseBody_CreateFromStream 
+#define s_twResponseBody_Delete twResponseBody_Delete 
+#define s_twResponseBody_SetContent twResponseBody_SetContent 
+#define s_twResponseBody_SetReason twResponseBody_SetReason 
+#define s_twResponseBody_ToStream twResponseBody_ToStream 
+#define s_twAuthBody_Create twAuthBody_Create 
+#define s_twAuthBody_CreateFromStream twAuthBody_CreateFromStream 
+#define s_twAuthBody_Delete twAuthBody_Delete 
+#define s_twAuthBody_SetClaim twAuthBody_SetClaim 
+#define s_twAuthBody_ToStream twAuthBody_ToStream 
+#define s_twBindBody_Create twBindBody_Create 
+#define s_twBindBody_CreateFromStream twBindBody_CreateFromStream 
+#define s_twBindBody_Delete twBindBody_Delete 
+#define s_twBindBody_AddName twBindBody_AddName 
+#define s_twBindBody_ToStream twBindBody_ToStream 
+#define s_twMultipartBody_CreateFromStream twMultipartBody_CreateFromStream 
+#define s_twMultipartBody_Delete twMultipartBody_Delete 
+#define s_mulitpartMessageStoreEntry_Create mulitpartMessageStoreEntry_Create 
+#define s_mulitpartMessageStoreEntry_Delete mulitpartMessageStoreEntry_Delete 
+#define s_twMultipartMessageStore_Instance twMultipartMessageStore_Instance 
+#define s_twMultipartMessageStore_Delete twMultipartMessageStore_Delete 
+#define s_twMultipartMessageStore_AddMessage twMultipartMessageStore_AddMessage 
+#define s_twMultipartMessageStore_RemoveStaleMessages twMultipartMessageStore_RemoveStaleMessages 
+#define s_twCompressBytes twCompressBytes
+
+/* Messaging */
+#define s_twMessageHandler_Instance twMessageHandler_Instance 
+#define s_twMessageHandler_Delete twMessageHandler_Delete 
+#define s_twMessageHandler_CleanupOldMessages twMessageHandler_CleanupOldMessages 
+#define s_twMessageHandler_msgHandlerTask twMessageHandler_msgHandlerTask 
+#define s_twMessageHandler_RegisterConnectCallback twMessageHandler_RegisterConnectCallback 
+#define s_twMessageHandler_RegisterCloseCallback twMessageHandler_RegisterCloseCallback 
+#define s_twMessageHandler_RegisterPingCallback twMessageHandler_RegisterPingCallback 
+#define s_twMessageHandler_RegisterPongCallback twMessageHandler_RegisterPongCallback 
+#define s_twMessageHandler_RegisterDefaultRequestCallback twMessageHandler_RegisterDefaultRequestCallback 
+#define s_twMessageHandler_RegisterDumpIncomingMsgListCallback twMessageHandler_RegisterDumpIncomingMsgListCallback 
+#define s_twMessageHandler_RegisterRequestCallback twMessageHandler_RegisterRequestCallback 
+#define s_twMessageHandler_RegisterResponseCallback twMessageHandler_RegisterResponseCallback 
+#define s_twMessageHandler_GetCompletedResponseStruct twMessageHandler_GetCompletedResponseStruct 
+#define s_twMessageHandler_UnegisterRequestCallback twMessageHandler_UnegisterRequestCallback 
+#define s_twMessageHandler_UnegisterResponseCallback twMessageHandler_UnegisterResponseCallback 
+
+/* Subscribed Properties */
+#define s_twSubscribedPropsMgr_Initialize twSubscribedPropsMgr_Initialize 
+#define s_twSubscribedPropsMgr_Delete twSubscribedPropsMgr_Delete 
+#define s_twSubscribedPropsMgr_SetFolding twSubscribedPropsMgr_SetFolding 
+#define s_twSubscribedPropsMgr_PushSubscribedProperties twSubscribedPropsMgr_PushSubscribedProperties 
+#define s_twSubscribedPropsMgr_SetPropertyVTQ twSubscribedPropsMgr_SetPropertyVTQ
+#define s_twSubscribedPropsMgr_QueueValueForSending twSubscribedPropsMgr_QueueValueForSending
+#define s_twSubscribedProperty_Delete twSubscribedProperty_Delete
+#define s_twSubscribedProperty_ToStream twSubscribedProperty_ToStream
+
+/* Offline Message Store */
+#define s_twOfflineMsgStore_Initialize twOfflineMsgStore_Initialize
+#define s_twOfflineMsgStore_SetDir twOfflineMsgStore_SetDir
+#define s_twOfflineMsgStore_Delete twOfflineMsgStore_Delete
+#define s_twOfflineMsgStore_HandleRequest twOfflineMsgStore_HandleRequest
+
+/* Crypto */
+#define s_EncryptDES EncryptDES 
+#define s_DecryptDES DecryptDES 
+#define s_createDESKey createDESKey 
+#define s_MD4Hash MD4Hash 
+
+/* twList */
+#define s_twList_Create twList_Create 
+#define s_twList_CreateSearchable twList_CreateSearchable
+#define s_twList_Delete twList_Delete
+#define s_twList_Clear twList_Clear 
+#define s_twList_Add twList_Add 
+#define s_twList_Remove twList_Remove 
+#define s_twList_Next twList_Next 
+#define s_twList_GetByIndex twList_GetByIndex 
+#define s_twList_GetCount twList_GetCount 
+#define s_twList_ReplaceValue twList_ReplaceValue 
+
+/* twMap */
+#define s_twMap_Add twMap_Add
+#define s_twMap_Remove twMap_Remove
+
+/* twDict */
+#define s_twDict_Add twDict_Add
+
+/* String Utils */
+#define s_lowercase lowercase 
+#define s_uppercase uppercase 
+#define s_duplicateString duplicateString 
+
+/* twProxy */
+/*#define s_connectToProxy connectToProxy */
+#define s_twSocket_Write twSocket_Write
+#define s_twSocket_WaitFor twSocket_WaitFor
+#define s_twSocket_Read twSocket_Read
+
+/* Logger */
+#define s_twLogger_Instance twLogger_Instance 
+#define s_twLogger_Delete twLogger_Delete 
+#define s_twLogger_SetLevel twLogger_SetLevel 
+#define s_twLogger_SetFunction twLogger_SetFunction 
+#define s_twLogger_SetIsVerbose twLogger_SetIsVerbose 
+#define s_twLog twLog 
+#define s_twLogHexString twLogHexString 
+#define s_twLogMessage twLogMessage 
+#define s_twCodeToString twCodeToString 
+#define s_twEntityToString twEntityToString 
+#define s_twCharacteristicToString twCharacteristicToString 
+
+/* NTLM */
+/*#define s_NTLM_connectToProxy NTLM_connectToProxy */
+
+/* twNTLM */
+#define s_NTLM_parseType2Msg NTLM_parseType2Msg
+#define s_GenerateType3Msg GenerateType3Msg
+#define s_GenerateType1Msg GenerateType1Msg
+#define s_NTLM_sendType1Msg NTLM_sendType1Msg
+
+/* Tasker */
+#ifdef ENABLE_TASKER
+#define s_twTasker_Initialize twTasker_Initialize 
+    #define s_twTasker_CreateTask twTasker_CreateTask 
+    #define s_twTasker_RemoveTask twTasker_RemoveTask 
+#endif
+
+/* Websocket */
+#define s_twWs_Create twWs_Create 
+#define s_twWs_Delete twWs_Delete 
+#define s_twWs_Connect twWs_Connect 
+#define s_twWs_Disconnect twWs_Disconnect 
+#define s_twWs_IsConnected twWs_IsConnected 
+#define s_twWs_RegisterConnectCallback twWs_RegisterConnectCallback 
+#define s_twWs_RegisterCloseCallback twWs_RegisterCloseCallback 
+#define s_twWs_RegisterBinaryMessageCallback twWs_RegisterBinaryMessageCallback 
+#define s_twWs_RegisterTextMessageCallback twWs_RegisterTextMessageCallback 
+#define s_twWs_RegisterPingCallback twWs_RegisterPingCallback 
+#define s_twWs_RegisterPongCallback twWs_RegisterPongCallback 
+#define s_twWs_Receive twWs_Receive 
+#define s_twWs_SendMessage twWs_SendMessage 
+#define s_twWs_SendPing twWs_SendPing 
+#define s_twWs_SendPong twWs_SendPong 
+#define s_twWs_SendDataFrame twWs_SendDataFrame
+
+/* TLS Client */
+#define s_twTlsClient_UseCertificateChainFile twTlsClient_UseCertificateChainFile
+#define s_twTlsClient_SetClientCaList twTlsClient_SetClientCaList
+#define s_twTlsClient_UsePrivateKeyFile twTlsClient_UsePrivateKeyFile
+#define s_twTlsClient_Read twTlsClient_Read
+#define s_twTlsClient_Write twTlsClient_Write
+#define s_twTlsClient_Reconnect twTlsClient_Reconnect
+
+/* cJSON */
+#define s_cJSON_Delete cJSON_Delete
+
+/* Mutexes */
+#define s_twMutex_Lock twMutex_Lock
+#define s_twMutex_Unlock twMutex_Unlock
+#define s_twMutex_Create twMutex_Create
+
+/* file transfer */
+#define s_twDirectory_FileExists		twDirectory_FileExists
+#define s_twDirectory_GetFileInfo		twDirectory_GetFileInfo
+#define s_twDirectory_GetLastError		twDirectory_GetLastError
+#define s_twFile_Create					twFile_Create
+#define s_twFileManager_CloseFile		twFileManager_CloseFile
+#define s_twFileManager_GetOpenFile		twFileManager_GetOpenFile
+#define s_twFileManager_GetRealPath		twFileManager_GetRealPath
+#define s_twFile_Delete					twFile_Delete
+#define s_twFile_FOpen					twFile_FOpen
+#define s_twFileManager_MakeFileCallback twFileManager_MakeFileCallback
+#define s_twDirectory_CreateDirectory   twDirectory_CreateDirectory
+#define s_twDirectory_CreateFile        twDirectory_CreateFile
+#define s_twDirectory_DeleteFile        twDirectory_DeleteFile
+#define s_listDirsInInfoTable			listDirsInInfoTable
+
+/* base64_encode */
+#define s_base64_encode base64_encode
+#endif /* TW_C_SDK_TWSTUBSOFF_H */

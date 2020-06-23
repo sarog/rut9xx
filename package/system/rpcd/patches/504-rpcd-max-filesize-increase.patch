@@ -1,0 +1,10 @@
+--- a/file.c
++++ b/file.c
+@@ -37,7 +37,7 @@
+ #define RPC_FILE_MIN_SIZE		(128)
+
+ /* limit of regular files and command output data */
+-#define RPC_FILE_MAX_SIZE		(4096 * 64)
++#define RPC_FILE_MAX_SIZE		(4096 * 64 * 96)
+ //#define RPC_FILE_MAX_RUNTIME	(3 * 1000)
+ #define RPC_FILE_MAX_RUNTIME	(9 * 1000)

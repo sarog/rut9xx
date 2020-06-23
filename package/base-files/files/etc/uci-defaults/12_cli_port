@@ -1,0 +1,10 @@
+#!/bin/sh
+cli_port=`uci get -q cli.status.port`
+old_port=`echo $cli_port | grep "-"`
+
+if [ -z "$old_port" ]; then
+	uci set cli.status.port="4200-4220"
+	uci commit cli
+fi
+
+exit 0

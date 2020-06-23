@@ -1,0 +1,121 @@
+Index: quectel-CM/QMIThread.h
+===================================================================
+--- quectel-CM.orig/QMIThread.h
++++ quectel-CM/QMIThread.h
+@@ -105,6 +105,7 @@ typedef struct __PROFILE {
+     const char *user;
+     const char *password;
+     const char *pincode;
++    const char *config;
+     int auth;
+     int pdp;
+     int IsDualIPSupported;
+Index: quectel-CM/udhcpc.c
+===================================================================
+--- quectel-CM.orig/udhcpc.c
++++ quectel-CM/udhcpc.c
+@@ -104,14 +104,15 @@ void udhcpc_start(PROFILE_T *profile) {
+     return;
+ #endif
+ 
+-    if (strcmp(ifname, profile->usbnet_adapter)) {
+-        snprintf(shell_cmd, sizeof(shell_cmd) - 1, "ifconfig %s up", profile->usbnet_adapter);
++    if(access("/lib/netifd/mobile.script", X_OK) || !profile->config ){
++       if (strcmp(ifname, profile->usbnet_adapter)) {
++           snprintf(shell_cmd, sizeof(shell_cmd) - 1, "ifconfig %s up", profile->usbnet_adapter);
++           ql_system(shell_cmd);
++       }
++        snprintf(shell_cmd, sizeof(shell_cmd) - 1, "ifconfig %s up", ifname);
+         ql_system(shell_cmd);
+     }
+ 
+-    snprintf(shell_cmd, sizeof(shell_cmd) - 1, "ifconfig %s up", ifname);
+-    ql_system(shell_cmd);
+-
+ #if 1 //for bridge mode, only one public IP, so donot run udhcpc to obtain
+ {
+     const char *BRIDGE_MODE_FILE = "/sys/module/GobiNet/parameters/bridge_mode";
+@@ -132,6 +133,8 @@ void udhcpc_start(PROFILE_T *profile) {
+             if(bridge_mode[0] != '0') {
+                 snprintf(shell_cmd, sizeof(shell_cmd), "echo 0x%08x > %s", profile->ipv4.Address, BRIDGE_IPV4_FILE);
+                 ql_system(shell_cmd);
++                snprintf(shell_cmd, sizeof(shell_cmd) - 1, "ifconfig %s up", ifname);
++                ql_system(shell_cmd);
+                 return;
+             }
+         }
+@@ -209,16 +212,20 @@ void udhcpc_start(PROFILE_T *profile) {
+             if (access("/usr/share/udhcpc/default.script", X_OK)) {
+                 dbg_time("Fail to access /usr/share/udhcpc/default.script, errno: %d (%s)", errno, strerror(errno));
+             }
+-
+-            //-f,--foreground    Run in foreground
+-            //-b,--background    Background if lease is not obtained
+-            //-n,--now        Exit if lease is not obtained
+-            //-q,--quit        Exit after obtaining lease
+-            //-t,--retries N        Send up to N discover packets (default 3)
+-            snprintf(udhcpc_cmd, sizeof(udhcpc_cmd), "busybox udhcpc -f -n -q -t 5 -i %s", ifname);
++            else if(!access("/lib/netifd/mobile.script", X_OK) && profile->config != NULL ){
++                snprintf(udhcpc_cmd, sizeof(udhcpc_cmd), "/lib/netifd/mobile.script up %s %s", ifname, profile->config);
++            }
++            else{
++               //-f,--foreground    Run in foreground
++               //-b,--background    Background if lease is not obtained
++               //-n,--now        Exit if lease is not obtained
++               //-q,--quit        Exit after obtaining lease
++               //-t,--retries N        Send up to N discover packets (default 3)
++               snprintf(udhcpc_cmd, sizeof(udhcpc_cmd), "busybox udhcpc -f -n -q -t 5 -i %s", ifname);
++            }
+ #endif
+ 
+-#if 1 //for OpenWrt
++#if 0 //for OpenWrt
+             if (!access("/lib/netifd/dhcp.script", X_OK) && !access("/sbin/ifup", X_OK) && !access("/sbin/ifstatus", X_OK)) {
+                 dbg_time("you are use OpenWrt?");
+                 dbg_time("should not calling udhcpc manually?");
+@@ -276,6 +283,12 @@ void udhcpc_stop(PROFILE_T *profile) {
+         ifname = profile->qmapnet_adapter;
+     }
+ 
++    if(!access("/lib/netifd/mobile.script", X_OK) && profile->config != NULL ){
++        snprintf(shell_cmd, sizeof(shell_cmd) - 1, "/lib/netifd/mobile.script down %s %s", ifname, profile->config);
++        ql_system(shell_cmd);
++        return;
++    }
++
+ #ifdef ANDROID
+     if(!access("/system/bin/netcfg", F_OK)) {
+         snprintf(shell_cmd, sizeof(shell_cmd) - 1, "/system/bin/netcfg %s down", ifname);
+Index: quectel-CM/main.c
+===================================================================
+--- quectel-CM.orig/main.c
++++ quectel-CM/main.c
+@@ -654,6 +654,11 @@ int main(int argc, char *argv[])
+                 profile.IsDualIPSupported |= (1 << IpFamilyV6); //support ipv4&ipv6
+             break;
+ 
++            case 'c':
++                if (has_more_argv())
++                    profile.config = argv[opt++];
++            break;
++
+             default:
+                 return usage(argv[0]);
+             break;
+@@ -661,7 +666,7 @@ int main(int argc, char *argv[])
+     }
+ 
+     dbg_time("WCDMA&LTE_QConnectManager_Linux&Android_V1.1.38");
+-    dbg_time("%s profile[%d] = %s/%s/%s/%d, pincode = %s", argv[0], profile.pdp, profile.apn, profile.user, profile.password, profile.auth, profile.pincode);
++    dbg_time("%s profile[%d] = %s/%s/%s/%d, pincode = %s, config = %s", argv[0], profile.pdp, profile.apn, profile.user, profile.password, profile.auth, profile.pincode, profile.config);
+ 
+     signal(SIGUSR1, ql_sigaction);
+     signal(SIGUSR2, ql_sigaction);
+@@ -991,6 +996,7 @@ __main_loop:
+                 }
+             }
+         }
++	fflush(stdout);
+     }
+ 
+ __main_quit:

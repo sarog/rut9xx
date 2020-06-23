@@ -1,0 +1,6 @@
+#!/bin/sh
+uci batch <<-EOF
+	set luci.languages.tr=Turkish
+        commit luci
+EOF
+

@@ -1,0 +1,240 @@
+<%
+local sys = require "luci.sys"
+local util = require "luci.util"
+
+local gps = util.trim(sys.exec("uci get -q hwinfo.hwinfo.gps")) or "0"
+local in_out = util.trim(sys.exec("uci get -q hwinfo.hwinfo.in_out")) or "0"
+local is_io = util.trim(sys.exec("uci get -q hwinfo.hwinfo.4pin_io")) or "0"
+local rs485 = util.trim(sys.exec("uci get -q hwinfo.hwinfo.rs485")) or "0"
+local rs232 = util.trim(sys.exec("uci get -q hwinfo.hwinfo.rs232")) or "0"
+local snmp = util.trim(sys.exec("opkg list-installed | grep tlt_custom_pkg_snmpd | wc -l"))
+local show =  luci.tools.status.show_mobile()
+
+%>
+<script type="text/javascript">
+	function addOption(val, inn){
+		var select = document.getElementById('_newinput.eventMark');
+		var opt = document.createElement('option');
+		opt.value = val;
+		opt.innerHTML = inn;
+		select.appendChild(opt);
+	}
+
+	function removeAll(select){
+		if (select == null) return;
+		if (select.options == null) return;
+		while (select.options.length > 0){
+			select.remove(0);
+		}
+	}
+
+	function event_mark(){
+		var show = <%=show and "true" or "false"%>;
+		removeAll(document.getElementById('_newinput.eventMark'));
+		addOption('all', '<%=translate("All")%>');
+		if(document.getElementById('_newinput.event').value == "Config"){
+			addOption('restore point', '<%=translate("Restore point")%>');
+			addOption('open vpn', '<%=translate("OpenVPN")%>');
+			if (show )addOption('sms', '<%=translate("SMS")%>');
+			addOption('events reporting', '<%=translate("Events reporting")%>');
+			<% if tonumber(gps)== 1 then %>
+				if (show ) addOption('gps', '<%=translate("GPS")%>');
+			<% end %>
+			addOption('periodic reboot', '<%=translate("Periodic reboot")%>');
+			<% if tonumber(snmp) > 0 then %>
+				addOption('snmp', '<%=translate("SNMP")%>');
+			<% end %>
+			addOption('ping reboot', '<%=translate("Ping reboot")%>');
+			addOption('auto update', '<%=translate("Auto update")%>');
+			addOption('site blocking', '<%=translate("Site blocking")%>');
+			addOption('pptp', '<%=translate("PPTP")%>');
+//			addOption('administration', '<%=translate("Administration")%>');
+			addOption('hotspot', '<%=translate("Hotspot")%>');
+			<% if tonumber(in_out)== 1 or tonumber(is_io) == 1 then %>
+				addOption('input/output', '<%=translate("Input/output")%>');
+			<% end %>
+			addOption('content blocer', '<%=translate("Content blocker")%>');
+			addOption('login page', '<%=translate("Login page")%>');
+			if (show ) addOption('data limit', '<%=translate("Data limit")%>');
+			addOption('language', '<%=translate("Language")%>');
+			addOption('profile', '<%=translate("Profile")%>');
+			addOption('ddns', '<%=translate("DDNS")%>');
+			if (show ) addOption('mobile traffic', '<%=translate("Mobile traffic")%>');
+			addOption('ipsec', '<%=translate("IPsec")%>');
+			addOption('access control', '<%=translate("Access control")%>');
+			addOption('dhcp', '<%=translate("DHCP")%>');
+			addOption('multiwan', '<%=translate("Multiwan")%>');
+			<% if tonumber(rs232)== 1 or tonumber(rs485)== 1 then %>
+				addOption('rs232/rs485', '<%=translate("RS232/RS485")%>');
+			<% end %>
+			addOption('vrrp', '<%=translate("VRRP")%>');
+			addOption('ssh', '<%=translate("SSH")%>');
+			addOption('network', '<%=translate("Network")%>');
+			if (show ) addOption('sim switch', '<%=translate("SIM switch")%>');
+			addOption('wireless', '<%=translate("Wireless")%>');
+			addOption('firewall', '<%=translate("Firewall")%>');
+			addOption('ntp', '<%=translate("NTP")%>');
+			if (show ) addOption('mobile', '<%=translate("Mobile")%>');
+			addOption('l2tp', '<%=translate("L2TP")%>');
+			addOption('other', '<%=translate("Other")%>');
+		}else if(document.getElementById('_newinput.event').value == "DHCP"){
+			addOption('wifi', '<%=translate("Connected from WiFi")%>');
+			addOption('lan', '<%=translate("Connected from LAN")%>');
+		}else if(document.getElementById('_newinput.event').value == "GPS"){
+			addOption('left geofence', '<%=translate("Left geofence")%>');
+			addOption('entered geofence', '<%=translate("Entered geofence")%>');
+//		}else if(document.getElementById('_newinput.event').value == "FW"){
+//			addOption('file', '<%=translate("From file")%>');
+//			addOption('server', '<%=translate("From server")%>');
+		}else if(document.getElementById('_newinput.event').value == "Mobile Data"){
+			addOption(' connected', '<%=translate("Connected")%>');
+			addOption('disconnected', '<%=translate("Disconnected")%>');
+		}else if(document.getElementById('_newinput.event').value == "Reboot"){
+			addOption('Boot start up, reason unknown', '<%=translate("After unexpected shut down")%>');
+			addOption('fw upgrade', '<%=translate("After FW upgrade")%>');
+			addOption('web ui', '<%=translate("From Web UI")%>');
+			if (show ) addOption('sms', '<%=translate("From SMS")%>');
+			if (show ) addOption('call', '<%=translate("From Call")%>');
+			<% if tonumber(in_out)== 1  or tonumber(is_io) == 1 then %>
+				addOption('input/output', '<%=translate("From input/output")%>');
+			<% end %>
+			addOption('ping reboot', '<%=translate("From ping reboot")%>');
+			addOption('periodic reboot', '<%=translate("From periodic reboot")%>');
+			addOption('from button', '<%=translate("From button")%>');
+// 			addOption('factory reset button', '<%=translate("After factory reset button")%>');
+// 			addOption('restore', '<%=translate("After restore")%>');
+		}else if(document.getElementById('_newinput.event').value == "SMS"){
+			//if (show ) addOption('send', '<%=translate("SMS sent")%>');
+			if (show ) addOption('received from', '<%=translate("SMS received")%>');
+		}else if(document.getElementById('_newinput.event').value == "SSH"){
+			addOption('succeeded', '<%=translate("Successful authentication")%>');
+			addOption('bad', '<%=translate("Unsuccessful authentication")%>');
+		}else if(document.getElementById('_newinput.event').value == "Web UI"){
+			addOption('was successful', '<%=translate("Successful authentication")%>');
+			addOption('not successful', '<%=translate("Unsuccessful authentication")%>');
+		}else if(document.getElementById('_newinput.event').value == "WiFi"){
+			addOption('connected', '<%=translate("Connected")%>');
+			addOption('disconnected', '<%=translate("Disconnected")%>');
+		}else if(document.getElementById('_newinput.event').value == "SIM switch" && show){
+			addOption('SIM 1 to SIM 2', '<%=translate("From SIM 1 to SIM 2")%>');
+			addOption('SIM 2 to SIM 1', '<%=translate("From SIM 2 to SIM 1")%>');
+		}else if(document.getElementById('_newinput.event').value == "Signal strength" && show){
+			addOption('Signal strength dropped below -113 dBm', '<%=translate("-121dBm -113dBm")%>');
+			addOption('Signal strength dropped below -98 dBm', '<%=translate("-113dBm -98dBm")%>');
+			addOption('Signal strength dropped below -93 dBm', '<%=translate("-98dBm -93dBm")%>');
+			addOption('Signal strength dropped below -75 dBm', '<%=translate("-93dBm -75dBm")%>');
+			addOption('Signal strength dropped below -60 dBm', '<%=translate("-75dBm -60dBm")%>');
+			addOption('Signal strength dropped below -50 dBm', '<%=translate("-60dBm -50dBm")%>');
+		}else if(document.getElementById('_newinput.event').value == "Port"){
+			addOption('unplugged', '<%=translate("Unplugged")%>');
+			addOption('plugged in', '<%=translate("Plugged in")%>');
+		}else if(document.getElementById('_newinput.event').value == "Backup"){
+			addOption('main', '<%=translate("Switched to main")%>');
+			addOption('backup', '<%=translate("Switched to failover")%>');
+		}else if(document.getElementById('_newinput.event').value == "Restore Point"){
+			addOption('download', '<%=translate("Store")%>');
+			addOption('restore', '<%=translate("Restore")%>');
+		}
+	}
+</script>
+<div class="cbi-section-create cbi-tblsection-create">
+	<legend><%=translate("Events Reporting Configuration")%></legend>
+	<br />
+	<table class="cbi-section-table" style="width:100%;">
+		<tr class="cbi-section-table-descr">
+			<th class="cbi-section-table-cell"><span onmouseover="ShowHint(this, '<%=translate('Event type for which the rule is applied')%>')" onmouseout="HideHint(this)"><%=translate("Event type")%></span></th>
+			<th class="cbi-section-table-cell"><span onmouseover="ShowHint(this, '<%=translate('Event subtype for which the rule is applied')%>')" onmouseout="HideHint(this)"><%=translate("Event subtype")%></span></th>
+			<th class="cbi-section-table-cell"><span onmouseover="ShowHint(this, '<%=translate('Action to perform when an event occurs')%>')" onmouseout="HideHint(this)"><%=translate("Action")%></span></th>
+			<th class="cbi-section-table-cell"></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td class="cbi-section-table-cell" style="width:110px">
+				<select class="cbi-input-select" id="_newinput.event" name="_newinput.event" onchange="event_mark()" style="float:left;">
+					<option value="Config"><%=translate("Config change")%></option>
+					<option value="DHCP"><%=translate("New DHCP client")%></option>
+					<option value="Reboot"><%=translate("Reboot")%></option>
+					<option value="SSH"><%=translate("SSH")%></option>
+					<option value="Web UI"><%=translate("Web UI")%></option>
+					<option value="WiFi"><%=translate("New WiFi client")%></option>
+					<option value="Port"><%=translate("LAN port state")%></option>
+					<option value="Backup"><%=translate("WAN Failover")%></option>
+					<option value="Restore Point"><%=translate("Restore Point")%></option>
+					<% if show then %>
+						<option value="Mobile Data"><%=translate("Mobile data")%></option>
+						<option value="SMS"><%=translate("SMS")%></option>
+						<option value="SIM switch"><%=translate("SIM switch")%></option>
+						<option value="Signal strength"><%=translate("Signal strength")%></option>
+					<% end %>
+					<% if tonumber(gps)== 1 then %>
+						<option value="GPS" id="GPS"><%=translate("GPS")%></option>
+					<% end %>
+				</select>
+			</td>
+			<td class="cbi-section-table-cell" style="width:110px">
+				<select class="cbi-input-select" id="_newinput.eventMark" name="_newinput.eventMark" style="float:left;">
+					<option value="all" id="all"><%=translate("All")%></option>
+					<option value="restore point" id="restore_point"><%=translate("Restore point")%></option>
+					<option value="open vpn" id="open_vpn"><%=translate("OpenVPN")%></option>
+					<% if show then %>
+						<option value="sms" id="sms"><%=translate("SMS")%></option>
+						<option value="data limit" id="data_limit"><%=translate("Data limit")%></option>
+						<option value="mobile traffic" id="mobile_traffic"><%=translate("Mobile traffic")%></option>
+						<option value="multiwan" id="multiwan"><%=translate("Multiwan")%></option>
+						<option value="sim switch" id="sim_switch"><%=translate("SIM switch")%></option>
+						<option value="mobile" id="mobile"><%=translate("Mobile")%></option>
+						<% if tonumber(gps)== 1 then %>
+							<option value="gps" id="gps"><%=translate("GPS")%></option>
+						<% end
+					end %>
+					<% if tonumber(gps)== 1 then %>
+						<option value="left geofence" id="left_geofence"><%=translate("Left geofence")%></option>
+						<option value="entered geofence" id="entered_geofence"><%=translate("Entered geofence")%></option>
+					<% end %>
+					<option value="events reporting" id="events_reporting"><%=translate("Events reporting")%></option>
+					<option value="periodic reboot" id="periodic_reboot"><%=translate("Periodic reboot")%></option>
+					<% if tonumber(snmp) > 0 then %>
+						<option value="snmp" id="snmp"><%=translate("SNMP")%></option>
+					<% end %>
+					<option value="ping reboot" id="ping_reboot"><%=translate("Ping reboot")%></option>
+					<option value="auto update" id="auto_update"><%=translate("Auto update")%></option>
+					<option value="site blocking" id="site_blocking"><%=translate("Site blocking")%></option>
+					<option value="pptp" id="pptp"><%=translate("PPTP")%></option>
+					<option value="hotspot" id="hotspot"><%=translate("Hotspot")%></option>
+					<% if tonumber(in_out)== 1 or tonumber(is_io) == 1 then %>
+						<option value="input/output" id="input/output"><%=translate("Input/output")%></option>
+					<% end %>
+					<option value="content blocker" id="content_blocker"><%=translate("Content blocker")%></option>
+					<option value="login page" id="login_page"><%=translate("Login page")%></option>
+					<option value="language" id="language"><%=translate("Language")%></option>
+					<option value="profile" id="profile"><%=translate("Profile")%></option>
+					<option value="ddns" id="ddns"><%=translate("DDNS")%></option>
+					<option value="ipsec" id="ipsec"><%=translate("IPsec")%></option>
+					<option value="access control" id="access_control"><%=translate("Access control")%></option>
+					<option value="dhcp" id="dhcp"><%=translate("DHCP")%></option>
+					<% if tonumber(rs232)== 1 or tonumber(rs485)== 1 then %>
+						<option value="rs232/rs485" id="rs232/rs485"><%=translate("RS232/RS485")%></option>
+					<% end %>
+					<option value="vrrp" id="vrrp"><%=translate("VRRP")%></option>
+					<option value="ssh" id="ssh"><%=translate("SSH")%></option>
+					<option value="network" id="network"><%=translate("Network")%></option>
+					<option value="wireless" id="wireless"><%=translate("Wireless")%></option>
+					<option value="firewall" id="firewall"><%=translate("Firewall")%></option>
+					<option value="ntp" id="ntp"><%=translate("NTP")%></option>
+					<option value="l2tp" id="l2tp"><%=translate("L2TP")%></option>
+					<option value="other" id="other"><%=translate("Other")%></option>
+				</select>
+			</td>
+			<td class="cbi-section-table-cell" style="width:110px">
+				<select class="cbi-input-select" id="_newinput.action" name="_newinput.action" style="float:left;">
+					<% if show then %>
+						<option value="sendSMS"><%=translate("Send SMS")%></option>
+					<% end %>
+					<option value="sendEmail"><%=translate("Send email")%></option>
+				</select>
+			</td>
+			<td class="cbi-section-table-cell">
+				<input type="submit" class="cbi-button cbi-button-add" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" value="<%:Add%>" />
+			</td>
+		</tr>
+	</table>
+</div>

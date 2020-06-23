@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+
+. /lib/teltonika-functions.sh
+
+START=97
+STOP=19
+
+ENABLED="uci get reregister.reregister.enabled"
+
+start()
+{
+	if [ "`$ENABLED`" -eq 1 ]; then
+		/sbin/reregister.sh &
+	fi
+}
+ 
+stop()
+{
+	pid_rereg=`pidof reregister.sh`
+	if [ -n "$pid_rereg" ]; then
+		kill -9 $pid_rereg
+	fi
+}

@@ -1,0 +1,1297 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: index.htm 8408 2012-04-02 22:50:26Z jow $
+
+-%>
+
+<%
+	require "luci.fs"
+	require "luci.tools.status"
+	luci.util = require "luci.util"
+	local ds = require "luci.dispatcher"
+    local uci = require "uci".cursor()
+
+	local has_wired = luci.fs.access("/tmp/net_scan_wan.txt")
+	local has_lan = luci.fs.access("/tmp/net_scan_lan.txt")
+	local has_wifi = luci.fs.access("/tmp/net_scan_wifi.txt")
+	local has_dhcp = luci.fs.access("/etc/config/dhcp")
+	local bridge_on = luci.util.trim(luci.sys.exec("uci -q get network.ppp.bridge")) or ""
+	local ifname = luci.util.trim(luci.sys.exec("uci -q get network.wan.ifname")) or ""
+	local ifname_ppp= luci.util.trim(luci.sys.exec("uci -q get network.ppp.ifname")) or ""
+	
+	local wan_operstate =luci.util.trim(luci.sys.exec("cat /sys/class/net/\"".. ifname .."\"/operstate")) or ""
+	local ppp_operstate = luci.util.trim(luci.sys.exec("cat /sys/class/net/\"".. ifname_ppp .."\"/operstate")) or ""
+	
+	local mobile_connected = luci.util.trim(luci.sys.exec("gsmctl -j")) or ""
+	local backupwan = luci.util.trim(luci.sys.exec("uci -q get multiwan.config.enabled")) or ""
+	local modelOverride = brand(11)--"Teltonika RUT9XX
+	local product = luci.util.trim(luci.sys.exec("uci -q get hwinfo.hwinfo.mnf_code")) or "-"
+	local lan_ipaddr = luci.util.trim(luci.sys.exec("uci -q get network.lan.ipaddr")) or "-"
+	local wan_backup_ip = luci.util.trim(luci.sys.exec("uci -q get multiwan.wan.icmp_hosts")) or "?"
+	local mob_backup_ip = luci.util.trim(luci.sys.exec("uci -q get multiwan.wan2.icmp_hosts")) or "?"
+
+	local ppp_method = uci:get("network", "ppp", "method") or nil
+
+	local wan_mac = ""
+	local wan_ip = ""
+	local wan_ppp_mac = ""
+	local wan_ppp_ip = ""
+
+	-----------------------
+	--MAIN WAN INFORMACIJA
+	-----------------------
+      
+	if wan_operstate == "up" or wan_operstate == "unknown" then
+		--Get IP address
+		if ppp_method and ppp_method == "pbridge" then
+			wan_ip = "Passthrough mode"
+		elseif ppp_method and ppp_method == "bridge" then
+			wan_ip = "Bridge mode"
+		else
+			wan_ip = luci.util.trim(luci.sys.exec("/sbin/ifconfig \"".. ifname .."\" | grep 'inet addr:' | cut -d: -f2 | awk '{print $1}'")) or "-"
+		end
+		--Get MAC if it's not 3g-ppp
+		if ifname ~= "3g-ppp" then
+			wan_mac = luci.util.trim(luci.sys.exec("ifconfig \"".. ifname .."\" | grep HWaddr | awk -F ' ' '{print $5}'")) or "-"
+		end
+	end
+      
+	------------------------
+	--WAN BACKUP INFORMACIJA
+	------------------------
+	function GetSecondInterface()
+			local wan2_status = luci.util.trim(luci.sys.exec("uci -q get network.wan2.enabled")) or ""
+			local wan3_status = luci.util.trim(luci.sys.exec("uci -q get network.wan3.enabled")) or ""
+			local wan2_priority = luci.util.trim(luci.sys.exec("uci -q get multiwan.wan2.priority")) or 0
+			local wan3_priority = luci.util.trim(luci.sys.exec("uci -q get multiwan.wan3.priority")) or 0
+
+			local interface_name = "wan3"
+			if wan2_status ~= "0" and wan2_priority > wan3_priority then
+				interface_name = "wan2"
+			else
+				if wan3_status == "0" then
+					interface_name = "wan2"
+				end
+			end
+
+			var_ifname = luci.util.trim(luci.sys.exec("uci -q get network.\"".. interface_name .."\".ifname")) or ""
+			var_ipaddr = luci.util.trim(luci.sys.exec("ifconfig \"".. var_ifname .."\" | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'")) or ""
+			if var_ifname ~= "3g-ppp" then
+				var_macaddr = luci.util.trim(luci.sys.exec("ifconfig \"".. var_ifname .."\" | grep HWaddr | awk -F ' ' '{print $5}'")) or ""
+			end	
+			return 1, var_ipaddr, var_macaddr, var_ifname
+	end
+	if backupwan == "1" then
+		--Display only 2 WANS.
+		status, SecondWanIp, SecondWanMac, SecondWanIfname = GetSecondInterface()
+		if status == 1 then
+			wan_ppp_ip = SecondWanIp
+			if SecondWanMac then
+				wan_ppp_mac = SecondWanMac
+			end
+		end
+	end
+	----------------------------
+	--PRADIZA BACKUP WAN STATUSO
+	----------------------------
+	local ntm = require "luci.model.network".init()
+	local nw  = require "luci.model.network"
+	local backupwan = luci.util.trim(luci.sys.exec("uci -q get multiwan.config.enabled")) or ""
+	local dr4 = luci.sys.net.defaultroute()
+	local dr6 = luci.sys.net.defaultroute6()
+	local cpuload = luci.util.trim(luci.sys.exec("/sbin/cpu_usage_script.sh"))
+	local has_backupLink = luci.fs.access("/tmp/.mwan/cache")
+	local wan, wan6, lan
+	if has_backupLink then
+		activeConnection = "wan"
+		local cachefile = luci.fs.readfile("/tmp/.mwan/cache")
+		_, _, wan_fail_map = string.find(cachefile, "wan_fail_map=\"([^\"]*)\"")
+		if wan_fail_map == "wan[x]" then
+			activeConnection = "only_wan2"
+		elseif wan_fail_map == "wan2[x]" then
+			activeConnection = "only_wan"
+		elseif wan_fail_map == "wan[x]wan2[x]" then
+			activeConnection = nil
+		end
+	end
+	
+	product = string.sub(product, 0, 6)
+	if product == "RUT900" then
+		modelOverride = brand(12)--"Teltonika RUT900 3G"
+	elseif product == "RUT905" then
+		modelOverride = brand(13)--"Teltonika RUT905 3G"
+	elseif product == "RUT950" then
+		modelOverride = brand(14)--"Teltonika RUT950 LTE"
+	elseif product == "RUT955" then
+		modelOverride = brand(15)--"Teltonika RUT955 LTE"
+	elseif product == "RUT951" then
+		modelOverride = brand(16)--"Teltonika RUT951 LTE"
+	elseif product == "RUT956" then
+		modelOverride = brand(17)--"Teltonika RUT956 LTE"
+	else
+		modelOverride = "?"
+	end
+	
+	step = tonumber(luci.http.formvalue("step"))
+	local ntm = require "luci.model.network".init()
+	local scan = ""
+	function scan_all()
+		os.execute("/sbin/net_scan.sh all >/dev/null 2>/dev/null; echo $?>>/tmp/check_if_true.txt &")
+		while true do
+			local g = io.popen("cat /tmp/check_if_true.txt")
+			local code = g:read()
+			g:close()
+			if code == "0" then
+					status = "online"
+					os.execute("rm /tmp/check_if_true.txt ")
+					wan_topology()
+					lan_topology()
+					break
+			else
+					status = "offline"
+			end
+		end
+	end
+	
+	function scan_wan()
+		os.execute("/sbin/net_scan.sh wan >/dev/null 2>/dev/null; echo $?>>/tmp/check_if_true.txt &")
+		while true do
+			local gg = io.popen("cat /tmp/check_if_true.txt")
+			local codee = gg:read()
+			gg:close()
+			if codee == "0" then
+					status = "online"
+					os.execute("rm /tmp/check_if_true.txt ")
+					wan_topology()
+					break
+			else
+					status = "offline"
+			end
+		end
+	end
+	function wan_topology()
+		wan_f = io.popen('cat /tmp/net_scan_wan.txt')
+		wan_files = {}
+		wan_k = 0
+		wan_a = ""
+		for line in wan_f:lines() do
+				wan_k = wan_k + 1
+				wan_files[wan_k] = line
+				wan_a = wan_a .. " ,, ".. line
+				
+		end
+		wan_f:close()
+		return
+	end
+	function go_to_scan(lan, wan)
+		os.execute("rm /tmp/check_if_true.txt ")
+		if wan == "wan" and lan == "lan" then
+			os.execute("/sbin/net_scan.sh all >/dev/null 2>/dev/null; echo $?>>/tmp/check_if_true.txt")
+			scan = "all"
+		else
+			if lan == "lan" then
+				os.execute("/sbin/net_scan.sh lan >/dev/null 2>/dev/null; echo $?>>/tmp/check_if_true.txt &")
+				scan = "lan"
+			end
+			if wan == "wan" then
+				os.execute("/sbin/net_scan.sh wan >/dev/null 2>/dev/null; echo $?>>/tmp/check_if_true.txt &")
+				scan = "wan"
+			end
+		end
+		
+		local status = ""
+		while true do
+			local g = io.popen("cat /tmp/check_if_true.txt")
+			local code = g:read()
+			g:close()
+			if code == "0" then
+				status = "online"
+				os.execute("rm /tmp/check_if_true.txt ")
+				if scan == "all" then
+					lan_k, lan_a = lan_topology("lan")
+					wan_k, wan_a = lan_topology("wan")
+					break
+				else
+					lan_k, lan_a = lan_topology(scan)
+					break
+				end
+				
+			else
+				status = "offline"
+			end
+		end
+		if scan == "all" then
+			return status, lan_k, lan_a, wan_k, wan_a
+		else
+			return status, lan_k, lan_a
+		end
+	end
+	function scan_wifi()
+		os.execute("/sbin/net_scan.sh wifi >/dev/null 2>/dev/null; echo $?>>/tmp/check_if_true.txt &")
+		while true do
+			local wifi_file = io.popen("cat /tmp/check_if_true.txt")
+			local codeee = wifi_file:read()
+			wifi_file:close()
+			wifi_k = 0
+			wifi_a = ""
+			if codeee == "0" then
+					os.execute("rm /tmp/check_if_true.txt ")
+					local wifi_f = io.popen('cat /tmp/net_scan_wifi.txt')
+					local wifi_files = {}
+					for line in wifi_f:lines() do
+							wifi_k = wifi_k + 1
+							wifi_files[wifi_k] = line
+							wifi_a = wifi_a .. " ,, ".. line
+					end
+					wifi_f:close()
+					break
+			end
+		end
+		return wifi_k, wifi_a
+	end
+	
+	function get_gateway()
+		local f=io.open("/tmp/net_scan_wan_gw.txt","r")
+		gw_line = ""
+		if f~=nil then 
+			gw_line = f:read()
+			io.close(f) 
+		else 
+			gw_line = ""
+		end
+		return gw_line
+	end
+	function lan_topology(what_to_scan)
+		local lan_f = io.popen('cat /tmp/net_scan_' .. what_to_scan .. '.txt')
+		local lan_files = {}
+		local lan_k = 0
+		local lan_a = ""
+		for line in lan_f:lines() do
+				lan_k = lan_k + 1
+				lan_files[lan_k] = line
+				lan_a = lan_a .. " ,, ".. line
+		end
+		lan_f:close()
+		return lan_k, lan_a
+	end
+	function internet_connection(ifname_ping)
+		if ifname_ping == "wan" then
+			ifname_ping = ifname 
+		end
+		os.execute("rm -rf /tmp/internet_status.txt")
+		local s = io.popen("ping -c 1 -W 2 -w 2 -I \"".. ifname_ping .."\" 8.8.8.8; echo $?> /tmp/internet_status.txt")
+		s:close()
+		local g = io.popen("cat /tmp/internet_status.txt")
+		local code = g:read()
+		g:close()
+		os.execute("rm /tmp/internet_status.txt")
+		if code == "0" then
+				status = "online"
+		else
+				status = "offline"
+		end
+	end
+	
+step = tonumber(luci.http.formvalue("step"))
+
+if step == 6 then
+	gw_line = get_gateway()
+	rv = {
+		gateway = gw_line
+	}
+	luci.http.prepare_content("application/json")
+	luci.http.write_json(rv)
+	return
+end
+
+if step == 7 then
+	os.execute("/sbin/net_scan.sh clean >/dev/null 2>/dev/null")
+	rv = {
+		notfing = "1"
+	}
+	luci.http.prepare_content("application/json")
+	luci.http.write_json(rv)
+	return
+end
+if step == 8 then
+	wifi_a, wifi_k = scan_wifi()
+	rv = {
+		wifi_info = wifi_a,
+		wifi_index = wifi_k
+	}
+	luci.http.prepare_content("application/json")
+	luci.http.write_json(rv)
+	return
+end
+
+if step == 9 then
+	scan_wan = luci.http.formvalue("wan")
+	scan_lan = luci.http.formvalue("lan")
+	status, lan_k, lan_a, wan_k, wan_a = go_to_scan(scan_lan, scan_wan)
+	rv = {
+		internet_status = status,
+		lan_info = lan_a,
+		lan_index = lan_k,
+		wan_info = wan_a,
+		wan_index = wan_k
+	}
+	luci.http.prepare_content("application/json")
+	luci.http.write_json(rv)
+	return
+end
+
+-%>
+
+<%+header%>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+function start_scan(status){
+	var cb_wan = false;
+	var cb_lan = false;
+	loading(status);
+	if (status == "lan"){
+		cb_lan = true;
+	}
+	if (status == "wan"){
+		cb_wan = true;
+	}
+	if (status == "all"){
+		cb_lan = true;
+		cb_wan = true;
+	}
+	if (cb_wan != false || cb_lan != false) {
+		document.getElementById("lan_network").style.background ="#e6e6e6";
+		document.getElementById("wan_network").style.background ="#e6e6e6";
+		document.getElementById("all_network").style.background ="#e6e6e6";
+		document.getElementById("lan_network").disabled = true;
+		document.getElementById("wan_network").disabled = true;
+		document.getElementById("all_network").disabled = true;
+		document.getElementById("err_message_lan").style.display='none'
+		document.getElementById("err_message_wan").style.display='none'
+		
+		if (cb_lan == true){
+			cb_lan = "lan";
+			document.getElementById("lan_load").style.display="";
+			document.getElementById("topology-double-line-lan").style.display='';
+			document.getElementById("topology-double-line-lan").style.height="20px";
+			document.getElementById("topology-double-line-lan").style.marginBottom="0px";
+		}else{
+			cb_lan= ""
+		}
+		if (cb_wan == true){
+			document.getElementById("topology-double-line").style.height="20px";
+			document.getElementById("topology-double-line").style.marginBottom="0px";
+			cb_wan = "wan"
+			document.getElementById("wan_load").style.display="";
+		}else{
+			cb_wan= ""
+		}
+		XHR.get('<%=luci.dispatcher.build_url("admin", "status", "netinfo", "topology" )%>', { step: 9, wan: cb_wan, lan: cb_lan },
+		function(x, internet){
+			document.getElementById("lan_network").disabled = false;
+			if ('<%=ifname%>' !== "3g-ppp"){
+				document.getElementById("wan_network").disabled = false;
+				document.getElementById("all_network").disabled = false;
+			}
+			document.getElementById("lan_network").disabled = false;
+			document.getElementById("lan_network").style.background ="";
+			document.getElementById("wan_network").style.background ="";
+			document.getElementById("all_network").style.background ="";
+			if (internet.internet_status == "offline"){
+				document.getElementById("Loading").style.display='none';
+			}else {
+				if ( cb_lan == "lan"){
+					Lan_topology(internet.lan_info, internet.lan_index, "lan" );
+					document.getElementById("lan_load").style.display='none';
+					document.getElementById("Loading").style.display='none';
+				}
+				if ( cb_wan == "wan"){
+					if ( cb_lan == "lan"){
+						Lan_topology(internet.wan_info, internet.wan_index, "wan" );
+					}else{
+						Lan_topology(internet.lan_info, internet.lan_index, "wan" );
+					}
+					document.getElementById("wan_load").style.display='none';
+					document.getElementById("Loading").style.display='none';
+				}
+				finish_timer = true;
+				remove_files();
+			}
+		}
+		);
+	}
+}
+function default_gw(){
+	XHR.get('<%=luci.dispatcher.build_url("admin", "status", "netinfo", "topology" )%>', { step: 6 },
+	function(x, gw){
+		if (gw.gateway != "" ){
+			var gateway = "";
+			gateway = " " + gw.gateway;
+			text_style = text_format(gateway);
+			if (text_style !== "" || text_style !== null){
+				gw_style_element = "<div class=\"cbi-network-topology-box\" style=\"border-top:0px solid;padding-bottom:0px;\"><div class=\"cbi-network-topology-box-top\"></div><div style=\"text-align:center;\"><img src=\"<%=resource%>/icons/gateway.png\"/></div>" + text_style + "</div>";
+				document.getElementById("topology-gateway").innerHTML = gw_style_element;
+			}
+			text_style = "";
+		}
+	}
+	);
+}
+function remove_files(){
+	XHR.get('<%=luci.dispatcher.build_url("admin", "status", "netinfo", "topology" )%>', { step: 7 },
+	function(x, no){
+		if (no.notfing == "5" ){
+			console.log("");
+		}
+	}
+	);
+}
+function Wireless_clients(){
+	XHR.get('<%=luci.dispatcher.build_url("admin", "status", "netinfo", "topology" )%>', { step: 8 },
+	function(x, wifi){
+		if (wifi.wifi_info != "" ){
+			Lan_topology(wifi.wifi_index, wifi.wifi_info, "lan", "wifi");
+		}
+	}
+	);
+}
+var wan_line = "";
+var wan_line_2_4 = "";
+function display_wan_table(){
+	var show_hide = document.getElementById('hideWAN').value
+	var elem = document.getElementById("hideWAN");
+	if (show_hide == "-"){
+		if ('<%=backupwan%>' == "1"){
+			document.getElementsByName("network-backup-top-line")[0].style.display="block";
+		}
+		if (wan_double_line == 1){
+			document.getElementById("topology-double-line").style.height="20px";
+			document.getElementById("topology-double-line").style.marginBottom="0px";
+		}
+		document.getElementById('wan_topology').style.display='none';
+		document.getElementById('topology-gateway').style.display='none';
+		if (wan_line == "true"){
+			document.getElementById('Connected_via').style.display='none';
+		}
+		if (wan_line_2_4 == "true"){
+			document.getElementById("topology-double-line").style.borderRightWidth='1px';
+		}
+		elem.value = "+";
+	}else if(show_hide == "+"){
+		
+		if (wan_double_line == 1){
+			document.getElementById("topology-double-line").style.height="40px";
+			document.getElementById("topology-double-line").style.marginBottom="-23px";
+		}
+		if ('<%=backupwan%>' == "1"){
+			if (table_rows % 2 != 0){
+				document.getElementsByName("network-backup-top-line")[0].style.display="none";
+			}else{
+				document.getElementsByName("network-backup-top-line")[0].style.display="block";
+			}
+		}
+		document.getElementById('wan_topology').style.display='block';
+		document.getElementById('topology-gateway').style.display='block';
+		if (wan_line == "true"){
+			document.getElementById('Connected_via').style.display='block';
+		}
+		if (wan_line_2_4 == "true"){
+			document.getElementById("topology-double-line").style.borderRightWidth='0px';
+		}
+		elem.value = "-";
+	}
+}
+function display_lan_table(){
+	var lan_but_val = document.getElementById('hideLAN').value
+	var lan_but = document.getElementById("hideLAN");
+	if (lan_but_val == "-"){
+		document.getElementById('lan_rezult').style.display='none';
+		document.getElementById('topology-double-line-lan').style.display='none';
+		lan_but.value = "+";
+	}else if(lan_but_val == "+"){
+		document.getElementById('lan_rezult').style.display='block';
+		document.getElementById('topology-double-line-lan').style.display='inline';
+		lan_but.value = "-";
+	}
+}
+
+function Internet_status(){
+	var status = "";
+	var gateway = "Gateway";
+	'<%=internet_connection("wan")%>';
+	var internet_status = '<%=status%>';
+	if (internet_status ==  "online") {
+		status +="<br><div style=\"position:relative;text-align:center;\"><a href=\"<%=ds.build_url('/admin/network/wan')%>\"><img width=\"50px\" height=\"50px\" src=\"<%=resource%>/icons/Internet_on.png\"/></a><div> <span onmouseover=\"ShowHint(this, '<%=translate("ICMP response from 8.8.8.8 address")%>')\" onmouseout=\"HideHint(this)\" ><%=translate("Internet Online")%></span> </div>";
+		status +="<div style=\"float: left;position:absolute\"><input style=\"width:18px;height:18px;display:none\" type=\"button\" value=\"<%=translate('-')%>\" class=\"cbi-network-topology-button\" id=\"hideWAN\" onclick=\"display_wan_table()\"></div><div id=\"topology-gateway\"></div>";
+		status +="<div style=\"width: 50%;\"><div style=\"text-align:right;border-right:1px solid rgb(150,150,150);height:20px\" id=\"topology-double-line\"><div></div></div></div>";
+	} else {
+		status = "<br><div style=\"position:relative;text-align:center;\"><a href=\"<%=ds.build_url('/admin/network/wan')%>\"><img width=\"50px\" height=\"50px\" src=\"<%=resource%>/icons/internet_off.png\"/></a><div> <span onmouseover=\"ShowHint(this, '<%=translate("ICMP response from 8.8.8.8 address")%>')\" onmouseout=\"HideHint(this)\" ><%=translate("Internet Offline")%></span></div><div id=\"topology-gateway\"></div><div style=\"width: 50%;\"><div style=\"float: left;\"><input style=\"width:18px;height:18px;display:none\" type=\"button\" value=\"<%=translate('-')%>\" class=\"cbi-network-topology-button\" id=\"hideWAN\" onclick=\"display_wan_table()\"></div><div style=\"text-align:right;\"><img id=\"topology-double-line\" style=\"border-left:1px solid rgb(150, 150, 150);background:white;margin-right:-1px\" width=\"0px\" height=\"20px\" src=\"<%=resource%>/icons/linija.png\"/></div></div></div>";
+	}
+	document.getElementById("Status_network").innerHTML = status;
+}
+function Wan_connected_via(){
+	default_gw();
+	var format_wan = "";
+	var format_ppp_wan = "";
+	var ifwan = '<%=ifname%>';
+	var ifname = "<div class=\"cbi-network-topology-row\">";
+	if ('<%=wan_ip%>' !== ""){
+		format_wan +='<div> <span onmouseover="ShowHint(this, \'<%=translate("Specifies the IP address that the router uses to connect to the internet")%>\')" onmouseout="HideHint(this)" >' + '<%=wan_ip%>' +'</span></div>';
+	}else{
+		format_wan +='<div class="cbi_network-topology-red" id="cbi-network-topology-war-ip"> <span onmouseover="ShowHint(this, \'<%=translate("Main WAN interface is down")%>\')" onmouseout="HideHint(this)" >0.0.0.0</span></div>';
+	}
+	if ('<%=wan_mac%>' !== ""){
+		format_wan +='<div> <span onmouseover="ShowHint(this, \'<%=translate("WAN MAC address")%>\')" onmouseout="HideHint(this)" >' + '<%=wan_mac%>' +'</span></div>';
+	}
+	if ('<%=backupwan%>' == "1" ){
+		if ('<%=wan_ppp_ip%>' !== ""){
+			format_ppp_wan +='<div> <span onmouseover="ShowHint(this, \'<%=translate("Specifies the IP address that the router uses to connect to the internet")%>\')" onmouseout="HideHint(this)" >' + '<%=wan_ppp_ip%>' +'</span></div>';
+		}else{
+			format_ppp_wan +='<div class="cbi_network-topology-red" id="cbi-network-topology-war-ip"> <span onmouseover="ShowHint(this, \'<%=translate("Failover interface is down")%>\')" onmouseout="HideHint(this)" >0.0.0.0</span></div>';
+		}
+		if ('<%=wan_ppp_mac%>' !== ""){
+			format_ppp_wan +='<div> <span onmouseover="ShowHint(this, \'<%=translate(" WAN MAC address")%>\')" onmouseout="HideHint(this)" >' + '<%=wan_ppp_mac%>' +'</span></div>';
+		}
+		var wan_backup_ip ='<%=pcdata(wan_backup_ip or "?")%>';
+		var mob_backup_ip ='<%=pcdata(mob_backup_ip or "?")%>';
+		var format_wan_backup = "";
+		var format_mobile_backup = "";
+		if (wan_backup_ip !== "?" || wan_backup_ip !== null || wan_backup_ip !== undefined || wan_backup_ip !== ""){
+			format_wan_backup ='<div> <span onmouseover="ShowHint(this, \'<%=translate("Failover WAN keep alive address")%>\')" onmouseout="HideHint(this)" >' + wan_backup_ip +'</span></div>';
+		}else {
+			format_wan_backup ='<div> <span onmouseover="ShowHint(this, \'<%=translate("Failover WAN keep alive address")%>\')" onmouseout="HideHint(this)" >?</span></div>';
+		}
+		if (mob_backup_ip !== "?" || mob_backup_ip !== null || mob_backup_ip !== undefined || mob_backup_ip !== ""){
+			format_mobile_backup ='<div> <span onmouseover="ShowHint(this, \'<%=translate("Failover WAN keep alive address")%>\')" onmouseout="HideHint(this)" >' + mob_backup_ip +'</span></div>';
+		}else {
+			format_mobile_backup ='<div> <span onmouseover="ShowHint(this, \'<%=translate("Failover WAN keep alive address")%>\')" onmouseout="HideHint(this)" >?</span></div>';
+		}
+		var wan_icon = "network-wired";
+		if (ifwan == "wlan0"){
+			wan_icon = "wifi_enabled";
+		} else if (ifwan == "eth1") {
+			wan_icon = "network-wired";
+		} else {
+			wan_icon = "Mobile";
+		}
+		var backup_style_left = "topology-backup-left";
+		var backup_style_right = "topology-backup-dashed-right";
+		var wan_backup_line_style = "1px solid rgb(150,150,150)";
+		var mob_backup_line_style = "1px solid rgb(150,150,150)";
+		if ('<%=activeConnection%>' == "wan"){
+			backup_style_left = "topology-backup-left";
+			backup_style_right = "topology-backup-dashed-right";
+		}else if('<%=activeConnection%>' == "only_wan"){
+			backup_style_left = "topology-backup-left";
+			backup_style_right = "topology-backup-dashed-right";
+			mob_backup_line_style = "1px dashed rgb(150,150,150)";
+		}else if('<%=activeConnection%>' == "only_wan2"){
+			backup_style_left = "topology-backup-dashed-left";
+			backup_style_right = "topology-backup-right";
+			wan_backup_line_style = "1px dashed rgb(150,150,150)";
+		}else{
+			//default backup wan status
+			backup_style_left = "topology-backup-dashed-left";
+			backup_style_right = "topology-backup-right";
+			wan_backup_line_style = "1px dashed rgb(150,150,150)";
+			mob_backup_line_style = "1px dashed rgb(150,150,150)";
+		}
+		var SecondWanIcon = '<%=SecondWanIfname%>';
+		if (SecondWanIcon == "eth1"){
+			SecondWanIcon = "network-wired";
+		}else if (SecondWanIcon == "wlan0"){
+			SecondWanIcon = "wifi_enabled";
+		}else{
+			SecondWanIcon = "Mobile";
+		}
+		ifname += "<div class=\"cbi-network-topology-box-empty\"><div class=\"cbi-network-topology-top-half\"><div id=\"cbi-network-topology-right\" style=\"border-width:0px\"></div></div><div class=\"cbi-network-topology-size\"><a href=\"<%=ds.build_url('/admin/network/multiwan')%>\"><img src=\"<%=resource%>/icons/unknow_device.png\"/></a>" + format_wan_backup + "</div></div>";
+		ifname += "<div  style=\"display:inline-block;position:absolute;height:40px;width:125px;border-bottom:" + wan_backup_line_style + ";margin-left:-63px;\"></div>";
+		ifname += "<div class=\"cbi-network-topology-box-empty\"><div class=\"cbi-network-topology-top-half\"><div id=\"cbi-network-topology-right\" name=\"network-backup-top-line\"></div></div><div class=\"cbi-network-topology-size\"><img src=\"<%=resource%>/icons/" + wan_icon + ".png\"/>" + format_wan + "</div></div>";
+		ifname += "<div class=\"cbi-network-topology-box-empty\"><div class=\"cbi-network-topology-top-half\"><div id=\"cbi-network-topology-right\" style=\"border:0px;border-top:1px solid rgba(150,150,150,0)\"></div></div><div class=\"cbi-network-topology-size\"><img src=\"<%=resource%>/icons/" + SecondWanIcon + ".png\"/>" + format_ppp_wan + "</div></div>";
+		ifname += "<div style=\"display:inline-block;position:absolute;height:40px;width:125px;border-bottom:" + mob_backup_line_style + ";margin-left:-63px;\"></div>";
+		ifname += "<div class=\"cbi-network-topology-box-empty\"><div class=\"cbi-network-topology-top-half\"><div id=\"cbi-network-topology-right\" style=\"border-width:0px\"></div></div><div class=\"cbi-network-topology-size\"><a href=\"<%=ds.build_url('/admin/network/multiwan')%>\"><img src=\"<%=resource%>/icons/unknow_device.png\"/></a>" + format_mobile_backup + "</div></div>";
+		ifname += "<div><div style=\"width:50%;float:left\"><div id=\"" + backup_style_left + "\"></div></div>";
+		ifname += "<div style=\"width:50%;float:left\"><div id=\"" + backup_style_right + "\"></div></div></div></div>";
+		ifname += "<div id=\"topology-backup-bottom\"></div>"
+		ifname += "<div id=\"Connected_via\"></div>";
+	}else{
+		//------BACKUP WAN OFF-----------
+		ifname += "<div id=\"Connected_via\"></div>";
+		var wan_info = '<span onmouseover="ShowHint(this, \'<%=translate("WAN interface name")%>\')" onmouseout="HideHint(this)" ><%=translate("WAN: Mobile")%></span>';
+		var wan_info_icon = "Mobile";
+		if (ifwan == "eth1") {
+			wan_info = '<span onmouseover="ShowHint(this, \'<%=translate("WAN interface name")%>\')" onmouseout="HideHint(this)" ><%=translate("WAN: Wired")%></span>';
+			wan_info_icon = "network-wired";
+		}else if (ifwan == "eth2" || ifwan == "3g-ppp" || ifwan == "wwan0" ){
+			wan_info = '<span onmouseover="ShowHint(this, \'<%=translate("WAN interface name")%>\')" onmouseout="HideHint(this)" ><%=translate("WAN: Mobile")%></span>';
+			wan_info_icon = "Mobile";
+		}else {
+			wan_info = '<span onmouseover="ShowHint(this, \'<%=translate("WAN interface name")%>\')" onmouseout="HideHint(this)" ><%=translate("WAN: Wireless")%></span>';
+			wan_info_icon = "wifi_enabled";
+		}
+		ifname = "<div style=\"position:relative;text-align:center;\"><div id=\"Connected_via\" style=\"display:none\"><div style=\"width:162px;display:inline-block;\"><div id=\"cbi-network-topology-straight\" name=\"cbi-network-toplogy-half-line\"></div></div></div><a href=\"<%=ds.build_url('/admin/network/wan')%>\"><img width=\"40px\" height=\"40px\" src=\"<%=resource%>/icons/" + wan_info_icon + ".png\"/></a><div>" + wan_info + "</div><div>" + format_wan + "<img style=\"border-left:1px solid rgb(150, 150, 150);background:white\" width=\"0px\" height=\"20px\" src=\"<%=resource%>/icons/linija.png\"/></div></div>";
+	}
+	ifname += "</div>";
+	document.getElementById("connected_network").innerHTML = ifname;
+}
+var table_rows = "";
+var wan_double_line = 0;
+function Lan_topology(elem_array, array_range, insert_into, wifi){
+	wan_double_line = 0;
+	var lan_s = array_range;
+	var style = "";
+	var text_style = "";
+	var lan_text = "";
+	var lan_i = 0;
+	var ac = 1;
+	var new_line = 1;
+	var Computer="Computer";
+	var last_line = 0;
+	var first_line = 0;
+	var border_bottom = 0;
+	lan_a = elem_array;
+	lan_result = lan_a.split(",,") 
+	var text_split = "";
+	var error = "";
+	if (lan_s <= 1 ){
+		switch (lan_result[1]) {
+			case " eth0: link down":
+				error = '<%=translate("eth0: link down")%>';
+			break;
+			case " eth0: link down scan":
+				error = '<%=translate("eth0: link down during scan")%>';
+				
+			break;
+			case " arg_empty":
+				error = '<%=translate("Interface arguments are empty")%>';
+				
+			break;
+			case " down":
+				error = '<%=translate("LAN: link down")%>';
+				
+			break;
+			case " ipv6":
+				error = '<%=translate("Does not support ipv6")%>';
+			break;
+			case " net_range_to_large":
+				error = '<%=translate("Subnet is to large")%>';
+			break;
+			case " wireless_down":
+				error = "wireless_down";
+			//	error_wireless = '<%=translate("wireless link down")%>';
+			//break
+			case " mobile":
+				//document.getElementById("wan").disabled = true;
+				error = 'mobile';
+			break;
+			case " Error: dmesg_reader":
+				error = '<%=translate("Error: dmesg reader failed")%>';
+			break;
+			case " WAN: link down":
+				error = '<%=translate("WAN link down")%>';
+			break;
+			case " WAN: link down scan":
+				error = '<%=translate("WAN link down during scan")%>';
+			break;
+		}
+	}
+	if (error == "" ){
+		if (lan_s != 0){
+			table_rows = Math.floor(lan_s/5);
+			var last_row_elements = Math.floor(lan_s%5);
+			if (last_row_elements != 0){
+				table_rows++;
+			}else{
+				last_row_elements = 5;
+			}
+		}
+		if (table_rows  >= 2 ){
+			if (insert_into == "wan"){
+				document.getElementById("hideWAN").style.display='block';
+				if ('<%=backupwan%>' == "1"){
+					if (table_rows % 2 != 0){
+						document.getElementsByName("network-backup-top-line")[0].style.display="none";
+					}else{
+						document.getElementsByName("network-backup-top-line")[0].style.display="block";
+					}
+				}
+			}else{
+				document.getElementById("hideLAN").style.display='block';
+			}
+		}
+		var style_element = "";
+		if (table_rows == 2){
+			style_element = "<div class=\"cbi-network-topology-row\" style=\"border-left:1px solid rgb(150, 150, 150)\">";
+		}else{
+			style_element = "<div class=\"cbi-network-topology-row\">";
+		}
+		for (i = 1; i <= lan_s; i++) {
+			var last_row = new_line + 1;
+			if(table_rows == last_row){
+				last_row = true;
+			}else{
+				last_row = false;
+			}
+			style = "B";
+			if(new_line % 2 != 0){
+				//nelygine
+				switch (ac) {
+					case 1:
+					if (lan_s != i){
+						if (table_rows == 1){
+							if (last_row_elements == 2 && insert_into == "wan"){
+								style = "H_TR_A";
+							}else{
+								style = "H_TR";
+							}
+						}else if(last_row == true && last_row_elements != 5){
+							if (table_rows == 2){
+								style = "B";
+							}else{
+								style = "LB";
+							}
+						}else{
+							if (table_rows == new_line){
+								if (insert_into == "wan"){
+									style = "LB";
+								}else{
+									style = "H_TR";
+								}
+							}else {
+								if (table_rows == 2){
+									style = "B";
+								}else{
+									style = "L";
+								}
+							}
+						}
+					}else{
+						if (insert_into == "wan"){
+							style = "L";
+						}else{
+							style = "H_TR";
+						}
+					}
+					break;
+					case 2:
+					if (lan_s != i){
+						if(last_row == true && last_row_elements <= 2){
+							style = "BF";
+						}
+						if (table_rows == new_line && last_row_elements >= 4 && table_rows > 1){
+							if (insert_into == "wan"){
+								style = "BF";
+							}else{
+								style = "B";
+							}
+						}
+						
+						if (new_line == 1 && lan_s == 3){
+							if ( insert_into == "wan") {
+								
+								document.getElementById("topology-double-line").style.height="40px";
+								document.getElementById("topology-double-line").style.marginBottom="-23px";
+								style = "BN";
+							}else{
+								document.getElementById("topology-double-line-lan").style.height="40px";
+								document.getElementById("topology-double-line-lan").style.marginBottom="-23px";
+								style = "BN"
+							}
+						}
+						if (last_row_elements == 4 && insert_into == "wan" && table_rows == 1){
+							style = "B_A";
+						}
+					}else{
+						style = "B";
+					}
+					break;
+					case 3:
+					style = "B";
+					if (lan_s > 4 && new_line == 1){
+						if ( insert_into == "wan") {
+							wan_double_line = 1;
+							document.getElementById("topology-double-line").style.height="40px";
+							document.getElementById("topology-double-line").style.marginBottom="-23px";
+							style = "BN";
+						}else{
+							document.getElementById("topology-double-line-lan").style.height="40px";
+							document.getElementById("topology-double-line-lan").style.marginBottom="-23px";
+							style = "BN";
+						}
+					}
+					break;
+					case 4:
+					style = "B";
+					break;
+					case 5:
+					style = "B";
+					break;
+				}
+			}else{
+				switch (ac) {
+					case 1:
+					if (lan_s != i){
+						if (table_rows == new_line){
+							style = "BT_E";
+						}else{
+							style = "B";
+						}
+						
+					}else{
+						if (insert_into == "wan"){
+							style = "BT_E_R";
+						}else{
+							style = "BT_E";
+						}
+					}
+					break;
+					case 2:
+					if (lan_s != i){
+						if (table_rows == new_line){
+							style = "BT_E";
+						}else{
+							style = "B";
+						}
+					}else{
+						if (insert_into == "wan"){
+							style = "BT_E_R";
+						}else{
+							style = "BT_E";
+						}
+					}
+					break;
+					case 3:
+					if (lan_s != i){
+						if (table_rows == new_line && last_row_elements != 5){
+							style = "BT_E";
+						}else{
+							if (table_rows == new_line){
+								style = "BT_E";
+							}else{
+								style = "B";
+							}
+						}
+					}else{
+						if (insert_into == "wan"){
+							style = "BT_E_R";
+						}else {
+							style = "BT_E";
+						}
+					}
+					break;
+					case 4:
+					if (lan_s != i){
+						if (table_rows == new_line){
+							style = "BT_E";
+						}else{
+							if (last_row == true && last_row_elements <= 2){
+								style = "BF";
+							}else{
+								style = "B";
+							}
+						}
+					}else{
+						if (insert_into == "wan"){
+							style = "BT_E_R";
+						}else {
+							style = "BT_E";
+						}
+					}
+					break;
+					case 5:
+					if (lan_s != i){
+						if (last_row == true && last_row_elements != 5){
+							style = "RB";
+						}else{
+							style = "R";
+						}
+					}else{
+						if (insert_into == "wan"){
+							style = "BT_E_R";
+						}else {
+							style = "BT_E";
+						}
+					}
+					break;
+				}
+			}
+			if(table_rows == 1 && i == lan_s || i == 5){
+				style = "H_TL";
+				if (i == lan_s && i == 1){
+					style = "O";
+					//set double line
+					if( insert_into == "wan"){
+						document.getElementById("topology-double-line").style.height="40px";
+						document.getElementById("topology-double-line").style.marginBottom="-23px";
+						document.getElementById('Connected_via').style.display='';
+					}else{
+						document.getElementById("topology-double-line-lan").style.height="40px";
+						document.getElementById("topology-double-line-lan").style.marginBottom="-23px";
+					} 
+				}
+			}
+			text_style = text_format(lan_result[i]);
+			if (wifi == "wifi"){
+				Computer="laptop";
+				document.getElementById("topology-double-line-lan").style.display=''
+				document.getElementById("hideLAN").style.display='block';
+			}else{
+				Computer ="Computer";
+			}
+			switch (style) {
+				case "BN":
+					style_element += "<div class=\"cbi-network-topology-box\"><div class=\"cbi-network-topology-box-top\" style=\"border-right:0px solid #000\"></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div>";
+					break;
+				case "B":
+					style_element += "<div class=\"cbi-network-topology-box\"><div class=\"cbi-network-topology-box-top\"></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div>";
+					break;
+				case "H_TR":
+					style_element += "<div class=\"cbi-network-topology-box-empty\"><div class=\"cbi-network-topology-top-half\"><div id=\"cbi-network-topology-right\"></div></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div>";
+					break;
+				case "H_TL":
+					style_element += "<div class=\"cbi-network-topology-box-empty\"><div class=\"cbi-network-topology-top-half\"><div id=\"cbi-network-topology-left\"></div></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div>";
+					break;
+				case "L":
+					style_element += "<div class=\"cbi-network-topology-box\" id=\"cbi-network-topology-box-left\"><div class=\"cbi-network-topology-box-top\"></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/><br>" + text_style + "</br></div>";
+					break;
+				case "LB":
+					style_element += "<div class=\"cbi-network-topology-box\" id=\"cbi-network-topology-box-left\"><div class=\"cbi-network-topology-box-top\"></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div>";
+					break;
+				case "BF":
+					style_element += "<div class=\"cbi-network-topology-box\"><div class=\"cbi-network-topology-box-top\"></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div>";
+					break;
+				case "R":
+					style_element += "<div class=\"cbi-network-topology-box\" id=\"cbi-network-topology-box-right\"><div class=\"cbi-network-topology-box-top\"></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div>";
+					break;
+				case "RB":
+					style_element += "<div class=\"cbi-network-topology-box\" id=\"cbi-network-topology-box-right-bottom\"><div class=\"cbi-network-topology-box-top\"></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div>";
+					break;
+				case "O":
+					style_element += "<div class=\"cbi-network-topology-box\" style=\"border-top: 0px solid rgb(150, 150, 150)\"><div class=\"cbi-network-topology-box-top\" style=\"border-right:0px solid #000\"></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div>";
+					break;
+				case "BT_E":
+					style_element += "<div class=\"cbi-network-topology-box\" style=\"border-top: 0px solid rgb(150, 150 ,150)\"><div class=\"cbi-network-topology-box-top\"></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div>"; 
+					break;
+				case "BT_E_R":
+					style_element += "<div class=\"cbi-network-topology-box\" style=\"border-top: 0px solid rgb(150, 150 ,150);border-right:1px solid rgb(150, 150, 150)\"><div class=\"cbi-network-topology-box-top\"></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div>"; 
+					break;
+				case "H_TR_A":
+					style_element += "<div class=\"cbi-network-topology-box-empty\"><div class=\"cbi-network-topology-top-half\"><div id=\"cbi-network-topology-right\"></div></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div><div style=\"display:inline-block;height:121%;border-right:1px solid rgb(150,150,150);margin-top:-20px;margin-bottom:-1px\"></div>";
+					break;
+				case "B_A":
+					style_element += "<div class=\"cbi-network-topology-box\"><div class=\"cbi-network-topology-box-top\"></div><img src=\"<%=resource%>/icons/" + Computer + ".png\"/>" + text_style + "</div><div style=\"display:inline-block;height:121%;border-right:1px solid rgb(150,150,150);margin-top:-20px\"></div>";
+					break;
+			}
+			text_style = "";
+			Computer ="Computer";
+			ac++;
+			if (i % 5 == 0 || i == lan_s) {
+				ac = 1;
+				if ( insert_into == "wan" || insert_into == "lan"){
+					var before_last_row = new_line + 1;
+					if (new_line == table_rows && table_rows != 1){
+						if (new_line % 2 != 0){
+							if ( insert_into == "wan"){
+								var row_width_mini = 50;
+								var row_height_mini = 20;
+								var row_height_margin = "";
+								if ('<%=backupwan%>' == "1" ){
+									var row_height_mini = 25;
+									row_height_margin = "margin-bottom:-15px;"
+									switch(last_row_elements){
+										case 1:
+											row_width_mini=0;
+										break;
+										case 2:
+											row_width_mini=25;
+										break;
+										case 3:
+											row_width_mini=34;
+										break;
+										case 4:
+											row_width_mini=38;
+										break;
+										case 5:
+											row_width_mini=40;
+										break;
+									}
+								}
+								style_element += "<div></div><div id=\"topology-base-line-1\" style=\"width:" + row_width_mini + "%;height:" + row_height_mini + "px;" + row_height_margin + "border-top:1px solid rgb(150, 150, 150);border-right:1px solid rgb(150, 150, 150);\"></div></div><div class=\"cbi-network-topology-row\">";
+							}
+						}else{
+							if ( insert_into == "wan"){
+								style_element += "<div></div><div id=\"topology-base-line-2\" style=\"width:50%;height:20px;border-top:1px solid rgb(150, 150, 150);border-left:1px solid rgb(150, 150, 150);float:right\"></div><div class=\"cbi-network-topology-row\">";
+							}
+						}
+					}else {
+						if (before_last_row == table_rows && table_rows != 1){
+							if (new_line % 2 != 0){
+								var row_width=50;
+								switch(last_row_elements){
+									case 1:
+										row_width=60;
+									break;
+									case 2:
+										row_width=70;
+									break;
+									case 3:
+										row_width=80;
+									break;
+									case 4:
+										row_width=90;
+									break;
+									case 5:
+										row_width=100;
+									break;
+								}
+								if (insert_into == "lan"){
+									row_width=row_width - 10;
+								}
+								style_element += "<div id=\"topology-base-line-3\" style=\"width:" + row_width + "%;border-top:1px solid rgb(150, 150, 150);\"></div></div><div class=\"cbi-network-topology-row\">";
+							}else{
+								style_element += "<div id=\"topology-base-line-4\" style=\"width:50%;border-top:1px solid rgb(150, 150, 150);float:right\"></div></div><div class=\"cbi-network-topology-row\">";
+							}
+						}else {
+							if (i == lan_s && table_rows == 1 && insert_into == "wan"){
+								if (last_row_elements == 1 || last_row_elements == 3 || last_row_elements == 5){
+									style_element += "<div id=\"topology-base-line-5\" style=\"width:50%;height:20px;border-right:1px solid rgb(150, 150, 150);margin-bottom:-1px\"></div>";
+								}
+							}
+							style_element += "</div><div class=\"cbi-network-topology-row\">";
+						}
+					}
+					if (table_rows == 1){
+						style_element += "</div><div class=\"cbi-network-topology-row\">";
+					}
+				}else{
+					style_element += "</div><div class=\"cbi-network-topology-row\">";
+				}
+				new_line++;
+			}
+		}
+	}
+	wan_line_2_4 = "";
+	wan_line = "";
+	if ( insert_into == "wan" || insert_into == "all" ) {
+		
+		if (table_rows >= 2){
+			document.getElementById("Connected_via").style.display='none';
+		}else{
+			if (error == ""){
+				if (last_row_elements == 2 ||  last_row_elements == 4){
+					wan_line_2_4 = "true";
+					document.getElementById("Connected_via").style.display='none';
+					document.getElementById("topology-double-line").style.borderRightWidth='0px';
+				}else{
+					wan_line = "true";
+					document.getElementById("topology-double-line").style.borderRightWidth='1px';
+					document.getElementById("Connected_via").style.display='block';
+				}
+			}
+		}
+		if (error == ""){
+			default_gw();
+			if (lan_s != 0){
+				document.getElementById("wan_topology").innerHTML = style_element;
+				document.getElementById('wan_topology').style.display='block';
+				document.getElementById('topology-gateway').style.display='block';
+			}else if (lan_s == 0){
+				var style_straight = document.getElementById('cbi-network-topology-straight');
+				if (style_straight !== null || style_straight !== undefined ){
+					style_straight.style.display='none';
+				}
+				document.getElementById("Connected_via").style.display='none';
+			}
+		}else{
+			if (error == "mobile"){
+				default_gw();
+				document.getElementById('wan_topology').style.display='block';
+				document.getElementById('topology-gateway').style.display='block';
+				
+			}else{
+				document.getElementById('wan_topology').style.display='none';
+				document.getElementById('topology-gateway').style.display='none';
+				document.getElementById("err_message_wan").innerHTML = error;
+				document.getElementById("err_message_wan").style.display='';
+				
+			}
+		}
+		document.getElementById("wan_load").style.display='none';
+	}
+	if ( insert_into == "lan" || insert_into == "all" ) {
+		if (error == ""){
+			document.getElementById("lan_rezult").innerHTML = style_element;
+			document.getElementById('lan_rezult').style.display='block';
+		}else{
+			//-----------------
+			if (error !== "wireless_down"){
+				document.getElementById('lan_rezult').style.display='none';
+				document.getElementById('topology-double-line-lan').style.display='none';
+				document.getElementById("err_message_lan").innerHTML = error;
+				document.getElementById("err_message_lan").style.display='';
+			}
+		}
+		document.getElementById("lan_load").style.display='none';
+	}
+}
+
+function text_format(result){
+	var get_dup_ip = "";
+	var get_dup_mac = "";
+	var check_ip="";
+	var check_mac="";
+	var j = 0;
+	var text_style="";
+	var text_split="";
+	text_split=result.split(" ");
+	for (ij = 1; ij <text_split.length; ij++){
+		if (ij == 1){
+			check_ip = result.match(/IP-Dup_/g);
+			if (check_ip !== null){
+				j = 2;
+				while (j < text_split.length){
+					get_dup_ip = text_split[j].split("IP-Dup_");
+					if (get_dup_ip[1] != undefined){
+						break;
+					}
+					j++;
+				}
+				text_style +='<div class="cbi_network-topology-red" id="cbi-network-topology-war-ip" onmouseover="ShowHint(this, \' ' + get_dup_ip[1] + '<%=translate(" IP address are duplicated")%>\')" onmouseout="HideHint(this)" >' + text_split[ij] +'</div>';
+			}else{
+				text_style +='<div id="ip_paprastas">' + text_split[ij] + '</div>';
+			}
+		}
+		if (ij == 2){
+			check_mac = result.match(/MAC-Dup_/g);
+			if (check_mac !== null){
+				j = 2;
+				while (j < text_split.length){
+					get_dup_mac = text_split[j].split("MAC-Dup_");
+					if (get_dup_mac[1] != undefined){
+						break;
+					}
+					j++;
+				}
+				text_style +='<div class="cbi_network-topology-red" id="cbi-network-topology-war-ip" onmouseover="ShowHint(this, \' ' + get_dup_mac[1] + '<%=translate(" MAC address are duplicated")%>\')" onmouseout="HideHint(this)" >' + text_split[ij].toUpperCase() +'</div>';
+			}else{
+				text_style +='<div id="mac_paprastas">' + text_split[ij].toUpperCase() + '</div>';
+			}
+		}
+		if (ij == 3){
+			check_ip = text_split[ij].indexOf("IP-Dup_") > -1;
+			check_mac = text_split[ij].indexOf("MAC-Dup_") > -1;
+			if (check_ip != true && check_mac != true){
+				text_style +='<div id="hostname">' + text_split[ij] + '</div>';
+			}
+		}
+	}
+	return text_style;
+}
+
+function output(){
+	Internet_status();
+	Wan_connected_via(); 
+	Wireless_clients();
+}
+var finish_timer = false;
+function loading(load_for){
+	finish_timer = false;
+	var time = 0;
+	var t;
+	var interval = 0;
+	if (load_for == "wan" || load_for == "lan"){
+		time = 100;
+		first_timer();
+	}else if (load_for == "all"){
+		time = 200;
+		first_timer();
+	}else{
+		time = 0;
+	}
+	document.getElementById("Loading").style.display='table-cell';
+	var j = 1;
+	function first_timer(){
+		if (j >= time || finish_timer == true){
+			j = j;
+		}else{
+			setTimeout(another_timer, interval, j);
+			interval = 100;
+		}
+		j = j + 1;
+	}
+	var proc_value = 100;
+	function another_timer(j){
+		//console.log("Check timer = " + Math.floor((j / time) * 100) + "%");
+		proc_value = Math.floor((j / time) * 100) + "%";
+		if (proc_value != "NaN%"){
+			document.getElementById("Loading").innerHTML = "Please wait ... " + proc_value;
+		}
+		if (proc_value == "100%"){
+			document.getElementById("Loading").style.display='none';
+		}
+		first_timer();
+	}
+}
+
+AddWindowOnLoadEvent(output); 
+//]]></script>
+<div id="err_message_lan" class="alert-message error" style="display: none"></div>
+<div id="err_message_wan" class="alert-message error" style="display: none"></div>
+<div style="display:table;">
+	<div style="display: table-cell;"><h2><a id="content" name="content"><%=translate("Network Topology")%></a></h2></div>
+	<div style="display: none;text-align:right;width:79%" id="Loading"></div>
+</div>
+<fieldset class="cbi-section">
+	<legend><%=translate("Network Topology (MAP)")%></legend>
+</fieldset>
+
+<fieldset class="cbi-section">
+	<div>
+		<td><input type="button" value="<%=translate('Scan LAN')%>" class="cbi-button" id="lan_network" onclick="start_scan('lan')"></td>
+		<td><input type="<%if ifname == "3g-ppp" then%><%="hidden"%><%else %><%="button"%><% end %>" value="<%=translate('Scan WAN')%>" class="cbi-button" id="wan_network" onclick="start_scan('wan')" <%if ifname == "3g-ppp" then%> <%="hidden"%><%else %> <%="Enabled"%><% end %>="PPP"></td>
+		<td><input type="<%if ifname == "3g-ppp" then%><%="hidden"%><%else %><%="button"%><% end %>" value="<%=translate('Scan ALL')%>" class="cbi-button" id="all_network" onclick="start_scan('all')" <%if ifname == "3g-ppp" then%> <%="Disabled"%><%else %> <%="Enabled"%><% end %>="WAN"></td>
+	</div>
+	<div class="cbi-network-topology-status" id="Status_network"> 
+	</div>
+	<div id="wan_load" style="position:relative;text-align:center;display: none";><img src="/luci-static/resources/icons/loading.gif" style="width: 40px; height: 40px" alt="Loading"></div>
+	<div id="showtable"></div>
+	<div class="cbi-network-topology" id="wan_topology">
+	</div>
+	<div id="connected_network_line"></div>
+	<div id="connected_network" style="text-align:center;"></div>
+	<div style="position:relative; text-align:center;"><a href="<%=ds.build_url('/admin/network/firewall')%>"><img style="margin-top:-8px" alt="" id='Firewall' width="50px" height="40px" src="<%=resource%>/icons/firewall.png"/></a>
+		<div><%=translate("Firewall")%></div>
+		<div><img style="border-left:1px solid rgb(150, 150, 150);background:white" alt="" width="0px" height="20px" src="<%=resource%>/icons/linija.png"/></div>
+	</div>
+	
+	<div style="position:relative; text-align:center;"><a href="<%=ds.build_url('/admin/status/device')%>"><img alt="" id='Router' width="50px" height="50px" src="<%=resource%>/icons/router_icon.png"/></a>
+		<div><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('The device\\\'s model name')%>')"</span><%=translate("")%></td><td><%=pcdata(modelOverride or brand(4))%></div>
+		<div><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('The device\\\'s IP address')%>')"</span><%=translate("")%></td><td><%=pcdata(lan_ipaddr or "0.0.0.0")%></div>
+		
+		<div style="width: 50%;margin-bottom:-3px">
+			<div>
+				<div><input style="width:20px;height:20px;float:left;display:none" type="button" value="-" class="cbi-network-topology-button" id="hideLAN" onclick="display_lan_table()"></div>
+				<div style="text-align:right"><img id="topology-double-line-lan" style="display:none;border-left:1px solid rgb(150, 150, 150);margin-right:-1px;background:white" alt="" width="0px" height="20px" src="<%=resource%>/icons/linija.png"/></div>
+			</div>
+		</div>
+	</div>
+</fieldset>
+
+<fieldset class="cbi-section" style="padding-top:1px">
+	<div id="showlantable"> </div>
+	<div id="lan_load" style="position:relative;text-align:center;display: none";><img src="/luci-static/resources/icons/loading.gif" style="width: 40px; height: 40px" alt="Loading"></div>
+	<div class="cbi-network-topology" id="lan_rezult">
+	</div>
+	<table id="lease_status_table">
+	</table>
+</fieldset>
+<%+footer%>

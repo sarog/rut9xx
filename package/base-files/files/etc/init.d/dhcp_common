@@ -1,0 +1,8 @@
+#!/bin/sh /etc/rc.common
+
+stop()
+{
+	#Stop dnsmasq and dhcprelay so that their starp up sequence does not matter
+	/etc/init.d/dnsmasq stop
+	/etc/init.d/dhcprelay stop
+}

@@ -1,0 +1,78 @@
+<div class="cbi-section-create cbi-tblsection-create">
+	<br />
+	<legend> <%=translate("New Static Route")%></legend>
+	<br>
+	<table class="cbi-section-table" style="width:100%; ">
+
+		<tr class="cbi-section-table-descr">
+			<th class="cbi-section-table-cell" style="width:30%"><span onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("Prefix")%></span></th>
+			<th class="cbi-section-table-cell" style="width:30%"><span onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("Type")%></span></th>
+			<th class="cbi-section-table-cell"></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td class="cbi-section-table-cell">
+				<input type="text" style="width:30%" class="cbi-input-text" id="_newroute.prefix" name="_newroute.prefix" placeholder="<%=translate('Prefix')%>" />
+			</td>
+			<td class="cbi-section-table-cell" style="width:30%">
+				<select class="cbi-input-select" id="_newroute.type" name="_newroute.type">
+					<option value="router"><%=translate("Router")%></option>
+					<option value="special"><%=translate("Special")%></option>
+					<option value="iface"><%=translate("Iface")%></option>
+					<option value="recursive"><%=translate("Recursive")%></option>
+					<option value="multipath"><%=translate("Multipath")%></option>
+				</select>
+			<td class="cbi-section-table-cell">
+				<input type="submit" class="cbi-button cbi-button-add" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" value="<%=translate('Add')%>" />
+			</td>
+		</tr>
+	</table>
+
+	<!--<script type="text/javascript">//<![CDATA[
+		cbi_validate_field('_newroute.extport', true, 'portrange');
+		cbi_validate_field('_newroute.intaddr', true, 'host');
+		cbi_validate_field('_newroute.intport', true, 'portrange');
+
+		cbi_combobox_init('_newroute.intaddr', {
+			<% local i, e; for i, e in ipairs(luci.sys.net.arptable()) do -%>
+				<%- if i > 1 then %>,<% end -%>'<%=e["IP address"]%>': '<%=e["IP address"]%>'
+			<%- end %> }, '', '<%: -- custom -- %>');
+
+		cbi_bind(document.getElementById('_newroute.extport'), 'blur',
+			function() {
+				var n = document.getElementById('_newroute.prefix');
+				var p = document.getElementById('_newroute.type');
+				var i = document.getElementById('_newroute.intport');
+				var hints = {
+				/*  port    name     0=both, 1=tcp, 2=udp, 3=other */
+					21:   [ 'FTP',   1 ],
+					22:   [ 'SSH',   1 ],
+					53:   [ 'DNS',   0 ],
+					80:   [ 'HTTP',  1 ],
+					443:  [ 'HTTPS', 1 ],
+					3389: [ 'RDP',   1 ],
+					5900: [ 'VNC',   1 ],
+				};
+
+				if (!this.className.match(/invalid/))
+				{
+					if (!i.value) i.value = this.value;
+
+					var hint = hints[this.value || 0] || hints[i.value || 0];
+					if (hint)
+					{
+						p.selectedIndex = hint[1];
+
+						if (!n.value)
+							n.value = hint[0];
+					}
+					else if (!n.value)
+					{
+						n.value = 'Forward' + this.value;
+					}
+				}
+			});
+
+
+		cbi_validate_field('cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>', true, 'uciname');
+	//]]></script>-->
+</div>

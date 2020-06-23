@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+reload()
+{
+	#Invoked from WebUI so PIN is saved here
+	sim1=$(uci -q get simcard.sim1.pincode)
+	sim2=$(uci -q get simcard.sim2.pincode)
+	/sbin/mnf_info simpin set "$sim1"
+	/sbin/mnf_info sim2pin set "$sim2"
+}

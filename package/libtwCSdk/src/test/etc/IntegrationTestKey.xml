@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Entities build="b11" majorVersion="8" minorVersion="0" modelPersistenceProviderPackage="H2PersistenceProviderPackage"
+          revision="0" schemaVersion="1000">
+    <ApplicationKeys>
+        <ApplicationKey clientName="" description="" documentationContent=""
+                        expirationDate="2117-06-20T13:25:20.728-04:00" homeMashup="" ipWhitelist=""
+                        keyId="abf036c2-7009-4462-8a96-6036ee7eba53" lastModifiedDate="2017-10-23T09:39:09.539-04:00"
+                        name="IntegrationTestKey" projectName="" tags=""
+                        userNameReference="Administrator">
+            <Owner name="Administrator" type="User"/>
+            <avatar/>
+            <DesignTimePermissions>
+                <Create/>
+                <Read/>
+                <Update/>
+                <Delete/>
+                <Metadata/>
+            </DesignTimePermissions>
+            <RunTimePermissions/>
+            <VisibilityPermissions>
+                <Visibility/>
+            </VisibilityPermissions>
+            <ConfigurationTables/>
+            <ConfigurationChanges>
+                <ConfigurationChange changeAction="CREATE"
+                                     changeReason="header : name : updated, userNameReference : updated&#10;"
+                                     timestamp="2017-07-14T13:25:20.742-04:00" user="Administrator"/>
+            </ConfigurationChanges>
+        </ApplicationKey>
+    </ApplicationKeys>
+</Entities>

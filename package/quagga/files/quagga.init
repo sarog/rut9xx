@@ -1,0 +1,603 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+ . /lib/functions/network.sh
+
+START=60
+STOP=10
+
+DEBUG_LEVEL=4
+ZEBRA_CONFIG=/etc/quagga/zebra.conf
+ZEBRA_USERNAME="admin"
+ZEBRA_PASSWORD="admin01"
+#BGP
+BGP_CONFIG=/etc/quagga/bgpd.conf
+BGPD_USERNAME="admin"
+BGPD_PASSWORD="admin01"
+FIREWALL_SEC="A_BGP"
+#RIP
+RIP_CONFIG=/etc/quagga/ripd.conf
+RIPD_USERNAME="admin"
+RIPD_PASSWORD="admin01"
+RIP_FIREWALL_SEC="A_RIP"
+#OSPF
+OSPF_CONFIG=/etc/quagga/ospfd.conf
+OSPF_USERNAME="admin"
+OSPF_PASSWORD="admin01"
+OSPF_FIREWALL_SEC="A_OSPF"
+
+NHRP_CONFIG=/etc/quagga/nhrpd.conf
+
+debug() {
+	if [ $DEBUG_LEVEL -ge $1 ]; then
+		logger -t "quagga.init" "$2"
+	fi
+}
+
+writeToConfig() {
+	echo "$1" >> $2
+}
+
+BgpConfig() {
+	writeToConfig "$1" $BGP_CONFIG
+}
+
+RipConfig() {
+	writeToConfig "$1" $RIP_CONFIG
+}
+
+ZebraConfig() {
+	writeToConfig "$1" $ZEBRA_CONFIG
+}
+
+OspfConfig() {
+	writeToConfig "$1" $OSPF_CONFIG
+}
+
+NhrpConfig() {
+	writeToConfig "$1" $NHRP_CONFIG
+}
+# Function: IfConfig $1 $2 $3 [$4]
+# $1 string, $2 string, $2 string, $4 string (optional).
+# This function checks if $3 and $4 is not empty and equals.
+# If yes, it writes the string $2 in the $1 file.
+# If $4 is not set, function checks if $3 is empty. If not, it writes the string $2 in the $1 file.
+# Example: N=""; IfConfig $BGP_CONFIG "value: $N" $N;
+# Example 1: N="1"; IfConfig $BGP_CONFIG "value: $N" $N "1";
+IfConfig() {
+	if [ -n "$3" ]; then
+		if [ -n "$4" -a "$3" = "$4"  ]; then
+			writeToConfig "$2" "$1"
+		elif [[ -z "$4" ]]; then
+			writeToConfig "$2" "$1"
+		fi
+	fi
+}
+
+get() {
+	config_get $1 $2 $1 $3
+}
+
+prepare_peer() {
+	local section="$1"
+	local instance_name="$2"
+	local ipaddr; local as; local instance; local port; local description; local ebgp_multihop;
+	local default_originate; local weight; local maximum_prefix
+	local enabled; local inbound=0; local outbound=0;
+
+	get instance $section
+	[ "$instance" != "$instance_name" ] && return 2
+	get enabled $section
+	[ "$enabled" != "1" ] && return 1
+
+	get ipaddr $section
+	get as $section
+	get port $section
+	get description $section
+	get default_originate $section
+	get weight $section
+	get maximum_prefix $section
+	get ebgp_multihop $section
+	BgpConfig "! neighbor $section configuration"
+	BgpConfig "neighbor $ipaddr remote-as $as"
+	IfConfig $BGP_CONFIG "neighbor $ipaddr port $port" "$port"
+	IfConfig $BGP_CONFIG "neighbor $ipaddr description $description" "$description"
+	IfConfig $BGP_CONFIG "neighbor $ipaddr default-originate" "$default_originate" "1"
+	IfConfig $BGP_CONFIG "neighbor $ipaddr weight" "$weight"
+	IfConfig $BGP_CONFIG "neighbor $ipaddr maximum-prefix" "$maximum_prefix"
+	IfConfig $BGP_CONFIG "neighbor $ipaddr ebgp-multihop $ebgp_multihop" "$ebgp_multihop"
+	config_foreach prepare_distribute_list "access_list" "$section" "$ipaddr" "bgp"
+
+	inbound=0
+	outbound=0
+}
+
+prepare_peer_groups() {
+	local section="$1"
+	local instance_name="$2"
+
+	local neigbor; local as; local adv_int; local cl_config_type; local next_hop_self; local next_hop_self_all;
+	local soft_rec_inbound; local con_check;
+
+	get enabled $section
+	[ "$enabled" != "1" ] && return 1
+
+	get neighbor $section
+	get as $section
+	get adv_int $section
+	get cl_config_type $section
+	get next_hop_self $section
+	get next_hop_self_all $section
+	get soft_rec_inbound $section
+	get con_check $section
+
+	BgpConfig " neighbor $section peer-group"
+	BgpConfig " neighbor $section remote-as $as"
+
+	if [ "$con_check" = "1" ]; then
+		BgpConfig " neighbor $section disable-connected-check"
+	fi
+
+	IfConfig $BGP_CONFIG " neighbor $section advertisement-interval $adv_int" "$adv_int"
+	IfConfig $BGP_CONFIG " neighbor $section $cl_config_type" "$cl_config_type"
+
+	if [ "$next_hop_self" = "1" -a "$next_hop_self_all" = "1" ]; then
+		BgpConfig " neighbor $section next-hop-self all"
+	elif [ "$next_hop_self" = "1" ]; then
+		BgpConfig " neighbor $section next-hop-self"
+	fi
+
+	if [ "$soft_rec_inbound" = "1" ]; then
+		BgpConfig " neighbor $section soft-reconfiguration inbound"
+	fi
+
+	if [ -n "$neighbor" ]; then
+		for neigh in $neighbor
+		do
+			BgpConfig " neighbor $neigh peer-group $section"
+		done
+	fi
+}
+
+prepare_redistribution() {
+	local redistribute; section="$1"
+
+	get redistribute $section
+
+	if [ -n "$redistribute" ]; then
+		for redis in $redistribute
+		do
+			BgpConfig "  redistribute $redis"
+		done
+	fi
+}
+
+prepare_networks() {
+	local network; section="$1"
+
+	get network $section
+
+	if [ -n "$network" ]; then
+		for net in $network
+		do
+			BgpConfig "  network $net"
+		done
+	fi
+}
+
+prepare_ospf_network(){
+  local enabled; local section="$1"; local net; local authentication
+
+  get enabled $section
+
+  if [ "$enabled" == "1" ]; then
+    get net $section
+    get area $section
+    OspfConfig " network $net area $area"
+
+    if [ "$authentication" == "pass" ]; then
+      OspfConfig "area $area authentication"
+    elif [ "$authentication" == "md5_hmac" ]; then
+      OspfConfig "area $area authentication message-digest"
+    fi
+  fi
+}
+
+prepare_instance() {
+	local section="$1"
+	local as; local id; local network; local enabled
+
+	get enabled $section
+	[ "$enabled" != "1" ] && return 1
+
+	get as $section
+	get id $section
+	get network $section
+
+	BgpConfig "! Instance $as"
+	BgpConfig "router bgp $as"
+	IfConfig $BGP_CONFIG "bgp router-id $id" "$id"
+	prepare_networks $section
+	prepare_redistribution $section
+	config_foreach prepare_peer "peer" $section
+	config_foreach prepare_peer_groups "peer_group" $section
+
+}
+
+prepare_rip_interface() {
+	local section="$1"
+	local interface; local enabled; local deterministic_med; local passive_interface
+
+	get enabled $section
+	[ "$enabled" != "1" ] && return 1
+
+	get ifname $section
+  get passive_interface $section
+  get deterministic_med $section
+
+	RipConfig "! Interface $ifname"
+	IfConfig $RIP_CONFIG "network $ifname" "$ifname"
+	IfConfig $RIP_CONFIG "bgp deterministic-med" "$deterministic_med"
+  IfConfig $RIP_CONFIG "passive-interface $ifname" "$passive_interface" "1"
+  config_foreach prepare_distribute_list "rip_access_list" "$section" "$ifname" "rip"
+}
+
+prepare_interface() {
+	local section="$1"; local enabled; local ifname
+
+	if [ -n "`echo $1 | grep wan`" ]; then
+		get enabled $section
+
+		if [ "$enabled" != "0" ]; then
+			get ifname $section
+			IfConfig $ZEBRA_CONFIG "interface $ifname" "$ifname"
+		fi
+	fi
+}
+
+prepare_ospf_interface() {
+  local section="$1"; local enabled; local ifname; local hello_interval
+  local dead_interval; local retransmit_interval; local cost; local priority
+  local typ; local authentication; local password; local id
+
+  get enabled $section
+
+  [[ "$enabled" != "1" ]] && return 0
+
+  get ifname $section
+  get hello_interval $section
+  get dead_interval $section
+  get retransmit_interval $section
+  get cost $section
+  get priority $section
+  get typ $section
+  get authentication $section
+
+  OspfConfig "!"
+  OspfConfig "interface $ifname"
+  IfConfig $OSPF_CONFIG " ip ospf cost $cost" $cost
+  IfConfig $OSPF_CONFIG " ip ospf hello-interval $hello_interval" $hello_interval
+  IfConfig $OSPF_CONFIG " ip ospf dead-interval $dead_interval" $dead_interval
+  IfConfig $OSPF_CONFIG " ip ospf retransmit-interval $retransmit_interval" $retransmit_interval
+  IfConfig $OSPF_CONFIG " ip ospf priority $priority" $priority
+  IfConfig $OSPF_CONFIG " ip ospf network $typ" $typ
+
+  if [ "$authentication" == "pass" ]; then
+    get password $section
+    OspfConfig " ip ospf authentication"
+    IfConfig $OSPF_CONFIG " ip ospf authentication-key $password" $password
+  elif [ "$authentication" == "md5_hmac" ]; then
+    get password $section
+    get id $section "1"
+    OspfConfig " ip ospf authentication message-digest"
+    IfConfig $OSPF_CONFIG " ip ospf message-digest-key $id md5 $password" $password
+  fi
+}
+
+apply_maps() {
+	local ip_addr; local nbma;
+	config_get ip_addr $1 "ip_addr"
+	config_get nbma $1 "nbma"
+	if [[ -n "$ip_addr" ]] && [[ -n "$nbma" ]]; then
+		NhrpConfig "  ip nhrp map $ip_addr $nbma"
+	fi
+}
+
+prepare_nhrp_instance() {
+	local is_enabled; local nhs; local nbma; local t_source; local holdtime; local network_id; local interface; local ipsec_support;
+	local ipsec_instance;
+	local tmp;
+	config_get is_enabled $1 "enabled" "0"
+	config_get nhs $1 "proto_address"
+	config_get nbma $1 "nbma_address"
+	config_get t_source $1 "tunnel_source"
+	config_get holdtime $1 "holdtime" ""
+	config_get network_id $1 "network_id" "1"
+	config_get interface $1 "interface" ""
+	config_get ipsec_support $1 "ipsec_support" ""
+	config_get ipsec_instance $1 "ipsec_instance" ""
+
+	if [[ "$is_enabled" = "1" ]] && [[ "$interface" != "" ]]; then
+		NhrpConfig "interface $interface"
+		NhrpConfig "  ip nhrp network-id $network_id"
+
+		config_foreach apply_maps "$1_map"
+
+		if [[ -n "$nhs" ]] && [[ -n "$nbma" ]]; then
+			NhrpConfig "  ip nhrp nhs $nhs nbma $nbma"
+		fi
+		NhrpConfig "  ip nhrp registration no-unique"
+		NhrpConfig "  ip nhrp shortcut"
+		if [[ "$ipsec_support" = "1" ]]; then
+			NhrpConfig "  tunnel protection vici profile $ipsec_instance"
+		fi
+		IfConfig $NHRP_CONFIG "  tunnel source $t_source" $t_source
+		if [[ "$holdtime" ]] && [[ "$holdtime" != "" ]]; then
+			NhrpConfig "  ip nhrp holdtime $holdtime"
+		fi
+	fi
+	NhrpConfig "!"
+}
+
+prepare_distribute_list() {
+	local section=$1; local target_section=$2; local from=$3; local proto=$4
+	local enabled;  local target
+	get target $section
+
+	[ -z "$target" -o "$target" != "$target_section" ] && return 1
+	get enabled $section
+	[ "$enabled" != "1" ] && return 2
+	get direction $section
+
+	if [ "$direction" = "in" ]; then
+		[ $inbound -gt 0 ] && return 3 || inbound=1
+	elif [ "$direction" = "out" ]; then
+		[ $outbound -gt 0 ] && return 4 || outbound=1
+	fi
+
+	if [ -n "$direction" ]; then
+      if [[ "$proto" == "bgp" ]]; then
+        BgpConfig "neighbor $from distribute-list ${target}_${direction} $direction"
+      elif [[ "$proto" == "rip" ]]; then
+        RipConfig "distribute-list ${target}_${direction} $direction $from"
+      fi
+	fi
+}
+
+prepare_access_list() {
+	local section=$1; local config=$2; local target
+	local enabled;
+
+	get enabled $section
+
+	[ "$enabled" != "1" ] && return 2
+
+	get target $section
+	get action $section
+	get net $section
+	get direction $section
+
+	if [ -n "$target" -a -n "$action" -a -n "$net" -a -n "$direction" ]; then
+    writeToConfig "access-list ${target}_${direction} $action $net" $config
+	fi
+}
+
+prepare_zebra() {
+	local debug;
+
+	get debug "general"
+	get enabled_vty "general"
+
+	echo "" > $ZEBRA_CONFIG
+	ZebraConfig "hostname $ZEBRA_USERNAME"
+	ZebraConfig "password $ZEBRA_PASSWORD"
+	ZebraConfig "enable password $ZEBRA_PASSWORD"
+	ZebraConfig "!"
+	ZebraConfig "access-list vty permit 127.0.0.0/8"
+
+	if [ -n "$enabled_vty" -a "$enabled_vty" = "1" ]; then
+		network_get_subnet net "lan"
+		IfConfig $BGP_CONFIG "access-list vty permit $net" "$net"
+	fi
+
+	ZebraConfig "access-list vty deny any"
+	ZebraConfig "!"
+	# config_load "network"
+	# config_foreach prepare_interface
+	# config_load "quagga"
+	ZebraConfig "line vty"
+	ZebraConfig "access-class vty"
+	IfConfig $ZEBRA_CONFIG "log syslog" "$debug" "1"
+}
+
+prepare_bgpd() {
+	local debug; local enabled_vty; local bgpd_custom_conf
+	local instances=`uci show quagga | grep -c =instance`
+
+	get bgpd_custom_conf "general"
+
+	if [ -n "$bgpd_custom_conf" ]; then
+		cp "$bgpd_custom_conf" "$BGP_CONFIG"
+		return 0
+	fi
+
+	get debug "general"
+	get enabled_vty "general"
+
+	echo "" > $BGP_CONFIG
+	BgpConfig "hostname $BGPD_USERNAME"
+	BgpConfig "password $BGPD_PASSWORD"
+	BgpConfig "enable password $BGPD_PASSWORD"
+	BgpConfig "!"
+	BgpConfig "access-list vty permit 127.0.0.0/8"
+
+	if [ -n "$enabled_vty" -a "$enabled_vty" = "1" ]; then
+		network_get_subnet net "lan"
+		IfConfig $BGP_CONFIG "access-list vty permit $net" "$net"
+	fi
+
+	BgpConfig "access-list vty deny any"
+	BgpConfig "!"
+	[ $instances -gt 1 ] && BgpConfig "bgp multiple-instance"
+	config_foreach prepare_instance "instance"
+	config_foreach prepare_access_list "access_list" $BGP_CONFIG
+	BgpConfig "line vty"
+	BgpConfig "access-class vty"
+	IfConfig $BGP_CONFIG "log syslog" "$debug" "1"
+}
+
+prepare_rip() {
+	local debug; local enabled_vty; local custom_conf; local version
+  local neighbors;
+
+	get custom_conf "rip"
+
+	if [ -n "$custom_conf" ]; then
+		cp "$custom_conf" "$RIP_CONFIG"
+		return 0
+	fi
+
+	get debug "rip"
+	get enabled_vty "rip"
+  get neighbors "rip"
+  get version "rip"
+
+	echo "" > $RIP_CONFIG
+	RipConfig "hostname $RIPD_USERNAME"
+	RipConfig "password $RIPD_PASSWORD"
+	RipConfig "enable password $RIPD_PASSWORD"
+	RipConfig "!"
+	RipConfig "access-list vty permit 127.0.0.0/8"
+
+	if [ -n "$enabled_vty" -a "$enabled_vty" = "1" ]; then
+		network_get_subnet net "lan"
+		IfConfig $RIP_CONFIG "access-list vty permit $net" "$net"
+	fi
+
+	RipConfig "access-list vty deny any"
+	RipConfig "!"
+  RipConfig "router rip"
+	config_foreach prepare_rip_interface "interface"
+
+  for neighbor in $neighbors; do
+    RipConfig "neighbor $neighbor"
+  done
+
+  IfConfig $RIP_CONFIG "version $version" "$version"
+	config_foreach prepare_access_list "rip_access_list" $RIP_CONFIG
+	RipConfig "line vty"
+	RipConfig "access-class vty"
+  # IfConfig $RIP_CONFIG "debug rip events" "$debug" "1"
+  # IfConfig $RIP_CONFIG "debug rip packet" "$debug" "1"
+  # IfConfig $RIP_CONFIG "debug rip zebra" "$debug" "1"
+	IfConfig $RIP_CONFIG "log syslog" "$debug" "1"
+}
+
+prepare_ospf(){
+  local debug enabled_vty ustom_conf version id
+
+  get custom_conf "ospf"
+
+	if [ -n "$custom_conf" ]; then
+		cp "$custom_conf" "$OSPF_CONFIG"
+		return 0
+	fi
+
+	get debug "ospf"
+	get enabled_vty "ospf"
+	get id "ospf"
+
+	echo "" > $OSPF_CONFIG
+  OspfConfig "hostname $OSPF_USERNAME"
+  OspfConfig "password $OSPF_PASSWORD"
+  OspfConfig "enable password $OSPF_PASSWORD"
+  OspfConfig "!"
+  OspfConfig "access-list vty permit 127.0.0.0/8"
+
+  if [ -n "$enabled_vty" -a "$enabled_vty" = "1" ]; then
+    network_get_subnet net "lan"
+    IfConfig $OSPF_CONFIG "access-list vty permit $net" "$net"
+  fi
+
+  OspfConfig "access-list vty deny any"
+	OspfConfig "!"
+
+  config_foreach prepare_ospf_interface "ospf_interface"
+  OspfConfig "router ospf"
+  OspfConfig "ospf router-id ${id}" "${id}"
+
+  config_foreach prepare_ospf_network "ospf_network"
+  OspfConfig "line vty"
+	OspfConfig "access-class vty"
+	IfConfig $OSPF_CONFIG "log syslog" "$debug" "1"
+
+  if [ "$debug" == "1" ]; then
+    get debug_inf "ospf"
+
+    if [ "$debug_inf" != "" ]; then
+      for inf in $debug_inf; do
+        OspfConfig "debug ospf $inf"
+      done
+    fi
+  fi
+}
+
+prepare_nhrp() {
+	local debug;
+	config_get debug "nhrp" "debug" "0"
+
+	echo "hostname admin" > $NHRP_CONFIG
+	echo "password admin01" >> $NHRP_CONFIG
+	echo "enable password admin01" >> $NHRP_CONFIG
+	echo "!" >> $NHRP_CONFIG
+
+	config_foreach prepare_nhrp_instance "nhrp_instance"
+
+	echo "line vty" >> $NHRP_CONFIG
+	echo "access-class vty" >> $NHRP_CONFIG
+
+	if [ -n "$debug" -a "$debug" = "1" ]; then
+	    echo "log syslog" >> $NHRP_CONFIG
+	    echo "debug nhrp all" >> $NHRP_CONFIG
+    fi
+	echo "!" >> $NHRP_CONFIG
+}
+
+start() {
+	config_load quagga
+	local bgp_enabled; local rip_enabled; local ospf_enabled; local nhrp_enabled;
+
+	config_get bgp_enabled "general" "enabled" "0"
+  config_get rip_enabled "rip" "enabled" "0"
+  config_get ospf_enabled "ospf" "enabled" "0"
+	config_get nhrp_enabled "nhrp" "enabled" "0"
+
+  if [ "$rip_enabled" == "1" ]; then
+    prepare_rip
+  elif [ -f "$RIP_CONFIG" ]; then #/usr/sbin/quagga.init: deleted config file means daemon is disabled
+    rm $RIP_CONFIG
+  fi
+	if [ "$bgp_enabled" == "1" ]; then
+		prepare_bgpd
+  elif [ -f "$BGP_CONFIG" ]; then #/usr/sbin/quagga.init: deleted config file means daemon is disabled
+    rm $BGP_CONFIG
+  fi
+  if [ "$ospf_enabled" == "1" ]; then
+		prepare_ospf
+  elif [ -f "$OSPF_CONFIG" ]; then #/usr/sbin/quagga.init: deleted config file means daemon is disabled
+    rm $OSPF_CONFIG
+  fi
+  if [[ "$nhrp_enabled" == "1" ]]; then
+		prepare_nhrp
+	elif [[ -f "$NHRP_CONFIG" ]]; then #/usr/sbin/quagga.init: deleted config file means daemon is disabled
+		rm $NHRP_CONFIG
+	fi
+
+  if [ "$rip_enabled" == "1" -o "$bgp_enabled" == "1" -o "$ospf_enabled" == "1" -o "$nhrp_enabled" == "1" ]; then
+    prepare_zebra
+    /usr/sbin/quagga.init start
+  fi
+}
+
+stop() {
+	/usr/sbin/quagga.init stop
+}

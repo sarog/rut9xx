@@ -1,0 +1,193 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"PO-Revision-Date: 2012-01-30 19:31+0200\n"
+"Last-Translator: Manuel <freifunk@somakoma.de>\n"
+"Language-Team: none\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Pootle 2.0.4\n"
+
+msgid "Account Status"
+msgstr "Konto-Status"
+
+msgid "Account Status Message"
+msgstr "Konto-Status Meldung"
+
+msgid "Advanced Settings"
+msgstr "Erweiterte Einstellungen"
+
+msgid "Available"
+msgstr "Verfügbar"
+
+msgid ""
+"Avoid using anything but alpha-numeric characters, space, comma, and period."
+msgstr "Nur alphanumerische Zeichen, Komma, Punkt und Leerzeichen verwenden"
+
+msgid "Away"
+msgstr "Abwesend"
+
+msgid "Blacklisted Numbers"
+msgstr "Nicht erlaubte Nummern (Blacklist)"
+
+msgid "Call Routing"
+msgstr ""
+
+msgid "Call-through Numbers"
+msgstr "Durchwahl Nummern"
+
+msgid "Copy-paste large lists of numbers here."
+msgstr "Hier können per Copy & Paste größere Nummernlisten eingefügt werden."
+
+msgid "Do Not Disturb"
+msgstr "Beschäftigt"
+
+msgid "Domain Name/Dynamic Domain Name"
+msgstr "DNS Name (auch dynamisch möglich)"
+
+msgid "Dynamic List of Blacklisted Numbers"
+msgstr "Dynamische Liste nicht erlaubter Nummern (Dynamische Blacklist)"
+
+msgid "Email"
+msgstr "E-Mail"
+
+msgid "Enable Incoming Calls (Register via SIP)"
+msgstr "Eingehende Anrufe akzeptieren (registrieren via SIP)"
+
+msgid "Enable Incoming Calls (See Status, Message below)"
+msgstr ""
+
+msgid "Enable Outgoing Calls"
+msgstr "Ausgehende Anrufe aktivieren"
+
+msgid "Enabled"
+msgstr ""
+
+msgid "External SIP Port"
+msgstr "Externer SIP Port"
+
+msgid "Full Name"
+msgstr "Vollständiger Name"
+
+msgid "General Settings"
+msgstr "Allgemeine Einstellungen"
+
+msgid "Google Accounts"
+msgstr ""
+
+msgid "Google Voice/Talk Accounts"
+msgstr ""
+
+msgid "Incoming Calls"
+msgstr "Eingehende Anrufe"
+
+msgid "Insert QoS Rules"
+msgstr ""
+
+msgid "Makes Outgoing Calls"
+msgstr ""
+
+#, fuzzy
+msgid "No"
+msgstr ""
+
+msgid "Outbound Proxy"
+msgstr "Proxy für ausgehende Verbindungen"
+
+msgid "Outgoing Calls"
+msgstr "Abgehende Anrufe"
+
+msgid "PBX Main Page"
+msgstr ""
+
+msgid "PIN"
+msgstr ""
+
+msgid "Password"
+msgstr "Passwort"
+
+msgid "Port Setting for SIP Devices"
+msgstr ""
+
+msgid "Providers Used for Outgoing Calls"
+msgstr "Provider für abgehende Anrufe"
+
+msgid "QoS Settings"
+msgstr "QoS Einstellungen"
+
+msgid "RTP Port Range End"
+msgstr ""
+
+msgid "RTP Port Range Start"
+msgstr ""
+
+msgid "Receives Incoming Calls"
+msgstr ""
+
+msgid "Remote Usage"
+msgstr ""
+
+msgid "SIP Accounts"
+msgstr ""
+
+msgid "SIP Device/Softphone Accounts"
+msgstr ""
+
+msgid "SIP Provider Accounts"
+msgstr ""
+
+msgid "SIP Realm (needed by some providers)"
+msgstr ""
+
+msgid "SIP Server/Registrar"
+msgstr ""
+
+msgid "SIP Server/Registrar Port"
+msgstr ""
+
+msgid "Server Setting"
+msgstr ""
+
+msgid "Server Setting for Local SIP Devices"
+msgstr ""
+
+msgid "Server Setting for Remote SIP Devices"
+msgstr ""
+
+msgid "Service Control and Connection Status"
+msgstr ""
+
+msgid "Service Status"
+msgstr ""
+
+msgid "Space-Separated List of Blacklisted Numbers"
+msgstr ""
+
+msgid "Specify numbers individually here. Press enter to add more numbers."
+msgstr ""
+
+msgid ""
+"Use this account to make outgoing calls as configured in the \"Call Routing"
+"\" section."
+msgstr ""
+
+msgid "Use this account to make outgoing calls."
+msgstr ""
+
+msgid "User Accounts"
+msgstr ""
+
+msgid "User Agent String"
+msgstr ""
+
+msgid "User Name"
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid "You can specify a real name to show up in the Caller ID here."
+msgstr ""

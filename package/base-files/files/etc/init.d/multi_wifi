@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+
+# Copyright (C) 2014 Teltonika
+
+. /lib/teltonika-functions.sh
+
+START=99
+STOP=51
+USE_PROCD=1
+
+start_service() {
+	local enabled
+
+	config_load multi_wifi
+	config_get enabled general enabled "0"
+
+	[ "$enabled" == 0 ] && return
+
+	config_get scan_time general scan_time "0"
+	config_get block_time general block_time "0"
+
+	procd_open_instance
+	procd_set_param respawn 0
+	procd_set_param command /sbin/multiple_ap.sh "$scan_time" "$block_time"
+	procd_close_instance
+}

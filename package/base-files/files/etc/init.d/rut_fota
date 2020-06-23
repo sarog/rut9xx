@@ -1,0 +1,48 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=99
+
+CONFIG_GET="uci -q get rut_fota.config"
+
+check_last_update()
+{
+    curdate=$(date '+%s')
+    last_update=`$CONFIG_GET.last_update`
+    check_after=`$CONFIG_GET.check_after`
+
+    if [ -z $last_update ];
+    then
+        last_update=$curdate
+        uci set rut_fota.config.last_update=$last_update
+        uci commit
+        /sbin/rut_fota -d &
+    fi
+
+    next_update=$(($last_update + check_after))
+    if [ $curdate -ge $next_update ] ;
+    then
+        last_update=$curdate
+        uci set rut_fota.config.last_update=$next_update
+        uci commit
+        /sbin/rut_fota -d &
+    fi
+}
+
+start()
+{
+    if [[ -z "$(grep "0 [*] [*] [*] [*] /etc/init.d/rut_fota start" "/etc/crontabs/root")" ]];
+    then
+        echo "0 * * * * /etc/init.d/rut_fota start" >> /etc/crontabs/root
+        /etc/init.d/cron restart
+    fi
+	if [ `uci -q get rut_fota.config.enabled` = 1 ];
+	then
+		check_last_update
+	fi
+}
+
+stop()
+{
+    /sbin/rut_fota stop
+}

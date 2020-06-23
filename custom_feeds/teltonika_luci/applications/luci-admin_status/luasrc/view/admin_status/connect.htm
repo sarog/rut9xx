@@ -1,0 +1,127 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: index.htm 8408 2012-04-02 22:50:26Z jow $
+
+-%>
+
+<%
+require "teltonika_lua_functions"
+eventlog = require'tlt_eventslog_lua'
+local show = luci.tools.status.show_mobile()
+local curdev = luci.dispatcher.context.requestpath
+    curdev = curdev[#curdev] ~= "connect" and curdev[#curdev] or show and "all" or "wifi"
+
+local number 
+local time
+local action 
+local result 
+local index = 0
+local line
+local event
+local Table = {}
+
+-%>
+
+<%+header%>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript" src="<%=resource%>/Dable.js"></script>
+
+<h2><a id="content" name="content"><%=translate("Connections Log")%></a></h2>
+
+<ul class="cbi-tabmenu">
+	<% if show then %>
+		<li class="cbi-tab<%= "all" == curdev and "" or "-disabled" %>"><a href="<%=pcdata("all")%>"><%="All"%></a></li>
+	<% end %>
+	<li class="cbi-tab<%= "wifi" == curdev and "" or "-disabled" %>"><a href="<%=pcdata("wifi")%>"><%="Wireless"%></a></li>
+	<% if show then %>
+		<li class="cbi-tab<%= "mobile" == curdev and "" or "-disabled" %>"><a href="<%=pcdata("mobile")%>"><%="Mobile Data"%></a></li>
+		<li class="cbi-tab<%= "conntype" == curdev and "" or "-disabled" %>"><a href="<%=pcdata("conntype")%>"><%="Network Type"%></a></li>
+		<li class="cbi-tab<%= "coper" == curdev and "" or "-disabled" %>"><a href="<%=pcdata("coper")%>"><%="Network Operator"%></a></li>
+	<% end %>
+</ul>
+
+<fieldset>
+	<legend><%=translate("Connections Log")%></legend>
+	<div id="loading" style="display: inline;">
+		<img src="/luci-static/resources/icons/loading.gif" alt="Loading">
+		<span style="position: relative; bottom: 12px;"> Loading... </span>
+	</div>
+<%
+
+if curdev == "all" then 
+	t = {requests = "print", table = "connections", date = "1"}
+elseif curdev == "wifi" then
+	t = {requests = "print", table = "connections", date = "1", query=" WHERE NAME = 'WiFi'"}
+elseif curdev == "mobile" then
+	t = {requests = "print", table = "connections", date = "1", query=" WHERE NAME = 'Mobile Data'"}
+elseif curdev == "conntype" then
+	t = {requests = "print", table = "connections", date = "1", query=" WHERE NAME = 'Network Type'"}
+elseif curdev == "coper" then
+	t = {requests = "print", table = "connections", date = "1", query=" WHERE NAME = 'Network Operator'"}
+end
+
+if t then
+	Table = eventlog:print(t)
+end
+%>
+
+<div id="TableDable" style="display: none">
+	<table id="tablepaging" class="yui" align="center" width="100%" cellspacing="10" >
+		<thead>
+			<tr>
+				<th class="cbi-section-table-cell" width="10%" onmouseover="ShowHint(this, '<%=translate('Event identification number')%>')" onmouseout="HideHint(this)"><%=translate("ID")%></th>
+				<th class="cbi-section-table-cell" width="30%" onmouseover="ShowHint(this, '<%=translate('Date when event was registered')%>')" onmouseout="HideHint(this)"><%=translate("Date")%></th>
+				<th class="cbi-section-table-cell" width="20%" onmouseover="ShowHint(this, '<%=translate('Event action group')%>')" onmouseout="HideHint(this)"><%=translate("Event type")%></th>
+				<th class="cbi-section-table-cell" width="40%" onmouseover="ShowHint(this, '<%=translate('Detailed event result')%>')" onmouseout="HideHint(this)"><%=translate("Event")%></th>
+			</tr>
+		</thead>
+		<tbody>
+			<%
+			for i = #Table, 1, -1 do
+					number = Table[i][1]
+					--time =os.date("%Y-%m-%d %H:%M:%S", Table[i][2])
+					time = Table[i][2]
+					action = Table[i][3]
+					result = Table[i][4]
+				index = index + 1
+				%>
+					<tr class="cbi-section-table-row">
+						<td class="cbi-section-table-cell" width="10%"><%=escapeHTML(number)%></td>
+						<td class="cbi-section-table-cell" width="30%"><%=escapeHTML(time)%></td>
+						<td class="cbi-section-table-cell" width="20%"><%=escapeHTML(action)%></td>
+						<td class="cbi-section-table-cell" width="40%"><%=escapeHTML(result)%></td>
+					</tr>
+			<% end %>
+
+			<% if index == 0 then %>
+				<tr class="cbi-section-table-row">
+				<td style="padding:20px 0 20px 10px;" colspan="3"><em><%=translate("There are no connections yet.")%></em></td><td></td><td></td>
+			<% end %>
+		</tbody>
+	</table>
+</div>
+
+
+<script type="text/javascript">
+
+var dable = new Dable("TableDable");
+AddWindowOnLoadEvent(hide);
+
+function hide(){
+	var e = document.getElementById("loading");
+	e.setAttribute('style', 'display: none;');
+}
+</script>
+</fieldset>
+
+
+<%+footer%>

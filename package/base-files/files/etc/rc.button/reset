@@ -1,0 +1,66 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+handler_reboot(){
+	echo "REBOOT" > /dev/console
+	ps | grep led_reset_count.sh | awk '{print $1}' | xargs kill
+	/usr/sbin/ledbar.sh blink green
+	sync
+	reboot -b
+	exit
+}
+
+handler_firstboot(){
+	echo "FACTORY RESET" > /dev/console
+	ps | grep led_reset_count.sh | awk '{print $1}' | xargs kill
+	/usr/sbin/ledbar.sh blink red
+	/sbin/jffs2mark -y && reboot -b &
+	exit
+}
+
+handler_default(){
+	local tar_file="/etc/default-config/config.tar.gz"
+
+	[ ! -f "$tar_file" ] && handler_firstboot
+
+	/sbin/user_defaults && echo "RESTORE TO DEFAULT CONFIG" > /dev/console
+	reboot -b
+	exit
+}
+
+handle () {
+    local action
+    local handler
+    local min
+    local max
+
+    config_get action "${1}" action
+    config_get handler "${1}" handler
+    config_get min "${1}" min
+    config_get max "${1}" max
+
+    [ "${ACTION}" = "${action}" -a -n "${handler}" ] && {
+        [ -z "${min}" -o -z "${max}" ] && eval handler_${handler}
+        [ -n "${min}" -a -n "${max}" ] && {
+            [ "${min}" -le "${SEEN}" -a "${max}" -ge "${SEEN}" ] && \
+            	eval handler_${handler}
+        }
+    }
+}
+
+[ "${ACTION}" = "pressed" ] && logger "$BUTTON was $ACTION after $SEEN seconds" \
+	|| logger "$BUTTON was $ACTION for $SEEN seconds"
+
+[ "${ACTION}" = "pressed" ] && {
+	/etc/init.d/ledsman stop
+	/usr/sbin/led_reset_count.sh 1000000 -f &
+}
+
+config_load system
+config_foreach handle button
+
+[ "${ACTION}" = "released" ] && {
+	ps | grep led_reset_count.sh | awk '{print $1}' | xargs kill
+	/etc/init.d/ledsman start
+}

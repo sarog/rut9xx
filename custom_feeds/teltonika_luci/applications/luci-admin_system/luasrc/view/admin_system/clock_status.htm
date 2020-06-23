@@ -1,0 +1,70 @@
+<%+cbi/valueheader%>
+
+<% 
+	local util = require "luci.util"
+	local sys = require "luci.sys"
+	local dev_has_gps = luci.util.trim(luci.sys.exec("uci get hwinfo.hwinfo.gps")) or "0"
+%>
+
+<script type="text/javascript">//<![CDATA[
+	XHR.poll(5, '<%=luci.dispatcher.build_url("admin", "system", "clock_status")%>', null,
+		function(x, rv)
+		{
+			if (x && x.status === 403)
+				location.href = location.href;
+
+			var s = document.getElementById('<%=self.option%>-clock-status');
+			if (s)
+			{
+				s.innerHTML = rv.timestring || '?';
+			}
+		}
+	);
+
+
+	function get_gps_time(btn){
+		btn.disabled = true;
+		btn.value = '<%=translate("Synchronizing...")%>';
+		XHR.get('<%=luci.dispatcher.build_url("admin", "system", "admin", "xhr_gps_time")%>', null,
+			function(x, info)
+			{
+				if (x && x.status === 403)
+					location.href = location.href;
+
+				btn.value = info.status;
+				if(info.status === "Success!"){
+					alert("System time successfully updated from GPS!");
+				}else{
+					alert("Unable to update system time! Please make sure GPS service is enabled and device is receiving GPS data");
+				}
+				setTimeout(function() { btn.value="Sync with GPS"; btn.disabled = false;}, 1000);
+			}
+		);
+	}
+
+	function sync_clock(btn)
+	{
+		btn.disabled = true;
+		btn.value = '<%=translate("Synchronizing...")%>';
+		XHR.get('<%=luci.dispatcher.build_url("admin", "system", "clock_status")%>',
+			{ set: (new Date().getTime())/1000},
+			function()
+			{
+				btn.value = '<%=translate("Success!")%>';
+				alert("System time successfully updated from browser!");
+				setTimeout(function() { btn.value="Sync with browser"; btn.disabled = false;}, 1000);
+			}
+		);
+
+		return false;
+	}
+//]]></script>
+
+<span id="<%=self.option%>-clock-status"><em><%=translate("Collecting data...")%></em></span>
+<input type="button" class="cbi-button cbi-button-apply" style="margin-right:15px;" value="<%=translate('Sync with browser')%>" onclick="return sync_clock(this)" />
+
+<% if dev_has_gps == "1" then %>
+	<input type="button" class="cbi-button cbi-button-apply" style="margin-right:15px;" value="<%=translate('Sync with GPS')%>" onclick="get_gps_time(this)" />
+<% end %>	
+	
+<%+cbi/valuefooter%>

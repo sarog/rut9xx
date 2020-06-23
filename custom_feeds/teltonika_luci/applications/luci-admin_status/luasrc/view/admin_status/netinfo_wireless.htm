@@ -1,0 +1,224 @@
+<%
+	require "luci.fs"
+	require "luci.tools.status"
+	luci.util   = require "luci.util"
+	local mac = luci.util.trim(luci.sys.exec("ifconfig | grep 'wlan0' | awk -F ' ' '{print $5}'"))
+	local ntm = require "luci.model.network"
+
+	if luci.http.formvalue("status") == "1" then
+		local rv = {
+			wifinets = luci.tools.status.wifi_networks(),
+			leases = luci.tools.status.dhcp_leases(),
+			iwinfo = ntm:iwinfo_parser()
+		}
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(rv)
+		return
+	end
+-%>
+
+<%+header%>
+<script type="text/javascript">
+
+</script>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+function get_icon(avail, quality){
+	var icon;
+	if (!avail)
+		icon = "<%=resource%>/icons/signal-none.png";
+	else if (quality == 0)
+		icon = "<%=resource%>/icons/signal-0.png";
+	else if (quality < 25)
+		icon = "<%=resource%>/icons/signal-0-25.png";
+	else if (quality < 50)
+		icon = "<%=resource%>/icons/signal-25-50.png";
+	else if (quality < 75)
+		icon = "<%=resource%>/icons/signal-50-75.png";
+	else
+		icon = "<%=resource%>/icons/signal-75-100.png";
+	return icon;
+}
+
+function refreshPage(){
+	document.getElementById("refresh").disabled = true;
+	XHR.get('<%=luci.dispatcher.build_url("admin", "status", "netinfo", "wireless")%>', { status: 1 },
+		function(x, info)
+		{	//-------------------------------------------------------------------------------
+			//------------Wifi info----------------------------------------------------------
+			//-------------------------------------------------------------------------------
+			if (x && x.status === 403)
+				location.href = location.href;
+
+			var assoclist = [ ];
+			var ws = document.getElementById('wifi_status_table');
+			if (ws){
+				var wsbody = ws.rows[0].parentNode;
+				while (ws.rows.length > 0)
+					wsbody.deleteRow(0);
+				for (var didx = 0; didx < info.wifinets.length; didx++){
+					var dev = info.wifinets[didx];
+					var s = '';
+
+					for (var nidx = 0; nidx < dev.networks.length; nidx++){
+						var net = dev.networks[nidx];
+						if (net != null && net.bssid != "00:00:00:00:00:00") {
+							s = String.format(
+											'<tr><td width="33%%" onmouseover="ShowHint(this, \'<%=translate("Force your wireless radio to work on this channel")%>\')" onmouseout="HideHint(this)"><%=translate("Channel")%></td><td>%d (%.3f GHz)</td></tr>'+
+									'<tr><td width="33%%" onmouseover="ShowHint(this, \'<%=translate("Indicates Country Code")%>\')" onmouseout="HideHint(this)" ><%=translate("Country code")%></td><td>%s (%s)</td></tr>',
+											net.channel, net.frequency || '?', net.country, net.countryname
+							);
+						
+							for (var bssid in net.assoclist)
+							{
+								assoclist.push({
+									bssid: bssid,
+									signal: net.assoclist[bssid].signal,
+									noise: net.assoclist[bssid].noise,
+									rx_rate: net.assoclist[bssid].rx_rate,
+									rx_mcs: net.assoclist[bssid].rx_mcs,
+									rx_40mhz: net.assoclist[bssid].rx_40mhz,
+									tx_rate: net.assoclist[bssid].tx_rate,
+									tx_mcs: net.assoclist[bssid].tx_mcs,
+									tx_40mhz: net.assoclist[bssid].tx_40mhz,
+									link: net.link,
+									name: net.name
+								});
+							}
+						}
+					}
+					if (!s)
+						s = '<tr><td width="33%%"><em><%=translate("No enabled wireless access points found")%></em></td></tr>';
+					ws = document.getElementById('wifi_status');
+					ws.innerHTML = '<table id="wifi_status_table" width="100%" cellspacing="10">' + s + '</table>';
+				}
+			}
+
+			var wi = document.getElementById('wifi_interface_table');
+			if (wi){
+				while( wi.rows.length > 1 )
+					wi.rows[0].parentNode.deleteRow(1);
+				var iwinfo = info.iwinfo;
+				for (var i = 0; i < iwinfo.length; i++){
+					var tr = wi.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row cbi-rowstyle-' + (1 + (i % 2));
+					tr.insertCell(-1).innerHTML = iwinfo[i]["name"];
+					tr.insertCell(-1).innerHTML = iwinfo[i]["mode"];
+					tr.insertCell(-1).innerHTML = iwinfo[i]["encryption"];
+					tr.insertCell(-1).innerHTML = iwinfo[i]["macaddr"];
+					tr.insertCell(-1).innerHTML = iwinfo[i]["signal"]+"%";
+					tr.insertCell(-1).innerHTML = iwinfo[i]["bitrate"];
+				}
+			}
+
+			var ac = document.getElementById('wifi_assoc_table');
+			if (ac){
+				/* clear all rows */
+				while( ac.rows.length > 1 )
+					ac.rows[0].parentNode.deleteRow(1);
+
+				assoclist.sort(function(a, b){
+					return (a.name == b.name)
+						? (a.bssid < b.bssid)
+						: (a.name  > b.name )
+					;
+				});
+				for( var i = 0; i < assoclist.length; i++ ){
+					var devicename='?';
+
+					for( var l = 0; l < info.leases.length; l++ ){
+						if(info.leases[l].macaddr.toUpperCase() == assoclist[i].bssid.toUpperCase()){
+							devicename=info.leases[l].hostname ? info.leases[l].hostname : '?';
+							break;
+						}
+					}
+
+					var tr = ac.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row cbi-rowstyle-' + (1 + (i % 2));
+
+					tr.insertCell(-1).innerHTML = assoclist[i].bssid;
+
+					tr.insertCell(-1).innerHTML = devicename;
+
+					tr.insertCell(-1).innerHTML = String.format('%d dBm', assoclist[i].signal);
+
+					tr.insertCell(-1).innerHTML = (assoclist[i].rx_mcs > -1)
+						? String.format('%.1f Mbit/s, MCS %d, %dMHz', assoclist[i].rx_rate / 1000, assoclist[i].rx_mcs, assoclist[i].rx_40mhz ? 40 : 20)
+						: String.format('%.1f Mbit/s', assoclist[i].rx_rate / 1000)
+					;
+
+					tr.insertCell(-1).innerHTML = (assoclist[i].tx_mcs > -1)
+						? String.format('%.1f Mbit/s, MCS %d, %dMHz', assoclist[i].tx_rate / 1000, assoclist[i].tx_mcs, assoclist[i].tx_40mhz ? 40 : 20)
+						: String.format('%.1f Mbit/s', assoclist[i].tx_rate / 1000)
+					;
+				}
+
+				if (ac.rows.length == 1){
+					var tr = ac.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row';
+
+					var td = tr.insertCell(-1);
+						td.colSpan = 7;
+						td.innerHTML = '<tr><td><em><%=translate("No associated stations found")%></em><tr><td>';
+				}
+			}
+
+			document.getElementById('refresh').disabled = false;
+		}
+	);
+}
+AddWindowOnLoadEvent(refreshPage);
+//]]></script>
+
+<h2><a id="content" name="content"><%=translate("Wireless Information")%></a></h2>
+<fieldset class="cbi-section">
+	<div id="wifiBarsShow" class="overlayParent">
+		<div class="overlayLegend"><%=translate("Wireless Information")%></div> 
+	</div>
+<div id="wifi_status">
+	<table id="wifi_status_table" width="100%" cellspacing="10">
+		<tr><td><em><%=translate("Collecting data...")%></em></td></tr>
+	</table>
+</div>
+</fieldset>
+
+<fieldset class="cbi-section">
+	<div id="wifiBarsShow2" class="overlayParent">
+		<div class="overlayLegend"><%=translate("Wireless Status")%></div> 
+	</div>
+	<div id="wifi_status2">
+		<table class="cbi-section-table" id="wifi_interface_table">
+			<tr class="cbi-section-table-titles">
+				<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('The broadcasted SSID (Service Set Identifier) of the wireless network')%>')" onmouseout="HideHint(this)" ><%=translate("SSID")%></th>
+				<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Connection mode. Can either be Access Point (AP) or Client. In AP mode others can connect to this router\\\&#39;s wireless connection. In client mode router connects to other wireless networks')%>')" onmouseout="HideHint(this)" ><%=translate("Mode")%></th>
+				<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Encryption that is used to secure a connection between this router and AP (Access Point), to which the router is connected to')%>')" onmouseout="HideHint(this)" ><%=translate("Encryption")%></th>
+				<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('The MAC (Media Access Control) address of the access point radio')%>')" onmouseout="HideHint(this)" ><%=translate("Wireless MAC")%></th>
+				<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('The signal quality between router\\\&#39;s radio and some other device that is connected to the router.')%>')" onmouseout="HideHint(this)" ><%=translate("Signal quality")%></th>
+				<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('The maximum possible physical throughput that the router\\\&#39;s radio can handle. Bitrate will be shared between the router and other possible devices which connect to the local AP')%>')" onmouseout="HideHint(this)" ><%=translate("Bit rate")%></th>
+			</tr>
+			<tr class="cbi-section-table-row">
+				<td colspan="7"><em><br /><%=translate("Collecting data...")%></em></td>
+			</tr>
+		</table>
+	</div>
+</fieldset>
+
+<fieldset class="cbi-section">
+	<legend><%=translate("Associated Stations")%></legend>
+	<table class="cbi-section-table" id="wifi_assoc_table">
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Associated station\\\'s MAC (Media Access Control) address')%>')" onmouseout="HideHint(this)" ><%=translate("MAC address")%></th>
+			<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Device Name')%>')" onmouseout="HideHint(this)" ><%=translate("Device name")%></th>
+			<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Received Signal Strength Indicator (RSSI). Signal\\\'s strength measured in dBm')%>')" onmouseout="HideHint(this)" ><%=translate("Signal")%></th>
+			<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('The rate at which packets are received from associated station')%>')" onmouseout="HideHint(this)" ><%=translate("RX rate")%></th>
+			<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('The rate at which packets are sent to associated station')%>')" onmouseout="HideHint(this)" ><%=translate("TX rate")%></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td colspan="7"><em><br /><%=translate("Collecting data...")%></em></td>
+		</tr>
+	</table>
+</fieldset>
+<fieldset class="cbi-section"> 
+    <button id="refresh" class="cbi-button-refresh"  style="float: right;" disabled onClick="refreshPage()"><%=translate("Refresh")%></button>
+</fieldset> 
+<%+footer%>

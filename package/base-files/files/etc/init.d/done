@@ -1,0 +1,52 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=95
+
+check_modem() {
+	. /lib/teltonika-functions.sh
+	vidpid=`get_ext_vidpid_tlt`
+	if [ -z "$vidpid" ]; then
+		err1=`dmesg | grep -c "device descriptor read"`
+	        err2=`dmesg | grep -c "device not accepting address"`
+	        if [ "$err1" -ne 0 ] || [ "$err2" -ne 0 ]; then
+			echo "Modem error. Restarting modem"
+			/etc/init.d/modem restart
+		fi
+	fi
+}
+
+boot() {
+	mount_root done
+
+	# process user commands
+	[ -f /etc/rc.local ] && {
+		sh /etc/rc.local
+	}
+
+	# set leds to normal state
+	. /etc/diag.sh
+
+	# check for modem startup error
+	check_modem
+
+        # reloading configs for uci (moved from wifid.init)
+        /sbin/reload_config
+
+        /usr/bin/logger "Warning: this sim get method (gpio.sh get SIM) is deprecated. Consider usin    g ubus interface instead."
+
+	set_state done
+
+	if [ -f /tmp/memoryexpansion ]
+	then
+		block detect > /etc/config/fstab
+		sed -i s@/mnt/sda1@/overlay@ /etc/config/fstab
+		sed -i "s/option\\tenabled\\t'0'/option\\tenabled\\t'1'/" /etc/config/fstab
+		mount -t ext2 /dev/sda1 /mnt/sda1
+		rm -rf /mnt/sda1/*
+		rm -rf /overlay/upper/mnt/sda1/*
+		tar -C /overlay -cvf - . | tar -C /mnt/sda1 -xf -
+		sync
+		reboot
+	fi
+}

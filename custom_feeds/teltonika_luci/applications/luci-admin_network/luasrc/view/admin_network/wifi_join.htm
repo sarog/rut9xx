@@ -1,0 +1,183 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2009 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: wifi_join.htm 8329 2012-03-04 18:35:13Z jow $
+
+-%>
+
+<%- 
+local uci = require "luci.model.uci".cursor()
+local utl = require "luci.util"
+local sys = require "luci.sys"
+require "teltonika_lua_functions"
+local dev =  "radio0"
+local wan_wifi_enabled = false
+uci:foreach("network", "interface", function(sct)
+	if sct.ifname and sct.ifname:match("wlan") then
+		if not sct.enabled or (sct.enabled and sct.enabled == "1") then
+			wan_wifi_enabled = true
+		end
+	end
+end)
+
+	if siteSurvey == true then
+		luci.sys.call("(env -i /sbin/wifi down) >/dev/null 2>/dev/null")
+		os.execute("sleep 4")
+	end	
+	
+	function guess_wifi_signal(info)
+		local scale = (100 / (info.quality_max or 100) * (info.quality or 0))
+		local icon
+
+		if not info.bssid or info.bssid == "00:00:00:00:00:00" then
+			icon = resource .. "/icons/signal-none.png"
+		elseif scale < 15 then
+			icon = resource .. "/icons/signal-0.png"
+		elseif scale < 35 then
+			icon = resource .. "/icons/signal-0-25.png"
+		elseif scale < 55 then
+			icon = resource .. "/icons/signal-25-50.png"
+		elseif scale < 75 then
+			icon = resource .. "/icons/signal-50-75.png"
+		else
+			icon = resource .. "/icons/signal-75-100.png"
+		end
+
+		return icon
+	end
+
+	function percent_wifi_signal(info)
+		local qc = info.quality or 0
+		local qm = info.quality_max or 0
+
+		if info.bssid and qc > 0 and qm > 0 then
+			return math.floor((100 / qm) * qc)
+		else
+			return 0
+		end
+	end
+
+	function format_wifi_encryption(info)
+		if info.wep == true and not info.wpa_version then
+			return "WEP"
+		elseif info.wpa then
+			return "%s - %s" % {
+				table.concat(info.pair_ciphers, ", "),
+				table.concat(info.group_ciphers, ", "),
+				(info.wpa == 3) and "mixed WPA/WPA2"
+					or (info.wpa == 2 and "WPA2" or "WPA"),
+				table.concat(info.auth_suites, ", ")
+			}
+		else
+			return "<em>None</em>"
+		end
+	end
+
+	local dev =  "radio0"
+	local iw = luci.sys.wifi.getiwinfo(dev)
+	if not iw then
+		luci.http.redirect(luci.dispatcher.build_url("admin/network/wireless"))
+		return
+	end
+
+
+	function scanlist(times)
+		local i, k, v
+		local l = { }
+		local s = { }
+
+		for i = 1, times do
+			for k, v in ipairs(iw.scanlist) do
+				if not s[v.bssid] then
+					l[#l+1] = v
+					s[v.bssid] = true
+				end
+			end
+		end
+		return l
+	end
+-%>
+
+<%+header%>
+
+<h2>
+	<a id="content" name="content">
+		<%- if siteSurvey == true then 
+				pcdata("Site Survey")
+			else
+				pcdata("Join Network: Wireless Scan")
+			end 
+		-%>
+	</a>
+</h2>
+
+<div class="cbi-map">
+	<fieldset class="cbi-section">
+		<table class="cbi-section-table" style="empty-cells:hide">
+			<!-- scan list -->
+			<% for i, net in ipairs(scanlist(3)) do net.encryption = net.encryption or { } %>
+			<tr class="cbi-section-table-row cbi-rowstyle-<%=1 + ((i-1) % 2)%>">
+				<td class="cbi-value-field" style="width:16px; padding:3px">
+					<img src="<%=guess_wifi_signal(net)%>" /><br />
+					<small><%=percent_wifi_signal(net)%>%</small>
+				</td>
+				<td class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px">
+					<big><strong><%=net.ssid and escapeHTML(utl.pcdata(net.ssid)) or "<em>hidden</em>"%></strong></big><br />
+					<strong><%=translate("Channel:")%></strong> <%=net.channel%> |
+					<strong><%=translate("Mode:")%></strong> <%=net.mode%> |
+					<strong><%=translate("BSSID:")%></strong> <%=net.bssid%> |
+					<strong><%=translate("Encryption:")%></strong> <%=net.encryption.description or translate("Open")%>
+				</td>
+				<td class="cbi-value-field" style="width:40px">
+					<form action="<%=luci.dispatcher.build_url('admin/network/wireless_join')%>" method="post">
+						<input type="hidden" name="device" value="<%=utl.pcdata(dev)%>" />
+						<input type="hidden" name="join" value="<%=escapeHTML(utl.pcdata(net.ssid))%>" />
+						<input type="hidden" name="mode" value="<%=net.mode%>" />
+						<input type="hidden" name="bssid" value="<%=net.bssid%>" />
+						<input type="hidden" name="channel" value="<%=net.channel%>" />
+						<input type="hidden" name="wep" value="<%=net.encryption.wep and 1 or 0%>" />
+						<% if net.encryption.wpa then %>
+						<input type="hidden" name="wpa_version" value="<%=net.encryption.wpa%>" />
+						<% for _, v in ipairs(net.encryption.auth_suites) do %><input type="hidden" name="wpa_suites" value="<%=v%>" />
+						<% end; for _, v in ipairs(net.encryption.group_ciphers) do %><input type="hidden" name="wpa_group" value="<%=v%>" />
+						<% end; for _, v in ipairs(net.encryption.pair_ciphers) do %><input type="hidden" name="wpa_pairwise" value="<%=v%>" />
+						<% end; end %>
+						<input type="hidden" name="clbridge" value="<%=iw.type == "wl" and 1 or 0%>" />
+						<% if wan_wifi_enabled then%>
+							<input class="cbi-button cbi-button-apply" type="submit" value="<%:Join Network%>" />
+						<% end %>
+					</form>
+				</td>
+			</tr>
+			<% end %>
+			<!-- /scan list -->
+		</table>
+	</fieldset>
+</div>
+<div class="cbi-page-actions right">
+	<!--<form class="inline" action="<%=luci.dispatcher.build_url("admin/network/wireless")%>" method="get">
+		<input class="cbi-button cbi-button-reset" type="submit" value="<%:Back to overview%>" />
+	</form>-->
+	<form class="inline" action="<%=REQUEST_URI%>" method="get">
+		<input type="hidden" name="scan" value="<%='start'%>" />
+		<% if siteSurvey == true then %>
+		<input type="hidden" name="site" value="survey" />
+		<% end %>
+		<input class="cbi-button cbi-input-find" type="submit" value="<%:Repeat scan%>" />
+	</form>
+</div>
+
+<%
+	if siteSurvey == true then
+		luci.sys.call("(env -i /sbin/wifi up) >/dev/null 2>/dev/null")
+	end
+%>
+
+<%+footer%>

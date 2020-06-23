@@ -1,0 +1,12 @@
+--- a/mailutils/sendmail.c
++++ b/mailutils/sendmail.c
+@@ -538,6 +538,8 @@
+ 				send_r_n((char *) llist_pop(&list));
+ 			}
+ 			// stop analyzing headers
++			send_r_n("Content-Type: text/plain; charset=\"utf-8\"");
++			send_r_n("Content-Transfer-Encoding: 8bit");
+ 			code++;
+ 			// N.B. !s means: we read nothing, and nothing to be read in the future.
+ 			// just dump empty line and break the loop
+

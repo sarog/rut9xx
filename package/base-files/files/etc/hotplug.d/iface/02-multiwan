@@ -1,0 +1,3 @@
+#!/bin/sh
+[ "$ACTION" = "ifup" -o "$ACTION" = "ifupdate" ] || exit 0
+killall -USR1 mwan

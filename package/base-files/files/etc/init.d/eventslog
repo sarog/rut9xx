@@ -1,0 +1,125 @@
+#!/bin/sh /etc/rc.common
+
+START=41
+STOP=99
+USE_PROCD=1
+
+LOG_PART="event-log"
+MOUNT_DIR="/log"
+EXTRA_COMMANDS="mount_log_part"
+HOST=
+PORT=
+TYPE=
+PROTO=
+
+mount_log_part() {
+	# Mount event-log partition
+	ret=`grep -m 1 "\"$LOG_PART\"" /proc/mtd`
+	log_mtd_num=${ret:3:1}
+	if [ -z "$log_mtd_num" ]; then
+		echo "Partition '$LOG_PART' not found"
+		return 1
+	fi
+	if ! grep -qs "mtdblock$log_mtd_num" /proc/mounts; then
+		mkdir -p /mnt/mtdblock"$log_mtd_num"
+		# *WORKAROUND* dėl eventslog particijos po safe mode išėmimo:
+		# Kiekvienoje JFFS2 particijos pradžioje turi būti magiška
+		# konstanta JFFS2_MAGIC_BITMASK (iš Linux kodo) t.y. 0x1985 tad
+		# patikrinam ar ji egzistuoja. Jeigu ne - tai bus suvaryta failų
+		# sistema ir pats Linux jos nelies, kad nepradanginti galimai
+		# vertingų duomenų, tad vienintelis būdas mums sugrįžti iš to,
+		# kad gauti veikiantį eventslog yra ištrinti visą tą flasho
+		# vietą ir pradėti gyvenimą iš naujo.
+		first_2_bytes="$(hexdump -e '/1 "%02X"' -n 2 /dev/mtdblock$log_mtd_num)"
+		if [ -n "$first_2_bytes" -a "$first_2_bytes" != "1985" ]; then
+			echo "$LOG_PART MTD partition is broken WRT the FS, fixing it by erasing" > /dev/kmsg
+			mtd erase "$LOG_PART"
+		fi
+		mount -t jffs2 /dev/mtdblock"$log_mtd_num" /mnt/mtdblock"$log_mtd_num"/
+	fi
+}
+
+check_startup(){
+    if [ -f "/tmp/first_boot" ]; then
+        /usr/bin/eventslog -i -t EVENTS -n 'Reboot' -e 'First boot start up'
+        uci set system.device_info.reboot=1
+        uci commit system
+        #setting router name and host name by router type
+        tipo_kodas=`uci get -q hwinfo.hwinfo.mnf_code`
+        tipas=${tipo_kodas:0:6}
+        pradzia="Teltonika-"
+        pabaiga=".com"
+        #atsakymas=$pradzia$tipas$pabaiga
+        atsakymas=$(echo "$pradzia$tipas$pabaiga" | sed 's/[^[:print:]]//g')
+				logger "hostame set $atsakymas"
+				if [ `which brand` ]; then
+					brand_hostname=`brand 22`
+					[ "$brand_hostname" != "" ] && atsakymas=`brand 22`
+					brand_routername=`brand 24`
+					[ "$brand_routername" != "" ] && tipas=`brand 24`
+				fi
+
+        `uci set system.system.routername=$tipas`
+        `uci set system.system.hostname="$atsakymas"`
+
+				#Ignore if hostname specified in branding config
+				if [ "$brand_hostname" == "" ]; then
+	        gethost=`uci get -q system.system.hostname`
+	        checkname=${gethost:10:6}
+	        name="RUT"
+	        model=${gethost:13:3}
+	        check=$(echo $checkname | grep '[^a-zA-Z0-9]')
+	        atsakymas=$(echo "$pradzia$name$model$pabaiga" | sed 's/[^[:print:]]//g')
+
+	        if [[ "$check" != "" ]]; then
+	            /rom/etc/uci-defaults/01_mnf_info
+	            `uci set system.system.hostname=$atsakymas`
+	        fi
+				fi
+    fi
+	reboot=`uci get -q system.device_info.reboot`
+	if [ "$reboot" == "1" ]; then
+		uci set system.device_info.reboot=0
+		uci commit system
+	elif [ "$reboot" == "0" ]; then
+		/usr/bin/eventslog -i -t EVENTS -n "Reboot" -e "Boot start up, reason unknown"
+	fi
+}
+
+check_reporting(){
+    local enable host port type
+
+    config_get enable "$1" "enable" 0
+    [ $enable -ne 1 ] && return 1
+
+    config_get type "$1" "type"
+    [ "$type" != "tcp" ] && return 1
+
+    config_get HOST "$1" "host"
+    config_get PORT "$1" "port"
+    config_get TYPE "$1" "event"
+    config_get PROTO "$1" "proto"
+}
+
+#boot() {
+#	mount_log_part
+#	start_service
+#	check_startup
+#}
+
+start_service()
+{
+    config_load eventslog_report
+    config_foreach check_reporting "rule"
+	mount_log_part
+
+	procd_open_instance
+	procd_set_param respawn
+	procd_set_param command /usr/bin/eventslogd
+	[ -n "$HOST" -a -n "$PORT" ] && procd_append_param command -r ${HOST:-127.0.0.1} ${PORT:-4444}
+	[ -n "$TYPE" ] && procd_append_param command -t $TYPE
+	[ "$PROTO" = "udp" ] && procd_append_param command -u
+	procd_close_instance
+
+	check_startup
+}

@@ -1,0 +1,125 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: applyreboot.htm 7773 2011-10-24 01:10:34Z jow $
+
+-%>
+<%
+	a=keep and "1" or "0"
+	a=keep_network and a.."1" or a.."0"
+	a=keep_3g and a.."1" or a.."0"
+	a=keep_lan and a.."1" or a.."0"
+	a=keep_ddns and a.."1" or a.."0"
+	a=keep_wireless and a.."1" or a.."0"
+	a=keep_firewall and a.."1" or a.."0"
+	a=keep_openvpn and a.."1" or a.."0"
+%>
+<%+header%>
+<style>
+	.tabs li:nth-child(2){
+		display:none;
+	}
+</style>
+	<script type="text/javascript" src="/luci-static/resources/spin.js"></script>
+	<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+	<script type="text/javascript">//<![CDATA[
+
+		function refreshPage(){
+			XHR.poll(3, '<%=luci.dispatcher.build_url("admin", "system", "flashops","check_status")%>', { status: 1 },
+				function(x, info) {
+					if(info) {
+						document.getElementById('id_progress').innerHTML = info.uptime;
+						if (info.uptime == "done"){
+							document.getElementById('spinner').style.display = 'none';
+							document.getElementById("download_form").submit();
+							XHR.halt();
+						}
+					}
+				}
+			);
+		}
+
+		function download(){
+			XHR.get('<%=luci.dispatcher.build_url("admin", "system", "flashops","download")%>', { status: <%=a%> },
+				function(x, info) {
+					refreshPage();
+				}
+			);
+		}
+		AddWindowOnLoadEvent(download);
+	//]]></script>
+
+		<div class="cbi-map-descr"><%=translate("")%> </div>
+			<h2><a id="content" name="content"><%=translate("Downloading...")%></a> <span id="id_progress" style="color: green;">0 %</span></h2>
+			<fieldset class="cbi-section">
+				<div class="spin_wrapper">
+					<div id="spinner"></div>
+				</div>
+					<p1 style="position: relative; top: 150px; left: 375px; "><%=translate("The new firmware is downloading.")%></p1>
+					<p2 style="position: relative; top: 185px; left: 165px; "><%=translate("<b>DO NOT POWER OFF THE DEVICE!</b>")%></p2>
+<!-- 					<p3><%translate("It might be necessary to change your computer\'s network settings to reach the device again, depending on your configuration.")%></p3> -->
+			</fieldset>
+
+			<form id="download_interupted" style="display:inline" action="<%=luci.dispatcher.build_url("admin", "system", "flashops", "auto")%>" method="post">
+				<input type="hidden" name="redirect" value="1"/>
+			</form>
+
+			<form id="download_form" style="display:inline" action="<%=luci.dispatcher.build_url("admin", "system", "flashops","upgrade")%>" method="post">
+				<input type="hidden" name="step" value="1" />
+				<% if keep then %>
+					<input type="hidden" name="keep" value="1" />
+				<% end %>
+				<% if keep_network then %>
+					<input type="hidden" name="keep_network" value="1" />
+				<% end %>
+				<% if keep_3g then %>
+					<input type="hidden" name="keep_3g" value="1" />
+				<% end %>
+				<% if keep_lan then %>
+				<input type="hidden" name="keep_lan" value="1" />
+				<% end %>
+				<% if keep_ddns then %>
+				<input type="hidden" name="keep_ddns" value="1" />
+				<% end %>
+				<% if keep_wireless then %>
+				<input type="hidden" name="keep_wireless" value="1" />
+				<% end %>
+				<% if keep_firewall then %>
+				<input type="hidden" name="keep_firewall" value="1" />
+				<% end %>
+				<% if keep_openvpn then %>
+				<input type="hidden" name="keep_openvpn" value="1" />
+				<% end %>
+				<input type="hidden" name="download" value="1" />
+			</form>
+		</div>
+		<script type="text/javascript">//<![CDATA[
+			//var apply_xhr = new XHR();
+			var opts = {
+				lines: 14, // The number of lines to draw
+				length: 13, // The length of each line
+				width: 5, // The line thickness
+				radius: 17, // The radius of the inner circle
+				rotate: 0, // The rotation offset
+				color: '#000', // #rgb or #rrggbb
+				speed: 1.7, // Rounds per second
+				trail: 64, // Afterglow percentage
+				shadow: false, // Whether to render a shadow
+				hwaccel: true, // Whether to use hardware acceleration
+				className: 'spinner', // The CSS class to assign to the spinner
+				zIndex: 2e9, // The z-index (defaults to 2000000000)s
+				top: 50, // Top position relative to parent in px
+				left: 'auto' // Left position relative to parent in px
+			};
+			var target = document.getElementById('spinner');
+			var spinner = new Spinner(opts).spin(target);
+	//]]></script>
+<%+footer%>

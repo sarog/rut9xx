@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Entities build="b3090" majorVersion="0" minorVersion="0" modelPersistenceProviderPackage="NeoPersistenceProviderPackage" revision="0" schemaVersion="1000">
+    <Things>
+        <Thing description="" documentationContent="" effectiveThingPackage="RemoteThing" enabled="true" homeMashup="" identifier="" lastModifiedDate="2017-07-05T15:41:39.637Z" name="One_Int_Prop" projectName="" published="false" tags="" thingTemplate="RemoteThing" valueStream="">
+            <Owner name="Administrator" type="User" />
+            <avatar />
+            <DesignTimePermissions>
+                <Create />
+                <Read />
+                <Update />
+                <Delete />
+                <Metadata />
+            </DesignTimePermissions>
+            <RunTimePermissions />
+            <VisibilityPermissions>
+                <Visibility />
+            </VisibilityPermissions>
+            <ConfigurationTables />
+            <ThingShape>
+                <PropertyDefinitions>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeThreshold="0.0" aspect.dataChangeType="VALUE" aspect.defaultValue="0" aspect.isLogged="true" aspect.isPersistent="false" aspect.isReadOnly="false" baseType="INTEGER" category="" description="" isLocalOnly="false" name="MyInt" ordinal="1" />
+                </PropertyDefinitions>
+                <ServiceDefinitions />
+                <EventDefinitions />
+                <ServiceMappings />
+                <ServiceImplementations />
+                <Subscriptions />
+            </ThingShape>
+            <PropertyBindings />
+            <RemotePropertyBindings>
+                <RemotePropertyBinding foldType="NONE" name="MyInt" pushThreshold="0.0" pushType="VALUE" sourceName="MyInt" timeout="0" />
+            </RemotePropertyBindings>
+            <RemoteServiceBindings />
+            <RemoteEventBindings />
+            <AlertConfigurations>
+                <AlertDefinitions name="MyInt" />
+            </AlertConfigurations>
+            <ImplementedShapes />
+            <ThingProperties>
+                <lastConnection>
+                    <Value>1970-01-01T00:00:00.000Z</Value>
+                    <Timestamp>2017-07-05T15:41:39.637Z</Timestamp>
+                    <Quality>GOOD</Quality>
+                </lastConnection>
+            </ThingProperties>
+            <ConfigurationChanges>
+                <ConfigurationChange changeAction="CREATE" changeReason="" timestamp="2017-07-05T15:33:58.761Z" user="Administrator" />
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-07-05T15:34:14.777Z" user="Administrator" />
+                <ConfigurationChange changeAction="MODIFY" changeReason="documentation : updated&amp;#10;properties : MyInt : Updated&amp;#10;" timestamp="2017-07-05T15:36:20.496Z" user="Administrator" />
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-07-05T15:36:25.433Z" user="Administrator" />
+                <ConfigurationChange changeAction="MODIFY" changeReason="documentation : updated&amp;#10;properties : MyInt : Updated&amp;#10;" timestamp="2017-07-05T15:41:39.637Z" user="Administrator" />
+            </ConfigurationChanges>
+        </Thing>
+    </Things>
+</Entities>

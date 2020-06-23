@@ -1,0 +1,106 @@
+{
+    "dataShape": {
+        "fieldDefinitions": {
+            "host": {
+                "name": "host",
+                "description": "",
+                "baseType": "STRING",
+                "ordinal": 0,
+                "aspects": {}
+            },
+            "port": {
+                "name": "port",
+                "description": "",
+                "baseType": "INTEGER",
+                "ordinal": 1,
+                "aspects": {
+                    "defaultValue": 443
+                }
+            },
+            "appKey": {
+                "name": "appKey",
+                "description": "",
+                "baseType": "STRING",
+                "ordinal": 2,
+                "aspects": {}
+            },
+            "grafanaHost": {
+                "name": "grafanaHost",
+                "description": "",
+                "baseType": "STRING",
+                "ordinal": 2,
+                "aspects": {}
+            },
+            "grafanaPort": {
+                "name": "grafanaPort",
+                "description": "",
+                "baseType": "INTEGER",
+                "ordinal": 4,
+                "aspects": {
+                    "defaultValue": 443
+                }
+            },
+            "httpuploadexecutable": {
+                "name": "httpuploadexecutable",
+                "description": "",
+                "baseType": "STRING",
+                "ordinal": 5,
+                "aspects": {}
+            },
+            "docker-platform": {
+                "name": "docker-platform",
+                "description": "",
+                "baseType": "STRING",
+                "ordinal": 6,
+                "aspects": {}
+            },
+            "docker-platform-version": {
+                "name": "docker-platform-version",
+                "description": "",
+                "baseType": "STRING",
+                "ordinal": 7,
+                "aspects": {}
+            },
+            "docker-username": {
+                "name": "docker-username",
+                "description": "",
+                "baseType": "STRING",
+                "ordinal": 8,
+                "aspects": {}
+            },
+            "docker-encrypted-password": {
+                "name": "docker-encrypted-password",
+                "description": "",
+                "baseType": "STRING",
+                "ordinal": 9,
+                "aspects": {}
+            },
+            "docker-script": {
+                "name": "docker-script",
+                "description": "",
+                "baseType": "STRING",
+                "ordinal": 10,
+                "aspects": {}
+            },
+            "bootstraphttpuploadexecutable": {
+                "name": "bootstraphttpuploadexecutable",
+                "description": "",
+                "baseType": "STRING",
+                "ordinal": 11,
+                "aspects": {}
+            }
+
+        }
+    },
+    "rows": [
+        {
+            "host": "localhost",
+            "port": 8443,
+            "appKey": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+            "httpuploadexecutable": "curl -i -s --insecure --header \"X-XSRF-TOKEN:TWX-XSRF-TOKEN-VALUE\"  --header \"appKey:%s\" -F name=file -F filedata=@%s \"https://%s:%d/Thingworx/Importer?purpose=import&usedefaultdataprovider=false&WithSubsystems=false\" -o null --retry 10 --connect-timeout 3",
+            "bootstraphttpuploadexecutable": "curl -i -s --insecure --header \"X-XSRF-TOKEN:TWX-XSRF-TOKEN-VALUE\"  -u \"Administrator:trUf6yuz2?_Gub\" -F name=file -F filedata=@%s \"https://%s:%d/Thingworx/Importer?purpose=import&usedefaultdataprovider=false&WithSubsystems=false\" -o null --retry 10 --connect-timeout 3",
+            "grafanaHost": "localhost",
+            "grafanaPort": 2003
+        }
+    ]
+}

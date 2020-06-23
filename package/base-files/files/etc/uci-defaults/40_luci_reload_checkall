@@ -1,0 +1,4 @@
+#!/bin/sh
+# Copyright (C) 2015 Teltonika
+
+luci-reload --check_all >/dev/null 2>/dev/null

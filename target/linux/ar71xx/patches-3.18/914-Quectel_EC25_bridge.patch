@@ -1,0 +1,37 @@
+Index: linux-3.18.44/drivers/net/usb/qmi_wwan.c
+===================================================================
+--- linux-3.18.44.orig/drivers/net/usb/qmi_wwan.c
++++ linux-3.18.44/drivers/net/usb/qmi_wwan.c
+@@ -128,7 +128,7 @@ static int qmi_wwan_rx_fixup(struct usbn
+ 	skb_push(skb, ETH_HLEN);
+ 	skb_reset_mac_header(skb);
+ 	eth_hdr(skb)->h_proto = proto;
+-	memset(eth_hdr(skb)->h_source, 0, ETH_ALEN);
++	memcpy(eth_hdr(skb)->h_source, "\x00\x11\x22\x33\x44\x55", ETH_ALEN);
+ fix_dest:
+ 	memcpy(eth_hdr(skb)->h_dest, dev->net->dev_addr, ETH_ALEN);
+ 	return 1;
+@@ -371,13 +371,7 @@ next_desc:
+ 	if (dev->udev->descriptor.idVendor == cpu_to_le16(0x2C7C)) {
+ 		dev_info(&intf->dev, "Quectel EC21&EC25&EC20 R2.0 work on RawIP mode\n");
+ 		dev->net->flags |= IFF_NOARP;
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,9,1))
+ 	/* make MAC addr easily distinguishable from an IP header */
+-	if (possibly_iphdr(dev->net->dev_addr)) {
+-		dev->net->dev_addr[0] |= 0x02; /* set local assignment bit */
+-		dev->net->dev_addr[0] &= 0xbf; /* clear "IP" bit */
+-	}
+-#endif
+ 	usb_control_msg(interface_to_usbdev(intf),
+ 				usb_sndctrlpipe(interface_to_usbdev(intf), 0),
+ 				0x22, //USB_CDC_REQ_SET_CONTROL_LINE_STATE
+@@ -474,9 +468,7 @@ static const struct driver_info	qmi_wwan
+ 	.manage_power	= qmi_wwan_manage_power,
+ 	.rx_fixup       = qmi_wwan_rx_fixup,
+ #if 1 //Added by Quectel
+-	#if (LINUX_VERSION_CODE < KERNEL_VERSION( 4,5,0 ))
+ 	.tx_fixup = qmi_wwan_tx_fixup,
+-	#endif
+ #endif
+ };
+ 

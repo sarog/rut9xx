@@ -1,0 +1,103 @@
+<%+cbi/valueheader%>
+<%
+local cbeid = luci.cbi.FEXIST_PREFIX .. self.config .. "." .. section .. "." .. self.option
+local daysz={
+	mon = "Monday",
+	tue = "Tuesday",
+	wed = "Wednesday",
+	thu = "Thursday",
+	fri = "Friday",
+	sat = "Saturday",
+	sun = "Sunday"
+}
+local days={"mon", "tue", "wed", "thu", "fri", "sat", "sun"}
+%>
+
+<style>
+table.hotspot_scheduler_table td {
+	border: 1px solid #ddd;
+	border-spacing: 0px;
+	padding:0px;
+	margin:0px;
+	height: 30px;
+	text-align: center;
+	vertical-align: middle;
+	border-collapse: separate;
+}
+#matrix{
+	border: 1px solid #ddd;
+	border-spacing: 0px;
+	padding:0px;
+	margin:0px;
+	height: 30px;
+	text-align: center;
+	vertical-align: middle;
+	border-collapse: separate;
+}
+
+#td_time1 {
+	font-size:10px;
+	width: 3.75%;
+}
+
+table.hotspot_scheduler_table td.schedule_all {
+	background-color: #328DD7;
+}
+</style>
+
+	<script type="text/javascript" src="<%=media%>/hotspot_scheduler.js"></script>
+	<table class="hotspot_scheduler_table" id="matrix">
+
+	<% 
+
+	local class
+	require("uci")
+	local x = uci.cursor()
+	%>
+	<tr> 
+	<td width="10%" ><b>Days/Hours</b></td>
+		<%for i=0, 23 do%>
+		<td id="td_time1" onClick="Select_column(<%=i%>)"><%=i.."-"..(i+1)%>h</td>
+		<%end%>
+	</tr>
+	
+	<%
+	for key, value in pairs(days) do 
+		local eilute = x:get("hotspot_scheduler", section, value)
+
+		if eilute then
+			eilute = string.match(eilute, "%d+")
+		end
+		 %>
+		
+		<tr id="tr_<%= daysz[value] %>">
+		<td onClick="Select_All_Cells('tr_<%= daysz[value] %>')"><%= daysz[value] %></td>
+		<% for i=1, 24 do
+			if eilute then
+				if string.sub(eilute, i, i) == "1"then
+					class = "schedule_all"
+				else
+					class = "schedule_clear"
+				end
+			else
+				class = "schedule_clear"
+			end%>
+			<td class="<%=class%>" onClick="change_color(this)"></td>
+		<% end %>
+		</tr>
+	<% end 
+	%>
+	</table>
+	<input type="hidden" size="200" id="schedule_matrix" name="<%=cbid%>" value=""></td>
+	<script type="text/javascript">
+		var frm = document.getElementsByTagName("form");
+		var atributte = frm[0].getAttribute("onsubmit");
+		frm[0].setAttribute("onsubmit", "MakeVar(); " + atributte);
+	</script>
+	<fieldset class="cbi-section">
+	<table id="3gTable" width="100%" cellspacing="10">
+		<tr><td width="5%"><div style="width: 20px; height: 20px; background-color: #ffffff;border:1px solid black;"></div></td><td><%=translate("Internet access allowed")%></td></tr>
+		<tr><td width="5%"><div style="width: 20px; height: 20px; background-color: #328DD7;border:1px solid black;"></div></td><td><%=translate("Internet access blocked")%></td></tr>
+	</table>
+	</fieldset>
+<%+cbi/valuefooter%>

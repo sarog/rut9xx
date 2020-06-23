@@ -1,0 +1,55 @@
+<%+cbi/valueheader%>
+<%
+	local sys = require("luci.sys")
+	local utl = require "luci.util"
+	local uci = require "luci.model.uci".cursor()
+	local selected = uci:get("openvpn", section, "dev") or "tun"
+	local list_options
+	local num = utl.trim(sys.exec(" cat /etc/config/openvpn | grep -c \"option dev 'tap'\""))
+	local num1 = utl.trim(sys.exec(" cat /etc/config/openvpn | grep -c \"option dev tap\""))
+	if selected == "tap" or (tonumber(num) == 0 and tonumber(num1) == 0) then
+		list_options = {
+			{value = "tun", name = "TUN (tunnel)", selected = false},
+			{value = "tap", name = "TAP (bridged)", selected = false}
+		}
+	else
+		list_options = {
+			{value = "tun", name = "TUN (tunnel)", selected = false}
+		}
+	end
+
+%>
+<script type="text/javascript">
+	function visible_clients(value) {
+		e = document.getElementById("cbi-openvpn-client");
+		auth = document.getElementById("cbid.openvpn." + "<%=section%>" + "._auth");
+		if (e && auth) {
+			if (value === "tun" && (auth.value === "tls" || auth.value === "tls/pass")) {
+				e.style.display="inline";
+			}
+			else
+			{
+				e.style.display="none";
+			}
+		}
+
+	}
+	document.addEventListener('DOMContentLoaded', function() {
+   // your code here
+   e = document.getElementById("<%=cbid%>");
+   if (e){
+		visible(e.value);
+   }
+}, false);
+
+</script>
+<select class="cbi-input-select" onchange="cbi_d_update(this.id)" onclick="visible_clients(this.value)" name="<%=cbid%>" id="<%=cbid%>">
+	<% for i, val in ipairs(list_options) do
+		if selected == val.value then
+			val.selected = true
+		end%>
+		<option id="<%=cbid%>-<%=val.value%>" value="<%=val.value%>" <%= ifattr(val.selected, "selected", "selected")%> ><%=val.name%></option>
+	<% end	%>
+</select>
+
+<%+cbi/valuefooter%>

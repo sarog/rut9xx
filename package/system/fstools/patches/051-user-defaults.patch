@@ -1,0 +1,43 @@
+--- a/libfstools/mount.c
++++ b/libfstools/mount.c
+@@ -110,13 +110,16 @@
+ 	 */
+ 	snprintf(mount_options, sizeof(mount_options), "lowerdir=/,upperdir=%s", rw_root);
+ 	if (mount(overlay, "/mnt", "overlayfs", MS_NOATIME, mount_options)) {
+-		char upperdir[64], workdir[64], upgrade[64], upgrade_dest[64];
++		char upperdir[64], workdir[64], upgrade[64], upgrade_dest[64],
++                user_default[64], user_default_dest[64];
+ 		struct stat st;
+ 
+ 		snprintf(upperdir, sizeof(upperdir), "%s/upper", rw_root);
+ 		snprintf(workdir, sizeof(workdir), "%s/work", rw_root);
+ 		snprintf(upgrade, sizeof(upgrade), "%s/sysupgrade.tgz", rw_root);
+ 		snprintf(upgrade_dest, sizeof(upgrade_dest), "%s/sysupgrade.tgz", upperdir);
++		snprintf(user_default, sizeof(user_default), "%s/user_defaults.tgz", rw_root);
++		snprintf(user_default_dest, sizeof(user_default_dest), "%s/user_defaults.tgz", upperdir);
+ 		snprintf(mount_options, sizeof(mount_options), "lowerdir=/,upperdir=%s,workdir=%s",
+ 			 upperdir, workdir);
+ 
+@@ -132,6 +135,9 @@
+ 
+ 		if (stat(upgrade, &st) == 0)
+ 		    rename(upgrade, upgrade_dest);
++        
++        if (stat(user_default, &st) == 0)
++		    rename(user_default, user_default_dest);
+ 
+ 		/* Mainlined overlayfs has been renamed to "overlay", try that first */
+ 		if (mount(overlay, "/mnt", "overlay", MS_NOATIME, mount_options)) {
+
+--- a/libfstools/overlay.c
++++ b/libfstools/overlay.c
+@@ -53,6 +53,9 @@
+ 			continue;
+
+ 		if (keep_sysupgrade && !strcmp(dt->d_name, "sysupgrade.tgz"))
++			continue;
++
++        if (keep_sysupgrade && !strcmp(dt->d_name, "user_defaults.tgz"))
+ 			continue;
+
+ 		unlinkat(fd, dt->d_name, 0);

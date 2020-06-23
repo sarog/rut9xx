@@ -1,0 +1,64 @@
+--- a/src/ap/ap_config.c
++++ b/src/ap/ap_config.c
+@@ -690,23 +690,23 @@
+ int hostapd_maclist_found(struct mac_acl_entry *list, int num_entries,
+ 			  const u8 *addr, struct vlan_description *vlan_id)
+ {
+-	int start, end, middle, res;
+-
+-	start = 0;
+-	end = num_entries - 1;
+-
+-	while (start <= end) {
+-		middle = (start + end) / 2;
+-		res = os_memcmp(list[middle].addr, addr, ETH_ALEN);
++	int i, res;
++	for (i = 0; i < num_entries; i++) {
++		res = os_memcmp(list[i].addr, addr, ETH_ALEN);
+ 		if (res == 0) {
+ 			if (vlan_id)
+-				*vlan_id = list[middle].vlan_id;
++				*vlan_id = list[i].vlan_id;
+ 			return 1;
+-		}
+-		if (res < 0)
+-			start = middle + 1;
+-		else
+-			end = middle - 1;
++		} else if (i < num_entries - 2) {
++			res = os_memcmp(list[i + 1].addr, "......", ETH_ALEN);
++			if (res == 0) {
++				if (strcmp(addr, list[i].addr) >= 0 && strcmp(addr, list[i + 2].addr) <= 0) {
++					return 1;
++				} else {
++					i+=2;
++				}
++			}
++		}
+ 	}
+ 
+ 	return 0;
+
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -197,7 +197,9 @@
+ 			pos++;
+ 		}
+ 
+-		if (hwaddr_aton(pos, addr)) {
++		if (pos[0] == '.' && pos[1] == '.' && pos[2] == '.') {
++			memset(addr, '.', ETH_ALEN);
++		} else if (hwaddr_aton(pos, addr)) {
+ 			wpa_printf(MSG_ERROR, "Invalid MAC address '%s' at "
+ 				   "line %d in '%s'", pos, line, fname);
+ 			fclose(f);
+@@ -224,9 +226,6 @@
+ 	}
+ 
+ 	fclose(f);
+-
+-	if (*acl)
+-		qsort(*acl, *num, sizeof(**acl), hostapd_acl_comp);
+ 
+ 	return 0;
+ }

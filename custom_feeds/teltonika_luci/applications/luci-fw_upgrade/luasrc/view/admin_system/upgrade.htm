@@ -1,0 +1,130 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2009 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: upgrade.htm 7798 2011-10-26 23:43:04Z jow $
+
+-%>
+<%+header%>
+
+<style>
+	.tabs li:nth-child(2){
+		display:none;
+	}
+</style>
+
+<%if #checksum ~= 32 then%>
+	<h2><a id="content" name="content"><%=translate("Firmware upgrade - ")%><font color="red"><%=translate("verification failed")%></font></a></h2>
+<%else %>
+	<h2><a id="content" name="content"><%=translate("Firmware upgrade - ")%><font color="green"><%=translate("verification succeeded")%></font></a></h2>
+<%end%>
+
+<p>
+	<%if checksum == "0" then%>
+		<%=translate("<b>Verification failed. This means that flash image is either damaged or not compatible with this router.</b> <br />Ensure to get a correct firmware image and try to upgrade again.")  %>
+	<%elseif checksum == "1" then%>
+		<%=translate(" <b>This device's provisioning doesn't allow it to be downgraded to a firmware version older than RUT9XX_R_00.03.491.</b> <br />Ensure to get a correct firmware image and try to upgrade again.") %>
+	<%elseif checksum == "2" then%>
+		<%=translate(" <b>This device's provisioning doesn't allow it to be downgraded to a firmware version older than RUT9XX_R_00.06.00.</b> <br />Ensure to get a correct firmware image and try to upgrade again.") %>
+	<%elseif checksum == "3" then%>
+		<%=translate(" <b>This device's provisioning doesn't allow it to be downgraded to a firmware version older than RUT9XX_R_00.06.01.</b> <br />Ensure to get a correct firmware image and try to upgrade again.") %>
+	<%else %>
+		<%=translate(" The new firmware image was uploaded successfully. <b>This is the last chance to abort the firmware upgrade if required.</b> <br />Click \"Upgrade\" below to start the firmware upgrade procedure.") %>
+	<%end%>
+
+	<% if storage > 0 and size > storage and checksum ~= "0" then %>
+		<br /><br />
+		<div class="error"><%=translate("It appears that you try to upload an image that does not fit into the flash memory, please verify the firmware image file! ")%></div>
+	<% end %>
+</p>
+
+<fieldset class="cbi-section" style="margin-top:25%;">
+	<ul>
+
+		<%if #checksum == 32 then%>
+		<li><%=translate("Checksum")%>: <code>
+			<%=checksum%>
+		<%end%>
+		</code></li>
+		<li><%=translate("Size")%>: <%
+			local w = require "luci.tools.webadmin"
+			write(w.byte_format(size))
+
+			if storage > 0 then
+				write(luci.i18n.translatef(
+					" (%s available)",
+					w.byte_format(storage)
+				))
+			end
+		%></li>
+
+                    <% if is_fw_version_new == 1 then %>
+                        <% if keep then %>
+                                <li><%=translate("All configuration files will be kept.")%></li>
+                        <% elseif  #checksum ~= 1 and not keep_network and not keep_3g and not keep_lan and not keep_ddns and not keep_wireless and not keep_firewall and not keep_openvpn then %>
+                                <li><%=translate("Note: All configuration files will be erased.")%></li>
+                        <% end %>
+                        <% if keep_network then %>
+                                <li><%=translate("Network configuration will be kept.")%></li>
+                        <% end %>
+                        <% if keep_3g then %>
+                                <li><%=translate("Cellular configuration will be kept.")%></li>
+                        <% end %>
+                        <% if keep_lan then %>
+                                <li><%=translate("LAN configuration will be kept.")%></li>
+                        <% end %>
+                        <% if keep_ddns then %>
+                                <li><%=translate("Dynamic DNS configuration will be kept.")%></li>
+                        <% end %>
+                        <% if keep_wireless then %>
+                                <li><%=translate("Wireless configuration will be kept.")%></li>
+                        <% end %>
+                        <% if keep_firewall then %>
+                                <li><%=translate("Firewall configuration will be kept.")%></li>
+                        <% end %>
+                        <% if keep_openvpn then %>
+                                <li><%=translate("OpenVPN configuration will be kept.")%></li>
+                        <% end %>
+                    <% else %>
+                         <li style="color: #404040"><b><%=translate("Note: Uploaded firmware image version is older than current firmware version. All configuration files will be erased.")%></b></li>
+                    <% end %>
+	</ul>
+</fieldset>
+
+<div class="cbi-page-actions right">
+	<% if tonumber(download) == 1 then %>
+		<form style="display:inline" action="<%=luci.dispatcher.build_url("admin", "system", "flashops","download")%>" method="post">
+	<% else %>
+		<form style="display:inline" action="<%=REQUEST_URI%>" method="post">
+	<% end %>
+		<input class="cbi-button cbi-button-reset" style="float: left;" type="submit" formaction="<%=luci.dispatcher.build_url("admin", "system", "flashops")%>" value="<%=translate('Cancel')%>" />
+	</form>
+	<form style="display:inline" action="<%=REQUEST_URI%>" method="post">
+		<input type="hidden" name="step" value="2" />
+		<% if tonumber(download) == 1 then %>
+			<input type="hidden" name="download" value="1" />
+		<% else %>
+			<input type="hidden" name="download" value="0" />
+		<% end %>
+		<input type="hidden" name="keep" value="<%=keep and "1" or ""%>" />
+		<input type="hidden" name="keep_network" value="<%=keep_network and "1" or ""%>" />
+		<input type="hidden" name="keep_3g" value="<%=keep_3g and "1" or ""%>" />
+		<input type="hidden" name="keep_lan" value="<%=keep_lan and "1" or ""%>" />
+		<input type="hidden" name="keep_ddns" value="<%=keep_ddns and "1" or ""%>" />
+		<input type="hidden" name="keep_wireless" value="<%=keep_wireless and "1" or ""%>" />
+		<input type="hidden" name="keep_firewall" value="<%=keep_firewall and "1" or ""%>" />
+		<input type="hidden" name="keep_openvpn" value="<%=keep_openvpn and "1" or ""%>" />
+		<% if #checksum == 32 then%>
+			<input class="cbi-button cbi-button-apply" type="submit" value="<%=translate('Upgrade')%>" />
+		<%end%>
+	</form>
+</div>
+
+<%+footer%>

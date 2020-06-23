@@ -1,0 +1,87 @@
+<%
+local sys = require "luci.sys"
+local utl = require "luci.util"
+--local sambagroup = luci.sys.sambagroup()
+
+function validate(username, password)
+	user_used = sys.exec("cat /etc/passwd | grep -o ^" .. username .. ":")
+	if #username > 10 then
+		return translate("Username cannot be more than 10 characters.")
+	elseif #username == 0 then
+		return translate("Username cannot be empty.")
+	elseif string.find(username, "%W") then
+		return translate("Username should contain only alphanumeric characters.")
+	elseif #user_used ~= 0 then
+		return translate("Username already exists.")
+	end
+	if #password == 0 then
+		return translate("Password is a required field.")
+	end
+end
+
+function createUser(username, password)
+	if username then
+		for i=2001, 2999 do 
+			output = utl.trim(sys.exec("cat /etc/passwd | grep -c "..i..""))
+			if tonumber(output) == 0 then
+				sys.call("adduser -D -H -u "..i.." "..username.." -s /bin/false")
+				sys.call("echo -e \""..password.."\n"..password.."\" | smbpasswd -a "..username.." -s")
+				break
+			end
+		end
+	else
+		return 1
+	end	
+end
+
+%>
+<%+header%>
+
+<%
+add_user_clicked = false
+add_user_clicked = luci.http.formvalue("user-add-button")
+if add_user_clicked then
+	local username = luci.http.formvalue("add-username")
+	local password = luci.http.formvalue("add-password")
+	err = validate(username, password)
+	if err then %>
+		<div class="alert-message error"><%=err%></div>
+	<% else
+		if createUser(username, password) ~= 1 then %>
+			<script> setTimeout("window.location.href=window.location.href", 0) </script>
+		<% else %>
+			<div class="alert-message error"><%=translatef("Username %s already exists.", username)%></div>
+		<% end
+	end
+end
+%>
+
+<div class="cbi-section-create cbi-tblsection-create">
+	<br />
+	<form method="post" name="profile-add-form" style="padding-top: 9px;" onsubmit="document.getElementById('spin-loader').style.display='';">
+	<table class="cbi-section-table" style="width:100%; margin-left:5px">
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell" colspan="6"><%=translate("Add user")%>:</th>
+		</tr>
+		<tr class="cbi-section-table-descr">			
+			<th class="cbi-section-table-cell"><%=translate("Username")%></th>
+			<th class="cbi-section-table-cell"><%=translate("Password")%></th>
+			<th class="cbi-section-table-cell"></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td class="cbi-section-table-cell" style="width:110px">	
+				<input type="text" class="cbi-input-text" id="add-username" name="add-username" pattern="[a-zA-Z0-9!@#$%&*+-/=?^_`{|}~. ]+$" />
+			</td>
+			<td class="cbi-section-table-cell" style="width:195px">	
+				<input type="password" class="cbi-input-password" id="add-password" name="add-password" pattern="[a-zA-Z0-9!@#$%&*+-/=?^_`{|}~. ]+$" />
+				<img onclick="var e = document.getElementById('add-password'); e.type = (e.type=='password') ? 'text' : 'password';" title="Reveal/hide password" style="vertical-align:sub;width:16px;height:16px;" src="/luci-static/resources/cbi/reload.gif">
+			</td>
+			<td class="cbi-section-table-cell">
+				<input class="cbi-button" type="submit" value="<%=translate('Add')%>" name="user-add-button">
+			</td>
+		</tr>
+	</table>
+	</form>
+	
+</div>
+

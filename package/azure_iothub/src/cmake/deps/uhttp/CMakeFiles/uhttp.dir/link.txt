@@ -1,0 +1,2 @@
+/usr/bin/ar qc libuhttp.a  CMakeFiles/uhttp.dir/src/uhttp.c.o
+/usr/bin/ranlib libuhttp.a

@@ -1,0 +1,33 @@
+<%
+local ds = require "luci.dispatcher"
+%>
+<% if self.user_conf_avail then %>
+<fieldset class="cbi-section">
+	
+	<div class="cbi-section-node">
+		  <div class="cbi-value cbi-value-last">
+			  <label class="cbi-value-title" ><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%:Router will be set to the User\'s default configuration%>')"</span><%=translate("Restore to User's defaults")%></label>
+			  <a href="<%=ds.build_url('admin/system/flashops').."?user_reset=1"%>" class="cbi-value-field">
+				  <input onclick="return confirm('<%=translate('Really restore all changes?')%>')" class="cbi-button cbi-button-reset1" type="button" value="<%=translate('Restore')%>" />
+			  </a>
+		  </div>
+
+	  </div>
+
+</fieldset>
+<%end%>
+
+<fieldset class="cbi-section">
+	
+	  <div class="cbi-section-node">
+
+			<div class="cbi-value cbi-value-last">
+				<label class="cbi-value-title" ><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Router will be set to the factory default settings')%>')"</span><%=translate("Restore to Factory defaults")%></label>
+				<a href="<%=ds.build_url('admin/system/flashops').."?reset=1"%>" class="cbi-value-field">
+					<input onclick="return confirm('<%=translate('Really restore all changes?')%>')" class="cbi-button cbi-button-reset1" type="button" value="<%=translate('Restore')%>" />
+				</a>
+			</div>
+
+		</div>
+
+</fieldset>

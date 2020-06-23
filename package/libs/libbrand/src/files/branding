@@ -1,0 +1,13 @@
+#!/bin/sh
+
+mediaurlbase=`uci -q get luci.main.mediaurlbase`
+Default=`uci -q get luci.themes.Default`
+
+if [ ! -d "/www$mediaurlbase" ]; then
+  rom_mediaurlbase=`uci -q get luci.main.mediaurlbase -c /rom/etc/config/`
+  
+  uci -q set luci.main.mediaurlbase="$rom_mediaurlbase"
+  uci commit
+fi
+
+exit 0

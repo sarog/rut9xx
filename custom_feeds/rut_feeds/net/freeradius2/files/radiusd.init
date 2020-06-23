@@ -1,0 +1,142 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+START=99
+STOP=56
+. /lib/functions.sh
+DEFAULT=/etc/default/radiusd
+LOG_D=/var/log
+RUN_D=/var/run
+PID_F=$RUN_D/radiusd.pid
+RADACCT_D=/var/db/radacct
+USERS_CONFIG=/etc/freeradius2/users
+CLIENTS_CONF=/etc/freeradius2/clients.conf
+RADIUS_CONF=/etc/freeradius2/radiusd.conf
+CONFIG_NAME=radius
+IPADDR=$(ifconfig br-lan | sed -n 's/.*dr:\(.*\)Bc.*/\1/p')
+
+write_to_clients() {
+
+	local name ipaddr mask secret enabled
+
+	config_get enabled "$1" "enabled"
+
+	if [ "$enabled" == "1" ]; then
+		config_get name "$1" "name"
+		config_get ipaddr "$1" "ipaddr"
+		config_get mask "$1" "mask"
+		config_get secret "$1" "secret"
+cat <<EOF
+client $name {
+	ipaddr = $ipaddr
+	netmask = $mask
+	secret = $secret
+	}
+
+EOF
+	fi
+}
+
+write_to_users() {
+	local pass name REPLY_MSG dowload upload idle timeout downloadlimit uploadlimit interval start template
+
+	config_get enabled "$1" "enabled"
+	config_get template "$1" "template"
+
+	if [ "$enabled" == "1" -a -n "$template" ]; then
+		config_get name "$1" "username"
+		config_get pass "$1" "pass"
+		config_get REPLY_MSG "$1" "message"
+		config_get dowload "$template" "downloadbandwidth"
+		config_get upload "$template" "uploadbandwidth"
+		config_get idle "$template" "defidletimeout"
+		config_get timeout "$template" "defsessiontimeout"
+		config_get downloadlimit "$template" "downloadlimit"
+		config_get uploadlimit "$template" "uploadlimit"
+		config_get interval "$template" "period"
+
+		if [ -n "$interval" ]; then
+				if [ "$interval" == "3" ]; then
+					config_get start "$template" "day"
+				elif [  "$interval" == "1" ]; then
+					config_get start "$template" "hour"
+				elif [  "$interval" == "2" ]; then
+					config_get start "$template" "weekday"
+				fi
+
+		fi
+
+		[ -z $REPLY_MSG ] && REPLY_MSG="Hello, %{User-Name}"
+
+cat <<EOF
+$name	Cleartext-Password := "$pass"
+	Reply-Message = "$REPLY_MSG",
+EOF
+		[ ! -z $dowload ] && addconfig "	WISPr-Bandwidth-Max-Down = $dowload,"
+		[ ! -z $upload ] && addconfig "	WISPr-Bandwidth-Max-Up = $upload,"
+		[ ! -z $idle ] && addconfig "	Idle-Timeout = $idle,"
+		[ ! -z $timeout ] && addconfig "	Session-Timeout = $timeout,"
+		if [ ! -z $downloadlimit ]; then
+			addconfig "	ChilliSpot-Max-Input-Gigawords = `expr $downloadlimit / 4294967296`,"
+			addconfig "	ChilliSpot-Max-Input-Octets = `expr $downloadlimit % 4294967296`,"
+		fi
+		if [ ! -z $uploadlimit ]; then
+			addconfig "	ChilliSpot-Max-Output-Gigawords = `expr $uploadlimit / 4294967296`,"
+			addconfig "	ChilliSpot-Max-Output-Octets = `expr $uploadlimit % 4294967296`,"
+		fi
+
+			addconfig "	ChilliSpot-Start-Point = ${start:-3},"
+			addconfig "	ChilliSpot-Data_Interval = ${interval:-1},"
+
+	fi
+}
+
+addconfig() { [ -n "$*" ] && 	cat<<EOF
+$*
+EOF
+}
+
+
+clients() {
+	write_to_clients $1 >> $CLIENTS_CONF
+}
+
+users() {
+	write_to_users $1 >> $USERS_CONFIG
+}
+
+start() {
+	local enabled
+
+	config_load "$CONFIG_NAME"
+	config_get enabled "general" "enabled"
+
+	[ "$enabled" != "1" ] && exit 1
+	echo "Starting radius ..."
+	[ -e $USERS_CONFIG ] && rm $USERS_CONFIG
+	[ -e $CLIENTS_CONF ] && rm $CLIENTS_CONF
+	[ -e $RADIUS_CONF ] && rm $RADIUS_CONF
+
+	config_foreach users 'user'
+	config_foreach clients 'client'
+	config_foreach clients 'local'
+
+	# radiusd.conf setinimo funkcijos
+	sh /etc/freeradius2/radius_conf.sh
+
+	[ -f $DEFAULT ] && . $DEFAULT
+	mkdir -p $LOG_D
+	mkdir -p $RUN_D
+	mkdir -p $RADACCT_D
+
+	radiusd $OPTIONS
+
+}
+
+stop() {
+	[ -f $PID_F ] && kill $(cat $PID_F)
+}
+
+restart() {
+	stop
+	start
+}

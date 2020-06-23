@@ -1,0 +1,82 @@
+#!/bin/sh
+# Copyright (C) 2016 MOHAMED Kallel <mohamed.kallel@yahoo.fr>
+
+#common_execute_method_param "$parameter" "$permission" "$get_cmd" "$set_cmd" "xsd:$type" "$forcedinform"
+#  $forcedinform should be set to 1 if the parameter is included in the inform message otherwise empty
+#  Default of $type = string
+
+#############################
+#   Entry point functions   #
+#############################
+
+prefix_list="$prefix_list $DMROOT.Hotspot."
+entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_Hotspot"
+
+entry_execute_method_root_Hotspot() {
+	case "$1" in ""|"$DMROOT."|"$DMROOT.Hotspot."*)
+		common_execute_method_obj "$DMROOT.Hotspot." "0"
+		common_execute_method_obj "$DMROOT.Hotspot.Instances." "0" "" "" "hotspot_browse_instances $1"
+		return 0
+		;;
+	esac
+	return $E_INVALID_PARAMETER_NAME;
+}
+
+Hotspot_Instance() {
+	local j="$2"
+	local mode=`$UCI_GET coovachilli.$j.mode`
+
+	case_param "$1" belongto "$DMROOT.Hotspot.Instances.$j." && {
+		common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.General.Enable" "1" "Hotspot_Get_Bool $j enabled 1 0" "Hotspot_Set_Bool $j enabled 1 0" "xsd:boolean"
+		common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.General.IP" "1" "Hotspot_Get $j net" "Hotspot_Set $j net"
+		common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.General.Mode" "1" "Hotspot_Get $j mode" "Hotspot_Set $j mode" "xsd:string"
+
+		if [ "$mode" = "intrad" -o "$mode" = "norad" ]; then
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.General.ExternalLandingPage" "1" "Hotspot_Get_Bool $j externalpage 1 0" "Hotspot_Set_Bool $j externalpage 1 0" "xsd:boolean"
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.General.LandingPageAddress" "1" "Hotspot_Get $j externadress" "Hotspot_Set $j externadress"
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.General.HTTPSRedirect" "1" "Hotspot_Get_Bool $j https 1 0" "Hotspot_Set_Bool $j https 1 0" "xsd:boolean"
+		elif [ "$mode" = "extrad" ]; then
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.Radius.Server1" "1" "Hotspot_Get $j radiusserver1" "Hotspot_Set $j radiusserver1"
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.Radius.Server2" "1" "Hotspot_Get $j radiusserver2" "Hotspot_Set $j radiusserver2"
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.Radius.AuthenticationPort" "1" "Hotspot_Get $j radiusauthport" "Hotspot_Set $j radiusauthport"
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.Radius.AccountingPort" "1" "Hotspot_Get $j radiusacctport" "Hotspot_Set $j radiusacctport"
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.Radius.RadiusSecretKey" "1" "Hotspot_Get $j radiussecret" "Hotspot_Set $j radiussecret"
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.Radius.UAMPort" "1" "Hotspot_Get $j uamport" "Hotspot_Set $j uamport"
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.Radius.UAMUIPort" "1" "Hotspot_Get $j uamuiport" "Hotspot_Set $j uamuiport"
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.Radius.UAMSecret" "1" "Hotspot_Get $j uamsecret" "Hotspot_Set $j uamsecret"
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.Radius.NASIdentifier" "1" "Hotspot_Get $j nasid" "Hotspot_Set $j nasid"
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.Radius.SwapOctets" "1" "Hotspot_Get_Bool $j swapoctets 1 0" "Hotspot_Set_Bool $j swapoctets 1 0" "xsd:boolean"
+			common_execute_method_param  "$DMROOT.Hotspot.Instances.$j.Radius.LocationName" "1" "Hotspot_Get $j locationname" "Hotspot_Set $j locationname"
+		fi
+
+		return 0
+	}
+	return $E_INVALID_PARAMETER_NAME;
+}
+#$1 - section name, $2 - option, $3 - true value, $4 - false value
+Hotspot_Get_Bool() {
+	local val=`$UCI_GET coovachilli.$1.$2`
+
+	[ "$val" = "1" ] && echo "$3" || echo "$4"
+}
+#$1 - section name, $2 - option, $3 - true value, $4 - false value, $5 - value
+Hotspot_Set_Bool() {
+	common_set_bool "coovachilli.$1.$2" "$5" "$3" "$4"
+	return $?
+}
+#$1 - section name, $2 - option
+Hotspot_Get() {
+	echo `$UCI_GET coovachilli.$1.$2`
+}
+#$1 - section name, $2 - option, $3 - value
+Hotspot_Set() {
+	$UCI_SET coovachilli.$1.$2=$3
+	return $?
+}
+
+hotspot_browse_instances() {
+	local instance instances=`$UCI_SHOW  wireless | grep "hotspotid" | cut -d "=" -f 2`
+	for instance in $instances; do
+		Hotspot_Instance  "$1" "$instance" "$iface"
+	done
+}

@@ -1,0 +1,56 @@
+<%+cbi/valueheader%>
+<script type="text/javascript">
+	function changeStartAndEnd() {
+		XHR.get('<%=luci.dispatcher.build_url("admin", "system", "wizard", "calcIP")%>', {
+			address: document.getElementById("cbid.network.lan.ipaddr").value,
+			mask: document.getElementById("cbid.network.lan.netmask").value,
+			start: document.getElementById("cbid.dhcp.lan.start").value,
+			limit: document.getElementById("cbid.dhcp.lan.limit").value
+		}, function (x, info) {
+			if (info) {
+				document.getElementById("start_ip").innerHTML = info.start_range;
+				document.getElementById("end_ip").innerHTML = info.end_range;
+			}
+		});
+	}
+
+	function fixElementPosition() {
+		var topElement = document.getElementById('cbi-dhcp-lan-_start');
+		if (topElement) {
+			var element = topElement.getElementsByTagName('div')[0];
+			if (element) {
+				element.style = "margin-top: 8px;";
+				element.id = "start_ip";
+			}
+		}
+	}
+
+	function addListenersToStartAndEnd() {
+		var ipaddr = document.getElementById("cbid.network.lan.ipaddr");
+		var mask = document.getElementById("cbid.network.lan.netmask");
+		var start = document.getElementById("cbid.dhcp.lan.start");
+		var limit = document.getElementById("cbid.dhcp.lan.limit");
+		ipaddr ? ipaddr.addEventListener("change", changeStartAndEnd) : console.log("IP address field not found");
+		mask ? mask.addEventListener("change", changeStartAndEnd) : console.log("Mask field not found");
+		start ? start.addEventListener("change", changeStartAndEnd) : console.log("Start field not found");
+		limit ? limit.addEventListener("change", changeStartAndEnd) : console.log("Limit field not found");
+	}
+
+	AddWindowOnLoadEvent(changeStartAndEnd);
+	AddWindowOnLoadEvent(fixElementPosition);
+	AddWindowOnLoadEvent(addListenersToStartAndEnd);
+</script>
+
+<% if self.href then %><a href="<%=self.href%>"><% end -%>
+	<%
+		local val = self:cfgvalue(section) or self.default or ""
+		if not self.rawhtml then
+			write(pcdata(val))
+		else
+			write(val)
+		end
+	%>
+<%- if self.href then %></a><%end%>
+<%- if self.text then %><p style="margin-top:9px;margin-bottom: 0px;" ><font color="red"><%- write(self.text) -%></font></p> <%end%>
+<input type="hidden" id="<%=cbid%>" value="<%=pcdata(self:cfgvalue(section) or self.default or "")%>" name="<%=cbid%>"/>
+<%+cbi/valuefooter%>

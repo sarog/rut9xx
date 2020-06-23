@@ -1,0 +1,2 @@
+# Location of certificates that will be always kept
+/lib/uci/upload/

@@ -1,0 +1,147 @@
+<%
+require("uci")
+
+local uci = uci.cursor()
+local rowcnt = 1
+function rowstyle()
+	rowcnt = rowcnt + 1
+	return (rowcnt % 2) + 1
+end
+
+function width(o)
+	if o.width then
+		if type(o.width) == 'number' then
+			return ' style="width:%dpx"' % o.width
+		end
+		return ' style="width:%s"' % o.width
+	end
+	return ''
+end
+
+%>
+
+<style>
+	.delete_button{
+		float:right;
+		margin-right:50px;
+	}
+</style>
+
+<!-- tblsection -->
+<fieldset class="cbi-section" id="cbi-<%=self.config%>-<%=self.sectiontype%>">
+	<% if self.title and #self.title > 0 then -%>
+		<legend><%=self.title%></legend>
+	<%- end %>
+	<%- if self.sortable then -%>
+		<input type="hidden" id="cbi.sts.<%=self.config%>.<%=self.sectiontype%>" name="cbi.sts.<%=self.config%>.<%=self.sectiontype%>" value="" />
+	<%- end -%>
+	<div class="cbi-section-descr"><%=self.description%></div>
+	<div class="cbi-section-node" id="TableDable">
+		<%- local count = 1 -%>
+		<table class="cbi-section-table" id="tablepaging">
+			<thead>
+			<tr class="cbi-section-table-titles">
+			<%- if not self.anonymous then -%>
+				<%- if self.sectionhead then -%>
+					<th class="cbi-section-table-cell"><%=self.sectionhead%></th>
+				<%- else -%>
+					<th>&#160;</th>
+				<%- end -%>
+			<%- end -%>
+			<%- for i, k in pairs(self.children) do if not k.optional then -%>
+				<th class="cbi-section-table-cell"<%=width(k)%> onmouseover="ShowHint(this, '<%=translate(k.description)%>')" onmouseout="HideHint(this)">
+				<%- if k.titleref then -%><a title="<%=self.titledesc or translate('Go to relevant configuration page')%>" class="cbi-title-ref" href="<%=k.titleref%>"><%- end -%>
+					<%-=k.title-%>
+				<%- if k.titleref then -%></a><%- end -%>
+				</th>
+			<%- count = count + 1; end; end; if self.sortable then -%>
+				<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=self.sorthint%>')" onmouseout="HideHint(this)"><%=translate("Sort")%></th>
+			<%- end; if self.extedit or self.addremove or self.addbutton then -%>
+			<%- count = count + 1; end -%>
+			</tr>
+			</thead>
+			<%- local isempty = true
+				local sections = {}
+				local section
+				uci:foreach(self.config, "dropbear", function(s)
+					section = {}
+					section.cfg = s[".name"]
+					section.type = s[".type"]
+					section.ip = s["ip"]
+					section.date = s["date"]
+					table.insert(sections, section)
+				end)
+				uci:foreach(self.config, "uhttpd", function(s)
+					section = {}
+					section.cfg = s[".name"]
+					section.type = s[".type"]
+					section.ip = s["ip"]
+					section.date = s["date"]
+					table.insert(sections, section)
+				end)
+			    for i, s in ipairs(sections) do
+					cfg = s.cfg
+					type = s.type
+					ip = s.ip
+					_date = s.date
+					if type == "dropbear" then
+						service = "SSH"
+					elseif type == "uhttpd" then
+						service = "WebUI"
+					else
+						service = "-"
+					end
+					scope = { valueheader = "cbi/cell_valueheader", valuefooter = "cbi/cell_valuefooter" }
+					isempty = false
+			-%>
+				<tr class="cbi-section-table-row<% if self.extedit or self.rowcolors then %> cbi-rowstyle-<%=rowstyle()%><% end %>" id="cbi-<%=self.config%>-<%=cfg%>">
+					<td class="cbi-value-field">
+						<div id="cbi-blocklist-service">
+							<%=service%>
+						</div>
+						<div id="cbip-blocklist-service"></div>
+					</td>
+					<td class="cbi-value-field">
+						<div id="cbi-blocklist-ip">
+							<%=ip%>
+						</div>
+						<div id="cbip-blocklist-ip"></div>
+					</td>
+					<td class="cbi-value-field">
+						<div id="cbi-blocklist-date">
+						<%=os.date("%Y-%m-%d, %H:%M:%S", _date)%>
+						<%- if self.addremove then %>
+							<input class="cbi-button cbi-button-remove delete_button" type="submit" value="<%:Delete%>" onclick="this.form.cbi_state='del-section'; return true" name="cbi.del.<%=self.config%>.<%=cfg%>.<%=type%>.ip=<%=ip%>" alt="<%:Delete%>" title="<%:Delete%>" />
+						<%- end -%>
+						</div>
+						<div id="cbip-blocklist-date"></div>
+					</td>
+				</tr>
+			<%- end -%>
+			<%- if isempty then -%>
+			<tr class="cbi-section-table-row">
+				<%- if self.novaluetext then -%>
+					<td style="padding:20px 0 20px 10px;" colspan="<%=count%>"><em><%=self.novaluetext%></em></td>
+				<%- else -%>
+					<td style="padding:20px 0 20px 10px;" colspan="<%=count%>"><em><%=translate("There are no addresses blocked")%></em></td>
+					<td></td>
+					<td></td>
+				<%- end -%>
+			</tr>
+			<%- end -%>
+		</table>
+
+		<% if self.error then %>
+			<div class="cbi-section-error">
+				<ul><% for _, c in pairs(self.error) do for _, e in ipairs(c) do -%>
+					<li><%=pcdata(e):gsub("\n","<br />")%></li>
+				<%- end end %></ul>
+			</div>
+		<% end %>
+	</div>
+</fieldset>
+<!-- /tblsection -->
+<script type="text/javascript" src="<%=resource%>/Dable.js"></script>
+<script>
+var dable = new Dable("TableDable");
+</script>

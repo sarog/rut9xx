@@ -1,0 +1,63 @@
+--- a/pppd/main.c
++++ b/pppd/main.c
+@@ -745,10 +745,14 @@
+ set_ifunit(iskey)
+     int iskey;
+ {
+-    if (use_ifname[0] == 0)
++    if (use_ifname[0] == 0) {
+ 	slprintf(ifname, sizeof(ifname), "%s%d", PPP_DRV_NAME, ifunit);
+-    else
++    } else if(enable_ifname_counter) {
++	slprintf(ifname, sizeof(ifname), "%s%d", use_ifname, ifunit);
++    } else {
+ 	slprintf(ifname, sizeof(ifname), "%s", use_ifname);
++    }
++
+     info("Using interface %s", ifname);
+     script_setenv("IFNAME", ifname, iskey);
+     if (iskey) {
+--- a/pppd/options.c
++++ b/pppd/options.c
+@@ -112,6 +112,7 @@ bool	log_default = 1;	/* log_to_fd is de
+ int	maxfail = 10;		/* max # of unsuccessful connection attempts */
+ char	linkname[MAXPATHLEN];	/* logical name for link */
+ char	use_ifname[IFNAMSIZ];	/* physical name for PPP link */
++bool	enable_ifname_counter;  /* turn on custom iface counter*/
+ bool	tune_kernel;		/* may alter kernel settings */
+ int	connect_delay = 1000;	/* wait this many ms after connect script */
+ int	req_unit = -1;		/* requested interface unit */
+@@ -270,6 +271,8 @@ option_t general_options[] = {
+     { "ifname", o_string, use_ifname,
+       "Set physical name for PPP interface",
+       OPT_PRIO | OPT_PRIV | OPT_STATIC, NULL, IFNAMSIZ },
++    { "encounter", o_bool, &enable_ifname_counter,
++      "Turn on custom iface counter", OPT_PRIO | 1 },
+ 
+     { "maxfail", o_int, &maxfail,
+       "Maximum number of unsuccessful connection attempts to allow",
+--- a/pppd/pppd.h
++++ b/pppd/pppd.h
+@@ -220,6 +220,7 @@ struct notifier {
+ extern int	hungup;		/* Physical layer has disconnected */
+ extern int	ifunit;		/* Interface unit number */
+ extern char	ifname[];	/* Interface name */
++extern bool     enable_ifname_counter;	/* Enable interface counter*/
+ extern char	hostname[];	/* Our hostname */
+ extern u_char	outpacket_buf[]; /* Buffer for outgoing packets */
+ extern int	devfd;		/* fd of underlying device */
+--- a/pppd/sys-linux.c
++++ b/pppd/sys-linux.c
+@@ -659,7 +659,11 @@
+ 			s = socket(PF_UNIX, SOCK_DGRAM, 0);
+ 		if (s >= 0) {
+ 			slprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s%d", PPP_DRV_NAME, ifunit);
+-			slprintf(ifr.ifr_newname, sizeof(ifr.ifr_newname), "%s", use_ifname);
++			if (enable_ifname_counter) {
++				slprintf(ifr.ifr_newname, sizeof(ifr.ifr_newname), "%s%d", use_ifname, ifunit);
++			} else {
++				slprintf(ifr.ifr_newname, sizeof(ifr.ifr_newname), "%s", use_ifname);
++			}
+ 			x = ioctl(s, SIOCSIFNAME, &ifr);
+ 			close(s);
+ 		} else {

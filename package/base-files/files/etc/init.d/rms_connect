@@ -1,0 +1,32 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2018 Teltonika
+
+START=99
+
+FUNC_NAME="/sbin/rms_connect"
+USE_PROCD=1
+
+start_service() {
+	ena=`uci get rms_connect_mqtt.rms_connect_mqtt.enable`
+	remote=`uci get rms_connect_mqtt.rms_connect_mqtt.remote`
+	port=`uci get rms_connect_mqtt.rms_connect_mqtt.port`
+	if [ "$ena" -eq "1" -o "$ena" -eq "2" ]; then
+		procd_open_instance
+		procd_set_param respawn ${respawn_threshold:-0} ${respawn_timeout:-60} ${respawn_retry:-0}
+		procd_set_param command "$FUNC_NAME"
+		procd_close_instance
+	else
+		echo -ne '0\n0\n0\n\n' > /tmp/rms_data
+		/etc/init.d/rms_mqtt stop &
+	fi
+}
+
+stop_service() {
+	sed -i '2s/.*/0/' /tmp/rms_data
+    /etc/init.d/rms_mqtt stop &
+}
+
+reload_service() {
+    /etc/init.d/rms_connect stop
+    /etc/init.d/rms_connect start
+}

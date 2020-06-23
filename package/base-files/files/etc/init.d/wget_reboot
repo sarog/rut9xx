@@ -1,0 +1,43 @@
+#!/bin/sh /etc/rc.common
+
+. /lib/functions.sh
+
+START=99
+STOP=99
+CRONTAB_FILE=/etc/crontabs/root
+
+start(){
+    local enabled=0, time=0
+
+    config_load "wget_reboot"
+    config_get enabled "wget_reboot" "enable" "0"
+
+    [ "$enabled" = "0" ] && exit 1
+
+    config_get time "wget_reboot" "time" "0"
+
+	sed -i '/check_wget_reboot.sh/d' ${CRONTAB_FILE} 2>/dev/null
+
+	case ${time} in
+       "30")
+          echo '0,30 * * * * /usr/sbin/check_wget_reboot.sh' >> ${CRONTAB_FILE}
+          ;;
+       "60")
+          echo '0 */1 * * * /usr/sbin/check_wget_reboot.sh' >> ${CRONTAB_FILE}
+          ;;
+       "120")
+          echo '0 */2 * * * /usr/sbin/check_wget_reboot.sh' >> ${CRONTAB_FILE}
+          ;;
+       *)
+         echo "*/$time * * * * /usr/sbin/check_wget_reboot.sh" >> ${CRONTAB_FILE}
+         ;;
+    esac
+}
+
+stop(){
+    local pid=`pidof wget_reboot.sh`
+
+    sed -i '/check_wget_reboot.sh/d' ${CRONTAB_FILE} 2>/dev/null
+
+    [ "$pid" != "" ] && kill -9 ${pid}
+}

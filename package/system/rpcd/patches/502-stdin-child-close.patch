@@ -1,0 +1,20 @@
+--- a/file.c
++++ b/file.c
+@@ -676,6 +676,7 @@
+
+ 	int opipe[2];
+ 	int epipe[2];
++	int nfd;
+
+ 	int rem;
+ 	struct blob_attr *cur;
+@@ -715,6 +716,10 @@
+ 		close(epipe[0]);
+ 		close(epipe[1]);
+
++		nfd = open("/dev/null", O_RDWR);
++		dup2(nfd, 0);
++		if (nfd > 2) close(nfd);
++
+ 		arglen = 2;
+ 		args = malloc(sizeof(char *) * arglen);

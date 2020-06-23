@@ -1,0 +1,210 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: flashops.htm 7798 2011-10-26 23:43:04Z jow $
+
+-%>
+
+<%
+	local show =  luci.tools.status.show_mobile()
+	local sys = require "luci.sys"
+	local month = luci.sys.exec("uname -a | awk -F ' ' '{print $6}' ")
+	month = tostring(month)
+	month = month:gsub("%s+", "")
+	local months = { ["Jan"]="01", ["Feb"]="02", ["Mar"]="03", ["Apr"]="04", ["May"]="05", ["Jun"]="06", ["Jul"]="07", ["Aug"]="08", ["Sep"]="09", ["Oct"]="10", ["Nov"]="11", ["Dec"]="12" }
+		month = months[month]
+	local day = luci.sys.exec("uname -a | awk -F ' ' '{print $7}' ")
+	day = day:gsub("%s+", "")
+
+	if tonumber(day) < 10 then
+		local days = { ["1"]="01", ["2"]="02", ["3"]="03", ["4"]="04", ["5"]="05", ["6"]="06", ["7"]="07", ["8"]="08", ["9"]="09", ["0"]="00" }
+		day = days[day]
+	end
+
+	local hour = luci.sys.exec("uname -a | awk -F ' ' '{print $8}' ")
+	hour = hour:gsub("%s+", "")
+	local year = luci.sys.exec("uname -a | awk -F ' ' '{print $10}' ")
+	year = year:gsub("%s+", "")
+
+	require "teltonika_lua_functions"
+
+	blver = luci.sys.exec("/sbin/mnf_info blver")
+	if blver == "" or blver == "\n" then
+		blver = "1.0.0"
+	end
+
+%>
+
+<%+header%>
+<script type="text/javascript" src="/luci-static/resources/spin.js"></script>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/JavaScript" src="/luci-static/default/upload-validation.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+function check() {
+	document.getElementById('upgrd').disabled = true;
+	document.getElementById('refresh').disabled = true;
+	document.getElementById('spinner1').style.display = '';
+	XHR.get('<%=luci.dispatcher.build_url("admin", "system", "flashops","check")%>', null,
+		function(x, info) {
+			document.getElementById('fw_version').innerHTML = info.remote_fw_version;
+			document.getElementById('refresh').disabled = false;
+			if (document.getElementById('from').value === "server") {
+				if (info.remote_fw_version !== "No update available." && info.remote_fw_version !== "No access to server." && info.err_code === 0) {
+					document.getElementById('upgrd').disabled = false;
+				}
+			}
+			else {
+				document.getElementById('upgrd').disabled = false;
+			}
+			document.getElementById('spinner1').style.display = 'none';
+		}
+	);
+}
+
+function change() {
+	if (document.getElementById('from').value=="server") {
+		document.getElementById('upgrd').disabled = true;
+		var fw_str = document.getElementById('fw_version').innerHTML;
+		check();
+		document.getElementById('image').style.display = 'none';
+		document.getElementById('label_image').style.display = 'none';
+		document.getElementById('div_image').style.display = 'none';
+		document.getElementById('upgrade_form').action=document.getElementById('server_form').value;
+		document.getElementById('download').value = 1;
+		document.getElementById('upgrd').onclick = null;
+	}
+	else {
+		document.getElementById('upgrd').disabled = false;
+		document.getElementById('image').style.display = '';
+		document.getElementById('label_image').style.display = '';
+		document.getElementById('div_image').style.display = '';
+		document.getElementById('upgrade_form').action=document.getElementById('file_form').value;
+		document.getElementById('download').value = 0;
+		document.getElementById('upgrd').onclick = function() { return CheckFilesize('image', '30000000', '<%=translate("Selected file is too large, max 30 MB")%>', '<%=translate("Selected file is empty")%>'); };
+	}
+}
+
+AddWindowOnLoadEvent(change);
+
+//]]></script>
+
+<h2><a id="content" name="content"><%=translate("Firmware")%></a></h2>
+<div class="cbi-map-descr"><%=translate("")%> </div>
+
+<% if image_invalid or download_error then %>
+	<% if download_error then %>
+		<div id="err_message" class="alert-message error"> <%=translate(error_message)%></div>
+	<% end %>
+	<% if image_invalid then %>
+		<div id="err_message" class="alert-message error"><%=translate("The uploaded image file does not contain a supported format.") %></div>
+	<% end %>
+<% end %>
+
+
+<div style="width: 100%; height: 205px;">
+	<div style="width:450px; float:left;">
+		<fieldset class="cbi-section">
+			<legend><%=translate("Current Firmware Information")%></legend>
+			<table width="100%" class="cbi-section-table2" >
+				<tbody>
+				<tr><td><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Specifies the version of the firmware that is currently loaded in the router')%>')"</span><%=translate("Firmware version")%></td><td><%=luci.sys.exec("cat /etc/version")%></td></tr>
+				<tr><td><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Specifies when firmware was loaded in the router, format (Year-month-day-hour)')%>')"</span><%=translate("Firmware build date")%></td><td><%=year%>-<%=month%>-<%=day%>, <%=hour%></td></tr>
+				<tr style="border-bottom: 1px solid #DDD;"><td><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Specifies the version of the Linux or kernel that is currently running on the router')%>')"</span><%=translate("Kernel version")%></td><td><%=luci.sys.exec("uname -r")%></td></tr>
+				<% if blver == "1.0.0" then %>
+					<tr style="border-bottom: 1px solid #DDD;"><td><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Specifies the version of Bootloader that is currently running on the router')%>')"</span><%=translate("Bootloader version")%></td><td>1.0.0 <a style="color:red; "href="https://wiki.teltonika-networks.com/view/RUT9xx_Firmware"><u>Update needed [Download]</u></a></td></tr>
+				<% else %>
+					<tr style="border-bottom: 1px solid #DDD;"><td><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Specifies the version of Bootloader that is currently running on the router')%>')"</span><%=translate("Bootloader version")%></td><td><%=blver%></td></tr>
+				<% end %>
+				</tbody>
+			</table>
+		<fieldset class="cbi-section">
+	</div>
+	<div style="width:450px; float: right;">
+		<fieldset class="cbi-section">
+			<legend><%=translate("Firmware Available On Server")%></legend>
+			<table width="100%" id="TEST" cellspacing="10" class="cbi-section-table2">
+				<div id="spinner1" style="display:none; position: relative; top: -50px; left: 220px;"></div>
+				<tr style="border-bottom: 1px solid #DDD;"><td><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Firmware version available on Server')%>')"</span><%=translate("Firmware version")%></td><td id="fw_version"><%=new_fw or "N/A" %></td></tr>
+			</table>
+			 <button id="refresh" class="cbi-button-refresh" style="float: right;margin-top: 15px;" onClick="check()"><%=translate("Check for new FW")%></button>
+		</fieldset>
+	</div>
+</div>
+
+<fieldset class="cbi-section">
+		<legend><%=translate("Firmware Upgrade Settings")%></legend>
+		<% if upgrade_avail then %>
+			<form id="upgrade_form" method="post" action="<%=luci.dispatcher.build_url("admin", "system", "flashops","auto")%>" enctype="multipart/form-data">
+				<input type="hidden" id="server_form" value="<%=luci.dispatcher.build_url("admin", "system", "flashops","auto")%>" />
+				<input type="hidden" id="file_form" value="<%=luci.dispatcher.build_url("admin", "system", "flashops","upgrade")%>" />
+
+				<div class="cbi-section-descr"><!--<%:Warning: Upgrading firmware may take a few minutes. Do not turn off power or unplug the device during the firmware update, because it will result in permanent damage.%>--></div>
+				<div class="cbi-section-node">
+					<div class="cbi-value">
+						<table style="margin-top: -16px;margin-bottom: 10px;" class="cbi-section-table3">
+						<tr>
+							<td><div class="cbi-value-title" style="margin: 0 0 0px 10px; width: 275px;"  id="block_keep">
+									<label class="cbi-value-title" for="keep"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('All settings will be kept after firmware upgrade. If unchecked all settings will be erased. ')%>')"</span><%=translate("Keep all settings")%></label>
+									<input type="checkbox" style="float:right; margin-top:0px;" name="keep" id="keep" checked/>
+								</div>
+							</td>
+						</tr>
+						</table>
+					</div>
+					<div style="float:left;width:100%;margin-top: 10px;">
+						<div class="cbi-value-title" id="block_keep_o" style="float:left;">
+							<select id="from" onchange="change()">
+								<option value="server" >Upgrade from server</option>
+								<option value="file">Upgrade from file</option>
+							</select>
+						</div>
+						<div id="div_image" <% if image_invalid then %> cbi-value-error<% end %>" style="display: none; margin-left: 30px;float:left;">
+								<input type="hidden" id="step" name="step" value="1" />
+								<input type="hidden" id="download" name="download" value="0" />
+								<label id="label_image" class="cbi-value-title" style="float:none; margin-left:10px;" for="image"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Image- router firmware (FW) upgrade file')%>')"</span><%=translate("Firmware image file")%></label>
+								<input type="file" name="image" id="image" /><br />
+						</div>
+
+					</div>
+					<div style="float:left;">
+						<input id="upgrd" type="submit" style="margin-top: 15px;" class="cbi-button cbi-button-apply1" value="<%=translate('Upgrade')%>" />
+					</div>
+				</div>
+			</form>
+		<% else %>
+			<div id="err_message" class="alert-message error"><%=translate("Sorry, unknown error.") %></div>
+		<% end %>
+
+</fieldset>
+
+<script>
+var opts = {
+    lines: 14, // The number of lines to draw
+    length: 5, // The length of each line
+    width: 2, // The line thickness
+    radius: 5, // The radius of the inner circle
+    rotate: 0, // The rotation offset
+    color: '#000', // #rgb or #rrggbb
+    speed: 1.7, // Rounds per second
+    trail: 64, // Afterglow percentage
+    shadow: false, // Whether to render a shadow
+    hwaccel: true, // Whether to use hardware acceleration
+    className: 'spinner', // The CSS class to assign to the spinner
+    zIndex: 2e9, // The z-index (defaults to 2000000000)s
+    top: 50, // Top position relative to parent in px
+    left: 'auto' // Left position relative to parent in px
+};
+var target1 = document.getElementById('spinner1');
+var spinner1= new Spinner(opts).spin(target1);
+</script>
+
+<%+footer%>

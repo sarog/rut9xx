@@ -1,0 +1,277 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: index.htm 8408 2012-04-02 22:50:26Z jow $
+
+-%>
+
+<%
+	require "luci.fs"
+	require "luci.tools.status"
+	luci.util   = require "luci.util"
+	local has_ipv6 = luci.fs.access("/proc/net/ipv6_route")
+	local has_dhcp = luci.fs.access("/etc/config/dhcp")
+	local uci = require "luci.model.uci".cursor()
+	local ntm = require "luci.model.network".init()
+	local mac = luci.util.trim(luci.sys.exec("ifconfig | grep 'br-lan' | awk -F ' ' '{print $5}'"))
+	if luci.http.formvalue("status") == "1" then
+
+	--========================== lan =========================
+		local ppp_method = uci:get("network", "ppp", "method")
+
+		lan = ntm:get_interface("br-lan")
+		lan = lan and lan:get_network()
+
+		local lan_array = { }
+
+		lan_array[#lan_array+1]={}
+		lan_array[#lan_array]["name"] = lan:name()
+		lan_array[#lan_array]["ipaddr"] = lan:ipaddr()
+		lan_array[#lan_array]["netmask"] = lan:netmask()
+
+		output = io.popen("ipcalc.sh "..lan_array[#lan_array]["ipaddr"].." ".. lan_array[#lan_array]["netmask"].."")
+		for line in output:lines() do
+			aaa = line:split("=")
+			if aaa[1]=="BROADCAST" then
+				lan_array[#lan_array]["to"] = aaa[2]
+				elseif aaa[1]=="NETWORK" then
+					lan_array[#lan_array]["from"] = aaa[2]
+				end
+			end
+
+		output:close()
+		lan_array[#lan_array]["uptime"] = lan:uptime()
+		lan_array[#lan_array]["ifname"]  = lan:ifname()
+		info=lan:get_interface()
+		lan_array[#lan_array].mac = info:mac()
+                
+                local wan_as_lan = luci.util.trim(luci.sys.exec("uci get network.lan.ifname | if grep -q eth1; then echo 1; else echo 0; fi"))
+
+		local rv = {
+			ppp_method = ppp_method,
+			leases = luci.tools.status.dhcp_leases(),
+			port_stat = luci.tools.status.switch_status("switch0"),
+			wan_as_lan = wan_as_lan
+		}
+
+		if lan_array then
+			rv.lan = lan_array
+		end
+
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(rv)
+
+		return
+	end
+
+-%>
+
+<%+header%>
+<script type="text/javascript">
+
+</script>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	var wifidevs = <%=luci.http.write_json(netdevs)%>;
+	var arptable = <%=luci.http.write_json(arpcache)%>;
+
+function CompareIP( from,  to,  ip){
+	var fromArr = from.split(".");
+	var toArr = to.split(".");
+	var ipArr = ip.split(".");
+	for(i=0;i<4;i++){
+		if(ipArr[i]>toArr[i] || fromArr[i]>ipArr[i])
+			return false;
+	}
+	return true;
+}
+
+function refreshPage(){
+	document.getElementById("refresh").disabled = true;
+	XHR.get('<%=luci.dispatcher.build_url("admin", "status", "netinfo", "lan")%>', { status: 1 },
+		function(x, info){
+			if (x && x.status === 403)
+				location.href = location.href;
+
+			//-----------------------------------------------------------------------------
+			//----- Potrt info-------------------------------------------------------------
+			//-----------------------------------------------------------------------------
+			var tableStart = '<table width="100%" cellspacing="10"><tr>';
+                        var tableEnd = '</tr></table>';
+                        var switches = "switch0";
+                        var ports = info.port_stat[switches];
+                        var s = '';
+                        if (ports && ports.length){		//kol portas ir jo ilgis egzistuoja
+                                for (var j = 2; j <  ports.length; j++){		//ciklas nuo 2, kol 2 maziau uz porto ilgi
+                                        if (ports[j].link){		//jei tai egzistuoja spausdina porta, jei ne nerodo
+                                                if (e = document.getElementById('port'+(j-1))){
+                                                        e.src = "<%=resource%>/icons/lan_up.png";
+                                                }
+                                        }else{
+                                                if (e = document.getElementById('port'+(j-1))){
+                                                        e.src = "<%=resource%>/icons/lan_down.png";
+                                                }
+                                        }
+                                }
+                        }
+                        if (info.wan_as_lan != "1"){
+                                e = document.getElementById('port4');
+                                e.src = "<%=resource%>/icons/wan_not_used.png";
+                        }
+                        
+			//----- Lan status ------------------------------------------------------------
+			//-----------------------------------------------------------------------------
+			var ifc;
+			ifc = info.lan;
+			if (ifc){
+				var ls = document.getElementById('lan_status_table');
+				while( ls.rows.length > 1 )
+					ls.rows[0].parentNode.deleteRow(1);
+				for(var i=0; i<ifc.length; i++){
+					var tr = ls.rows[0].parentNode.insertRow(-1);
+					tr.className = 'cbi-section-table-row cbi-rowstyle-' + ((i % 2) + 1);
+					tr.insertCell(-1).innerHTML = ifc[i].name.charAt(0).toUpperCase() + ifc[i].name.slice(1);
+					tr.insertCell(-1).innerHTML = ifc[i].ipaddr;
+					tr.insertCell(-1).innerHTML = ifc[i].netmask;
+					tr.insertCell(-1).innerHTML = ifc[i].mac.toUpperCase();
+					if (ifc[i].uptime > 0)
+						s = String.format('%t',ifc[i].uptime);
+					else
+						s = String.format('');
+					tr.insertCell(-1).innerHTML = s;
+				}
+			}else{
+				ss = document.getElementById('LAN');
+				ss.innerHTML = '<table width="100%" cellspacing="10" class="cbi-section-table"><br /><tr><em><%=translate("Not connected via LAN.")%></em></tr> </br></table>' ;
+			}
+			//----- DHCP Leases ------------------------------------------------------------
+			//-----------------------------------------------------------------------------
+			<% if has_dhcp then %>
+			var ls = document.getElementById('lease_status_table');
+			if (ls){
+				/* clear all rows */
+				while( ls.rows.length > 1 )
+					ls.rows[0].parentNode.deleteRow(1);
+
+				for( var i = 0; i < info.leases.length; i++ ){
+					var timestr;
+					if (info.leases[i].expires <= 0)
+						timestr = '<em><%=translate("expired")%></em>';
+					else
+						timestr = String.format('%t', info.leases[i].expires);
+					var tr = ls.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row cbi-rowstyle-' + ((i % 2) + 1);
+					tr.insertCell(-1).innerHTML = info.leases[i].hostname ? info.leases[i].hostname : '?';
+					tr.insertCell(-1).innerHTML = info.leases[i].ipaddr;
+
+					tt=""
+					for(var a=0; a<ifc.length; a++){
+						if(CompareIP(ifc[a].from, ifc[a].to, info.leases[i].ipaddr)){
+							tt=ifc[a].name.charAt(0).toUpperCase() + ifc[a].name.slice(1);
+						} else if (info.ppp_method == "bridge") {
+							tt = "Bridge mode";
+						} else if (info.ppp_method == "pbridge") {
+							tt = "Passthrough mode";
+						}
+					}
+					tr.insertCell(-1).innerHTML = tt;
+					tr.insertCell(-1).innerHTML = info.leases[i].macaddr.toUpperCase();
+					tr.insertCell(-1).innerHTML = timestr;
+				}
+
+				if( ls.rows.length == 1 ){
+					var tr = ls.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row';
+
+					var td = tr.insertCell(-1);
+						td.colSpan = 5;
+						td.innerHTML = "<em><%=translate("There are no active leases.")%></em>";
+				}
+			}
+			<% end %>
+			document.getElementById('refresh').disabled = false;
+		}
+	);
+}
+AddWindowOnLoadEvent(refreshPage);
+
+function show(id){
+	e = document.getElementById(id);
+	if (e && id) {
+		if (e.style.display == "none") {
+			e.style.display="";
+		}else{
+			e.style.display="none";
+		}
+	}
+}
+//]]></script>
+
+<h2><a id="content" name="content"><%=translate("LAN Information")%></a></h2>
+<fieldset class="cbi-section">
+	<legend><%=translate("LAN Information")%></legend>
+<div id="LAN">
+	<table width="100%" cellspacing="10" class="cbi-section-table" id="lan_status_table" >
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell" width="20%%" onmouseover="ShowHint(this, '<%=translate("")%>')" onmouseout="HideHint(this)" ><%=translate("Name")%> </th>
+			<th class="cbi-section-table-cell" width="20%%" onmouseover="ShowHint(this, '<%=translate("The Local Area Network IP address that the router uses on the LAN network")%>')" onmouseout="HideHint(this)" ><%=translate("IP address")%> </th>
+			<th class="cbi-section-table-cell" width="20%%" onmouseover="ShowHint(this, '<%=translate("A mask used to define how large the LAN network is")%>')" onmouseout="HideHint(this)" ><%=translate("Netmask")%> </th>
+			<th class="cbi-section-table-cell" width="22%%" onmouseover="ShowHint(this, '<%=translate("Ethernet MAC address")%>')" onmouseout="HideHint(this)"><%=translate("Ethernet MAC address")%></th>
+			<th class="cbi-section-table-cell" width="18%%" onmouseover="ShowHint(this, '<%=translate("For how long LAN (Local Area Network) connection has been successfully maintained")%>')" onmouseout="HideHint(this)" ><%=translate("Connected for")%> </th>
+		</tr>
+		<tr>
+				<td colspan="5" id="wan4_s" style="vertical-align:middle; padding: 3px"><em><%=translate("Collecting data...")%></em></td>
+		</tr>
+		<% if has_ipv6_1 then %>
+		<tr>
+				<td width="33%" style="vertical-align:top"><%=translate("IP WAN Status")%></td>
+				<td id="wan6_s" style="vertical-align:middle; padding: 3px"><em><%=translate("Collecting data...")%></em></td>
+		</tr>
+		<% end %>
+	</table>
+</div>
+</fieldset>
+<% if has_dhcp then %>
+<fieldset class="cbi-section">
+	<legend><%=translate("DHCP Leases")%></legend>
+
+	<table class="cbi-section-table" id="lease_status_table" >
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell" width="20%%" onmouseover="ShowHint(this, '<%=translate('DHCP client\\\'s hostname')%>')" onmouseout="HideHint(this)" ><%=translate("Hostname")%></th>
+			<th class="cbi-section-table-cell" width="20%%" onmouseover="ShowHint(this, '<%=translate('Each lease declaration includes a single IP address that has been leased to the client')%>')" onmouseout="HideHint(this)" ><%=translate("IP address")%></th>
+			<th class="cbi-section-table-cell" width="20%%" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)" ><%=translate("LAN name")%></th>
+			<th class="cbi-section-table-cell" width="22%%" onmouseover="ShowHint(this, '<%=translate('The MAC (Media Access Control) address of the network interface on which the lease will by used. MAC is specified as a series of hexadecimal octets separated by colons')%>')" onmouseout="HideHint(this)" ><%=translate("MAC address")%></th>
+			<th class="cbi-section-table-cell" width="18%%" onmouseover="ShowHint(this, '<%=translate('Remaining lease time for addresses handed out to clients')%>')" onmouseout="HideHint(this)" ><%=translate("Lease time remaining")%></th>
+		</tr>
+		<tr>
+			<td colspan="5" id="wan4_s" style="vertical-align:middle; padding: 3px"><em><%=translate("Collecting data...")%></em></td>
+		</tr>
+	</table>
+</fieldset>
+<% end %>
+<fieldset class="cbi-section">
+	<legend><%=translate("Ports")%></legend>
+	<div style=" padding:3px; width:100%;  align:center;">
+		<div style="position:relative; margin:auto; background-image:url('<%=resource%>/icons/RUT900_back.png'); background-size: 100%; background-repeat:no-repeat; height: 143px; width:326px;" id="PRT">
+			<div style="position:absolute; top: 13px; right: 70px;">
+				<div style="float:right;"><img id='port4' width="49px" height="54px" src="<%=resource%>/icons/lan_down.png" /></div>
+				<div style="margin-right:0px; float:right;"><img id='port1' width="49px" height="54px" src="<%=resource%>/icons/lan_down.png" /></div>
+				<div style="margin-right:0px;float:right;"><img id='port2' width="49px" height="54px" src="<%=resource%>/icons/lan_down.png" /></div>
+				<div style="margin-right:0px; float:right;"><img id='port3' width="49px" height="54px" src="<%=resource%>/icons/lan_down.png" /></div>
+			</div>
+		</div>
+	</div>
+</fieldset>
+<fieldset class="cbi-section">
+    <button id="refresh" class="cbi-button-refresh"  style="float: right;" disabled onClick="refreshPage()"><%=translate("Refresh")%></button>
+</fieldset>
+<%+footer%>

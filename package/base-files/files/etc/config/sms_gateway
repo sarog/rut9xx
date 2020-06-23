@@ -1,0 +1,17 @@
+config post_get 'post_get'
+	option enabled '0'
+
+config pop3 'pop3'
+	option enabled '0'
+	option ssl '0'
+	option limit '160'
+
+config sms_gateway 'forwarding_to_http'
+	option every_sms '0'
+
+config sms_gateway 'forwarding_to_sms'
+	option every_sms '0'
+
+config sms_gateway 'forwarding_to_smtp'
+	option every_sms '0'
+

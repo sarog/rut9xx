@@ -1,0 +1,141 @@
+Index: linux-3.18.44/drivers/net/usb/qmi_wwan.c
+===================================================================
+--- linux-3.18.44.orig/drivers/net/usb/qmi_wwan.c
++++ linux-3.18.44/drivers/net/usb/qmi_wwan.c
+@@ -43,6 +43,28 @@
+  * These devices may alternatively/additionally be configured using AT
+  * commands on a serial interface
+  */
++ 
++ #if 1
++//Added by Quectel
++#include <linux/etherdevice.h>
++struct sk_buff *qmi_wwan_tx_fixup(struct usbnet *dev, struct sk_buff *skb, gfp_t flags)
++{
++	if (dev->udev->descriptor.idVendor != cpu_to_le16(0x2C7C))
++		return skb;
++	
++	// Skip Ethernet header from message
++	if (skb_pull(skb, ETH_HLEN)) {
++		return skb;
++	} else {
++		dev_err(&dev->intf->dev, "Packet Dropped ");
++	}
++
++	// Filter the packet out, release it
++	dev_kfree_skb_any(skb);
++	return NULL;
++}
++#endif
++#include <linux/version.h>
+ 
+ /* driver specific data */
+ struct qmi_wwan_state {
+@@ -344,6 +366,28 @@ next_desc:
+ 		dev->net->dev_addr[0] &= 0xbf;	/* clear "IP" bit */
+ 	}
+ 	dev->net->netdev_ops = &qmi_wwan_netdev_ops;
++	
++#if 1 //Added by Quectel
++	if (dev->udev->descriptor.idVendor == cpu_to_le16(0x2C7C)) {
++		dev_info(&intf->dev, "Quectel EC21&EC25&EC20 R2.0 work on RawIP mode\n");
++		dev->net->flags |= IFF_NOARP;
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,9,1))
++	/* make MAC addr easily distinguishable from an IP header */
++	if (possibly_iphdr(dev->net->dev_addr)) {
++		dev->net->dev_addr[0] |= 0x02; /* set local assignment bit */
++		dev->net->dev_addr[0] &= 0xbf; /* clear "IP" bit */
++	}
++#endif
++	usb_control_msg(interface_to_usbdev(intf),
++				usb_sndctrlpipe(interface_to_usbdev(intf), 0),
++				0x22, //USB_CDC_REQ_SET_CONTROL_LINE_STATE
++				0x21, //USB_DIR_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE
++				1, //active CDC DTR
++				intf->cur_altsetting->desc.bInterfaceNumber,
++				NULL, 0, 100);
++	}
++#endif
++
+ err:
+ 	return status;
+ }
+@@ -429,6 +473,11 @@ static const struct driver_info	qmi_wwan
+ 	.unbind		= qmi_wwan_unbind,
+ 	.manage_power	= qmi_wwan_manage_power,
+ 	.rx_fixup       = qmi_wwan_rx_fixup,
++#if 1 //Added by Quectel
++	#if (LINUX_VERSION_CODE < KERNEL_VERSION( 4,5,0 ))
++	.tx_fixup = qmi_wwan_tx_fixup,
++	#endif
++#endif
+ };
+ 
+ #define HUAWEI_VENDOR_ID	0x12D1
+@@ -447,6 +496,21 @@ static const struct driver_info	qmi_wwan
+ 	QMI_FIXED_INTF(vend, prod, 0)
+ 
+ static const struct usb_device_id products[] = {
++#if 1 //Added by Quectel
++#ifndef QMI_FIXED_INTF
++/* map QMI/wwan function by a fixed interface number */
++#define QMI_FIXED_INTF(vend, prod, num) \
++		.match_flags = USB_DEVICE_ID_MATCH_DEVICE | USB_DEVICE_ID_MATCH_INT_INFO, \
++		.idVendor = vend, \
++		.idProduct = prod, \
++		.bInterfaceClass = 0xff, \
++		.bInterfaceSubClass = 0xff, \
++		.bInterfaceProtocol = 0xff, \
++		.driver_info = (unsigned long)&qmi_wwan_force_int##num,
++#endif
++	{ QMI_FIXED_INTF(0x2C7C, 0x0125, 4) }, /* Quectel EC25/EC20 R2.0 */
++	{ QMI_FIXED_INTF(0x2C7C, 0x0121, 4) }, /* Quectel EC21 */
++#endif
+ 	/* 1. CDC ECM like devices match on the control interface */
+ 	{	/* Huawei E392, E398 and possibly others sharing both device id and more... */
+ 		USB_VENDOR_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, USB_CLASS_VENDOR_SPEC, 1, 9),
+@@ -889,3 +953,4 @@ module_usb_driver(qmi_wwan_driver);
+ MODULE_AUTHOR("Bjørn Mork <bjorn@mork.no>");
+ MODULE_DESCRIPTION("Qualcomm MSM Interface (QMI) WWAN driver");
+ MODULE_LICENSE("GPL");
++
+Index: linux-3.18.44/drivers/usb/serial/option.c
+===================================================================
+--- linux-3.18.44.orig/drivers/usb/serial/option.c
++++ linux-3.18.44/drivers/usb/serial/option.c
+@@ -670,6 +670,10 @@ static const struct option_blacklist_inf
+ };
+ 
+ static const struct usb_device_id option_ids[] = {
++#if 1 //Added by Quectel
++	{ USB_DEVICE(0x2C7C, 0x0125) }, /* Quectel EC25/EC20 R2.0 */
++	{ USB_DEVICE(0x2C7C, 0x0121) }, /* Quectel EC21 */
++#endif
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_COLT) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_LIGHT) },
+@@ -2043,6 +2047,10 @@ static struct usb_serial_driver option_1
+ #ifdef CONFIG_PM
+ 	.suspend           = usb_wwan_suspend,
+ 	.resume            = usb_wwan_resume,
++#if 1 //Added by Quectel
++	.reset_resume      = usb_wwan_resume,
++#endif
++
+ #endif
+ };
+ 
+@@ -2123,7 +2131,12 @@ static int option_probe(struct usb_seria
+ 		return -ENODEV;
+ 	// Add to cancel the binding of EC20 NDIS interface -> end
+ 
+-		
++#if 1 //Added by Quectel
++//Quectel EC21&EC25&EC20 R2.0's interface 4 can be used as USB Network device
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x2C7C)
++		&& serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4)
++		return -ENODEV;
++#endif		
+ 	/* Store device id so we can use it during attach. */
+ 	usb_set_serial_data(serial, (void *)id);
+ 

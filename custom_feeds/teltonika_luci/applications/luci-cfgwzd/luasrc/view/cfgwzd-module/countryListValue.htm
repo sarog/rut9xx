@@ -1,0 +1,29 @@
+<%+cbi/valueheader%>
+<%
+local sqlite = require "lsqlite3"
+local dbPath = "/usr/lib/operators/"
+local dbName = "operators.db"
+local dbFullPath = dbPath .. "" ..dbName
+local sys = require "luci.sys"
+countryList = {}
+
+if fileExists(dbPath, dbName) then
+	local db = sqlite.open(dbFullPath)
+	local query = "SELECT DISTINCT code,country FROM operators"
+	local stmt = db:prepare(query)
+	if stmt then
+		for row in db:nrows(query) do
+			countryList[#countryList+1] = row
+		end
+	end
+	db:close()
+end
+
+%>
+<select class="cbi-input-select" onchange="cbi_d_update(this.id);changeCountry(this.value)" id="cbid.simcard.sim1.country" name="cbid.simcard.sim1.country" size="1">
+	<option id="cbi-simcard-sim1-country-none" value="none">None</option>
+	<% for i=1,#countryList do %>
+		<option id="cbi-simcard-sim1-country-<%=i%>" value="<%=countryList[i].code%>"><%=countryList[i].country%></option>
+	<% end %>
+</select>
+<%+cbi/valuefooter%>

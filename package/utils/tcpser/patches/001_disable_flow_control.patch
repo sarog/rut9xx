@@ -1,0 +1,12 @@
+--- a/src/serial.c
++++ b/src/serial.c
+@@ -96,7 +96,8 @@
+          O_APPEND and O_NONBLOCK, will work with F_SETFL...) */
+       fcntl(fd, F_SETFL, FASYNC);
+ 
+-      tio.c_cflag = bps_rate | CS8 | CLOCAL | CREAD | CRTSCTS;
++      //tio.c_cflag = bps_rate | CS8 | CLOCAL | CREAD | CRTSCTS;
++      tio.c_cflag = bps_rate | CS8 | CLOCAL | CREAD;
+ 
+       tio.c_iflag = (IGNBRK);
+       tio.c_oflag = 0;

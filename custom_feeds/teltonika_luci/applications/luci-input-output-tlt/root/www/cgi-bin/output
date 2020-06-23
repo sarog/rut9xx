@@ -1,0 +1,150 @@
+#!/usr/bin/lua
+io.stdout:write("Content-Type: text/plain\r\n\r\n")
+
+require "teltonika_lua_functions"
+require("uci")
+local uci = uci.cursor()
+
+function exec(command)
+	local pp   = io.popen(command)
+	local data = pp:read("*a")
+	pp:close()
+	data = data:gsub("^%s*(.-)%s*$", "%1")
+	return data
+end
+
+function url_decode(str)
+	if not str then return nil end
+	str = string.gsub (str, "+", " ")
+	str = string.gsub (str, "%%(%x%x)", function(h) return
+		string.char(tonumber(h,16)) end)
+	str = string.gsub (str, "\r\n", "\n")
+	return str
+end
+
+function url_parse(url)
+	local params = {}
+	for s in string.gmatch(url, "[^&]+") do
+		for k, v in string.gmatch(s, "(.-)=(.*)") do
+			params[k] = v
+		end
+	end
+	return params
+end
+
+function gpio_action(action, pin, delay_time, action_time)
+	local gpio = "/sbin/gpio.sh"
+	-- local command = string.format("%s %s %s",gpio , action, pin)
+	if action_time > 0 then
+		local returnaction																							
+		if action == "set" then
+			returnaction = "clear"
+		elseif action == "clear" then
+			returnaction = "set"
+		end
+		command = string.format("(sleep %s; %s %s %s; sleep %s; %s %s %s) &",delay_time,  gpio , action, pin, action_time, gpio, returnaction, pin)
+		os.execute(command)
+		return "OK"
+	else
+		command = string.format("(sleep %s; %s %s %s;) &",delay_time,  gpio , action, pin)
+		os.execute(command)
+		return "OK"
+	end
+	
+	if not getParam(command)then
+		return "OK"
+	end
+
+	return
+end
+
+function debug(string)
+	os.execute("logger " ..string)
+end
+
+if os.getenv("QUERY_STRING") then
+	query = os.getenv("QUERY_STRING")
+end
+
+local enabled = uci:get("output_control", "post_get", "enabled")
+
+if enabled == "1" then
+	if query then
+		query = url_decode(query)
+		params = url_parse(query)
+
+		if params['username'] and params['username'] ~= "" and params['password'] and params['password'] ~= "" and params['action'] and
+		params['action'] ~= "" and params['pin'] and params['pin'] ~= "" then
+
+			username = uci:get("output_control","post_get","username")
+			password = uci:get("output_control","post_get","password")
+			cfg_in_out = uci:get("hwinfo","hwinfo","in_out")
+			cfg_4pin_io = uci:get("hwinfo","hwinfo","4pin_io")
+			
+			if params['username'] == username and params['password'] == password then
+				local action
+				local pin = "none"
+
+				if params['action'] == "on" then
+					action = "set"
+				elseif params['action'] == "off" then
+					action = "clear"
+				else
+					io.stdout:write("ERROR: Action not available.")
+					return
+				end
+
+				if params['pin'] == "oc" and cfg_in_out == "1" then
+					pin = "DOUT1"
+				end
+				
+				if params['pin'] == "relay" and cfg_in_out == "1" then
+					pin = "DOUT2"
+				end
+				
+				if params['pin'] == "4pin" and cfg_4pin_io == "1" then
+					pin = "DOUT3"
+				end
+				
+				if pin == "none" then
+					if cfg_in_out == "1" and cfg_4pin_io == "1" then
+						io.stdout:write("ERROR: No such output available. (allowed pin values: oc, relay, 4pin)")
+					elseif cfg_in_out == "1" and cfg_4pin_io == "0" then
+						io.stdout:write("ERROR: No such output available. (allowed pin values: oc, relay)")
+					elseif cfg_in_out == "0" and cfg_4pin_io == "1" then
+						io.stdout:write("ERROR: No such output available. (allowed pin values: 4pin)")
+					else
+						io.stdout:write("ERROR: No outputs available for this device")
+					end
+					
+					return
+				end
+
+				if action and pin ~= "none" then
+					local current_gpio
+					local action_time
+					local delay_time
+					if params['time'] and params['time'] ~= "" then
+						action_time = tonumber(params['time'])
+					else
+						action_time = 0;
+					end
+					if params['delay'] and params['delay'] ~= "" then
+						delay_time = tonumber(params['delay'])
+					else
+						delay_time = 0;
+					end
+					io.stdout:write(gpio_action(action, pin, delay_time, action_time))
+				end
+			else
+				io.stdout:write("ERROR: Unknown user name or bad password.")
+			end
+		else
+			io.stdout:write("ERROR: Too few parameters. Expected 4 min.")
+		end
+	else
+		io.stdout:write("ERROR: Can't get query string.")
+	end
+else
+	io.stdout:write("ERROR: Not enabled.")
+end

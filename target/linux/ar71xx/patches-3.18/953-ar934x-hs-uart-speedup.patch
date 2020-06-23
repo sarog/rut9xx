@@ -1,0 +1,79 @@
+--- a/drivers/tty/serial/ar934x_hs_uart.c
++++ b/drivers/tty/serial/ar934x_hs_uart.c
+@@ -131,54 +131,39 @@
+ static inline void ar934x_hs_uart_putc(struct ar934x_hs_uart_port *up, int ch)
+ {
+ 	unsigned int rdata;
+-	unsigned int baud;
+-	unsigned int timeout = 0;
++	unsigned int timeout = 60000;
++	unsigned long flags;
++	unsigned int status;
+ 
+-	baud = up->port.state->port.tty->termios.c_ospeed;
+-	if (up->port.state->port.tty->termios.c_cflag & PARENB) {
+-		if (baud == 9600)
+-			timeout = 700;
+-		else if (baud == 4800)
+-			timeout = 1700;
+-		else if (baud == 2400)
+-			timeout = 3700;
+-		else if (baud == 1200)
+-			timeout = 8700;
+-		else if (baud == 600)
+-			timeout = 17500;
+-		else if (baud == 300)
+-			timeout = 35500;
+-	}
+-	else{
+-		if (baud == 9600)
+-			timeout = 500;
+-		else if (baud == 4800)
+-			timeout = 1500;
+-		else if (baud == 2400)
+-			timeout = 3500;
+-		else if (baud == 1200)
+-			timeout = 8500;
+-		else if (baud == 600)
+-			timeout = 16500;
+-		else if (baud == 300)
+-			timeout = 32500;
+-	}
+-	//timeout = 9120000/baud;
+ 	rdata = ch & AR934X_HS_UART_DATA_TX_RX_MASK;
+ 	rdata |= AR934X_HS_UART_DATA_TX_CSR;
+ 
+-	gpio_set_value_cansleep(RS485_R, 1);
++	spin_lock_irqsave(&up->port.lock, flags);
++	/* Disable RX interrupt */
++	up->ier &= ~AR934X_HS_UART_INT_RX_VALID;
++	ar934x_hs_uart_write(up, AR934X_HS_UART_INT_EN_REG, up->ier);
++
+ 	gpio_set_value(RS485_D, 0);
+ 	
+ 	//dprintk("%s() write 0x%08X value 0x%08X\n", __func__, rdata, AR934X_HS_UART_DATA_REG);
+ 	ar934x_hs_uart_write(up, AR934X_HS_UART_DATA_REG, rdata);
+ 	
+-	while (timeout != 0) {
+-		--timeout;
++	do {
++		status = ar934x_hs_uart_read(up, AR934X_HS_UART_CS_REG);
++		if (--timeout == 0)
++			break;
+ 		udelay(1);
+-	} 
+-	gpio_set_value_cansleep(RS485_R, 0);
++	} while ((status & AR934X_HS_UART_CS_TX_BUSY) != 0);
++	
+ 	gpio_set_value(RS485_D, 1);
++
++	ar934x_hs_uart_write(up, AR934X_HS_UART_INT_REG, AR934X_HS_UART_INT_RX_VALID);
++	/* remove the character from the FIFO */
++	ar934x_hs_uart_write(up, AR934X_HS_UART_DATA_REG, AR934X_HS_UART_DATA_RX_CSR);
++	/* Enable RX interrupt */
++	up->ier = AR934X_HS_UART_INT_RX_VALID;
++	ar934x_hs_uart_write(up, AR934X_HS_UART_INT_EN_REG, up->ier);
++	spin_unlock_irqrestore(&up->port.lock, flags);
+ }
+ 
+ static unsigned int ar934x_hs_uart_tx_empty(struct uart_port *port)

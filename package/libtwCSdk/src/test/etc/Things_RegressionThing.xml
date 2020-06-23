@@ -1,0 +1,553 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Entities build="b52" majorVersion="8" minorVersion="1" modelPersistenceProviderPackage="H2PersistenceProviderPackage"
+          revision="0" schemaVersion="1010">
+    <Things>
+        <Thing description="" documentationContent="" effectiveThingPackage="RemoteThingWithTunnelsAndFileTransfer"
+               enabled="true" homeMashup="" identifier="" lastModifiedDate="2018-03-06T15:38:55.031Z"
+               name="RegressionThing" projectName="" published="false" tags=""
+               thingTemplate="RemoteThingWithTunnelsAndFileTransfer" valueStream="">
+            <Owner name="Administrator" type="User"/>
+            <avatar/>
+            <DesignTimePermissions>
+                <Create/>
+                <Read/>
+                <Update/>
+                <Delete/>
+                <Metadata/>
+            </DesignTimePermissions>
+            <RunTimePermissions/>
+            <VisibilityPermissions>
+                <Visibility/>
+            </VisibilityPermissions>
+            <ConfigurationTables>
+                <ConfigurationTable description="Tunneling Destinations" isMultiRow="true" name="Tunnels" ordinal="1">
+                    <DataShape>
+                        <FieldDefinitions>
+                            <FieldDefinition aspect.defaultValue="" aspect.friendlyName="Application Path"
+                                             baseType="STRING"
+                                             description="Location of the client app that will use this tunnel"
+                                             name="appUri" ordinal="5"/>
+                            <FieldDefinition aspect.defaultValue="" aspect.friendlyName="Description" baseType="STRING"
+                                             description="A description of the tunnel" name="description" ordinal="3"/>
+                            <FieldDefinition aspect.defaultValue="127.0.0.1" aspect.friendlyName="Host"
+                                             baseType="STRING"
+                                             description="Host or IP that this tunnel will connect to at the edge"
+                                             name="host" ordinal="1"/>
+                            <FieldDefinition aspect.defaultValue="vnc" aspect.friendlyName="Name" baseType="STRING"
+                                             description="Name of the tunnel" name="name" ordinal="0"/>
+                            <FieldDefinition aspect.defaultValue="1.0" aspect.friendlyName="Number of Connects"
+                                             baseType="NUMBER"
+                                             description="The number of connections required to establish this tunnel"
+                                             name="numConnects" ordinal="4"/>
+                            <FieldDefinition aspect.defaultValue="5900.0" aspect.friendlyName="Port" baseType="NUMBER"
+                                             description="Port that this tunnel will connect to at the edge" name="port"
+                                             ordinal="2"/>
+                            <FieldDefinition aspect.defaultValue="tcp" aspect.friendlyName="Protocol" baseType="STRING"
+                                             description="The protocol used over this tunnel" name="proto" ordinal="6"/>
+                        </FieldDefinitions>
+                    </DataShape>
+                    <Rows/>
+                </ConfigurationTable>
+                <ConfigurationTable description="General Settings" isMultiRow="false" name="TunnelSettings" ordinal="0">
+                    <DataShape>
+                        <FieldDefinitions>
+                            <FieldDefinition aspect.friendlyName="Enable Tunneling" aspect.isNullable="true"
+                                             baseType="BOOLEAN" description="Enable tunneling" name="enableTunneling"
+                                             ordinal="0"/>
+                        </FieldDefinitions>
+                    </DataShape>
+                    <Rows>
+                        <Row>
+                            <enableTunneling>true</enableTunneling>
+                        </Row>
+                    </Rows>
+                </ConfigurationTable>
+            </ConfigurationTables>
+            <ThingShape>
+                <PropertyDefinitions>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="BOOLEAN"
+                                        category="" description="" isLocalOnly="false" name="InMemory_Boolean"
+                                        ordinal="42"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="DATETIME"
+                                        category="" description="" isLocalOnly="false" name="InMemory_Datetime"
+                                        ordinal="41"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="GROUPNAME"
+                                        category="" description="" isLocalOnly="false" name="InMemory_GroupName"
+                                        ordinal="40"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="HTML"
+                                        category="" description="" isLocalOnly="false" name="InMemory_HTML"
+                                        ordinal="39"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="HYPERLINK"
+                                        category="" description="" isLocalOnly="false" name="InMemory_Hyperlink"
+                                        ordinal="38"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="IMAGE"
+                                        category="" description="" isLocalOnly="false" name="InMemory_Image"
+                                        ordinal="37"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="IMAGELINK"
+                                        category="" description="" isLocalOnly="false" name="InMemory_Imagelink"
+                                        ordinal="36"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="INFOTABLE"
+                                        category="" description="" isLocalOnly="false" name="InMemory_InfoTable"
+                                        ordinal="35"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="INTEGER"
+                                        category="" description="" isLocalOnly="false" name="InMemory_Integer"
+                                        ordinal="34"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="JSON"
+                                        category="" description="" isLocalOnly="false" name="InMemory_Json"
+                                        ordinal="33"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="STRING"
+                                        category="" description="" isLocalOnly="false" name="InMemory_Large_String"
+                                        ordinal="32"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="LOCATION"
+                                        category="" description="" isLocalOnly="false" name="InMemory_Location"
+                                        ordinal="31"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="MASHUPNAME"
+                                        category="" description="" isLocalOnly="false" name="InMemory_MashupName"
+                                        ordinal="30"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="MENUNAME"
+                                        category="" description="" isLocalOnly="false" name="InMemory_MenuName"
+                                        ordinal="29"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="NUMBER"
+                                        category="" description="" isLocalOnly="false" name="InMemory_Number"
+                                        ordinal="28"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="QUERY"
+                                        category="" description="" isLocalOnly="false" name="InMemory_Query"
+                                        ordinal="27"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="STRING"
+                                        category="" description="" isLocalOnly="false" name="InMemory_String"
+                                        ordinal="26"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="TEXT"
+                                        category="" description="" isLocalOnly="false" name="InMemory_Text"
+                                        ordinal="25"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="THINGNAME"
+                                        category="" description="" isLocalOnly="false" name="InMemory_ThingName"
+                                        ordinal="24"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="USERNAME"
+                                        category="" description="" isLocalOnly="false" name="InMemory_UserName"
+                                        ordinal="23"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="XML" category=""
+                                        description="" isLocalOnly="false" name="InMemory_XML" ordinal="22"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="BOOLEAN"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_Boolean"
+                                        ordinal="21"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="DATETIME"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_Datetime"
+                                        ordinal="20"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="GROUPNAME"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_GroupName"
+                                        ordinal="19"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="HTML"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_HTML"
+                                        ordinal="18"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="HYPERLINK"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_Hyperlink"
+                                        ordinal="17"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="IMAGE"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_Image"
+                                        ordinal="16"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="IMAGELINK"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_Imagelink"
+                                        ordinal="15"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="INFOTABLE"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_InfoTable"
+                                        ordinal="14"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="INTEGER"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_Integer"
+                                        ordinal="13"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="JSON"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_Json"
+                                        ordinal="12"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="STRING"
+                                        category="" description="" isLocalOnly="false"
+                                        name="Pushed_InMemory_Large_String" ordinal="11"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="LOCATION"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_Location"
+                                        ordinal="10"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="MASHUPNAME"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_MashupName"
+                                        ordinal="9"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="MENUNAME"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_MenuName"
+                                        ordinal="8"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="NUMBER"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_Number"
+                                        ordinal="7"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="QUERY"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_Query"
+                                        ordinal="6"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="STRING"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_String"
+                                        ordinal="5"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="TEXT"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_Text"
+                                        ordinal="4"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="THINGNAME"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_ThingName"
+                                        ordinal="3"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="USERNAME"
+                                        category="" description="" isLocalOnly="false" name="Pushed_InMemory_UserName"
+                                        ordinal="2"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeType="VALUE" aspect.isLogged="false"
+                                        aspect.isPersistent="false" aspect.isReadOnly="false" baseType="XML" category=""
+                                        description="" isLocalOnly="false" name="Pushed_InMemory_XML" ordinal="1"/>
+                </PropertyDefinitions>
+                <ServiceDefinitions>
+                    <ServiceDefinition category="" description="Loads an Edge Thing Shape Library."
+                                       isAllowOverride="false" isLocalOnly="false" isOpen="false" isPrivate="false"
+                                       name="AddEdgeThingShape">
+                        <ResultType baseType="NOTHING" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="STRING"
+                                             description="Optional Namespace to use when adding this shape."
+                                             name="namespace" ordinal="0"/>
+                            <FieldDefinition baseType="STRING"
+                                             description="The name of the registered shape to add to this thing."
+                                             name="shapeName" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="Loads an Edge Thing Shape Library."
+                                       isAllowOverride="false" isLocalOnly="false" isOpen="false" isPrivate="false"
+                                       name="loadShapeLibrary">
+                        <ResultType baseType="NOTHING" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="STRING"
+                                             description="The name of a remote shared extension library."
+                                             name="libraryName" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="NotifyPropertyUpdate">
+                        <ResultType baseType="NOTHING" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions/>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_Boolean">
+                        <ResultType baseType="BOOLEAN" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="BOOLEAN" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_Datetime">
+                        <ResultType baseType="DATETIME" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="DATETIME" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_GroupName">
+                        <ResultType baseType="GROUPNAME" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="GROUPNAME" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_HTML">
+                        <ResultType baseType="HTML" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="HTML" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_Hyperlink">
+                        <ResultType baseType="HYPERLINK" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="HYPERLINK" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_Image">
+                        <ResultType baseType="IMAGE" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="IMAGE" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_Imagelink">
+                        <ResultType baseType="IMAGELINK" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="IMAGELINK" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_InfoTable">
+                        <ResultType aspect.dataShape="AllPropertyBaseTypesDataShape" baseType="INFOTABLE" description=""
+                                    name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition aspect.dataShape="AllPropertyBaseTypesDataShape" baseType="INFOTABLE" description=""
+                                             name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_Integer">
+                        <ResultType baseType="INTEGER" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="INTEGER" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_Json">
+                        <ResultType baseType="JSON" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="JSON" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_Location">
+                        <ResultType baseType="LOCATION" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="LOCATION" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_MashupName">
+                        <ResultType baseType="MASHUPNAME" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="MASHUPNAME" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_MenuName">
+                        <ResultType baseType="MENUNAME" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="MENUNAME" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_Number">
+                        <ResultType baseType="NUMBER" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="NUMBER" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_Query">
+                        <ResultType baseType="QUERY" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="QUERY" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_String">
+                        <ResultType baseType="STRING" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="STRING" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_Text">
+                        <ResultType baseType="TEXT" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="TEXT" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_ThingName">
+                        <ResultType baseType="THINGNAME" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="THINGNAME" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_UserName">
+                        <ResultType baseType="USERNAME" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="USERNAME" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Push_XML">
+                        <ResultType baseType="XML" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions>
+                            <FieldDefinition baseType="XML" description="" name="value" ordinal="0"/>
+                        </ParameterDefinitions>
+                    </ServiceDefinition>
+                    <ServiceDefinition category="" description="" isAllowOverride="false" isLocalOnly="false"
+                                       isOpen="false" isPrivate="false" name="Shutdown">
+                        <ResultType baseType="NOTHING" description="" name="result" ordinal="0"/>
+                        <ParameterDefinitions/>
+                    </ServiceDefinition>
+                </ServiceDefinitions>
+                <EventDefinitions/>
+                <ServiceMappings/>
+                <ServiceImplementations/>
+                <Subscriptions/>
+            </ThingShape>
+            <PropertyBindings/>
+            <RemotePropertyBindings>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_Boolean" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_Boolean" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_Datetime" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_Datetime" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_GroupName" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_GroupName" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_HTML" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_HTML" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_Hyperlink" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_Hyperlink" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_Image" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_Image" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_Imagelink" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_Imagelink" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_InfoTable" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_InfoTable" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_Integer" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_Integer" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_Json" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_Json" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_Large_String" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="InMemory_Large_String" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_Location" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_Location" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_MashupName" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_MashupName" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_MenuName" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_MenuName" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_Number" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_Number" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_Query" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_Query" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_String" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_String" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_Text" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_Text" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_ThingName" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_ThingName" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_UserName" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_UserName" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="InMemory_XML" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="InMemory_XML" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_Boolean" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_Boolean" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_Datetime" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_Datetime" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_GroupName" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_GroupName" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_HTML" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="Pushed_InMemory_HTML" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_Hyperlink" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_Hyperlink" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_Image" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_Image" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_Imagelink" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_Imagelink" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_InfoTable" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_InfoTable" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_Integer" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_Integer" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_Json" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="Pushed_InMemory_Json" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_Large_String" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_Large_String" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_Location" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_Location" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_MashupName" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_MashupName" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_MenuName" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_MenuName" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_Number" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_Number" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_Query" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_Query" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_String" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_String" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_Text" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="Pushed_InMemory_Text" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_ThingName" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_ThingName" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_UserName" pushThreshold="0.0"
+                                       pushType="ALWAYS" sourceName="Pushed_InMemory_UserName" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="Pushed_InMemory_XML" pushThreshold="0.0" pushType="ALWAYS"
+                                       sourceName="Pushed_InMemory_XML" timeout="0"/>
+            </RemotePropertyBindings>
+            <RemoteServiceBindings>
+                <RemoteServiceBinding enableQueue="false" name="AddEdgeThingShape" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="loadShapeLibrary" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="NotifyPropertyUpdate" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_Boolean" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_Datetime" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_GroupName" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_HTML" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_Hyperlink" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_Image" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_Imagelink" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_InfoTable" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_Integer" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_Json" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_Location" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_MashupName" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_MenuName" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_Number" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_Query" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_String" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_Text" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_ThingName" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_UserName" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Push_XML" sourceName="" timeout="0"/>
+                <RemoteServiceBinding enableQueue="false" name="Shutdown" sourceName="" timeout="0"/>
+            </RemoteServiceBindings>
+            <RemoteEventBindings/>
+            <AlertConfigurations/>
+            <ImplementedShapes/>
+            <ThingProperties>
+                <lastConnection>
+                    <Value>2018-03-06T15:38:55.066Z</Value>
+                    <Timestamp>2018-03-06T15:38:55.066Z</Timestamp>
+                    <Quality>GOOD</Quality>
+                </lastConnection>
+            </ThingProperties>
+            <ConfigurationChanges>
+                <ConfigurationChange changeAction="CREATE"
+                                     changeReason="header : name : updated, thingTemplate : updated&#10;"
+                                     timestamp="2018-03-06T15:33:26.136Z" user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY"
+                                     changeReason="properties : Pushed_InMemory_XML : added remote property from browse, Pushed_InMemory_UserName : added remote property from browse, Pushed_InMemory_ThingName : added remote property from browse, Pushed_InMemory_Text : added remote property from browse, Pushed_InMemory_String : added remote property from browse, Pushed_InMemory_Query : added remote property from browse, Pushed_InMemory_Number : added remote property from browse, Pushed_InMemory_MenuName : added remote property from browse, Pushed_InMemory_Ma"
+                                     timestamp="2018-03-06T15:38:45.771Z" user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY"
+                                     changeReason="services : AddEdgeThingShape : added remote service from browse, loadShapeLibrary : added remote service from browse, NotifyPropertyUpdate : added remote service from browse, Push_Boolean : added remote service from browse, Push_Datetime : added remote service from browse, Push_GroupName : added remote service from browse, Push_HTML : added remote service from browse, Push_Hyperlink : added remote service from browse, Push_Image : added remote service from browse, Push_Imagelink : added remote service from "
+                                     timestamp="2018-03-06T15:38:55.029Z" user="Administrator"/>
+            </ConfigurationChanges>
+        </Thing>
+    </Things>
+</Entities>

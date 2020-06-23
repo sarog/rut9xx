@@ -1,0 +1,83 @@
+<%
+local show_mobile = luci.tools.status.show_mobile()
+luci.util = require "luci.util"
+local uci = require "luci.model.uci".cursor()
+local product = luci.sys.exec("/sbin/mnf_info name") or "-"
+local serial = luci.sys.exec("/sbin/mnf_info sn") or "-"
+local batch = luci.sys.exec("/sbin/mnf_info batch") or "-"
+local revision = luci.sys.exec("/sbin/mnf_info hwver") or "-"
+local ifname = uci:get("network","wan","ifname") or "-"
+local lanmac = luci.sys.exec("ifconfig br-lan | grep 'br-lan' | awk -F ' ' '{print $5}'")
+local wifimac = luci.sys.exec("ifconfig wlan0 | grep 'wlan0' | awk -F ' ' '{print $5}'")
+local imei =""
+local imsi =""
+local mfwversion = luci.util.trim(luci.sys.exec("gsmctl -y"))
+local mmodel = luci.util.trim(luci.sys.exec("gsmctl -m"))
+local product_brand = ""
+local router_model = string.sub(product, 0, 6) or ""
+
+if router_model == "RUT950" then
+	product_brand = brand(25) or ""
+elseif router_model == "RUT955" then
+	product_brand = brand(26) or ""
+end
+
+if product_brand ~= "" then
+       product = product_brand
+end
+
+if wifimac == "" then
+	wifimac = "N/A"
+end
+
+
+local mac = luci.sys.exec("ifconfig eth1 | grep 'eth1' | awk -F ' ' '{print $5}'")
+
+if show_mobile then
+	imei = luci.util.trim(luci.sys.exec("gsmctl -i"))
+	if imei == "" then
+		imei = "N/A"
+	end
+
+	imsi =  luci.util.trim(luci.sys.exec("gsmctl -x"))
+	if imsi == "gsmctl error: sim failure" then
+		imsi = "SIM not inserted"
+	elseif imsi == "gsmctl error: sim not inserted" then
+		imsi = "SIM not inserted"
+	elseif imsi == "" then
+		imsi = "N/A"
+	end
+end
+
+%>
+
+<%+header%>
+<h2><a id="content" name="content"><%=translate("Device Information")%></a></h2>
+
+<fieldset>
+	<legend><%=translate("Device")%></legend>
+	<table width="100%" cellspacing="10">
+		<tr><td width="33%" onmouseover="ShowHint(this, '<%=translate('Unique device number')%>')" onmouseout="HideHint(this)"><%=translate("Serial number")%></td><td><%=serial%></td></tr>
+		<tr><td width="33%" onmouseover="ShowHint(this, '<%=translate('Specific product identifier')%>')" onmouseout="HideHint(this)"><%=translate("Product code")%></td><td><%=product%></td></tr>
+		<tr><td width="33%" onmouseover="ShowHint(this, '<%=translate('Product manufacturing batch number')%>')" onmouseout="HideHint(this)"><%=translate("Batch number")%></td><td><%=batch%></td></tr>
+		<tr><td width="33%" onmouseover="ShowHint(this, '<%=translate('Device hardware revision number')%>')" onmouseout="HideHint(this)"><%=translate("Hardware revision")%></td><td><%=revision%></td></tr>
+		<%if show_mobile then%>
+			<tr><td width="33%" onmouseover="ShowHint(this, '<%=translate('IMEI (International Mobile Equipment Indentity) is a unique number given to a mobile device')%>')" onmouseout="HideHint(this)"><%=translate("IMEI")%></td><td><%=imei%></td></tr>
+			<tr><td width="33%" onmouseover="ShowHint(this, '<%=translate('IMSI (International Mobile Subscriber Identity) is used to identify the user in a cellular network')%>')" onmouseout="HideHint(this)"><%=translate("IMSI")%></td><td><%=imsi%></td></tr>
+		<%end%>
+		<tr><td width="33%" onmouseover="ShowHint(this, '<%=translate('MAC (Media Access Control) address used for communication in a Ethernet LAN (Local Area Network)')%>')" onmouseout="HideHint(this)"><%=translate("Ethernet LAN MAC address")%></td><td><%=lanmac%></td></tr>
+		<tr><td width="33%" onmouseover="ShowHint(this, '<%=translate('MAC (Media Access Control) address used for communication in a Ethernet WAN (Wide Area Network)')%>')" onmouseout="HideHint(this)"><%=translate("Ethernet WAN MAC address")%></td><td><%=mac%></td></tr>
+		<tr><td width="33%" onmouseover="ShowHint(this, '<%=translate('MAC (Media Access Control) address used for communication in a wireless network')%>')" onmouseout="HideHint(this)" style="border-bottom: 1px solid #DDD;"><%=translate("Wireless MAC address")%></td><td style="border-bottom: 1px solid #DDD;"><%=wifimac%></td></tr>
+	</table>
+</fieldset>
+
+<fieldset>
+	<legend><%=translate("Modem")%></legend>
+	<table width="100%" cellspacing="10">
+		<tr><td width="33%" onmouseover="ShowHint(this, '<%=translate('Modem model')%>')" onmouseout="HideHint(this)"><%=translate("Model")%></td><td><%=mmodel%></td></tr>
+		<tr><td width="33%" onmouseover="ShowHint(this, '<%=translate('Modem FW version')%>')" onmouseout="HideHint(this)"><%=translate("FW version")%></td><td><%=mfwversion%></td></tr>
+	</table>
+</fieldset>
+
+
+<%+footer%>

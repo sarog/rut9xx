@@ -1,0 +1,220 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: flashops.htm 7798 2011-10-26 23:43:04Z jow $
+
+-%>
+
+<%
+	local sys = require "luci.sys"
+	local month = luci.sys.exec("uname -a | awk -F ' ' '{print $6}' ")
+	month = tostring(month)
+	month = month:gsub("%s+", "")
+	local months = { ["Jan"]="01", ["Feb"]="02", ["Mar"]="03", ["Apr"]="04", ["May"]="05", ["Jun"]="06", ["Jul"]="07", ["Aug"]="08", ["Sep"]="09", ["Oct"]="10", ["Nov"]="11", ["Dec"]="12" }
+		month = months[month]
+	local day = luci.sys.exec("uname -a | awk -F ' ' '{print $7}' ")
+	day = day:gsub("%s+", "")
+	local days = { ["1"]="01", ["2"]="02", ["3"]="03", ["4"]="04", ["5"]="05", ["6"]="06", ["7"]="07", ["8"]="08", ["9"]="09", ["0"]="00" }
+	day = days[day]
+	local hour = luci.sys.exec("uname -a | awk -F ' ' '{print $8}' ")
+	hour = hour:gsub("%s+", "")
+	local year = luci.sys.exec("uname -a | awk -F ' ' '{print $10}' ")
+	year = year:gsub("%s+", "")
+
+
+%>
+
+
+<%+header%>
+
+<h2><a id="content" name="content"><%=translate("Firmware")%></a></h2>
+<div class="cbi-map-descr"><%=translate("")%> </div>
+
+<fieldset class="cbi-section">
+	<legend><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Specifies current runing Firmware information')%>')"</span><%=translate("Current Firmware")%></legend>
+	<table width="100%" cellspacing="10">
+		<tr><td width="33%"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Specifies the version of the firmware that is currently loaded in the router')%>')"</span><%=translate("Firmware version")%></td><td><%=luci.sys.exec("cat /etc/version")%></td></tr>
+		<tr><td width="33%"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Specifies when firmware was loaded in the router')%>')"</span><%=translate("Firmware build date")%></td><td><%=year%>-<%=month%>-<%=day%>, <%=hour%></td></tr>
+
+		<tr><td width="33%"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Specifies the version of the Linux or kernel that is currently running on the router')%>')"</span><%=translate("Kernel version")%></td><td><%=luci.sys.exec("uname -r")%></td></tr>
+	</table>
+</fieldset>
+
+<fieldset class="cbi-section">
+		<legend><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('When check box is selected router will keep saved user configuration settings after firmware upgrade')%>')"</span><%=translate("Firmware Upgrade")%></legend>
+		<% if upgrade_avail then %>
+			<form method="post" action="<%=REQUEST_URI%>" enctype="multipart/form-data">
+				<div class="cbi-section-descr"><!--<%:Warning: Upgrading firmware may take a few minutes. Do not turn off power or unplug the device during the firmware update, because it will result in permanent damage.%>--></div>
+				<div class="cbi-section-node">
+					<div class="cbi-value">
+					<div style="margin-bottom:15px; width: 285px;"  id="block_keep">
+					<label class="cbi-value-title" style="margin-left:10px" for="keep"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('All settings will be keep after firmware upgrade')%>')"</span><%=translate("Keep all settings")%></label>
+							<input type="checkbox" style="float:right; margin-top:0px;" name="keep" id="keep"  onclick="validate_keep();" />
+						</div>
+						<div class="cbi-value-title" style="margin: 0 0 15px 10px; width: 275px;"  id="block_keep_n">
+							<label class="cbi-value-title"  for="keep_network"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('')%>')"</span><%=translate("Include WAN, mobile settings and LAN settings")%></label>
+								<input type="checkbox" style="float:right; margin-top:0px;" name="keep_network" id="keep_network" onclick="validate_3g(); validate_orcheck();" />
+						</div>
+						<div class="cbi-value-title" style="margin: 0 0 15px 10px; width: 275px;" id="block_keep_3">
+							<label class="cbi-value-title"  for="keep_3g"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Include all mobile settings')%>')"</span><%=translate("Keep cellular settings")%></label>
+								<input type="checkbox" style="float:right; margin-top:0px;" name="keep_3g" id="keep_3g" onclick="validate_orcheck();" />
+						</div>
+						<div class="cbi-value-title" style="margin: 0 0 15px 10px; width: 275px;" id="block_keep_l">
+							<label class="cbi-value-title"  for="keep_lan"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Include all local area network(LAN) settings')%>')"</span><%=translate("Keep LAN settings")%></label>
+								<input type="checkbox" style="float:right; margin-top:0px;" name="keep_lan" id="keep_lan" onclick="validate_orcheck();" />
+						</div>
+						<div class="cbi-value-title" style="margin: 0 0 15px 10px; width: 275px;" id="block_keep_d">
+							<label class="cbi-value-title"  for="keep_ddns"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Include all dynamic Domain Name System (DNS) settings')%>')"</span><%=translate("Keep dynamic DNS settings")%></label>
+								<input type="checkbox" style="float:right; margin-top:0px;" name="keep_ddns" id="keep_ddns" onclick="validate_orcheck();" />
+						</div>
+						<div class="cbi-value-title" style="margin: 0 0 15px 10px; width: 275px;" id="block_keep_w">
+							<label class="cbi-value-title"  for="keep_wireless"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Include all Wirless settings')%>')"</span><%=translate("Keep wireless settings")%></label>
+								<input type="checkbox" style="float:right; margin-top:0px;" name="keep_wireless" id="keep_wireless" onclick="validate_orcheck();" />
+						</div>
+						<div class="cbi-value-title" style="margin: 0 0 15px 10px; width: 275px;" id="block_keep_f">
+							<label class="cbi-value-title" for="keep_firewall"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Include all firewall settings')%>')"</span><%=translate("Keep firewall settings")%></label>
+								<input type="checkbox" style="float:right; margin-top:0px;" name="keep_firewall" id="keep_firewall" onclick="validate_orcheck();" />
+						</div>
+						<div class="cbi-value-title" style="margin: 0 0 15px 10px; width: 275px;" id="block_keep_o">
+							<label class="cbi-value-title" for="keep_openvpn"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Include OpenVPN settings')%>')"</span><%=translate("Keep OpenVPN settings")%></label>
+								<input type="checkbox" style="float:right; margin-top:0px;" name="keep_openvpn" id="keep_openvpn" onclick="validate_orcheck();" />
+						</div>
+					</div>
+					<div  class="cbi-value cbi-value-last <% if image_invalid then %> cbi-value-error<% end %>" style="margin-bottom: 0px; padding-top: 15px;">
+						<label class="cbi-value-title" style="float:none; margin-left:10px;" for="image"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Image- router firmware (FW) upgrade file')%>')"</span><%=translate("FW image")%></label>
+
+							<input type="file" name="image" id="image" /><br />
+							<input type="submit" style="margin-top: 15px; margin-left: 10px" class="cbi-button cbi-button-apply1" value="<%=translate('Upgrade')%>" />
+
+					</div>
+				</div>
+				<% if image_invalid then %>
+					<div class="cbi-section-error"><%=translate("The uploaded image file does not contain a supported format.") %></div>
+				<% end %>
+			</form>
+		<% else %>
+			<div class="cbi-section-error"><%=translate("Sorry, unknown error.") %></div>
+		<% end %>
+
+</fieldset>
+
+<script type="text/javascript">//<![CDATA[
+	function validate_keep()
+	{
+		if (document.getElementById('keep').checked) {
+
+			document.getElementById('keep_network').checked 	= true;
+			document.getElementById('keep_3g').checked 			= true;
+			document.getElementById('keep_lan').checked 		= true;
+			document.getElementById('keep_ddns').checked 		= true;
+			document.getElementById('keep_wireless').checked 	= true;
+			document.getElementById('keep_firewall').checked 	= true;
+			document.getElementById('keep_openvpn').checked 	= true;
+
+			document.getElementById('block_keep_n').style.display = "block";
+			document.getElementById('block_keep_3').style.display = "block";
+			document.getElementById('block_keep_l').style.display = "block";
+			document.getElementById('block_keep_d').style.display = "block";
+			document.getElementById('block_keep_w').style.display = "block";
+			document.getElementById('block_keep_f').style.display = "block";
+			document.getElementById('block_keep_o').style.display = "block";
+
+		} else {
+			document.getElementById('keep_network').checked 	= false;
+			document.getElementById('keep_3g').checked 			= false;
+			document.getElementById('keep_lan').checked 		= false;
+			document.getElementById('keep_ddns').checked 		= false;
+			document.getElementById('keep_wireless').checked 	= false;
+			document.getElementById('keep_firewall').checked 	= false;
+			document.getElementById('keep_openvpn').checked 	= false;
+
+			document.getElementById('block_keep_n').style.display = "block";
+			document.getElementById('block_keep_3').style.display = "block";
+			document.getElementById('block_keep_l').style.display = "block";
+			document.getElementById('block_keep_d').style.display = "block";
+			document.getElementById('block_keep_w').style.display = "block";
+			document.getElementById('block_keep_f').style.display = "block";
+			document.getElementById('block_keep_o').style.display = "block";
+		}
+	}
+	function validate_3g()
+	{
+		if (document.getElementById('keep_network').checked) {
+
+
+			document.getElementById('keep_3g').checked 	= true;
+			document.getElementById('keep_lan').checked = true;
+
+			document.getElementById('block_keep_3').style.display = "block";
+			document.getElementById('block_keep_l').style.display = "block";
+
+		} else {
+			document.getElementById('keep_3g').checked 	= false;
+			document.getElementById('keep_lan').checked = false;
+
+			document.getElementById('block_keep_3').style.display = "block";
+			document.getElementById('block_keep_l').style.display = "block";
+		}
+	}
+	function validate_orcheck()
+	{
+		if	((document.getElementById('keep_3g').checked 		== false)	||
+			(document.getElementById('keep_lan').checked 		== false)	||
+			(document.getElementById('keep_ddns').checked 		== false)	||
+			(document.getElementById('keep_wireless').checked	== false) 	||
+			(document.getElementById('keep_firewall').checked	== false) 	||
+			(document.getElementById('keep_openvpn').checked 	== false))	{
+
+			if	((document.getElementById('keep_3g').checked 	== false)	||
+			(document.getElementById('keep_lan').checked 		== false))	{
+
+				document.getElementById('keep_network').checked = false;
+				document.getElementById('block_keep_n').style.display = "block";
+
+				document.getElementById('keep').checked = false;
+				document.getElementById('block_keep').style.display = "block";
+			}
+
+				document.getElementById('keep').checked = false;
+				document.getElementById('block_keep').style.display = "block";
+			}
+
+		if ((document.getElementById('keep_3g').checked 		)	&&
+			(document.getElementById('keep_lan').checked 		)	&&
+			(document.getElementById('keep_ddns').checked 		)	&&
+			(document.getElementById('keep_wireless').checked	) 	&&
+			(document.getElementById('keep_firewall').checked	) 	&&
+			(document.getElementById('keep_openvpn').checked 	))	{
+
+			if	((document.getElementById('keep_3g').checked 		== true)	&&
+			(document.getElementById('keep_lan').checked 		== true))	{
+
+				document.getElementById('keep_network').checked = true;
+				document.getElementById('block_keep_n').style.display = "block";
+
+				document.getElementById('keep').checked = true;
+				document.getElementById('block_keep').style.display = "block";
+			}
+
+				document.getElementById('keep').checked = true;
+				document.getElementById('block_keep').style.display = "block";
+			}
+
+		if	((document.getElementById('keep_3g').checked 		== true)	&&
+			(document.getElementById('keep_lan').checked 		== true))	{
+
+				document.getElementById('keep_network').checked = true;
+				document.getElementById('block_keep_n').style.display = "block";
+			}
+	}
+//]]></script>
+
+<%+footer%>

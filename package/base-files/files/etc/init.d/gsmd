@@ -1,0 +1,66 @@
+#!/bin/sh /etc/rc.common
+
+# Copyright (C) 2014 Teltonika
+
+. /lib/teltonika-functions.sh
+
+#START=50
+STOP=51
+USE_PROCD=1
+
+GSMD_BIN="/usr/sbin/gsmd"
+UNIX_SOCK_PATH="/tmp/gsmd.sock"
+
+start_service() {
+	local ext_vidpid=`get_ext_vidpid_tlt`
+	#local logtype=
+
+	procd_open_instance
+	procd_set_param respawn 0
+
+	if [ "`uci get system.system.enable_gsmd_log`" == "0" ]
+	then
+		logger "gsmd.init: \"gsmd\" logging disabled by uci"
+		nolog="-n"
+	else
+		nolog=""
+	fi
+
+	device=`uci get system.module.device 2>/dev/null`
+	if [ -z $device ]
+	then
+		echo "$0: gsmd device not specified"
+		device="ttyUSB2"
+	fi
+
+	if [ "$ext_vidpid" != "" ]; then
+		procd_set_param command "$GSMD_BIN" -p "/dev/$device" -s 115200 $nolog
+	else
+		echo "$0: unknown or no 3g device, aborting"
+	fi
+
+	service=`uci get network.ppp.service 2>/dev/null`
+	[ -n "$service" ] && procd_append_param command -m "$service"
+
+	procd_close_instance
+}
+
+reload_service() {
+		restart
+}
+
+stop_service() {
+	local enabled=`uci -q get network.ppp.enabled`
+	#Jei ppp enable'intas, darome ifdown, nes kitaip AT^SYSCFGEX grazina  +CME ERROR: 3
+	if [ "$enabled" == "1" ]; then
+		ifdown ppp
+		sleep 2
+	fi
+
+	pid=$(ps w | grep -v grep | grep operctl)
+	if [ "$pid" != "" ]; then
+		killall -9 operctl
+		rm /var/run/operctl.pid
+	fi
+
+}

@@ -1,0 +1,56 @@
+config general 'hotspot1'
+	option net '192.168.2.254/24'
+	option profile 'hotspotsytem'
+	option uamlogoutip '1.1.1.1'
+	option enabled '1'
+	option mode 'extrad'
+	option auth_proto 'chap'
+	option radiusserver1 'radius.hotspotsystem.com'
+	option radiusserver2 'radius2.hotspotsystem.com'
+	option radiusauthport '1812'
+	option radiusacctport '1813'
+	option radiussecret 'hotsys123'
+	option uamport '3990'
+	option uamuiport '4990'
+	option uamsecret 'hotsys123'
+	option externalpage '1'
+	option externadress 'https://customer.hotspotsystem.com/customer/hotspotlogin.php '
+
+config ftp 'ftp'
+	option enabled '0'
+	option user 'username'
+	option host 'your.ftp.server'
+	option extra_name_info 'none'
+	option port '21'
+	option psw 'password'
+
+config interval
+	option fixed_minute '15'
+	option fixed_hour '8'
+	option weekdays 'mon,tue,wed,thu,fri'
+	option fixed '1'
+	option descr 'Uploads every workday at 8:15'
+
+config link 'link'
+
+config session 'unlimited1'
+	option name 'unlimited'
+	option id 'hotspot1'
+
+config users
+	option template 'unlimited1'
+	option username 'test'
+	option password 'test'
+	option id 'hotspot1'
+
+config uamallowed
+	option instance 'hotspot1'
+	option enabled '1'
+	option domain 'hotspotsystem.com'
+	option subdomains '1'
+
+config uamallowed
+	option instance 'hotspot1'
+	option enabled '1'
+	option domain 'facebook.com'
+	option subdomains '1'

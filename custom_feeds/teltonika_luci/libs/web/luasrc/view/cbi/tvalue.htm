@@ -1,0 +1,3 @@
+<textarea class="cbi-input-textarea" <% if not self.size then %> style="width: 100%; <% if self.height then %>height: <%=self.height%>px;<% end %> "<% else %> cols="<%=self.size%>"<% end %> onchange="cbi_d_update(this.id)"<%= attr("name", cbid) .. attr("id", cbid) .. ifattr(self.rows, "rows") .. ifattr(self.wrap, "wrap").. ifattr(self.maxlength, "maxlength") %>>
+	<%-=pcdata(self:cfgvalue(section))-%>
+</textarea>

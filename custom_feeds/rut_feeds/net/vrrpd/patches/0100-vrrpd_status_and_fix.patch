@@ -1,0 +1,174 @@
+--- a/vrrpd.c
++++ b/vrrpd.c
+@@ -403,7 +403,7 @@
+  AIM	:
+  REMARK	: linux refuse to change the hwaddress if the interface is up
+ ****************************************************************/
+-static int hwaddr_set( char *ifname, char *addr, int addrlen )
++static int hwaddr_set( char *ifname, char *addr, int addrlen, int st, vrrp_rt *vsrv  )
+ {
+ 	struct ifreq	ifr;
+ 	int		fd	= socket(AF_INET, SOCK_DGRAM, 0);
+@@ -412,6 +412,10 @@
+ 	if (fd < 0) 	return (-1);
+ 	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+ 	/* get the flags */
++	if (!strcasecmp(ifname, "br-lan") && st == 1){
++		system("/sbin/ifdown lan");
++		system("/sbin/ifup lan");
++	}
+ 	ret = ioctl(fd, SIOCGIFFLAGS, (char *)&ifr);
+ 	if( ret )	goto end;
+ 	flags = ifr.ifr_flags;
+@@ -438,6 +442,12 @@
+ end:;
+ if( ret )  	vrrpd_log(LOG_WARNING, "Can't add Virtual Mac erreur: %d",errno );
+ 	close(fd);
++	if (!strcasecmp(ifname, "br-lan") && st == 1){
++		close(fd);
++		if( open_sock( vsrv ) ){
++			return -1;
++		}
++	}
+ return ret;
+ }
+ 
+@@ -616,6 +626,7 @@
+ 
+ 	/* Scott added 9-4-02 */
+ 	master_ipaddr = ip->saddr;
++	write_ip_to_file(vsrv);
+ 	return 0;
+ }
+ 
+@@ -1335,6 +1346,28 @@
+  AIM	:
+  REMARK	: called when the state is now MASTER
+ ****************************************************************/
++/***********************write info to file************************
++****************************************************************/
++static void write_to_file(vrrp_rt *vsrv, char status[10])
++{
++	FILE *f;
++	if(!strcmp(vsrv->vif.ifname , "br-lan")){
++		f = fopen("/tmp/vrrpd_lan_log", "wb");
++	}else{
++		f = fopen("/tmp/vrrpd_wan_log", "wb");
++	}
++	if (f == NULL){
++		printf("Error opening file!\n");
++	}else{
++		if(!strcmp(status , "Master")){
++			fprintf(f, "%s\n\n",status);
++		}else{
++			fprintf(f, "%s\n%s\n",status, ipaddr_to_str(master_ipaddr));
++		}
++		fclose(f);
++	}
++}
++
+ char *ipaddr_to_str(uint32_t ipaddr)
+ {
+ 	static char temp_ipaddr[32];
+@@ -1346,6 +1379,42 @@
+ 	return temp_ipaddr;
+ }
+ 
++/****************************************************************
++********************write master ip to file**********************
++****************************************************************/
++static void write_ip_to_file( vrrp_rt *vsrv)
++{
++	FILE *pCMD, *f;
++	char BufferInfo[100];
++	char status[10];
++	if(!strcmp(vsrv->vif.ifname , "br-lan")){
++		pCMD = fopen("/tmp/vrrpd_lan_log", "r");
++	}else{
++		pCMD = fopen("/tmp/vrrpd_wan_log", "r");
++	}
++	if (pCMD == NULL){
++		printf("Error opening file!\n");
++	}else{
++		fgets(BufferInfo, 100, pCMD);
++		BufferInfo[strlen(BufferInfo)-1] = '\0';
++		strncpy(status, BufferInfo, sizeof(status));
++		fclose(pCMD);
++		if(!strcmp(vsrv->vif.ifname , "br-lan")){
++			f = fopen("/tmp/vrrpd_lan_log", "wb");
++		}else{
++			f = fopen("/tmp/vrrpd_wan_log", "wb");
++		}
++		if (f == NULL){
++			printf("Error opening file!\n");
++		}else{
++			fprintf(f, "%s\n%s\n",status, ipaddr_to_str(master_ipaddr));
++			fclose(f);
++		}
++	}
++}
++
++/****************************************************************/
++
+ static void state_goto_master( vrrp_rt *vsrv )
+ {
+ 	vrrp_if	*vif = &vsrv->vif;
+@@ -1382,10 +1451,11 @@
+  
+ 	vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%swe are now the master router.", vsrv->vrid, vif->ifname,master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is down, " : "");
+ 	strcpy(backup_reason,"");
++	char status[10];
+ 	/* set the VRRP MAC address -- rfc2338.7.3 */
+ 	if( !vsrv->no_vmac ){
+ 		vrrpd_log(LOG_WARNING, "VRRP ID %d change MAC %s",vsrv->vrid, vif->ifname);
+-		hwaddr_set( vif->ifname, vrrp_hwaddr, sizeof(vrrp_hwaddr) );
++		hwaddr_set( vif->ifname, vrrp_hwaddr, sizeof(vrrp_hwaddr), 0, vsrv);
+ 		rcvhwaddr_op( vif->ifname, vif->hwaddr, sizeof(vif->hwaddr), 1);
+ 	}
+ 	
+@@ -1402,6 +1472,8 @@
+ 	VRRP_TIMER_SET( vsrv->adver_timer, vsrv->adver_int );
+ 	vsrv->state = VRRP_STATE_MAST;
+ 	vsrv->wantstate = VRRP_STATE_MAST;
++	strcpy(status, "Master");
++	write_to_file(vsrv, status);
+ 	
+ 	globalstatedown[0] = '\0';
+ 
+@@ -1440,7 +1512,7 @@
+ 	/* restore the original MAC addresses */
+ 	if( !vsrv->no_vmac ){
+ 		vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: restore the original MAC",vsrv->vrid, vif->ifname);
+-		hwaddr_set( vif->ifname, vif->hwaddr, sizeof(vif->hwaddr) );
++		hwaddr_set( vif->ifname, vif->hwaddr, sizeof(vif->hwaddr), 1, vsrv );
+ 		rcvhwaddr_op( vif->ifname, vif->hwaddr, sizeof(vif->hwaddr), 0);
+ 	}
+ 	/* remove the ip addresses */
+@@ -1459,8 +1531,8 @@
+  REMARK	: rfc2338.6.4.1
+ ****************************************************************/
+ static void state_init( vrrp_rt *vsrv )
+-{	
+-
++{
++	char status[10];
+ 	vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%s - INIT State (backup) -", vsrv->vrid, vsrv->vif.ifname, master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is up, " : "");
+ 	if ( vsrv->priority == VRRP_PRIO_OWNER ) {
+ 		 state_goto_master( vsrv );
+@@ -1472,6 +1544,8 @@
+ 		VRRP_TIMER_SET( vsrv->ms_down_timer, delay );
+ 		vsrv->state = VRRP_STATE_BACK;
+ 		vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%s - INIT State (backup) -", vsrv->vrid, vsrv->vif.ifname, master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is up, " : "");
++		strcpy(status, "Backup");
++		write_to_file(vsrv, status);
+ 		if ((master_ipaddr) && (vsrv->wantstate == VRRP_STATE_BACK)){
+ 			strcpy(backup_reason,"Read packet from peer");
+ 			vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: be backup %s%s - Receive packet from Master -", vsrv->vrid, vsrv->vif.ifname, master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is up, " : "");
+@@ -1532,6 +1606,7 @@
+ ****************************************************************/
+ static void state_mast( vrrp_rt *vsrv )
+ {
++	char status[10];
+ 	uint32_t	addr[1024];
+ 	vrrp_if	*vif = &vsrv->vif;
+ 	char		buf[300];	/* WORK: lame ! */

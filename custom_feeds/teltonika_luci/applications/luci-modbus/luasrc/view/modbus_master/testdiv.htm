@@ -1,0 +1,84 @@
+<div class="cbi-section-create cbi-tblsection-create">
+	<% if self.anonymous then %>
+		<input class="cbi-button cbi-button-add" style="margin-left: 10px;" type="submit" value="<%:Add%>" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" title="<%:Add%>" />
+	<% else %>
+		<% if self.invalid_cts then -%>
+			<div class="cbi-section-error">
+		<% end %>
+		<input type="text" class="cbi-section-create-name" id="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" <% if self.field_length then -%> maxlength=<%=self.field_length%> <% end %> />
+		<script type="text/javascript">cbi_validate_field('cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>', true, 'uciname');</script>
+		<input class="cbi-button cbi-button-add" type="submit" onclick="this.form.cbi_state='add-section'; return true" value="<%:Add%>" title="<%:Add%>" />
+		<% if self.invalid_cts then -%>
+			<br/><%:Invalid%></div>
+		<%- end %>
+	<% end %>
+</div>
+
+<div id="test-area" style="font-family:monospace"></div>
+
+<script type="text/javascript">
+function change_validation(id, function_code) {
+	if (id && function_code){
+		conf_name_array = id.split(".");
+		if(conf_name_array[2]){
+			var num_field_id = conf_name_array[0] + "." + conf_name_array[1] + "." + conf_name_array[2] + ".reg_count"
+			var num_field = document.getElementById(num_field_id);
+
+			if (num_field) {
+				var el = num_field;
+				var elClone = el.cloneNode(true);
+				el.parentNode.replaceChild(elClone, el);
+				num_field = elClone;
+
+				if (function_code == 1 || function_code == 2) {
+					num_field.addEventListener("change", function() {
+						cbi_validate_field(this, false, 'range(1,2000)');
+					}, false);
+					num_field.placeholder = "1-2000";
+				} else if (function_code == 3 || function_code == 4) {
+					num_field.addEventListener("change", function() {
+						cbi_validate_field(this, false, 'range(1,125)');
+					}, false);
+					num_field.placeholder = "1-125";
+				} else if (function_code == 5) {
+					num_field.addEventListener("change", function() {
+						cbi_validate_field(this, false, 'FF_or_0()');
+					}, false);
+					num_field.placeholder = "65280=ON, 0=OFF";
+				} else if (function_code == 6) {
+					num_field.addEventListener("change", function() {
+						cbi_validate_field(this, false, 'range(0,65535)');
+					}, false);
+					num_field.placeholder = "0-65535";
+				} else if (function_code == 15) {
+					num_field.addEventListener("change", function() {
+						cbi_validate_field(this, false, 'multiple_coil_values()');
+					}, false);
+					num_field.placeholder = "Up to 246 8bit numbers";
+				} else if (function_code == 16) {
+					num_field.addEventListener("change", function() {
+						cbi_validate_field(this, false, 'multiple_register_values()');
+					}, false);
+					num_field.placeholder = "Up to 123 16bit numbers";
+				}
+
+				if ("createEvent" in document) {
+					var evt = document.createEvent("HTMLEvents");
+					evt.initEvent("change", false, true);
+					num_field.dispatchEvent(evt);
+				} else {
+					num_field.fireEvent("onchange");
+				}
+			}
+		}
+	}
+}
+
+var f_code_select = document.querySelectorAll('select[name$=".function"]');
+for (var i = 0; i < f_code_select.length; i++) {
+	if (f_code_select[i]) {
+		f_code_select[i].addEventListener("change", function(){change_validation(this.id, this.value);}, false);
+		change_validation(f_code_select[i].id, f_code_select[i].value);
+	}
+}
+</script>

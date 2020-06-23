@@ -1,0 +1,27 @@
+--- a/Makefile	(date 1538985067000)
++++ b/Makefile	(date 1538985067000)
+@@ -23,10 +23,10 @@
+ all: $(ALL_EXE)
+
+ vrrpd : $(VRRPD_OBJS)
+-	$(CC) $(PROF_OPT) -o $@ $^ -lrt $(LINKLIB)
++	$(CC) $(PROF_OPT) -o $@ $^ -lrt -leventslog $(LINKLIB)
+
+ atropos:$(ATROPOS_OBJS)
+-	$(CC) $(PROF_OPT) -o $@ $^ -lrt
++	$(CC) $(PROF_OPT) -o $@ $^ -lrt -leventslog
+
+ vrrpd.o: vrrpd.h
+ libnetlink.o: libnetlink.h
+--- a/vrrpd.c	(date 1538985067000)
++++ b/vrrpd.c	(date 1538985067000)
+@@ -60,6 +60,9 @@
+ int master_ipaddr = 0;
+ int daemonize = 0;
+
++static void write_ip_to_file( vrrp_rt *vsrv);
++char *ipaddr_to_str(uint32_t ipaddr);
++static int open_sock( vrrp_rt *vsrv );
+ static char	PidDir[FILENAME_MAX+1];
+ static char	scriptdown[FILENAME_MAX+1];
+ static char	upscript[FILENAME_MAX+1];

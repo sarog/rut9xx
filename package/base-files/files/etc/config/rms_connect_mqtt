@@ -1,0 +1,6 @@
+config rms_connect_mqtt 'rms_connect_mqtt'
+	option enable '1'
+	option retry '60'
+	option port '15009'
+	option remote 'rms.teltonika.lt'
+	option debug '1'

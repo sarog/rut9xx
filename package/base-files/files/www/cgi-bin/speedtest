@@ -1,0 +1,219 @@
+#!/usr/bin/lua
+
+DATA_FILE = "/tmp/average_speed"
+TEST_APP = "/sbin/speedtest"
+
+function exec(command)
+	local pp   = io.popen(command)
+	local data = pp:read("*a")
+	pp:close()
+
+	return data
+end
+
+function call(...)
+	return os.execute(...) / 256
+end
+
+function trim(str)
+	return (str:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+function write_json(x)
+	if x == nil then
+		print ("null")
+	elseif type(x) == "table" then
+		local k, v
+		if type(next(x)) == "number" then
+			print("[ ")
+			for k, v in ipairs(x) do
+				write_json(v)
+				if next(x, k) then
+					print(", ")
+				end
+			end
+			print(" ]")
+		else
+			print("{ ")
+			for k, v in pairs(x) do
+			print(string.format("%q: ", k))
+				write_json(v)
+				if next(x, k) then
+					print(", ")
+				end
+			end
+			print(" }")
+		end
+	elseif type(x) == "number" or type(x) == "boolean" then
+		if (x ~= x) then
+			-- NaN is the only value that doesn't equal to itself.
+			print("Number.NaN")
+		else
+			print(tostring(x))
+		end
+	elseif type(x) == "string" then
+		print(string.format("%q", tostring(x)))
+	end
+end
+
+function clean()
+	proc = exec("pgrep speedtest")
+
+	if (proc and proc ~= "") then
+		for pid in proc:gmatch("%d+") do
+			call("kill ".. pid .."")
+		end
+	end
+end
+
+function file_exists(file)
+	local f = io.open(file, "rb")
+	if f then 
+		f:close() 
+	end
+	return f ~= nil
+end
+
+function getItem(object, item, phrase) -- phrase=  symbols until number, function to get current row collum values and format it
+	object = object:split("\" ")
+	object[item] = object[item]:gsub("\"", "")
+	object[item] = object[item]:gsub(phrase , "")
+	return object[item]
+end
+
+function formvalue(param)
+	local value
+
+	if os.getenv ("REQUEST_METHOD") == "GET" then
+		if os.getenv("QUERY_STRING") then
+			query = os.getenv("QUERY_STRING")
+		end
+
+		if query then
+			value = string.match(query, param .. "=(%d+)")
+		end
+	end
+
+	return value
+end
+
+function get_data(line)
+	local command = "sed -n '" .. line .. "p' " .. DATA_FILE .. " 2>/dev/null";
+
+	return trim(exec(command))
+end
+
+function run_app(args)
+	call(TEST_APP .. " " .. args .. " 2>/dev/null &")
+end
+
+print [[
+Content-Type: application/json
+]]
+
+step = tonumber(formvalue('step'))
+
+if not step then
+	return
+end
+
+if (step > 0 and step <= 5) or step == 10 then
+	local parameters = { "-s 1", "-s 2", "-s 3", "-s 4", "-l"}
+	local args = parameters[step];
+	local serveris = ""
+	local pingas = ""
+	local i=1
+
+	call("rm " .. DATA_FILE .. " &>/dev/null")
+	clean()
+
+	if args then
+		run_app(args)
+	else
+		run_app("-t")
+	end
+
+	while serveris == "" and pingas == "" or i < 15 do
+		serveris = get_data(1) --trim(exec("sed -n '1p' " .. DATA_FILE .. " 2>/dev/null"))
+		pingas = get_data(2) --trim(exec("sed -n '2p' " .. DATA_FILE .. " 2>/dev/null"))
+
+		exec("sleep 1")
+		i=i+1
+	end
+
+	if serveris ~= "" and serveris ~= "Error" and pingas  ~= "" then
+		rv = { internet = 1, connection = serveris, ping_to_server = pingas }
+	else
+		rv = { internet = 0 }
+	end
+
+	write_json(rv)
+
+	return
+elseif step == 12 then
+	local error1 = get_data(1)--trim(exec("sed -n '1p' /tmp/average_speed 2>/dev/null"))
+	local current_spd = get_data(3) --trim(exec("sed -n '3p' /tmp/average_speed 2>/dev/null"))
+	local greitis = get_data(4)--trim(exec("sed -n '4p' /tmp/average_speed 2>/dev/null"))
+
+	if greitis then
+		rv = { downloadspeed = greitis, current_speed = current_spd }
+	else
+		rv = { downloadspeed = "0", current_speed = current_spd }
+	end
+
+	if error1 == "Error" then
+		rv = { downloadspeed = "-1", current_speed = "-1" }
+	end
+
+	write_json(rv)
+
+	return
+elseif step == 13 then
+	local error1 = get_data(1)--trim(exec("sed -n '1p' /tmp/average_speed 2>/dev/null"))
+	local current_spd = get_data(5)--trim(exec("sed -n '5p' /tmp/average_speed 2>/dev/null"))
+	local greitis = get_data(6)--trim(exec("sed -n '6p' /tmp/average_speed 2>/dev/null"))
+
+	if greitis then
+		rv = { uploadspeed = greitis, current_speed = current_spd }
+	else
+		rv = { uploadspeed = "0", current_speed = current_spd }
+	end
+
+	if error1 == "Error" then
+		rv = { uploadspeed = "-1", current_speed = "-1" }
+	end
+
+	write_json(rv)
+
+	return
+elseif step == 14 then
+	local file_server='/tmp/test_servers'
+
+	exec("speedtest -c")
+
+	if not file_exists(file_server) then
+		rv = { internet = 0 }
+	else
+		lines = {}
+		lin=1
+
+		for line in io.lines(file_server) do
+			lines[lin] = {}
+			for option, value in line:gmatch("%s?([^=%s]+)=\"?([^\"]*)\"") do
+				lines[lin][option] = value
+			end
+			lin=lin+1
+		end
+
+		rv = { internet = 1, servers=lines }
+	end
+
+	write_json(rv)
+
+	return
+elseif step == 9 then
+	clean()
+	write_json({ status = "done" })
+
+	return
+end

@@ -1,0 +1,5 @@
+noauth
+refuse-pap
+refuse-eap
+refuse-chap
+refuse-mschap

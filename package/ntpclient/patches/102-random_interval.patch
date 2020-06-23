@@ -1,0 +1,20 @@
+Index: ntpclient-2010/ntpclient.c
+===================================================================
+--- ntpclient-2010.orig/ntpclient.c
++++ ntpclient-2010/ntpclient.c
+@@ -510,6 +510,7 @@ static void primary_loop(int usd, struct
+ 	sa_xmit_len=sizeof sa_xmit;
+ 	to.tv_sec=0;
+ 	to.tv_usec=0;
++	srand(time(NULL));
+ 	for (;;) {
+ 		FD_ZERO(&fds);
+ 		FD_SET(usd,&fds);
+@@ -525,6 +526,7 @@ static void primary_loop(int usd, struct
+ 				send_packet(usd,ntpc->time_of_send);
+ 				++probes_sent;
+ 				to.tv_sec=ntpc->cycle_time;
++				to.tv_sec+=rand() % 30;
+ 				to.tv_usec=0;
+ 			}
+ 			continue;

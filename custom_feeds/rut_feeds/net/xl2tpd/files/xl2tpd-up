@@ -1,0 +1,36 @@
+#!/bin/sh
+. /lib/functions.sh
+#
+# Script which handles the routing issues as necessary for pptpd
+#
+# When the ppp link comes up, this script is called with the following
+# parameters
+#       $1      the interface name used by pppd (e.g. ppp3)
+#       $2      the tty device name
+#       $3      the tty device speed
+#       $4      the local IP address for the interface
+#       $5      the remote IP address
+#       $6      the parameter specified by the 'ipparam' option to pppd
+#
+
+add_routes(){
+	local section="$1"
+	local remote="$2"
+	local gateway
+	local target
+	local netmask
+
+	config_get gateway $section gateway
+
+	[ "$remote" = "$gateway" ] || return
+
+	config_get target $section target
+	config_get netmask $section netmask
+
+	ip route add "${target}/${netmask}" via "${gateway}"
+}
+
+config_load network
+config_foreach add_routes route $5
+
+exit 0

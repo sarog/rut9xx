@@ -1,0 +1,2 @@
+config settings 'settings'
+	option data_sender_version '1'

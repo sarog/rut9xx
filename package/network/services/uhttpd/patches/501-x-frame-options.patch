@@ -1,0 +1,11 @@
+--- a/client.c
++++ b/client.c
+@@ -67,6 +67,8 @@
+ 	if (!r->connection_close)
+ 		ustream_printf(cl->us, "Keep-Alive: timeout=%d\r\n", conf.http_keepalive);
+ 
++	ustream_printf(cl->us, "X-Frame-Options: SAMEORIGIN\r\n");
++
+ 	blobmsg_for_each_attr(cur, cl->hdr_response.head, rem)
+ 		ustream_printf(cl->us, "%s: %s\r\n", blobmsg_name(cur),
+ 			       blobmsg_get_string(cur));

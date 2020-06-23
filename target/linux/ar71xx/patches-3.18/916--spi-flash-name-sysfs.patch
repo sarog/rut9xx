@@ -1,0 +1,74 @@
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -34,6 +34,16 @@
+ 	struct mtd_info		mtd;
+ 	u8			command[MAX_CMD_SIZE];
+ };
++
++static char flash_name_attr[SPI_NAME_SIZE]="NULL";
++
++static ssize_t show_name(struct device *dev,
++				struct device_attribute *attr, char *buf)
++{
++	return sprintf(buf, "%s\n", flash_name_attr);
++}
++
++static DEVICE_ATTR(flash_name, S_IRUGO, show_name, NULL);
+ 
+ static int m25p80_read_reg(struct spi_nor *nor, u8 code, u8 *val, int len)
+ {
+@@ -242,12 +252,14 @@
+ 	 */
+ 	if (data && data->type)
+ 		flash_name = data->type;
+-	else
++	else 
+ 		flash_name = spi->modalias;
+ 
+-	ret = spi_nor_scan(nor, flash_name, mode);
++	ret = spi_nor_scan(nor, flash_name, mode, flash_name_attr);
+ 	if (ret)
+ 		return ret;
++
++	device_create_file(&spi->dev, &dev_attr_flash_name);
+ 
+ 	memset(&ppdata, '\0', sizeof(ppdata));
+ 	ppdata.of_node = spi->dev.of_node;
+@@ -263,6 +275,8 @@
+ static int m25p_remove(struct spi_device *spi)
+ {
+ 	struct m25p	*flash = spi_get_drvdata(spi);
++
++	device_remove_file(&spi->dev, &dev_attr_flash_name);
+ 
+ 	/* Clean up MTD stuff. */
+ 	return mtd_device_unregister(&flash->mtd);
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -918,7 +918,7 @@
+ 	return 0;
+ }
+ 
+-int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
++int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode, char *flash_name_attr)
+ {
+ 	const struct spi_device_id	*id = NULL;
+ 	struct flash_info		*info;
+@@ -955,6 +955,7 @@
+ 			dev_warn(dev, "found %s, expected %s\n",
+ 				 jid->name, id->name);
+ 			id = jid;
++			memcpy(flash_name_attr, jid->name, SPI_NAME_SIZE);
+ 			info = (void *)jid->driver_data;
+ 		}
+ 	}
+--- a/include/linux/mtd/spi-nor.h
++++ b/include/linux/mtd/spi-nor.h
+@@ -198,6 +198,6 @@
+  *
+  * Return: 0 for success, others for failure.
+  */
+-int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode);
++int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode, char *spi_nor_scan);
+ 
+ #endif

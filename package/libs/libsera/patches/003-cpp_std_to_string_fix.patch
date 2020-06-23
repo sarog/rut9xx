@@ -1,0 +1,24 @@
+Index: libsera-1.2.2/include/srlogger.h
+===================================================================
+--- libsera-1.2.2.orig/include/srlogger.h
++++ libsera-1.2.2/include/srlogger.h
+@@ -22,8 +22,19 @@
+ #define SRLOGGER_H
+ 
+ #include <cstdint>
++#include <sstream>
+ #include <string>
+ 
++// manual `to_string` due uClibc
++namespace std {
++    template<typename T>
++    std::string to_string(const T &n) {
++        std::ostringstream s;
++        s << n;
++        return s.str();
++    }
++}
++
+ /**
+  *  \file srlogger.h
+  *  \brief SmartREST logging facility with rotation feature.

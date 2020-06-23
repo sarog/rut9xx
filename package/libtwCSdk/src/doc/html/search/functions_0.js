@@ -1,0 +1,6 @@
+var searchData=
+[
+  ['add',['Add',['../class_dot_z_lib_1_1_codec_base.html#a9131ff23312ada67dbf58f428d562de4',1,'DotZLib.CodecBase.Add(byte[] data)'],['../class_dot_z_lib_1_1_codec_base.html#ab01e6ad1d9c5b05745dd9e487aaa40ee',1,'DotZLib.CodecBase.Add(byte[] data, int offset, int count)'],['../class_dot_z_lib_1_1_deflater.html#a2db95e3ca07e562df0652ed1ad8d0c4d',1,'DotZLib.Deflater.Add()'],['../interface_dot_z_lib_1_1_codec.html#aa40d0820bd95f098b3e7d8e707e7a536',1,'DotZLib.Codec.Add(byte[] data)'],['../interface_dot_z_lib_1_1_codec.html#a137234d0c6fa6981ca8b602340e79dbc',1,'DotZLib.Codec.Add(byte[] data, int offset, int count)'],['../class_dot_z_lib_1_1_inflater.html#a773dd62fe806dd9b6117f859faaeb079',1,'DotZLib.Inflater.Add()']]],
+  ['adlerchecksum',['AdlerChecksum',['../class_dot_z_lib_1_1_adler_checksum.html#a8b968384065103a827ac7bfb7bfab66d',1,'DotZLib.AdlerChecksum.AdlerChecksum()'],['../class_dot_z_lib_1_1_adler_checksum.html#ab983bcafef50a5f578398d2aa83d7433',1,'DotZLib.AdlerChecksum.AdlerChecksum(uint initialValue)']]],
+  ['attach',['attach',['../classgzfilebuf.html#ae8a47750ca65bc2a43b4768b47f3923a',1,'gzfilebuf::attach()'],['../classgzifstream.html#a24aff901c395acbdaddb7878f4ddb7aa',1,'gzifstream::attach()'],['../classgzofstream.html#a95b76eaecd03b6cbf53d2f4b1c867439',1,'gzofstream::attach()']]]
+];

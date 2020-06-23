@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><Entities build="b52" majorVersion="8" minorVersion="1" modelPersistenceProviderPackage="H2PersistenceProviderPackage" revision="0" schemaVersion="1010"><Things><Thing description="" documentationContent="" effectiveThingPackage="FileRepositoryThing" enabled="true" homeMashup="" identifier="" lastModifiedDate="2018-01-29T15:33:34.746Z" name="CSDKFileTransferIntegrationTestRepo" projectName="" published="false" tags="" thingTemplate="FileRepository" valueStream=""><Owner name="Administrator" type="User"/><avatar/><DesignTimePermissions><Create/><Read/><Update/><Delete/><Metadata/></DesignTimePermissions><RunTimePermissions/><VisibilityPermissions><Visibility/></VisibilityPermissions><ConfigurationTables/><ThingShape><PropertyDefinitions/><ServiceDefinitions><ServiceDefinition aspect.isAsync="false" category="" description="" isAllowOverride="false" isLocalOnly="false" isOpen="false" isPrivate="false" name="CompareTestFileContents"><ResultType baseType="BOOLEAN" description="" name="result" ordinal="0"/><ParameterDefinitions><FieldDefinition aspect.isRequired="true" baseType="STRING" description="" name="fileName" ordinal="1"/></ParameterDefinitions></ServiceDefinition><ServiceDefinition aspect.isAsync="false" category="" description="" isAllowOverride="false" isLocalOnly="false" isOpen="false" isPrivate="false" name="CreateTestFile"><ResultType baseType="NOTHING" description="" name="result" ordinal="0"/><ParameterDefinitions><FieldDefinition aspect.isRequired="true" baseType="STRING" description="" name="fileName" ordinal="1"/><FieldDefinition aspect.isRequired="true" baseType="INTEGER" description="" name="fileSize" ordinal="2"/></ParameterDefinitions></ServiceDefinition></ServiceDefinitions><EventDefinitions/><ServiceMappings/><ServiceImplementations><ServiceImplementation description="" handlerName="Script" name="CompareTestFileContents"><ConfigurationTables><ConfigurationTable description="Script" isMultiRow="false" name="Script" ordinal="0"><DataShape><FieldDefinitions><FieldDefinition baseType="STRING" description="code" name="code" ordinal="0"/></FieldDefinitions></DataShape><Rows><Row><code><![CDATA[var paramsA = {
+    path: "/out/"+fileName
+}
+
+var paramsB = {
+    path: "/in/"+fileName
+}
+
+var textA = me.LoadText(paramsA);
+var textB = me.LoadText(paramsB);
+
+var result = false;
+
+if (textA == textB) result = true;]]></code></Row></Rows></ConfigurationTable></ConfigurationTables></ServiceImplementation><ServiceImplementation description="" handlerName="Script" name="CreateTestFile"><ConfigurationTables><ConfigurationTable description="Script" isMultiRow="false" name="Script" ordinal="0"><DataShape><FieldDefinitions><FieldDefinition baseType="STRING" description="code" name="code" ordinal="0"/></FieldDefinitions></DataShape><Rows><Row><code><![CDATA[function randomString(length, chars) {
+    var result = '';
+    for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+    return result;
+}
+
+var params = {
+	path: "/out/"+fileName,
+    data: "",
+    overwrite: true
+};
+me.CreateTextFile(params);
+
+var offset = 0;
+
+while (fileSize-offset >= 1024) {
+    var params = {
+		path: "/out/"+fileName,
+        offset: offset,
+		data: randomString(1024, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+	};
+    me.WriteToTextFile(params);
+    offset += 1024;
+}
+
+var params = {
+	path: "/out/"+fileName,
+    offset: offset,
+    data: randomString(fileSize - offset, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+};
+me.WriteToTextFile(params);
+]]></code></Row></Rows></ConfigurationTable></ConfigurationTables></ServiceImplementation></ServiceImplementations><Subscriptions/></ThingShape><PropertyBindings/><RemotePropertyBindings/><RemoteServiceBindings/><RemoteEventBindings/><AlertConfigurations/><ImplementedShapes/><ThingProperties/><ConfigurationChanges><ConfigurationChange changeAction="CREATE" changeReason="header : name : updated, thingTemplate : updated&#10;" timestamp="2018-01-29T15:31:39.668Z" user="Administrator"/><ConfigurationChange changeAction="MODIFY" changeReason="services :  : Input parameter fileName Added, CreateTestFile : Inputs updated, Code Updated, Service Added&#10;" timestamp="2018-01-29T15:32:20.414Z" user="Administrator"/><ConfigurationChange changeAction="MODIFY" changeReason="services :  : Input parameter fileName Added, CompareTestFileContents : Inputs updated, Code Updated, Output Updated, Service Added, CreateTestFile : Input parameter fileSize Added, Inputs updated&#10;" timestamp="2018-01-29T15:33:34.746Z" user="Administrator"/></ConfigurationChanges></Thing></Things></Entities>

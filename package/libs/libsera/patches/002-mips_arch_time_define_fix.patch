@@ -1,0 +1,92 @@
+Index: libsera-1.2.2/src/srnethttp.cc
+===================================================================
+--- libsera-1.2.2.orig/src/srnethttp.cc
++++ libsera-1.2.2/src/srnethttp.cc
+@@ -30,7 +30,7 @@ static int xferinfo(void *ptr, curl_off_
+     (void) ultotal;
+     (void) ulnow;
+     timespec tv;
+-    if (clock_gettime(CLOCK_MONOTONIC_COARSE, &tv) == -1)
++    if (clock_gettime(CLOCK_MONOTONIC, &tv) == -1)
+     {
+         return 0;
+     }
+@@ -114,7 +114,7 @@ int SrNetHttp::post(const std::string &r
+     srDebug("HTTP post: " + request);
+     timespec tv = { 0, 0 };
+ 
+-    clock_gettime(CLOCK_MONOTONIC_COARSE, &tv);
++    clock_gettime(CLOCK_MONOTONIC, &tv);
+     meter.first = meter.second = tv.tv_sec;
+     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request.c_str());
+     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, request.size());
+Index: libsera-1.2.2/src/srnetmqtt.cc
+===================================================================
+--- libsera-1.2.2.orig/src/srnetmqtt.cc
++++ libsera-1.2.2/src/srnetmqtt.cc
+@@ -121,7 +121,7 @@ int SrNetMqtt::connect(bool clean, char
+         srError(string("MQTT: ") + emsg[rc]);
+     }
+ 
+-    clock_gettime(CLOCK_MONOTONIC_COARSE, &t0);
++    clock_gettime(CLOCK_MONOTONIC, &t0);
+ 
+     return ret == 1 && rc == 0 ? 0 : -1;
+ }
+@@ -409,7 +409,7 @@ static int _schedule(unsigned char *buf,
+ int SrNetMqtt::yield(int ms)
+ {
+     timespec now;
+-    clock_gettime(CLOCK_MONOTONIC_COARSE, &now);
++    clock_gettime(CLOCK_MONOTONIC, &now);
+ 
+     if (pval && t0.tv_sec + pval <= now.tv_sec)
+     {
+Index: libsera-1.2.2/src/sragent.cc
+===================================================================
+--- libsera-1.2.2.orig/src/sragent.cc
++++ libsera-1.2.2/src/sragent.cc
+@@ -168,7 +168,7 @@ void SrAgent::loop()
+         for (auto &i : timers)
+         {
+             timespec now;
+-            clock_gettime(CLOCK_MONOTONIC_COARSE, &now);
++            clock_gettime(CLOCK_MONOTONIC, &now);
+ 
+             // check, if timer exceeds fire time
+             if (i->isActive() && (i->fireTime() <= now))
+Index: libsera-1.2.2/include/srtimer.h
+===================================================================
+--- libsera-1.2.2.orig/include/srtimer.h
++++ libsera-1.2.2/include/srtimer.h
+@@ -163,7 +163,7 @@ public:
+      */
+     void start()
+     {
+-        clock_gettime(CLOCK_MONOTONIC_COARSE, &beg);
++        clock_gettime(CLOCK_MONOTONIC, &beg);
+         end.tv_sec = beg.tv_sec + val / 1000;
+         end.tv_nsec = beg.tv_nsec + (val % 1000) * 1000000;
+ 
+Index: libsera-1.2.2/src/watchdog/srwatchdogd.cc
+===================================================================
+--- libsera-1.2.2.orig/src/watchdog/srwatchdogd.cc
++++ libsera-1.2.2/src/watchdog/srwatchdogd.cc
+@@ -98,7 +98,7 @@ extern "C" int main(int argc, char *argv
+     while (!_quit)
+     {
+         timespec t0 = { 0 };
+-        clock_gettime(CLOCK_MONOTONIC_COARSE, &t0);
++        clock_gettime(CLOCK_MONOTONIC, &t0);
+         *shm = 0;
+         const pid_t child = fork();
+ 
+@@ -130,7 +130,7 @@ extern "C" int main(int argc, char *argv
+                 }
+ 
+                 timespec t;
+-                clock_gettime(CLOCK_MONOTONIC_COARSE, &t);
++                clock_gettime(CLOCK_MONOTONIC, &t);
+                 bool b = true;
+ 
+                 for (int i = 1; i <= *shm; ++i)

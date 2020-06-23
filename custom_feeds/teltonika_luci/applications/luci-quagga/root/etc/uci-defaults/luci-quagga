@@ -1,0 +1,29 @@
+#!/bin/sh
+CONFIG_FILE=/etc/config/quagga
+
+if [ ! -f "$CONFIG_FILE" ]; then
+	touch $CONFIG_FILE
+	cat <<-EOF > $CONFIG_FILE
+	config general 'general'
+		option enabled '0'
+		option debug '0'
+		option enabled_vty '0'
+
+	config rip 'rip'
+		option enabled '0'
+		option debug '0'
+		option enabled_vty '0'
+
+	config ospf 'ospf'
+		option enabled '0'
+		list debug_inf 'event'
+		option debug '0'
+		option enabled_vty '0'
+
+	config instance 'default'
+		option enabled '0'
+	EOF
+fi
+
+rm -f /tmp/luci-indexcache
+exit 0

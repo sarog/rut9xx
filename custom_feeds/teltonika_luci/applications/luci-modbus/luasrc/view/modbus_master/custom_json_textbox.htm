@@ -1,0 +1,42 @@
+<%
+	Value = luci.util.trim(luci.sys.exec("uci get -q modbus_data_sender." ..self.indicator.. ".json_string"))
+	does_exist = tonumber(luci.sys.exec("uci get -q modbus_data_sender." ..self.indicator.. ".json_string ; echo $?"))
+	if does_exist == 1 then
+		Value = self.default
+	end
+%>
+<%+cbi/valueheader%>
+	<% if self:cfgvalue(section) ~= false then %>
+	<head>
+		<style>
+			table td{border:none; padding: 0px 0px 0px 10px; line-height: 13px; font-size: 12px; width: 50%; color: #808080; text-align:justify;}
+		</style>
+	</head>
+	<fieldset class="cbi-section">
+		<div style="display: inline; ">
+		<div>
+		<textarea style="float: left; resize: none;" id="cbid.modbus_data_sender.<%=self.indicator%>.<%=self.option%>" name="cbid.modbus_data_sender.<%=self.indicator%>.<%=self.option%>"rows="<%=self.rows%>"><%=Value%></textarea>
+		</div>
+		<div>
+		<table style="width:55%; float: left;" border="0">
+			<tr>
+				<td><%=translate("Modbus slave ID - %i")%></td>
+			<tr>
+				<td><%=translate("Modbus slave IP - %p")%></td>
+			<tr>
+				<td><%=translate("Date (Linux timestamp) - %t")%></td>
+			<tr>
+				<td><%=translate("Date (Day/Month/Year Hour:Minute:Second) - %d")%></td>
+			<tr>
+				<td><%=translate("Start register - %s")%></td>
+			<tr>
+				<td><%=translate("Register data - %a")%></td>
+			<tr>
+		</table>
+		</div>
+		</div>
+	</fieldset>
+	<% else %>
+		-
+	<% end %>
+<%+cbi/valuefooter%>

@@ -1,0 +1,5 @@
+config system 'sys'
+	option first_login '1'
+	option module ''
+	option shw3g '0'
+	option pass_changed '0'

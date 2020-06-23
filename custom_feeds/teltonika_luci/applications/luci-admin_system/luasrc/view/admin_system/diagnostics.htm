@@ -1,0 +1,96 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2010 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: diagnostics.htm 6770 2011-01-20 12:49:42Z jow $
+
+-%>
+
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+	var stxhr = new XHR();
+
+	function update_status(field)
+	{
+		
+		var tool = field.name;
+		var addr = document.getElementById('ipaddr').value;
+		
+
+		var legend = document.getElementById('diag-rc-legend');
+		var output = document.getElementById('diag-rc-output');
+
+		if (legend && output)
+		{
+			output.innerHTML =
+				'<img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" style="vertical-align:middle" /> ' +
+				'<%=translate("Waiting for router...")%>'
+			;
+
+			legend.parentNode.style.display = 'block';
+			legend.style.display = 'inline';
+
+			stxhr.get('<%=luci.dispatcher.build_url("admin", "system")%>/diag_' + tool + '/' + addr, null,
+				function(x)
+				{
+					if (x.responseText)
+					{
+						var n = x.responseText.indexOf("html");
+						if(n=="-1"){
+							legend.style.display = 'none';
+							output.innerHTML = String.format('<pre>%h</pre>', x.responseText);
+						}else{
+							window.location.href = window.location.href;
+						}
+					}
+					else
+					{
+						legend.style.display = 'none';
+						output.innerHTML = '<span class="error"><%=translate("Bad address specified!")%></span>';
+					}
+				}
+			);
+		}
+	}
+//]]></script>
+
+<form method="post" action="<%=pcdata(luci.http.getenv("REQUEST_URI"))%>">
+	<div class="cbi-map">
+		<h2><a id="content" name="content"><%=translate("Diagnostics")%></a></h2>
+
+		<fieldset class="cbi-section">
+			<legend><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Note that DNS server must be configured correctly if you use server hostname instead of server IP address in address field')%>')"</span><%=translate("Network Utilities")%></legend>
+
+			<table>
+				<tr >
+					<td style="border: medium none; float: right; padding-top: 14px;"><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Specify host to try to reach')%>')"</span>Host</td>
+					<td style="border: none;"><input style="width: 200px;" type="text" value="" id="ipaddr"  /></td>
+				</tr>
+				<tr>
+					<td style="border: medium none; float: right; padding-top: 14px;">Action</td>
+					<td style="border: none;">
+						<input type="button" style="float:none; margin-rigth:10px; " name="ping"	value="<%=translate('Ping')%>"	  class="cbi-button cbi-button-apply" onclick="update_status(this.form.ping)" />
+						<input type="button" style="float:none; margin-rigth:10px; " name="traceroute"	value="<%=translate('Traceroute')%>" class="cbi-button cbi-button-apply" onclick="update_status(this.form.traceroute)" />
+						<input type="button" style="float:none; " 		     name="nslookup" 	value="<%=translate('Nslookup')%>"   class="cbi-button cbi-button-apply" onclick="update_status(this.form.nslookup)" />
+					</td>
+				</tr>
+			</table>
+
+		</fieldset>
+	</div>
+
+	<fieldset class="cbi-section" style="display:none">
+		<legend id="diag-rc-legend"><%=translate("Collecting data...")%></legend>
+		<span id="diag-rc-output"></span>
+	</fieldset>
+</form>
+
+<%+footer%>

@@ -1,0 +1,62 @@
+config TLT_VERSIONING_PREFIX
+	depends on PACKAGE_libbrand-versioning
+	string "PREFIX"
+	help
+		Teltonika VERSIONING PREFIX
+	default RUT9XX
+
+config TLT_VERSIONING_CLIENT
+	depends on PACKAGE_libbrand-versioning
+	string "Client"
+	help
+		Client code, two decimals
+	default 00
+
+config TLT_VERSIONING_MANUAL_ENABLE
+	depends on PACKAGE_libbrand-versioning
+	bool "Manual firmware versioning"
+	help
+		Use manual firmware versioning
+	default n
+
+config TLT_VERSIONING_RELEASE
+	depends on PACKAGE_libbrand-versioning && TLT_VERSIONING_MANUAL_ENABLE
+	string "Release/Test"
+	help
+		"R" for release, "T" for test version
+	default T
+
+config TLT_VERSIONING_BRANCH_PREFIX
+	depends on PACKAGE_libbrand-versioning
+	string "Define branch prefix string"
+	help
+		Define branch prefix, "-" for auto
+	default -
+
+config TLT_VERSIONING_MAJOR
+	depends on PACKAGE_libbrand-versioning && TLT_VERSIONING_MANUAL_ENABLE
+	string "Major"
+	help
+		Major version number, two decimals
+	default 00
+
+config TLT_VERSIONING_MINOR
+	depends on PACKAGE_libbrand-versioning && TLT_VERSIONING_MANUAL_ENABLE
+	string "Minor"
+	help
+		Minor version number, two decimals
+	default 00
+
+config TLT_VERSIONING_PATCH_ENABLE
+	depends on PACKAGE_libbrand-versioning && TLT_VERSIONING_MANUAL_ENABLE
+	bool "Add patch version to version string"
+	help
+		Add Patch version number
+	default n
+
+config TLT_VERSIONING_PATCH
+	depends on PACKAGE_libbrand-versioning && TLT_VERSIONING_MANUAL_ENABLE && TLT_VERSIONING_PATCH_ENABLE
+	string "Patch"
+	help
+		Patch version number
+	default 0

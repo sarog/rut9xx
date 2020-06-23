@@ -1,0 +1,62 @@
+<%
+local fs = require "nixio.fs"
+local CERT_FILE = "/etc/cacert.pem"
+
+action = luci.http.formvalue("action")
+if action == "Save" then
+	local value = luci.http.formvalue("cbid.root_ca.edit")
+	if value ~= nil and value ~= "" then
+		value = value:gsub("\r\n?", "\n")
+		fs.writefile("/etc/cacert.pem", value)
+	else
+		luci.sys.call("echo > /etc/cacert.pem")
+	end
+elseif action == "Reset" then
+	luci.sys.call("cp /rom/etc/cacert.pem /etc/cacert.pem")
+end
+%>
+
+<%+header%>
+<script type="text/javascript" src="/luci-static/default/upload-validation.js"></script>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+
+<h2><a id="content" name="content"><%=translate("Root CA Certificates")%></a></h2>
+<div class="cbi-map-descr"><%=translate("Here you can add the root CA certificates file. There is a default file already preloaded in this device which will be overwriten by any uploaded file. The certificates must be in PEM format, maximum file size is 300kB. These certificates are only needed if you want to use HTTPS for your services, and the default file should be sufficient in most cases.")%></div>
+<fieldset class="cbi-section">
+		<form method="post" id="upload_ca_form" action="<%=luci.dispatcher.build_url("admin", "system", "admin", "upload_ca")%>" enctype="multipart/form-data">
+		<legend><%=translate("Upload Root CA certificate file")%></legend>
+			<br/>
+			<div class="cbi-section-node">
+				<div class="cbi-value cbi-value-last">
+					<label id="input_label" class="cbi-value-title" for="cert"><%=translate("Add file")%>:</label>
+					<div class="cbi-value-field">
+						<input type="file" name="cert" id="cert">
+							<br>
+							<input id="submit-button-upload" type="submit" class="cbi-button cbi-input-apply" onclick="return CheckFilesize('cert', '300000', 'No file selected, please select a file', 'Selected file is empty');" name="cert" value="<%=translate("Upload file")%>">
+					</div>
+				</div>
+			</div>
+		</form>
+		<form method="post" id="edit_ca_form" action="<%=luci.dispatcher.build_url("admin", "system", "admin", "root_ca")%>" enctype="multipart/form-data">
+			<legend><%=translate("Edit Root CA certificate file")%></legend>
+			<br/>
+			<textarea class="cbi-input-textarea" onchange="cbi_d_update(this.id)" style="max-width: none;width: 99%;" name="cbid.root_ca.edit" id="cbid.root_ca.edit" rows="40" cbi_validate="function () {
+	if(field.form) {
+		field.className = field.className.replace(/ cbi-input-invalid/g, '');
+		var value = field.value;
+		if (value.length > 300000) {
+			field.className += ' cbi-input-invalid';
+			return false;
+		}
+	}
+	return true;
+}"><%=fs.readfile(CERT_FILE)%></textarea>
+			<input class="cbi-button cbi-button-save" type="submit" onclick="return cbi_validate_form(this.form, 'Some fields are invalid, cannot save values!')" name="action" value="Save">
+			<input class="cbi-button cbi-button-reset" type="submit" onclick="document.getElementById('cbid.root_ca.edit').value=''" name="action" value="Reset">
+		</form>
+</fieldset>
+<script type="text/javascript">
+	cbi_validate_field('cbid.root_ca.edit', true, 'lengthvalidation(0, 300000)');
+</script>
+
+<%+footer%>

@@ -1,0 +1,13 @@
+
+<div class="cbi-value" >
+	<label class="cbi-value-title">
+		<span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Message to be sent. Allowed characters: (a-zA-Z0-9!@#$%&*+-/=?^_`{|}~.)')%>')"</span><%=translate("Message text")%>
+	</label>
+
+	<div class="cbi-value-field">
+		<textarea class="cbi-input-textarea" style="width: 385px; height: 90px;" onchange="cbi_d_update(this.id);" onKeyDown="setTimeout(function() { cbi_d_counter(id) }, 1 )" name="cbid.sms_utils.1.message" id="cbid.sms_utils.1.message" rows="4" maxlength="480"><%=(self:cfgvalue(section) or "")%></textarea>
+	</div>
+	<div id="counter" style="margin-left: 315px;" class="cbi-input-textarea-count" ></div>
+	
+</div>
+<br>

@@ -1,0 +1,5 @@
+config smpp 'smpp'
+	option enabled '0'
+	option username 'admin'
+	option password 'admin01'
+	option port '7777'

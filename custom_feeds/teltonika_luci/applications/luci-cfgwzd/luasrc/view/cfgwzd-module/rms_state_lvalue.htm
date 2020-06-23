@@ -1,0 +1,21 @@
+<%+cbi/valueheader%>
+<% if self.widget == "select" then %>
+<div style="display: inline-flex;margin-left: auto;">
+    <select class="cbi-input-select" onchange="cbi_d_update(this.id);warningMessage();"<%= attr("id", cbid) .. attr("name", cbid) .. ifattr(self.size, "size") %> <%- if self.maxWidth then -%> style="max-width:<%=self.maxWidth%>;" <%- end -%>>
+    <% for i, key in pairs(self.keylist) do -%>
+    <option id="cbi-<%=self.config.."-"..section.."-"..self.option.."-"..key%>"<%= attr("value", key) .. ifattr(tostring(self:cfgvalue(section) or self.default) == key, "selected", "selected") %>><%=striptags(self.vallist[i])%></option>
+    <%- end %>
+    </select>
+    <a onmouseout="HideHint(this)" onmouseover="ShowHint(this,'<div style=\'display: block; max-width: 500px\'><strong>Enabled</strong><span style=\'padding-left:1em; box-decoration-break: clone; -ms-box-decoration-break: clone; -o-box-decoration-break: clone; -webkit-box-decoration-break: clone;\'>RMS functionality is always on. Retrying connection every 2-5 minutes if disconnected from server. 14 days after device has disconnected, router will go to Standby mode.</span><br><strong>Standby</strong><span style=\'padding-left:1em; box-decoration-break: clone; -ms-box-decoration-break: clone; -o-box-decoration-break: clone; -webkit-box-decoration-break: clone;\'>Router tries to establish connection with server infrequently - 6hrs between attempts. This is being done to save mobile data. In order to start using RMS, user intervention is not necessary from router\'s side. Worst case scenario - RMS connection will be established 6hrs after adding it to RMS.</span><br><strong>Disabled</strong><span style=\'padding-left:1em; box-decoration-break: clone; -ms-box-decoration-break: clone; -o-box-decoration-break: clone; -webkit-box-decoration-break: clone;\'>RMS functionality is completely disabled. In order to start using RMS later, user must enable functionality on router\'s side.</span></div>')" class="mini-question-icon" style="margin-top: 8px; margin-left: 4px;" href="<%=self.url%>" onclick="return false;"></a>
+</div>
+<% elseif self.widget == "radio" then
+local c = 0
+for i, key in pairs(self.keylist) do
+c = c + 1
+%>
+<input class="cbi-input-radio" onclick="cbi_d_update(this.id)" onchange="cbi_d_update(this.id)" type="radio"<%= attr("id", cbid..c) .. attr("name", cbid) .. attr("value", key) .. ifattr((self:cfgvalue(section) or self.default) == key, "checked", "checked") %> />
+<label<%= attr("for", cbid..c) %>><%=self.vallist[i]%></label>
+<% if c == self.size then c = 0 %><% if self.orientation == "horizontal" then %>&#160;<% else %><br /><% end %>
+<% end end %>
+<% end %>
+<%+cbi/valuefooter%>

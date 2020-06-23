@@ -1,0 +1,14 @@
+<%+cbi/valueheader%>
+<% if self.href then %><a href="<%=self.href%>"><% end -%>
+	<%
+		local val = self:cfgvalue(section) or self.default or ""
+		if not self.rawhtml then
+			write(pcdata(val))
+		else
+			write(val)
+		end
+	%>
+<%- if self.href then %></a><%end%>
+<%- if self.text then %><p style="margin-top:9px;margin-bottom: 0px;" ><font color="red"><%- write(self.text) -%></font></p> <%end%>
+<input type="hidden" id="<%=cbid%>" value="<%=pcdata(self:cfgvalue(section) or self.default or "")%>" name="<%=cbid%>"/>
+<%+cbi/valuefooter%>

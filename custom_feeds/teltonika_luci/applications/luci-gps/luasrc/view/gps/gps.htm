@@ -1,0 +1,241 @@
+<%+header%>
+
+<fieldset class="cbi-section">
+	<style>
+		.olControlLayerSwitcher {
+			position: absolute;
+			top: 25px;
+			right: 0;
+			width: 20em;
+			font-family: sans-serif;
+			font-weight: bold;
+			margin-top: 3px;
+			margin-left: 3px;
+			margin-bottom: 3px;
+			font-size: smaller;
+			color: white;
+			background-color: transparent;
+		}
+
+		.olControlLayerSwitcher .layersDiv {
+			padding-top: 5px;
+			padding-left: 10px;
+			padding-bottom: 5px;
+			padding-right: 10px;
+			background-color: darkblue;
+		}
+
+		.olControlLayerSwitcher .layersDiv .baseLbl,
+		.olControlLayerSwitcher .layersDiv .dataLbl {
+			margin-top: 3px;
+			margin-left: 3px;
+			margin-bottom: 3px;
+		}
+
+		.olControlLayerSwitcher .layersDiv .baseLayersDiv,
+		.olControlLayerSwitcher .layersDiv .dataLayersDiv {
+			padding-left: 10px;
+		}
+
+		.olControlLayerSwitcher .maximizeDiv,
+		.olControlLayerSwitcher .minimizeDiv {
+			width: 18px;
+			height: 18px;
+			top: 5px;
+			right: 0;
+			cursor: pointer;
+		}
+
+		.olButton {
+			color: white;
+		}
+	</style>
+
+	<legend><%:MAP%></legend>
+	<div style="display:inline-block; width:600px">
+		<div id="Map" style="height:350px; width:600px;float:left;border: solid #e5e5e5;"></div>
+	</div>
+	<div id="cord" style="width:350px;float:right; display:inline-block">
+		<table width="100%" cellspacing="10">
+			<tr>
+				<th>
+					<%:Fix time%>
+				</th>
+				<th>
+					<%:Latitude%>
+				</th>
+				<th>
+					<%:Longitude%>
+				</th>
+			</tr>
+			<tr>
+				<td id="fix-time">N/A</td>
+				<td id="latitude">N/A</td>
+				<td id="longitude">N/A</td>
+			</tr>
+		</table>
+		<div style="text-align:center">
+			<input type="button" value="Update location" style="display:inline-block" onclick="update_location();"/>
+		</div>
+	</div>
+</fieldset>
+
+<%+footer%>
+
+<script src="/luci-static/default/OpenLayers.js"></script>
+<script type="text/javascript">
+	var zoom = 11;
+	var fromProjection = new OpenLayers.Projection("EPSG:4326");	// Transform from WGS 1984
+	var toProjection = new OpenLayers.Projection("EPSG:900913");	// to Spherical Mercator Projection
+	var mapnik = new OpenLayers.Layer.OSM("OpenStreetMap",
+		[
+			"http://a.tile.openstreetmap.org/${z}/${x}/${y}.png",
+			"http://b.tile.openstreetmap.org/${z}/${x}/${y}.png",
+			"http://c.tile.openstreetmap.org/${z}/${x}/${y}.png"
+		],
+		{
+			displayInLayerSwitcher: false,
+		});
+	var markers = new OpenLayers.Layer.Markers("Location");
+
+	map = new OpenLayers.Map("Map");
+
+	map.addLayer(mapnik);
+	map.addLayer(markers);
+	map.addControl(new OpenLayers.Control.PanZoomBar());
+	map.addControl(new OpenLayers.Control.LayerSwitcher());
+
+	window.addEventListener('load', load_location);
+
+	function geofence_draw_circles(geofence) {
+		if (Number(geofence.enabled) === 1) {
+			vector = new OpenLayers.Layer.Vector(geofence[".name"], {
+				styleMap: new OpenLayers.StyleMap({
+					'default': new OpenLayers.Style(null, {
+						rules: [
+							new OpenLayers.Rule({
+								symbolizer: {
+									fillColor: getRandomColor(),
+									stroke: true,
+									fill: true,
+									label: geofence[".name"]
+
+								},
+								filter: new OpenLayers.Filter.Comparison({
+									type: "==",
+									property: "topic",
+									value: "geofence_zone"
+								})
+							}),
+						]
+					}),
+				})
+			});
+			map.addLayer(vector);
+
+			var radlat = (Number(geofence.latitude) * Math.PI / 180);
+			var radius = ((1- Math.pow(0.081, 2)) * (1 / Math.cos(radlat))) / (1 - (Math.pow(0.081, 2) * Math.pow(Math.sin(radlat), 2)));
+			var circle_point = new OpenLayers.Geometry.Point(geofence.longitude, geofence.latitude).transform(fromProjection, toProjection);
+
+			var mycircle = OpenLayers.Geometry.Polygon.createRegularPolygon(circle_point, Number(radius * geofence.radius), 40, 0);
+			var featurecircle = new OpenLayers.Feature.Vector(mycircle);
+			featurecircle.attributes = {
+				topic: "geofence_zone"
+			};
+
+			vector.addFeatures(featurecircle);
+		}
+	}
+
+	function update_location() {
+		XHR.get('<%=luci.dispatcher.build_url("admin", "services", "gps", "getcord")%>', null,
+			function(x, info) {
+				var fix = info.fix_status && info.fix_status === "1";
+				var position;
+				var e;
+
+				if (e = document.getElementById("fix-time"))
+					e.innerHTML = fix && info.fix_time ? info.fix_time : "N/A";
+
+				if (e = document.getElementById("latitude"))
+					e.innerHTML = fix && info.latitude ? info.latitude : "N/A";
+
+				if (e = document.getElementById('longitude'))
+					e.innerHTML = fix && info.longitude ? info.longitude : "N/A";
+
+				markers.clearMarkers();
+				if (fix && info.latitude && info.longitude) {
+					position = new OpenLayers
+						.LonLat(
+							info.longitude,
+							info.latitude
+						).transform(
+						fromProjection,
+						toProjection
+					);
+
+					markers.addMarker(
+						new OpenLayers.Marker(
+							position
+						)
+					);
+
+					zoom = map.getZoom();
+
+					map.setCenter(position, zoom);
+				}
+			}
+		);
+	}
+
+	function load_location() {
+		XHR.get('<%=luci.dispatcher.build_url("admin", "services", "gps", "getcord")%>', null,
+			function(x, info) {
+				var fix = info.fix_status && info.fix_status === "1";
+				var position;
+				var e;
+
+				if (e = document.getElementById("fix-time"))
+					e.innerHTML = fix && info.fix_time ? info.fix_time : "N/A";
+
+				if (e = document.getElementById("latitude"))
+					e.innerHTML = fix && info.latitude ? info.latitude : "N/A";
+
+				if (e = document.getElementById('longitude'))
+					e.innerHTML = fix && info.longitude ? info.longitude : "N/A";
+
+				for(var i = 0; i < info.geofence.length; i++) {
+					geofence_draw_circles(info.geofence[i]);
+				}
+
+				markers.clearMarkers();
+				if (fix && info.latitude && info.longitude) {
+					position = new OpenLayers
+						.LonLat(
+							info.longitude,
+							info.latitude
+						).transform(
+						fromProjection,
+						toProjection
+					);
+
+					markers.addMarker(
+						new OpenLayers.Marker(
+							position
+						)
+					);
+
+					map.setCenter(position, zoom);
+				}
+			}
+		);
+	}
+	function getRandomColor() {
+		var letters = '0123456789ABCDEF';
+		var color = '#';
+		for (var i = 0; i < 6; i++) {
+			color += letters[Math.floor(Math.random() * 16)];
+		}
+		return color;
+	}
+</script>

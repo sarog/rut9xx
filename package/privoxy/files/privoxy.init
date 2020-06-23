@@ -1,0 +1,154 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+. /lib/functions/network.sh
+
+START=99
+STOP=99
+
+SERVICE_USE_PID=1
+CONFIG_FILE=/tmp/privoxy/config
+PID_FILE=/var/run/privoxy.pid
+DAEMON=/usr/sbin/privoxy
+FIREWALL=/tmp/privoxy/firewall
+
+boot(){
+	mkdir -p /tmp/privoxy
+	start
+}
+
+add_hotspot(){
+	local enabled
+	config_get enabled "$1" "enabled" "0"
+	if [ "$enabled" == "1" ] ; then
+		CHILLI_NUMBER=`echo $1 | awk -F 'hotspot' '{print $2}'`
+		CHILLI_NUMBER=$(($CHILLI_NUMBER - 1))
+		config_get net "$1" "net"
+		net_IP=`echo $net | awk -F '/' '{print $1}'`
+		echo "iptables -A delegate_input -i tun$CHILLI_NUMBER -p tcp -m tcp --dport 8118 -j ACCEPT" >> $FIREWALL
+		echo "iptables -t nat -A PREROUTING -i tun$CHILLI_NUMBER -p tcp ! -d $net_IP --dport 80 -j REDIRECT --to-port 8118" >> $FIREWALL
+		echo "permit-access $net" >> $CONFIG_FILE
+	fi
+}
+
+
+add_hosts() {
+	local section="$1"
+	config_get _value "$section" "enabled"
+	
+	if [ "$_value" == "1" ]; then
+		config_get _value "$section" "domen"
+		if [ -n "$_value" ]; then
+			echo "$_value" >> /etc/privoxy/user.action
+		fi
+	fi
+}
+
+start() {
+
+	local enabled
+	config_load "privoxy"
+	config_get enabled "privoxy" "enabled" "0"
+
+	if [ $enabled -ne 1 ]; then
+		exit 1
+	fi
+
+	#Clean iptables
+	del_fw_rules
+	#Clean config files
+	echo > $FIREWALL 2>/dev/null
+	echo > $CONFIG_FILE 2>/dev/null
+	sleep 2 #kad jau tikrai butu failas uploadintas
+	
+	
+	if [ -e /etc/privoxy/user.action ]; then
+	
+		config_get mode_val "privoxy" "mode"
+		
+		if [ "$mode_val" == "blacklist" ]; then
+			echo "{+block{Blacklist}}" > /etc/privoxy/user.action
+			config_foreach add_hosts rule
+		else
+			echo "{+block{Blacklist}}
+
+
+/ # Block *all* URLs
+{-block{Whitelist}}" > /etc/privoxy/user.action
+			config_foreach add_hosts rule
+		fi
+
+		if [ -e /lib/uci/upload/cbid.privoxy.privoxy.proxy_blocking_hosts ]; then
+				while read line; do
+					echo "$line" >> "/etc/privoxy/user.action"
+				done < /lib/uci/upload/cbid.privoxy.privoxy.proxy_blocking_hosts
+		fi
+	fi
+	
+	
+	mkdir -p /tmp/privoxy
+	network_get_ipaddrs lanaddr "lan"
+	network_get_subnet subnet "lan"
+
+	echo "iptables -t nat -A PREROUTING -i br-lan -p tcp ! -d $lanaddr --dport 80 -j REDIRECT --to-port 8118" > $FIREWALL
+	print >>$CONFIG_FILE
+
+	oc1=`echo "$lanaddr" | cut -d '.' -f 1`
+	oc2=`echo "$lanaddr" | cut -d '.' -f 2`
+	oc3=`echo "$lanaddr" | cut -d '.' -f 3`
+	mask=`echo "$subnet" | cut -d '/' -f 2`
+
+	#echo "listen-address $lanaddr:8118" >> $CONFIG_FILE
+	echo "listen-address :8118" >> $CONFIG_FILE
+	echo "permit-access $oc1.$oc2.$oc3.0/$mask" >> $CONFIG_FILE
+	config_load "coovachilli"
+	config_foreach add_hotspot "general"
+	sh $FIREWALL
+	service_start $DAEMON --pidfile $PID_FILE $CONFIG_FILE
+}
+
+stop() {
+	del_fw_rules
+	echo > $FIREWALL 2>/dev/null
+	echo > $CONFIG_FILE 2>/dev/null
+	service_stop $DAEMON
+}
+
+reload() {
+	stop
+	start
+}
+
+print() {
+	echo "confdir /etc/privoxy"
+	echo "logdir /var/log"
+	echo "filterfile default.filter"
+	echo "logfile privoxy"
+	echo "#actionsfile match-all.action # Actions that are applied to all sites and maybe overruled later on."
+	echo "#actionsfile default.action   # Main actions file"
+	echo "#trustfile trust"
+	echo "actionsfile user.action      # User customizations"
+	echo "toggle  1"
+	echo "enable-remote-toggle  1"
+	echo "enable-remote-http-toggle  0"
+	echo "enable-edit-actions 1"
+	echo "enforce-blocks 0"
+	echo "buffer-limit 4096"
+	echo "forwarded-connect-retries  0"
+	echo "accept-intercepted-requests 1"
+	echo "allow-cgi-request-crunching 0"
+	echo "split-large-forms 0"
+	echo "keep-alive-timeout 300"
+	echo "socket-timeout 300"
+	echo "#debug   1    # show each GET/POST/CONNECT request"
+	echo "#debug   4096 # Startup banner and warnings"
+	echo "#debug   8192 # Errors - *we highly recommended enabling this*"
+	echo "#admin-address privoxy-admin@example.com"
+	echo "#proxy-info-url http://www.example.com/proxy-service.html"
+	#echo "listen-address  192.168.1.1:8118"
+	#echo "permit-access  192.168.1.0/24"
+}
+
+del_fw_rules(){
+	a=`sed 's/-A/-D/g' $FIREWALL 2>/dev/null`
+	$a
+}

@@ -1,0 +1,19 @@
+iptables -I FORWARD -o wlan0 -m coova --name chilli --source -j ACCEPT
+iptables -I FORWARD -i wlan0 -m coova --name chilli --dest -j ACCEPT
+
+iptables -I FORWARD --src -j ACCEPT
+iptables -I FORWARD --dst -j ACCEPT
+
+iptables -I FORWARD -o wlan0 --src 192.168.2.254/24 -m coova --name chilli -j ACCEPT
+iptables -I FORWARD -i wlan0 --dst 192.168.2.254/24 -m coova --name chilli --dest -j ACCEPT
+
+iptables -I FORWARD --src 192.168.2.254/16 -j ACCEPT;iptables -I FORWARD --dst 192.168.2.254/16 -j ACCEPT
+iptables -I FORWARD --dst 192.168.2.254/24 -j ACCEPT
+
+
+
+
+iptables -I FORWARD -o eth0 --src 10.0.0.0/8 -m coova --name chilli -j ACCEPT
+iptables -I FORWARD -i eth0 --dst 10.0.0.0/8 -m coova --name chilli --dest -j ACCEPT
+iptables -I FORWARD --src 10.0.0.0/8 -j ACCEPT
+iptables -I FORWARD --dst 10.0.0.0/8 -j ACCEPT

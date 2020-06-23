@@ -1,0 +1,114 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: index.htm 8408 2012-04-02 22:50:26Z jow $
+
+-%>
+
+<%
+	local uci = require "uci".cursor()
+	require "luci.fs"
+	require "luci.tools.status"
+	luci.util   = require "luci.util"
+
+	if luci.http.formvalue("status") == "1" then
+		local status, virtual_ip, priority
+		rv = {}
+		if tonumber(luci.sys.exec("ps -w | grep '/usr/sbin/vrrpd' | grep -v grep | grep -c 'br-lan'")) > 0 then
+			uci:foreach("vrrpd", "vrrpd", function (instance)
+			local router = "Unavailable"
+			local master_ip = "IP address not set for interface"
+				rv[instance[".name"]] = {}
+				if instance.enabled == "1" then 
+					status = "Enabled" 
+				else 
+					status = "Disabled" 
+				end
+				priority = instance.priority
+				virtual_ip = instance.virtual_ip
+				local instance_info = fs.readfile("/tmp/vrrpd_"..instance[".name"].."_log")
+				if instance_info and type(instance_info) ~= "table" then
+					router = luci.util.split(instance_info, "\n")
+					router = router[1]
+					if router == "Master" then
+						local bus = require "ubus"
+						local ubus = bus.connect()
+						local addrs = ubus:call("network.interface.%s" % instance.interface, "status", { })
+						if addrs["ipv4-address"] and #addrs["ipv4-address"] > 0 and addrs["ipv4-address"][1].address ~= "" then
+							master_ip=addrs["ipv4-address"] and #addrs["ipv4-address"] > 0 and addrs["ipv4-address"][1].address 
+						end
+					else
+						master_ip = router[2]
+					end
+				end
+				rv[instance[".name"]] = { status=status, virtual_ip=virtual_ip, priority=priority, router=router, master_ip=master_ip }
+			end)
+		end
+
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(rv)
+		return
+	end
+-%>
+
+<%+header%>
+<script type="text/javascript">
+
+</script>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">
+function refreshPage(){
+	document.getElementById("refresh").disabled = true;
+	XHR.get('<%=luci.dispatcher.build_url("admin", "status", "netinfo", "vrrp")%>', { status: 1 },
+		function(x, info)
+		{
+			var s = "";
+			for(var i in info){
+				s += String.format('<tr class="cbi-section-table-row"><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>',i,info[i].status,info[i].virtual_ip,info[i].priority,info[i].router,info[i].master_ip);
+			}
+			var element = document.getElementById("vrrp_collecting");
+				element.parentNode.removeChild(element);
+			let ws = document.getElementById('vrrp_status');
+			ws.innerHTML += s;
+			document.getElementById('refresh').disabled = false;
+		}
+	);
+}
+AddWindowOnLoadEvent(refreshPage);
+</script>
+
+<h2><a id="content" name="content"><%=translate("VRRP Information")%></a></h2>
+<fieldset class="cbi-section">
+	<div id="vrrpBarsShow" class="overlayParent">
+		<div class="overlayLegend"><%=translate("VRRP LAN Status")%></div>
+	</div>
+	<div>
+		<table class="cbi-section-table" id="vrrp_status_table" width="100%" cellspacing="10">
+			<tbody id="vrrp_status">
+				<tr class="cbi-section-table-titles">
+					<th class="cbi-section-table-cell" style="color: rgb(64, 64, 64);">Name</th>
+					<th class="cbi-section-table-cell" style="color: rgb(64, 64, 64);">Status</th>
+					<th class="cbi-section-table-cell" style="color: rgb(64, 64, 64);">Virtual IP</th>
+					<th class="cbi-section-table-cell" style="color: rgb(64, 64, 64);">Priority</th>
+					<th class="cbi-section-table-cell" style="color: rgb(64, 64, 64);">Router</th>
+					<th class="cbi-section-table-cell" style="color: rgb(64, 64, 64);">Master IP</th>
+				</tr>	
+				<tr id = "vrrp_collecting" class="cbi-section-table-row">
+					<td colspan="7"><em><%=translate("Collecting data...")%></em></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</fieldset>
+<fieldset class="cbi-section">
+    <button id="refresh" class="cbi-button-refresh"  style="float: right;" disabled onClick="refreshPage()"><%=translate("Refresh")%></button>
+</fieldset>
+<%+footer%>

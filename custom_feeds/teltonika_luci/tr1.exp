@@ -1,0 +1,26 @@
+#!/usr/bin/expect
+spawn ssh root@192.168.99.161
+expect "root@192.168.99.161's password:"
+send "root\n"
+
+
+
+#cbi models
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/controller/admin/network.lua -r networkRework/networkCtrl.lua 192.168.99.156\n"
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/model/cbi/admin_network/network.lua -r networkRework/network.lua 192.168.99.156\n"
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/model/cbi/admin_network/ifaces.lua -r networkRework/ifaces.lua 192.168.99.156\n"
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/model/cbi/admin_network/ifacesWan.lua -r networkRework/ifacesWan.lua 192.168.99.156\n"
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/model/cbi/admin_network/ifacesLan.lua -r networkRework/ifacesLan.lua 192.168.99.156\n"
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/view/cbi/network_ifacelist.htm -r networkRework/network_ifacelist.htm 192.168.99.156\n"
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/model/network.lua -r networkRework/networkHuge.lua 192.168.99.156\n"
+
+expect "root@Teltonika:"
+send "exit\n"
+interact

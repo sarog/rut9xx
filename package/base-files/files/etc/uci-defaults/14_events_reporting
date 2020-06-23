@@ -1,0 +1,23 @@
+#!/bin/sh
+. /lib/functions.sh
+CONFIG="events_reporting"
+
+change_event_mark() {
+	local section_id="$1"
+	local eventMark
+
+	config_get eventMark "$section_id" eventMark ''
+
+	case $eventMark in
+		'Signal strength droped below'*) eventMark=`printf "$eventMark" | sed 's/droped/dropped/'`;;
+		*'succesful') eventMark=`printf "$eventMark" | sed 's/succesful/successful/'`;;
+		'recieved'*) eventMark=`printf "$eventMark" | sed 's/recieved/received/'`;;
+		*) return ;;
+	esac
+
+	uci -q set $CONFIG.$section_id.eventMark="$eventMark"
+}
+
+config_load "$CONFIG"
+config_foreach change_event_mark 'rule'
+uci commit "$CONFIG"

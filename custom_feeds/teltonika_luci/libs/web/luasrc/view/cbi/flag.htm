@@ -1,0 +1,41 @@
+<%+cbi/valueheader%>
+<%- local save = luci.util.trim(luci.sys.exec("uci get -q ntpclient.@ntpclient[0].save"))
+	local check = false
+
+	if save == "1" then
+		check = true
+	end
+
+%>
+<script type="text/javascript">
+
+	function onload(){
+		f = document.getElementById("cbid.ntpclient.<%=section%>.interval");
+		f.setAttribute("onkeyup", "validate()");
+		validate();
+	}
+
+	function validate(){
+		var min = 3600;
+		f = document.getElementById("save_flash");
+		if (f.checked) {
+			min = 3600;
+		}else{
+			min = 10;
+		}
+		e = document.getElementById("cbid.ntpclient.<%=section%>.interval");
+		val = e.value;
+		if (val >= min && val.match(/^-?[0-9]+$/) != null){
+			e.className = e.className.replace(/ cbi-input-invalid/g, '');
+		}else{
+			e.className = e.className.replace(/ cbi-input-invalid/g, '');
+			e.className += " cbi-input-invalid";
+		}
+	}
+</script>
+
+<input id="save_flash" type="checkbox" value="1"  onchange=" validate()" <%= attr("name", cbid ) .. ifattr(check, 'checked', 'checked') %>>
+<script type="text/javascript">
+	onload();
+</script>
+<%+cbi/valuefooter%>

@@ -1,0 +1,58 @@
+<%
+	require "luci.fs"
+	require "luci.tools.status"
+	luci.util = require "luci.util"
+	local uci = require "luci.model.uci".cursor()
+	local ds = require "luci.dispatcher"
+		local system, model = luci.sys.sysinfo()
+
+-%>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script>
+	document.getElementById("cbid.ioman.iolabels.anforoffset").title = "<%=translate('Offset variable ( can be negative )')%>"
+	document.getElementById("cbid.ioman.iolabels.anforadd").title = "<%=translate('Add/deduct variable ( can be negative )')%>"
+	document.getElementById("cbid.ioman.iolabels.anfordivide").title = "<%=translate('Divide variable ( cannot be zero )')%>"
+	document.getElementById("cbid.ioman.iolabels.anformultiply").title = "<%=translate('Multiply variable ( cannot be zero, can be negative )')%>"
+	document.getElementById("cbid.ioman.iolabels.anformeasunit").title = "<%=translate('User defined unit of measurement')%>"
+	document.getElementById("cbid.ioman.iolabels.anforoffset").maxLength = 6;
+	document.getElementById("cbid.ioman.iolabels.anforadd").maxLength = 6;
+	document.getElementById("cbid.ioman.iolabels.anfordivide").maxLength = 6;
+	document.getElementById("cbid.ioman.iolabels.anformultiply").maxLength = 6;
+	document.getElementById("cbid.ioman.iolabels.anformeasunit").maxLength = 10;
+
+</script>
+
+<style>
+#container{height:178px;width:584px;position:relative;}
+#formulaimage{position:absolute;left:0;top:0;size:100%;}
+#cbi-ioman-iolabels-analoginput{	height:42px;	width:215px;	min-height:42px !important;}
+#cbi-ioman-iolabels-analoginput > label{width:200px;text-align:left;}
+#cbi-ioman-iolabels-analoginput > div{margin-left:230px;}
+#cbi-ioman-iolabels-anformeasunit{	height:42px;	width:215px;	min-height:42px !important;}
+#cbi-ioman-iolabels-anformeasunit > label{width:200px;text-align:left;}
+#cbi-ioman-iolabels-anformeasunit > div{margin-left:230px;}
+#cbid\.ioman\.iolabels\.anforoffset{z-index:100;position:relative;left:537px;top:184px;width:60px;height:40px;text-align:center;font-size:20px;}
+#cbid\.ioman\.iolabels\.anforadd{z-index:100;position:relative;left:369px;top:146px;width:61px;height:40px;text-align:center;font-size:20px;}
+#cbid\.ioman\.iolabels\.anfordivide{z-index:100;position:relative;left:332px;top:236px;width:60px;height:40px;text-align:center;font-size:20px;}
+#cbid\.ioman\.iolabels\.anformultiply{z-index:100;position:relative;left:126px;top:184px;width:60px;height:41px;text-align:center;font-size:20px;}
+#hintbox1{z-index:101;position:relative;left:0px;top:50px;width:80px;height:60px;border:1px black;font-size:9px;}
+#hintbox2{z-index:101;position:relative;left:273px;top:-50px;width:60px;height:80px;border:1px black;font-size:9px;color:#104589;}
+
+.cbi-value{height:1px;width:1px;min-height:1px !important;}
+#cbi-ioman-iolabels-analoginput{display:inline !important;}
+</style>
+
+<br>
+
+<p>Add custom values into fields to calculate formula:</p>
+<div id="container">
+	<img id='formulaimage' src="<%=resource%>/icons/formula.png" />
+	<div id='hintbox1' title="<%=translate('This calculated value will be displayed in status window')%>">
+	</div>
+	<div id='hintbox2' title="<%=translate('Actual analog value received from input')%>">
+	</div>
+</div>
+
+<br />
+

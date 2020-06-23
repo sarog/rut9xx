@@ -1,0 +1,107 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008-2009 Steven Barth <steven@midlink.org>
+Copyright 2008-2009 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: routes.htm 7168 2011-06-17 12:34:28Z jow $
+
+-%>
+
+<%-
+	require "bit"
+	require "luci.sys"
+	require "luci.tools.webadmin"
+	require "nixio.fs"
+
+	local style = true
+-%>
+
+<%+header%>
+
+<div class="cbi-map" id="cbi-network">
+	<h2><a id="content" name="content"><%=translate("Routes")%></a></h2>
+	
+
+	<fieldset class="cbi-section" id="cbi-table-table">
+		<legend><%=translate("ARP")%></legend>
+		<div class="cbi-section-node">
+			<table class="cbi-section-table">
+				<tr class="cbi-section-table-titles">
+					<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Recently cached IP addresses of every immediate device that was communicating with the router')%>')" onmouseout="HideHint(this)"><%=translate("IP address")%></th>
+					<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Recently cached MAC (Media Access Control) addresses of every immediate device that was communicating with the router')%>')" onmouseout="HideHint(this)"><%=translate("MAC address")%></th>
+					<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Interface name the IP address is assigned to')%>')" onmouseout="HideHint(this)"><%=translate("Interface")%></th>
+				</tr>
+
+				<% luci.sys.net.arptable(function(e) %>
+				<tr class="cbi-section-table-row cbi-rowstyle-<%=(style and 1 or 2)%>">
+					<td class="cbi-value-field"><%=e["IP address"]%></td>
+					<td class="cbi-value-field"><%=e["HW address"]:upper()%></td>
+					<td class="cbi-value-field"><%=e["Device"]%></td>
+				</tr>
+				<% style = not style; end) %>
+			</table>
+		</div>
+	</fieldset>
+	<br />
+
+	<fieldset class="cbi-section" id="cbi-table-table">
+		<legend><%=translate("Active IP Routes")%></legend>
+
+		<div class="cbi-section-node">
+			<table class="cbi-section-table">
+				<tr class="cbi-section-table-titles">
+					<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Interface to be used to transmit TCP/IP packets through')%>')" onmouseout="HideHint(this)"><%=translate("Network")%></th>
+					<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Indicates where a TCP/IP packet with a specific IP address should be directed to')%>')" onmouseout="HideHint(this)"><%=translate("Target")%></th>
+					<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Indicates which gateway a TCP/IP packet should by directed through')%>')" onmouseout="HideHint(this)"><%=translate("IP gateway")%></th>
+					<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('A number of network nodes through which a packet must go to reach it\\\'s destination')%>')" onmouseout="HideHint(this)"><%=translate("Metric")%></th>
+				</tr>
+				<% luci.sys.net.routes(function(rt) %>
+				<tr class="cbi-section-table-row cbi-rowstyle-<%=(style and 1 or 2)%>">
+					<td class="cbi-value-field"><%=luci.tools.webadmin.iface_get_network(rt.device) or rt.device%></td>
+					<td class="cbi-value-field"><%=rt.dest:string()%></td>
+					<td class="cbi-value-field"><%=rt.gateway:string()%></td>
+					<td class="cbi-value-field"><%=rt.metric%></td>
+				</tr>
+				<% style = not style; end) %>
+			</table>
+		</div>
+	</fieldset>
+	<br />
+
+	<% if nixio.fs.access("/proc/net/ipv6_route") then
+		style = true
+		fe80 = luci.ip.IPv6("fe80::/10")
+	%>
+	<fieldset class="cbi-section" id="cbi-table-table">
+		<legend><%=translate("Active IPv6-Routes")%></legend>
+
+		<div class="cbi-section-node">
+			<table class="cbi-section-table">
+				<tr class="cbi-section-table-titles">
+					<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Interface to be used to transmit TCP/IP packets through')%>')" onmouseout="HideHint(this)"><%=translate("Network")%></th>
+					<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Indicates where a TCP/IP packet, with a specific IP address, should be directed')%>')" onmouseout="HideHint(this)"><%=translate("Target")%></th>
+					<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('Indicates through which gateway a TCP/IP packet should by directed')%>')" onmouseout="HideHint(this)"><%=translate("IPv6 gateway")%></th>
+					<th class="cbi-section-table-cell" onmouseover="ShowHint(this, '<%=translate('A number of network nodes through which a packet must go to reach it\\\'s destination')%>')" onmouseout="HideHint(this)"><%=translate("Metric")%></th>
+				</tr>
+				<% luci.sys.net.routes6(function(rt) if fe80:contains(rt.dest) then return end %>
+				<tr class="cbi-section-table-row cbi-rowstyle-<%=(style and 1 or 2)%>">
+					<td class="cbi-value-field"><%=luci.tools.webadmin.iface_get_network(rt.device) or '(' .. rt.device .. ')'%></td>
+					<td class="cbi-value-field"><%=rt.dest:string()%></td>
+					<td class="cbi-value-field"><%=rt.source:string()%></td>
+					<td class="cbi-value-field"><%=rt.metric_raw:upper()%></td>
+				</tr>
+				<% style = not style; end) %>
+			</table>
+		</div>
+	</fieldset>
+	<br />
+	<% end %>
+</div>
+
+<%+footer%>

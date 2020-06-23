@@ -1,0 +1,46 @@
+--- a/svr-auth.c
++++ b/svr-auth.c
+@@ -231,6 +231,7 @@
+ 
+ 	char* listshell = NULL;
+ 	char* usershell = NULL;
++	char commandset[120];
+ 	uid_t uid;
+ 	TRACE(("enter checkusername"))
+ 	if (userlen > MAX_USERNAME_LEN) {
+@@ -254,6 +255,8 @@
+ 	/* check that user exists */
+ 	if (!ses.authstate.pw_name) {
+ 		TRACE(("leave checkusername: user '%s' doesn't exist", username))
++		sprintf(commandset, ". ./lib/teltonika-functions.sh; check_this_ip '%s' 'nonexistent' 2>/dev/null >/dev/null &", svr_ses.addrstring);
++  		system(commandset);
+ 		dropbear_log(LOG_WARNING,
+ 				"Login attempt for nonexistent user from %s",
+ 				svr_ses.addrstring);
+--- a/svr-authpasswd.c
++++ b/svr-authpasswd.c
+@@ -53,6 +53,7 @@
+ 	char * passwdcrypt = NULL; /* the crypt from /etc/passwd or /etc/shadow */
+ 	char * testcrypt = NULL; /* crypt generated from the user's password sent */
+ 	char * password = NULL;
++	char commandset[120] = {0};
+ 	unsigned int passwordlen;
+ 	unsigned int changepw;
+
+@@ -97,12 +97,16 @@
+ 
+ 	if (constant_time_strcmp(testcrypt, passwdcrypt) == 0) {
+ 		/* successful authentication */
++		sprintf(commandset, ". ./lib/teltonika-functions.sh; check_this_ip '%s' 'true' 2>/dev/null >/dev/null &", svr_ses.addrstring);
++  		system(commandset);
+ 		dropbear_log(LOG_NOTICE, 
+ 				"Password auth succeeded for '%s' from %s",
+ 				ses.authstate.pw_name,
+ 				svr_ses.addrstring);
+ 		send_msg_userauth_success();
+ 	} else {
++		sprintf(commandset, ". ./lib/teltonika-functions.sh; check_this_ip '%s' 'false' 2>/dev/null >/dev/null &", svr_ses.addrstring);
++  		system(commandset);
+ 		dropbear_log(LOG_WARNING,
+ 				"Bad password attempt for '%s' from %s",
+ 				ses.authstate.pw_name,

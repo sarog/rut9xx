@@ -1,0 +1,8 @@
+#!/bin/sh
+
+define_default_set_state() {
+	. /etc/diag.sh
+	set_state preinit
+}
+
+boot_hook_add preinit_main define_default_set_state

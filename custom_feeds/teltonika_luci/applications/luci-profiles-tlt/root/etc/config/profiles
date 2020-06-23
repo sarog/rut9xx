@@ -1,0 +1,4 @@
+
+config profiles 'profiles'
+	option path '/etc/profiles'
+

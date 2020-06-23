@@ -1,0 +1,119 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+Copyright 2012 David Menting <david@nut-bolt.nl>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+-%>
+<%
+	local disp = require "luci.dispatcher"
+
+	local request  = disp.context.path
+
+	local category = request[1]
+
+	local tree = disp.node()
+
+	local categories = disp.node_childs(tree)
+%>
+</div>
+   <footer class="tlt"><a1><%=translate(brand(20))%></a1><a target="_blank" href="<%=translate(brand(3))%>"><%=translate(brand(2))%></a>
+
+    <% if #categories > 1 then %>
+     <ul class="breadcrumb pull-right" id="modemenu">
+	    <% for i, r in ipairs(categories) do %>
+		    <li<% if request[1] == r then %> class="active"<%end%>><a href="<%=controller%>/<%=r%>/"><%=striptags(translate(tree.nodes[r].title))%></a> <span class="divider">|</span></li>
+	    <% end %>
+     </ul>
+    <% end %>
+   </footer>
+   </div>
+  </div>
+	<script type="text/javascript">
+		var button = document.getElementById("cbid.network.ppp.ifname");
+		if (button){ 
+		//initiate this function when the user clicks the ID
+		button.onclick = function() {
+			if (button.value == "bridge"){
+				alert("<%=translate('Warning! Router in bridge mode can be reached only by using static network settings.')%>");
+			}
+		};
+		}
+		function get_id(name){
+			var search
+			var element
+			if (typeof cbi_d != "undefined"){
+				for (var i=0; i<cbi_d.length; i++) {
+					if (cbi_d[i].id.search(name) > -1){
+						element = cbi_d[i].node.lastChild.firstElementChild;
+						id = element.getAttribute("id")
+						return id
+					}
+				}
+			}
+		}
+		
+		function display_option(inline){
+			var contin
+			for (var i=0; i<e.options.length; i++) {
+				contin = false;
+				for (var val=0; val<inline.length; val++) {
+					if (e.options[i].value == inline[val]){
+						e.options[i].style.display="";
+						contin = true;
+					}
+					else if (contin == false)
+					{
+						e.options[i].style.display="none";
+					}
+				}
+			}			
+		}
+		if (typeof(cbi_d)){
+			var htmode = get_id("htmode");
+			var e = document.getElementById(htmode);
+			var channel = document.getElementById("cbi.combobox.cbid.wireless.radio0.channel");
+			if (channel){
+				depends();
+			}
+		}
+		
+		
+		function depends (){
+			var sel = document.getElementById("cbi-wireless-radio0-htmode-HT20");
+			
+			if (channel.selectedIndex == "0"){
+				if (e.options[e.selectedIndex].value == "HT40-"){
+					e.options[e.selectedIndex].removeAttribute("selected")
+					sel.setAttribute("selected","selected")
+				}
+				var display = ["HT40+","HT20"];
+				display_option(display)
+										
+			}else if (channel.selectedIndex == "10"){
+				if (e.options[e.selectedIndex].value == "HT40+"){
+					e.options[e.selectedIndex].removeAttribute("selected")
+					sel.setAttribute("selected","selected")
+				}
+				var display = ["HT40-","HT20"];
+				display_option(display)
+			}else{
+				var display = ["HT40-","HT40+","HT20"];
+				display_option(display)	
+			}
+		}
+		if (channel){
+			channel.onclick = function() {
+				depends();
+			};
+		}
+</script>
+ </body>
+</html>
+

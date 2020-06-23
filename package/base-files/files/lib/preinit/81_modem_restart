@@ -1,0 +1,31 @@
+#!/bin/sh
+
+define_modem_restart() {
+	#Init modem pins
+	/sbin/gpio.sh "export" "MON"
+	/sbin/gpio.sh "dirout" "MON"
+	/sbin/gpio.sh "export" "MRST"
+	/sbin/gpio.sh "dirout" "MRST"
+
+
+	#Reset
+	/sbin/gpio.sh "clear" "MON"
+	#Power off
+	/sbin/gpio.sh "set" "MRST"
+
+	#SIM
+	# It shouldn't be done like this, because we should control sim_sel
+	#  through ubus interface. However, this is preinit and simd won't
+	#  be running. Perhaps simd could set default sim?
+	if [ `uci -q get simcard.simcard.default` = "sim2" ]; then
+		echo 0 > /sys/class/leds/sim_sel/brightness
+	else
+		echo 1 > /sys/class/leds/sim_sel/brightness
+	fi
+
+	#Clear reset
+	/sbin/gpio.sh "set" "MON"
+	#Power on
+	/sbin/gpio.sh "clear" "MRST"
+}
+boot_hook_add preinit_main define_modem_restart

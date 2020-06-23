@@ -1,0 +1,10 @@
+#!/bin/sh
+rms_status_on_rp=`uci get -q rms_connect_mqtt.rms_connect_mqtt.enable_on_rp`
+
+/sbin/crt_rms r
+if [ -n "$rms_status_on_rp" ]; then
+	uci set rms_connect_mqtt.rms_connect_mqtt.enable="$rms_status_on_rp"
+	uci delete rms_connect_mqtt.rms_connect_mqtt.enable_on_rp
+	uci commit rms_connect_mqtt
+fi
+exit 0

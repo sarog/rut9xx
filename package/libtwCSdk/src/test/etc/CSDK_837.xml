@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Entities build="b29" majorVersion="7" minorVersion="3" modelPersistenceProviderPackage="NeoPersistenceProviderPackage"
+          revision="2" schemaVersion="931">
+    <StyleDefinitions/>
+    <Networks/>
+    <PersistenceProviderPackages/>
+    <Mashups/>
+    <ScriptFunctionLibraries/>
+    <Projects/>
+    <Users/>
+    <DirectoryServices/>
+    <Widgets/>
+    <MediaEntities/>
+    <Groups/>
+    <PersistenceProviders/>
+    <ModelTags/>
+    <LocalizationTables/>
+    <Dashboards/>
+    <DataAnalysisDefinitions/>
+    <DataShapes/>
+    <Things>
+        <Thing description="" documentationContent="" effectiveThingPackage="ValueStreamThing" enabled="true"
+               homeMashup="" identifier="" lastModifiedDate="2017-04-10T17:56:46.820Z" name="Fold_Prop_ThingStream"
+               projectName="" published="false" tags="Applications:Test1" thingTemplate="ValueStream" valueStream="">
+            <Owner name="Administrator" type="User"/>
+            <avatar/>
+            <DesignTimePermissions>
+                <Create/>
+                <Read/>
+                <Update/>
+                <Delete/>
+                <Metadata/>
+            </DesignTimePermissions>
+            <RunTimePermissions/>
+            <VisibilityPermissions>
+                <Visibility/>
+            </VisibilityPermissions>
+            <ConfigurationTables>
+                <ConfigurationTable description="Data Thing Configuration" isMultiRow="false" name="DataThingSettings"
+                                    ordinal="0">
+                    <DataShape>
+                        <FieldDefinitions>
+                            <FieldDefinition baseType="STRING" description="Persistence Provider Name"
+                                             name="persistenceProvider" ordinal="0"/>
+                        </FieldDefinitions>
+                    </DataShape>
+                    <Rows>
+                        <Row>
+                            <persistenceProvider><![CDATA[ThingworxPersistenceProvider]]></persistenceProvider>
+                        </Row>
+                    </Rows>
+                </ConfigurationTable>
+                <ConfigurationTable description="Configurable options to tune Value Stream performance"
+                                    isMultiRow="false" name="PersistenceProviderCustomSettings" ordinal="2">
+                    <DataShape>
+                        <FieldDefinitions>
+                            <FieldDefinition aspect.friendlyName="Persistence Provider Custom Settings Table"
+                                             baseType="INFOTABLE" description="Persistence Provider Custom Config Table"
+                                             name="customConfigTable" ordinal="0"/>
+                        </FieldDefinitions>
+                    </DataShape>
+                    <Rows>
+                        <Row>
+                            <customConfigTable>
+                                <infoTable>
+                                    <DataShape>
+                                        <FieldDefinitions/>
+                                    </DataShape>
+                                    <Rows/>
+                                </infoTable>
+                            </customConfigTable>
+                        </Row>
+                    </Rows>
+                </ConfigurationTable>
+            </ConfigurationTables>
+            <ThingShape>
+                <PropertyDefinitions/>
+                <ServiceDefinitions/>
+                <EventDefinitions/>
+                <ServiceMappings/>
+                <ServiceImplementations/>
+                <Subscriptions/>
+            </ThingShape>
+            <PropertyBindings/>
+            <RemotePropertyBindings/>
+            <RemoteServiceBindings/>
+            <RemoteEventBindings/>
+            <AlertConfigurations/>
+            <ImplementedShapes/>
+            <ThingProperties/>
+            <ConfigurationChanges>
+                <ConfigurationChange changeAction="CREATE"
+                                     changeReason="header : name : updated, thingTemplate : updated&#10;configuration : persistenceProvider : updated&#10;"
+                                     timestamp="2017-04-05T21:04:51.197Z" user="BillR"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="header : tags : updated&#10;"
+                                     timestamp="2017-04-05T21:06:49.463Z" user="BillR"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-06T15:18:29.309Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-06T21:26:55.461Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-06T21:47:50.477Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-06T21:49:22.602Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-06T22:11:20.024Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:13:37.489Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:19:46.833Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:24:25.474Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:25:46.724Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:32:44.521Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:34:05.896Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:36:11.787Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:37:18.115Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:40:36.943Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:49:53.318Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:51:10.428Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:52:01.240Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:02:23.491Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:08:45.663Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:26:30.038Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:28:06.038Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:33:11.398Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:38:13.460Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:44:30.992Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:47:18.023Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:47:54.664Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:48:30.929Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:54:26.180Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:55:25.023Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:56:46.820Z"
+                                     user="Administrator"/>
+            </ConfigurationChanges>
+        </Thing>
+        <Thing description="" documentationContent="" effectiveThingPackage="RemoteThing" enabled="true" homeMashup=""
+               identifier="" lastModifiedDate="2017-04-10T18:00:21.680Z" name="Fold_Prop_Thing" projectName=""
+               published="false" tags="Applications:Test1" thingTemplate="RemoteThing"
+               valueStream="Fold_Prop_ThingStream">
+            <Owner name="BillR" type="User"/>
+            <avatar/>
+            <DesignTimePermissions>
+                <Create/>
+                <Read/>
+                <Update/>
+                <Delete/>
+                <Metadata/>
+            </DesignTimePermissions>
+            <RunTimePermissions/>
+            <VisibilityPermissions>
+                <Visibility/>
+            </VisibilityPermissions>
+            <ConfigurationTables/>
+            <ThingShape>
+                <PropertyDefinitions>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeThreshold="0.0"
+                                        aspect.dataChangeType="VALUE" aspect.isLogged="true" aspect.isPersistent="false"
+                                        aspect.isReadOnly="false" baseType="INTEGER" category="" description=""
+                                        isLocalOnly="false" name="FoldInt" ordinal="2"/>
+                    <PropertyDefinition aspect.cacheTime="0.0" aspect.dataChangeThreshold="0.0"
+                                        aspect.dataChangeType="VALUE" aspect.isLogged="true" aspect.isPersistent="false"
+                                        aspect.isReadOnly="false" baseType="INTEGER" category="" description=""
+                                        isLocalOnly="false" name="SomeInt" ordinal="1"/>
+                </PropertyDefinitions>
+                <ServiceDefinitions/>
+                <EventDefinitions/>
+                <ServiceMappings/>
+                <ServiceImplementations/>
+                <Subscriptions/>
+            </ThingShape>
+            <PropertyBindings/>
+            <RemotePropertyBindings>
+                <RemotePropertyBinding foldType="NONE" name="FoldInt" pushThreshold="0.0" pushType="VALUE"
+                                       sourceName="FoldInt" timeout="0"/>
+                <RemotePropertyBinding foldType="NONE" name="SomeInt" pushThreshold="0.0" pushType="VALUE"
+                                       sourceName="SomeInt" timeout="0"/>
+            </RemotePropertyBindings>
+            <RemoteServiceBindings/>
+            <RemoteEventBindings/>
+            <AlertConfigurations>
+                <AlertDefinitions name="FoldInt"/>
+                <AlertDefinitions name="SomeInt"/>
+            </AlertConfigurations>
+            <ImplementedShapes/>
+            <ThingProperties>
+                <lastConnection>
+                    <Value>2017-04-10T17:56:47.195Z</Value>
+                    <Timestamp>2017-04-10T17:56:47.195Z</Timestamp>
+                    <Quality>GOOD</Quality>
+                </lastConnection>
+            </ThingProperties>
+            <ConfigurationChanges>
+                <ConfigurationChange changeAction="CREATE"
+                                     changeReason="header : name : updated&#10;documentation : updated&#10;"
+                                     timestamp="2017-04-05T21:02:30.494Z" user="BillR"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="properties : FoldInt : Added, Updated&#10;"
+                                     timestamp="2017-04-05T21:03:52.791Z" user="BillR"/>
+                <ConfigurationChange changeAction="MODIFY"
+                                     changeReason="header : valueStream : updated&#10;properties : SomeInt : Updated, FoldInt : Updated&#10;"
+                                     timestamp="2017-04-05T21:05:28.838Z" user="BillR"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="header : tags : updated&#10;"
+                                     timestamp="2017-04-05T21:06:36.056Z" user="BillR"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-05T21:09:42.619Z"
+                                     user="BillR"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-06T15:18:29.324Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-06T21:26:55.461Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-06T21:47:50.477Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-06T21:49:22.602Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-06T22:11:20.024Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:13:37.489Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:19:46.833Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:24:25.474Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:25:46.724Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:32:44.521Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:34:05.896Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:36:11.787Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:37:18.115Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:40:36.943Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:49:53.318Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:51:10.428Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T16:52:01.240Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:02:23.491Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:08:45.663Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:26:30.038Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:28:06.038Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:33:11.398Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:38:13.460Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:44:30.992Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:47:18.039Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:47:54.664Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:48:30.929Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:54:26.180Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:55:25.023Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="" timestamp="2017-04-10T17:56:46.820Z"
+                                     user="Administrator"/>
+                <ConfigurationChange changeAction="MODIFY" changeReason="properties : FoldInt : Updated&#10;"
+                                     timestamp="2017-04-10T18:00:21.680Z" user="BillR"/>
+            </ConfigurationChanges>
+        </Thing>
+    </Things>
+    <Logs/>
+    <Authenticators/>
+    <ThingPackages/>
+    <ApplicationKeys/>
+    <StateDefinitions/>
+    <ThingTemplates/>
+    <ExtensionPackages/>
+    <Organizations/>
+    <Menus/>
+    <Resources/>
+    <DataTags/>
+    <ThingShapes/>
+    <Subsystems/>
+</Entities>

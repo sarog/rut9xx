@@ -1,0 +1,9 @@
+
+config rms_mqtt 'rms_mqtt'
+	option rms_ip 'rms.teltonika.lt'
+	option rms_port '15010'
+	option ca_file '/etc/rms_mqtt/ca.crt'
+	option cert_file '/etc/rms_mqtt/client.crt'
+	option key_file '/etc/rms_mqtt/client.key'
+	option rms_keepalive '60'
+

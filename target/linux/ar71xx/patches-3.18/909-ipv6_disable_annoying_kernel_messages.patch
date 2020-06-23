@@ -1,0 +1,24 @@
+--- a/net/ipv6/addrconf.c
++++ b/net/ipv6/addrconf.c
+@@ -2851,8 +2851,8 @@
+ 		if (event == NETDEV_UP) {
+ 			if (!addrconf_qdisc_ok(dev)) {
+ 				/* device is not ready yet. */
+-				pr_info("ADDRCONF(NETDEV_UP): %s: link is not ready\n",
+-					dev->name);
++				/*pr_info("ADDRCONF(NETDEV_UP): %s: link is not ready\n",
++					dev->name);*/
+ 				break;
+ 			}
+ 
+@@ -2876,8 +2876,8 @@
+ 				idev->if_flags |= IF_READY;
+ 			}
+ 
+-			pr_info("ADDRCONF(NETDEV_CHANGE): %s: link becomes ready\n",
+-				dev->name);
++			/*pr_info("ADDRCONF(NETDEV_CHANGE): %s: link becomes ready\n",
++				dev->name);*/
+ 
+ 			run_pending = 1;
+ 		}

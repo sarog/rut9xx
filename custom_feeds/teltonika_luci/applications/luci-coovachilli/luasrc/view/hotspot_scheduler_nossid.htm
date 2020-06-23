@@ -1,0 +1,31 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: index.htm 8408 2012-04-02 22:50:26Z jow $
+
+-%>
+
+<%
+	require "luci.fs"
+	require "luci.tools.status"
+	luci.util = require "luci.util"
+	local translatef = luci.i18n.translatef
+	local nw = require "luci.model.network"
+-%>
+
+<%+header%>
+<script type="text/javascript">
+
+</script>
+
+<h2><a id="content" name="content"><%=translate("No Hotspot Instances Created")%></a></h2>
+
+<%+footer%>

@@ -1,0 +1,13 @@
+Index: linux-3.18.44/drivers/mtd/devices/m25p80.c
+===================================================================
+--- linux-3.18.44.orig/drivers/mtd/devices/m25p80.c
++++ linux-3.18.44/drivers/mtd/devices/m25p80.c
+@@ -282,7 +282,7 @@ static const struct spi_device_id m25p_i
+ 	{"en25q64"},	{"en25qh128"},	{"en25qh256"},
+ 	{"f25l32pa"},
+ 	{"mr25h256"},	{"mr25h10"},
+-	{"gd25q32"},	{"gd25q64"},
++	{"gd25q32"},	{"gd25q64"},	{"gd25q128"},
+ 	{"160s33b"},	{"320s33b"},	{"640s33b"},
+ 	{"mx25l2005a"},	{"mx25l4005a"},	{"mx25l8005"},	{"mx25l1606e"},
+ 	{"mx25l3205d"},	{"mx25l3255e"},	{"mx25l6405d"},	{"mx25l12805d"},

@@ -1,0 +1,37 @@
+--- a/arch/mips/ath79/gpio.c
++++ b/arch/mips/ath79/gpio.c
+@@ -192,6 +192,24 @@
+ void ath79_gpio_function_disable(u32 mask)
+ {
+ 	ath79_gpio_function_setup(0, mask);
++}
++
++void ath79_gpio_output_enable(unsigned gpio, int value)
++{
++	void __iomem *base = ath79_gpio_base;
++	unsigned long flags;
++
++	spin_lock_irqsave(&ath79_gpio_lock, flags);
++
++	if (value)
++		__raw_writel(1 << gpio, base + AR71XX_GPIO_REG_SET);
++	else
++		__raw_writel(1 << gpio, base + AR71XX_GPIO_REG_CLEAR);
++
++	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_OE) & ~(1 << gpio),
++		     base + AR71XX_GPIO_REG_OE);
++
++	spin_unlock_irqrestore(&ath79_gpio_lock, flags);
+ }
+ 
+ void __init ath79_gpio_output_select(unsigned gpio, u8 val)
+--- a/arch/mips/ath79/common.h
++++ b/arch/mips/ath79/common.h
+@@ -27,6 +27,7 @@
+ void ath79_gpio_function_enable(u32 mask);
+ void ath79_gpio_function_disable(u32 mask);
+ void ath79_gpio_function_setup(u32 set, u32 clear);
++void ath79_gpio_output_enable(unsigned gpio, int value);
+ void ath79_gpio_output_select(unsigned gpio, u8 val);
+ void ath79_gpio_init(void);
+ 

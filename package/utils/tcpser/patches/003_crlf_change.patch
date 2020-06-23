@@ -1,0 +1,68 @@
+--- /src/init.c
++++ /src/init.c
+@@ -58,9 +58,10 @@
+   mdm_init_config(&cfg[0]);
+   cfg[0].dte_speed=38400;
+   cfg[0].dce_speed=38400;
+-
++  cfg[i].crlf_mode = 0;
++  
+   while(opt>-1 && i < max_modem) {
+-    opt=getopt(argc,argv,"p:s:S:d:v:hw:i:Il:L:t:n:a:A:c:C:N:B:T:D:");
++    opt=getopt(argc,argv,"p:s:S:d:v:hw:i:Il:L:t:n:a:A:c:C:N:B:T:D:x:");
+     switch(opt) {
+       case 't':
+         trace_flags=log_get_trace_flags();
+@@ -106,6 +107,9 @@
+       case 'i':
+         strncpy(cfg[i].config0,optarg,255);
+         break;
++      case 'x':
++        cfg[i].crlf_mode = 1;
++        break;
+       case 'I':
+         cfg[i].invert_dcd=TRUE;
+         break;
+--- /src/modem_core.c
++++ /src/modem_core.c
+@@ -181,7 +181,12 @@
+ 
+   LOG(LOG_DEBUG,"Sending %s response to modem",mdm_responses[msg]);
+   if(cfg->send_responses==TRUE) {
+-    mdm_write(cfg,cfg->crlf,2);
++	  
++	  
++	if(cfg->crlf_mode != 1){
++		mdm_write(cfg,cfg->crlf,2);
++	}
++
+     if(cfg->text_responses==TRUE) {
+       LOG(LOG_ALL,"Sending text response");
+       mdm_write(cfg,mdm_responses[msg],strlen(mdm_responses[msg]));
+@@ -190,7 +195,15 @@
+       sprintf(msgID,"%d",msg);
+       mdm_write(cfg,msgID,strlen(msgID));
+     }
+-    mdm_write(cfg,cfg->crlf,2);
++    
++    if(cfg->crlf_mode == 1){
++		char cr_string[2];
++		cr_string[0] = 13;
++		cr_string[1] = 0;
++		mdm_write(cfg,cr_string,1);
++	}else{
++		mdm_write(cfg,cfg->crlf,2);
++	}
+   }
+ }
+ 
+--- /src/modem_core.h
++++ /src/modem_core.h
+@@ -131,6 +131,7 @@
+   int break_len;
+   int disconnect_delay;
+   unsigned char crlf[3];
++  unsigned int crlf_mode;
+ } modem_config;
+ 
+ int mdm_init(void);

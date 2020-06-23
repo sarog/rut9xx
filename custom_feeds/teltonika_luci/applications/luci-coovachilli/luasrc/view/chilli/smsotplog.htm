@@ -1,0 +1,74 @@
+<%+header%>
+
+<%
+	require "teltonika_lua_functions"
+	local uci = require "luci.model.uci".cursor()
+	local log_path = "/tmp/smsotp.log"
+	local enabled = uci:get("tcplogger", "general", "enabled") or "0"
+%>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript" src="<%=resource%>/Dable.js"></script>
+<h2><a id="content" name="content"><%=translate("SMS OTP Log")%></a></h2>
+<fieldset>
+	<legend><%=translate("SMS OTP Log")%></legend>
+	<div id="loading" style="display: inline;">
+		<span style="position: relative; bottom: 12px;"> Loading... </span>
+		<img src="/luci-static/resources/icons/loading.gif" alt="Loading">
+	</div>
+<div id="TableDable" style="display: none;">
+	<table id="tablepaging" class="yui" align="center" width="100%" cellspacing="10" >
+		<thead style="border-bottom: 1px solid #DDD;">
+			<tr>
+				<th class="cbi-section-table-cell" width="10%" ><%=translate("Tel. Number")%></th>
+				<th class="cbi-section-table-cell" width="10%" ><%=translate("Password")%></th>
+			</tr>
+		</thead>
+		<tbody>
+			<%
+			local res = io.open(log_path, "r")
+			if res then
+				repeat
+					line = res:read("*l")
+					if line then
+						local tmp = {}%>
+						<tr class="cbi-section-table-row">
+						<%for i in string.gmatch(line, "([^;]+)") do
+							table.insert(tmp, i)
+						end%>
+							<td class="cbi-section-table-cell" width="10%"><%=escapeHTML(tmp[1])%></td>
+							<td class="cbi-section-table-cell" width="10%"><%=escapeHTML(tmp[2])%></td>
+						</tr>
+					<% end
+				until not line
+				res:close()
+			else%>
+				<tr class="cbi-section-table-row">
+					<td style="padding:20px 0 20px 10px;" colspan="8">
+					<%if enabled ~= "1" then%>
+					<em><%=translate("There are no records yet. Logging is not enabled.")%></em>
+					<%else%>
+					<em><%=translate("There are no records yet.")%></em>
+					<%end%>
+					</td>
+					<td></td>
+				</tr>
+			<%end %>
+
+		</tbody>
+	</table>
+</div>
+
+<script type="text/javascript">
+
+var dable = new Dable("TableDable");
+AddWindowOnLoadEvent(hide);
+
+function hide(){
+	var e = document.getElementById("loading");
+	e.setAttribute('style', 'display: none;');
+}
+
+</script>
+
+</fieldset>
+<%+footer%>

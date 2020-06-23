@@ -1,0 +1,90 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=99
+
+. /lib/functions.sh
+
+script_run()
+{
+	local enabled action timeout timeout_time mode days interval_time gpio create
+	local minutes="*"
+	local hours="*"
+	local param=""
+	config_get enabled $1 enabled "0"
+	config_get gpio $1 gpio
+	config_get action $1 action
+	config_get mode $1 mode
+	config_get timeout $1 timeout "0"
+	config_get timeout_time $1 timeout_time
+	config_get days $1 day
+
+	if [ "$enabled" == "1" ]; then
+
+		if [ "$mode" == "fixed" ]; then
+			config_get hours $1 fixed_hour "*"
+			config_get minutes $1 fixed_minute "*"
+			if [ "$hours" != "*" ] || [ "$minutes" != "*" ]; then
+				create="1"
+			fi
+		elif [ "$mode" == "interval" ]; then
+			config_get interval_time $1 interval_time
+			if [ -n "$interval_time" ]; then
+				hours=$((interval_time / 60))
+				minutes=$((interval_time % 60))
+				if [ "$hours" = "0" ]; then
+					minutes="*/$minutes"
+					hours="*"
+				else
+					minutes="0"
+					hours="*/$hours"
+				fi
+				create="1"
+			fi
+		fi
+
+		param="$param $gpio"
+
+		if [ "$action" == "on" ]; then
+			param="$param set"
+		elif [ "$action" == "off" ]; then
+			param="$param clear"
+		fi
+
+		if [ "$timeout" == "1" ]; then
+			param="$param $timeout_time"
+		fi
+
+		if [ -z "$days" ]; then
+			days="*"
+		else
+			days=${days// /,}
+		fi
+
+		if [ -n "$create" ]; then
+			echo "$minutes $hours * * $days sh /sbin/output_control.sh $param" >> /etc/crontabs/root
+		fi
+	fi
+}
+
+start()
+{
+	sed -i "/output_control/d" /etc/crontabs/root
+	config_load "output_control"
+	config_foreach script_run 'rule'
+	/etc/init.d/cron restart
+}
+
+stop()
+{
+	sed -i "/output_control/d" /etc/crontabs/root
+}
+
+restart(){
+	stop
+	start
+}
+
+reload(){
+	restart
+}

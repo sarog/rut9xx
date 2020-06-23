@@ -1,0 +1,24 @@
+Index: libsera-1.2.2/src/srdevicepush.cc
+===================================================================
+--- libsera-1.2.2.orig/src/srdevicepush.cc
++++ libsera-1.2.2/src/srdevicepush.cc
+@@ -20,6 +20,7 @@
+ 
+ #include <unistd.h>
+ #include <cstring>
++#include <cstdlib>
+ #include "smartrest.h"
+ #include "srdevicepush.h"
+ 
+Index: libsera-1.2.2/src/srnetsocket.cc
+===================================================================
+--- libsera-1.2.2.orig/src/srnetsocket.cc
++++ libsera-1.2.2/src/srnetsocket.cc
+@@ -21,6 +21,7 @@
+ #include <cstring>
+ #include <srnetsocket.h>
+ #include <srlogger.h>
++#include <cerrno>
+ 
+ using namespace std;
+ 

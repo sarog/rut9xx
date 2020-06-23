@@ -1,0 +1,32 @@
+#!/bin/sh
+
+if [ ! -f /etc/config/ntpserver ]; then
+	touch /etc/config/ntpserver
+	uci -q batch <<-EOF >/dev/null
+	set ntpserver.general="ntpserver"
+	set ntpserver.general.enabled=0
+	commit ntpserver
+	add ucitrack ntpserver
+	set ucitrack.@ntpserver[0].init=ntpserver
+	commit ucitrack
+	EOF
+fi
+
+ntpserver=`uci get -q ucitrack.@ntpserver[0].init`
+if [ -z "$ntpserver" ]; then
+    ntpserver_section=`uci get -q ucitrack.@ntpserver[0]`
+    if [ -z "$ntpserver_section" ]; then
+        uci add ucitrack ntpserver
+    fi
+    uci set ucitrack.@ntpserver[0].init='ntpserver'
+    uci commit ucitrack
+fi
+
+ntpserver_affects=`uci get -q ucitrack.@ntpclient[0].affects`
+if [ -z "$ntpserver_affects" ]; then
+    uci add_list ucitrack.@ntpclient[0].affects='ntpserver'
+    uci commit ucitrack
+fi
+
+rm -f /tmp/luci-indexcache
+exit 0

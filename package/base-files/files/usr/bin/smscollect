@@ -1,0 +1,196 @@
+#!/usr/bin/env lua
+local sqlite = require "lsqlite3"
+require "teltonika_lua_functions"
+--
+-- Variables
+--
+local daemon = "sms_collect" -- name of this script
+-- Database variables
+local dbTables = { current = "current", days = "days" } -- table names used in database
+local db -- database identifier
+
+local dataPath = "/usr/lib/" -- prefix for database files
+local savePath = dataPath .. daemon .."/" -- place to store database files
+local smscollect_enabled = "uci -q get smscollect.config.enabled"
+local dbPath = "/tmp/" -- place for running database
+local dbName = "sms_counter.db" -- database file name
+local dbFullPath = dbPath .. dbName -- full path to databas
+local dbSavePath = savePath .. dbName -- full path to save compressed database files
+local smscollect_enabled = "uci -q get smscollect.config.enabled"
+
+function insertDB(data)
+	local query = string.format("INSERT INTO  %s VALUES (:time, :sim, :sms)", dbTables.current)
+	local stmt = db:prepare(query)
+
+	if stmt then
+		stmt:bind_names{ time = data.time, sim = data.sim, sms = data.sms }
+		stmt:step()
+		stmt:finalize()
+	else
+		print(daemon.. " error: could not insert into database.")
+	end
+end
+--
+-- Database functions
+--
+function create_DB()
+	db = sqlite.open(dbFullPath)
+	local query = "CREATE TABLE IF NOT EXISTS %s (time TIMESTAMP, sim INT, sms INT)"
+	db:exec(string.format(query, dbTables.current))
+	db:exec(string.format(query, dbTables.days))
+end
+
+function getTotalDB(data)
+	local time = os.time()
+	local year, month, day = tonumber(os.date("%Y", time)), tonumber(os.date("%m", time)), tonumber(os.date("%d", time))
+	day = tonumber(day)-1
+	local timeStart = os.time{ year = year, month = month, day = day, hour = 00, min = 00, sec = 00 }
+	local timeEnd= os.time{ year = year, month = month, day = day, hour = 23, min = 59, sec = 59 }
+
+	local query = string.format("SELECT SUM(sms) AS totalSMS FROM %s WHERE time>='%d' AND time<='%d' AND sim='%d'", data.table, timeStart, timeEnd, data.sim)
+	local result = selectDB(query, db)
+
+	if result then
+		return { totalSMS= result[1].totalSMS or 0}
+	end
+end
+
+function deleteFromDB(data)
+	local time = os.time()
+	local year, month, day = tonumber(os.date("%Y", time)), tonumber(os.date("%m", time)), tonumber(os.date("%d", time))
+	local timeEnd= os.time{ year = year, month = month, day = day-1, hour = 23, min = 59, sec = 59 }
+
+	local query = string.format("DELETE FROM %s WHERE time<=:timeend", data.table)
+	local stmt = db:prepare(query)
+
+	if stmt then
+		stmt:bind_names{ timeend = timeEnd }
+		stmt:step()
+		stmt:finalize()
+	else
+		print(daemon.. " error: could not delete from database.")
+	end
+end
+
+function saveDB(from, to)
+	if fileExists(dbPath, dbName) then
+		local date = os.date("%F")
+		--print(string.format("[save DB] from: %s, to: %s_%s", from, to, date))
+		os.execute(string.format("gzip -c %s > %s.gz", from, from))
+		os.execute(string.format("mv %s_new.gz %s_old.gz", to, to))
+		os.execute(string.format("mv %s.gz %s_new.gz", from, to))
+	else
+		print("No database")
+	end
+end
+
+function crontab()
+	local year, month, day = tonumber(os.date("%Y", time)), tonumber(os.date("%m", time)), tonumber(os.date("%d", time))
+	day = tonumber(day)-1
+	local result = getTotalDB({ table = dbTables.current, sim = 1 })
+	if tonumber(result.totalSMS) >0 then
+		local data = { table = dbTables.days, time = os.time{ year=year, month=month, day=day }, sim = 1, sms = result.totalSMS }
+		insertDB(data)
+		local data = { table = dbTables.current}
+		deleteFromDB(data)
+	end
+	result = getTotalDB({ table = dbTables.current, sim = 2 })
+	if tonumber(result.totalSMS) >0 then
+		local data = { table = dbTables.days, time = os.time{ year=year, month=month, day=day }, sim = 2, sms = result.totalSMS }
+		insertDB(data)
+		local data = { table = dbTables.current}
+		deleteFromDB(data)
+	end
+	-- Shrink database size
+	selectDB("VACUUM", db)
+	-- Backup the database
+	saveDB(dbFullPath, dbSavePath)
+end
+
+function add(sms_num)
+	local sim = get_sim()
+	local time = os.time()
+	local year, month, day = tonumber(os.date("%Y", time)), tonumber(os.date("%m", time)), tonumber(os.date("%d", time))
+	local data = { table = dbTables.current, time = os.time(), sim = sim, sms = sms_num}
+	insertDB(data)
+	closeDB(db)
+end
+
+function status()
+	local query = "select * from current"
+	local list = {}
+	local stmt = db:prepare(query)
+
+	if stmt then
+		for row in db:nrows(query) do
+			list[#list+1] = row
+		end
+	end
+
+	if #list > 0 then
+		for i=1,#list do
+			print(tostring(list[i].time) .. "|"..list[i].sim.."|"..list[i].sms.."\r")
+		end
+		return list
+	end
+end
+
+function start()
+	if fileExists(dataPath, daemon) then
+		--local dbFile = dbName .."_".. os.date("%F") ..".gz"
+		local dbFile = dbName .."_new.gz"
+		if fileExists(savePath, dbFile) and not fileExists(dbPath, dbName) then
+			restoreDB(savePath .. dbFile, dbFullPath)
+		end
+	else
+		-- create a folder for smscollect if it doesn't exist
+		os.execute(string.format("mkdir %s", dataPath .. daemon))
+	end
+	create_DB()
+	crontab()
+end
+
+local out =
+	[[unknown command line argument.
+
+	usage:
+	  smscollect start
+	  smscollect stop
+	  smscollect crontab
+	  smscollect status
+	  smscollect add
+	]]
+
+--
+-- Program execution
+--
+if #arg > 0 then
+	if tonumber(getParam(smscollect_enabled)) == 1 then
+		if arg[1] == "add" then
+			if #arg > 1 and tonumber(arg[2]) > 0 then
+				sms_num=arg[2]
+			else
+				sms_num=1
+			end
+			db = sqlite.open(dbFullPath)
+			add(sms_num)
+			os.execute("/usr/sbin/sim_switch check_sms")
+		elseif arg[1] == "status" then
+			db = sqlite.open(dbFullPath)
+			status()
+		elseif arg[1] == "start" then
+			start()
+		elseif arg[1] == "stop" then
+			db = sqlite.open(dbFullPath)
+			selectDB("VACUUM", db)
+			saveDB(dbFullPath, dbSavePath)
+		elseif arg[1] == "crontab" then
+			db = sqlite.open(dbFullPath)
+			crontab()
+		else
+			print(out)
+		end
+	end
+else
+	print(out)
+end

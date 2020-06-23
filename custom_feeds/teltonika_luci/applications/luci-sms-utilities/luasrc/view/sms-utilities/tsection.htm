@@ -1,0 +1,73 @@
+<fieldset class="cbi-section" id="cbi-<%=self.config%>-<%=self.sectiontype%>">
+	<% if self.title and #self.title > 0 then -%>
+		<legend><%=self.title%></legend>
+	<%- end %>
+	<% if self.description and #self.description > 0 then -%>
+		<div class="cbi-section-descr"><%=self.description%></div>
+	<%- end %>
+	<% local isempty = true for i, k in ipairs(self:cfgsections()) do -%>
+
+		<%- 
+		section = k
+		isempty = false 
+		show = false
+		
+		if self.show_rule and #self.show_rule == 2 then
+			if self.map.uci:get(self.config, section, self.show_rule[1]) == self.show_rule[2] then
+				show = true
+			end
+		end
+		
+		if show then
+		-%>
+		
+
+			<%+cbi/tabmenu%>
+
+			<fieldset class="cbi-section-node<% if self.tabs then %> cbi-section-node-tabbed<% end %>" id="cbi-<%=self.config%>-<%=section%>">
+				<% if self.anonymous == false and self.fsnp and self.fsnp == true then -%>
+					<legend><%=section%></legend>
+				<%- end %>
+				<%+cbi/ucisection%>
+			</fieldset>
+			<% if self.addremove then -%>
+				<div class="cbi-section-remove left">
+					<input type="submit" name="cbi.rts.<%=self.config%>.<%=k%>" onclick="this.form.cbi_state='del-section'; return true" value="<%:Delete%>" class="cbi-button" />
+				</div>
+			<%- end %>
+
+	<%- 	
+		end
+	end 
+	%>
+
+	<% if isempty then -%>
+	
+		<%- if self.novaluetext then -%>
+			<td  colspan="<%=count%>"><div style="padding:10px 0 10px 10px; margin-bottom:10px; background-color:#f2f2f2; font-style: italic; font-weight: inherit; line-height: inherit;"><%=self.novaluetext%></div></td>
+		<%- else -%>
+			<td  colspan="<%=count%>"><div style="padding:10px 0 20px 10px; font-style: italic; font-weight: inherit; line-height: inherit;"><%=translate("There are no values created yet")%></div></td>
+		<%- end -%>
+
+	<%- end %>
+
+	<% if self.addremove then -%>
+		<% if self.template_addremove then include(self.template_addremove) else -%>
+		<div class="cbi-section-create">
+			<% if self.anonymous then -%>
+				<input type="submit" class="cbi-button cbi-button-add" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" value="<%:Add%>" />
+			<%- else -%>
+				<% if self.invalid_cts then -%><div class="cbi-section-error"><% end %>
+				<input type="text" class="cbi-section-create-name" id="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>" />
+				<script type="text/javascript">cbi_validate_field('cbi.cts.<%=self.config%>.<%=self.sectiontype%>.<%=section%>', true, 'uciname');</script>
+				<input type="submit" class="cbi-button cbi-button-add" onclick="this.form.cbi_state='add-section'; return true" value="<%:Add%>" />
+				<% if self.invalid_cts then -%>
+					<br /><%:Invalid%></div>
+				<%- end %>
+			<%- end %>
+		</div>
+		<%- end %>
+	<%- end %>
+	<% if self.add_template then include(self.add_template) else -%><%- end %>
+	
+</fieldset>

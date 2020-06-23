@@ -1,0 +1,174 @@
+<%-	
+	local uci = require "luci.model.uci".cursor()
+	local ntm = require "luci.model.network"
+	local translate, translatef = luci.i18n.translate, luci.i18n.translatef
+	require "luci.tools.status"
+	require "teltonika_lua_functions"
+	local dev_name="radio0"
+	ntm.init()
+	local device = ntm:get_wifidev(dev_name)
+	local wifi = device:get_wifinets(uci)
+	local id = 0
+	local instances = {}
+	local iwinfo =ntm:iwinfo_parser()	
+	
+	uci:foreach("coovachilli", "general",
+		function(s)
+			local disabled
+			id=#instances+1
+			instances[id] = {}
+			instances[id]["id"] = s[".name"]
+			instances[id]["net"] = s.net
+			instances[id]["signal"] = "wifi_disabled.png"
+
+			uci:foreach("wireless", "wifi-iface",
+				function(w)
+					if w.hotspotid == s[".name"] then
+						instances[id]["ssid"] = escapeHTML(w.ssid)
+						disabled = w.disabled
+					end
+				end)
+
+			if s.mode == "extrad" then
+				instances[id]["mode"] = "External RADIUS"
+			elseif s.mode == "intrad" then
+				instances[id]["mode"] = "Internal RADIUS"
+			elseif s.mode == "norad" then
+				instances[id]["mode"] = "Without RADIUS"
+			elseif s.mode == "sms" then
+				instances[id]["mode"] = "SMS OTP"
+			elseif s.mode == "mac" then
+				instances[id]["mode"] = "MAC Auth"
+			elseif s.mode == "tos" then
+				instances[id]["mode"] = "TOS"
+			elseif s.mode == "add" then
+				instances[id]["mode"] = "Advertisement"
+			else
+				instances[id]["mode"] = "-"
+			end
+			
+			if s.enabled == "1" then 
+				instances[id]["signal"] = "wifi.png"
+				instances[id]["enabled"] = "Yes"
+			else
+				instances[id]["enabled"] = "No"
+			end
+		end)
+		
+	local iface = {}
+	iface["ap"] = 0
+	iface["disabled"] = 0
+	
+	for _, net in ipairs(wifi) do
+		mode = net["iwdata"]["mode"]
+		disabled = net["iwdata"]["disabled"]
+		if ( mode == "ap" ) then
+			iface["ap"] = iface["ap"]+1
+			if ( disabled == "1" ) then
+				iface["disabled"]=iface["disabled"]+1
+			end
+		end
+	end
+-%>
+
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+function wifi_shutdown(sid) {
+	spin_loader();
+	XHR.get('<%=luci.dispatcher.build_url("admin/services/hotspot/onoff")%>', { sid: sid },
+		function(x, info) {
+			var checkfinish = function() {
+				XHR.get('<%=luci.dispatcher.build_url("servicectl", "status")%>', null,
+					function(x) {
+						if( x.responseText == 'finish' )
+						{
+							var e = document.getElementById("spin-loader");
+							if( e )
+							{
+								e.innerHTML = '<%:Configuration applied.%>';
+								window.setTimeout(function() {
+									e.style.display = 'none';
+								}, 1000);
+							}
+						}
+						else
+						{
+							if( e && x.responseText ) e.innerHTML = x.responseText;
+								window.setTimeout(checkfinish, 1000);
+						}
+					}
+				);
+			}
+			window.setTimeout(checkfinish, 1000);
+			location.reload();
+ 		}
+		
+	);
+}
+
+function spin_loader(interval) {
+	document.getElementById("spin-loader").style.display='';
+// 	setTimeout(function(){  document.getElementById("spin-loader").style.display='none';}, interval);
+}
+
+//]]></script>
+<div id="spin-loader" class="applyChanges" style="display: none;">
+	<span><%=translate("Restarting Hotspot")%></span>
+	<img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" />
+</div>
+<h2><a id="content" name="content"><%=translate("Hotspot Configuration")%></a></h2>
+
+<div class="cbi-map">
+	<fieldset class="cbi-section">
+		<table class="cbi-section-table5" style="margin:10px; empty-cells:hide">
+			<tr style="background-color: #f5f5f5;" >
+				<% if iface["ap"] == iface["disabled"] then %>
+					<td id="ap_td" style="width:34px"><img src="<%=resource%>/icons/wifi_big_disabled.png" style="float:left; margin-right:10px" id="ap_iw-upstate" /></td>
+				<% else %>
+					<td id="ap_td" style="width:34px"><img src="<%=resource%>/icons/wifi_big.png" style="float:left; margin-right:10px" id="ap_iw-upstate" /></td>
+				<% end %>
+				<td colspan="4" style="text-align:left">
+					<big><strong><%=translate("Hotspot Instances")%></strong></big><br/>
+				</td>
+			</tr>
+			<%if #instances > 0 then %>
+				<% for i, net in ipairs(instances) do %>
+					<tr class="cbi-section-table-row cbi-rowstyle-<%=1 + ((i-1) % 2)%>" style="border-bottom: 1px solid #DDD;">
+						<td></td>
+						<td class="cbi-value-field" style="width:16px; vertical-align: middle; padding:3px; text-align: center;">
+							<img src="<%=resource%>/icons/<%=net["signal"]%>" title="<%=translate('Not associated')%>" /><br />
+						</td>
+						<td class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px">
+							<strong><%=translate("Enabled")%>:</strong> <%=net["enabled"]%><br />
+							<strong><%=translate("Auth Mode")%>:</strong> <%=net["mode"]%><br />
+						</td>
+						<td class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px">
+							<strong><%=translate("SSID")%>:</strong> <%=net["ssid"]%><br />
+							<strong><%=translate("IP")%>:</strong> <%=net["net"]%><br />
+						</td>
+						
+						<td class="cbi-value-field" style="padding-right: 20px; width:380px;text-align:right">
+							<input id="<%=net["id"]%>-iw-toggle" type="button" class="cbi-button cbi-button-reload" style="width:100px;" onclick="wifi_shutdown('<%=net["id"]%>')" title="<%=translate('Activate this network')%>" value="<%if net["enabled"] == "Yes" then %><%= translate("Disable")%><% else %><%= translate('Enable')%><% end%>" />
+							<input type="button" class="cbi-button cbi-button-edit" style="width:100px;" onclick="location.href='<%=luci.dispatcher.build_url("admin/services/hotspot/general/")%><%=net["id"]%> '" title="<%=translate('Edit this hotspot')%>" value="<%=translate('Edit')%>" />
+							<% if net["enabled"] and net["enabled"] == "Yes" then  %>
+								<input type="button" class="cbi-button cbi-button-edit" onclick="location.href='<%=luci.dispatcher.build_url("admin/services/hotspot/general/clients/")%><%=net["id"]%> '" title="<%=translate('Manage clients')%>" value="<%=translate('Manage')%>" />
+							<% end %>
+						</td>
+					</tr>
+				<%end %>
+			<%else %>
+				<tr class="cbi-section-table-row cbi-rowstyle-2">
+					<td></td>
+					<td colspan="3" class="cbi-value-field" style="vertical-align:middle; text-align:left; padding:3px">
+						<em><%=translate("No Wireless Access Point configured")%></em>
+					</td>
+				</tr>
+			<%end %>
+		</table>
+	</fieldset>
+</div>
+
+<%+footer%>

@@ -1,0 +1,22 @@
+--- a/main.c	2019-10-29 08:23:44.185670418 +0200
++++ b/main.c	2019-10-29 08:23:40.745631905 +0200
+@@ -199,8 +199,7 @@
+ 
+ 		/* Request index for this interface */
+ 		if (ioctl(fd, SIOCGIFINDEX, &reqbuf) < 0) {
+-			perror("ioctl(SIOCGIFINDEX)");
+-			exit(1);
++			continue;
+ 		}
+ 
+ 		/* Save the index for later use */	
+@@ -227,8 +226,7 @@
+ 
+ 		/* Request the broadcast/destination address for this interface */
+ 		if (ioctl(fd, ioctl_request, &reqbuf) < 0) {
+-			perror("ioctl(SIOCGIFBRDADDR)");
+-			exit(1);
++			continue;
+ 		}
+ 
+ 		/* Save the address for later use */

@@ -1,0 +1,35 @@
+<%+cbi/valueheader%>
+	<input type="hidden" value="1"<%=
+		attr("name", "cbi.cbe." .. self.config .. "." .. section .. "." .. self.option)
+	%> />
+	<% if self.alert then%>
+		<input class="cbi-input-checkbox" type="checkbox" onclick="cbi_d_update(this.id); alert_message(this.id, '<%=self.alert[1]%>', '<%=self.alert[2]%>');" 
+		<%=attr("id", cbid) .. attr("name", cbid) .. attr("value", self.enabled or 1) ..
+		ifattr((self:cfgvalue(section) or self.default) == self.enabled, "checked", "checked") .. 
+		ifattr(self.hardDisabled == true, "disabled", "disabled")
+	%> />
+	<% elseif self.confirm then%>
+		<input class="cbi-input-checkbox" type="checkbox" onclick="cbi_d_update(this.id); confirm_message(this.id, '<%=self.confirm[1]%>', '<%=self.confirm[2]%>');"
+		<%=attr("id", cbid) .. attr("name", cbid) .. attr("value", self.enabled or 1) ..
+		ifattr((self:cfgvalue(section) or self.default) 	== self.enabled, "checked", "checked") ..
+		ifattr(self.hardDisabled == true, "disabled", "disabled")
+	%> />
+	<% else %>
+		<input class="cbi-input-checkbox" onclick="cbi_d_update(this.id)" onchange="cbi_d_update(this.id)" type="checkbox"<%=
+			attr("id", cbid) .. attr("name", cbid) .. attr("value", self.enabled or 1) ..
+			ifattr((self:cfgvalue(section) or self.default) == self.enabled, "checked", "checked") .. 
+			ifattr(self.hardDisabled == true, "disabled", "disabled")
+		%> />
+		<% if self.info then%>
+			<span style="color: rgb(64, 64, 64);" onmouseover="ShowHint(this, '')" onmouseout="HideHint(this)">
+				<% if self.url then%>
+					<a class="overview-mini-info_icon" href="<%=self.url%>"></a>
+				<% end %>
+			</span>
+			<label class="enthcon" ><%=self.info %></label>
+		<% end %>
+	<%end%>
+	<% if self.user_info and (self:cfgvalue(section) or self.default) == self.enabled then%>
+		<span style="color: #808080; font-style: italic; font-size: 10px;"><%=self.user_info%></span>
+	<%end%>
+<%+cbi/valuefooter%>

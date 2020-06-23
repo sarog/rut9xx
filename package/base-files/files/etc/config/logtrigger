@@ -1,0 +1,36 @@
+config rule
+	option name "SSH_WrongPass"
+	option pattern "Bad password attempt for '%s' from %s:"
+	option pattern_ok "Password auth succeeded for '%s' from %s:"
+	option fields "user ip"
+	option script "/usr/bin/ipblock"
+	option maxfail "5"
+	option enabled "1"
+
+config rule
+	option name "SSH_nonexistent"
+	option pattern "Login attempt for nonexistent %s from %s:"
+	option pattern_ok "Password auth succeeded for '%s' from %s:"
+	option fields "user ip"
+	option script "/usr/bin/ipblock"
+	option maxfail "5"
+	option enabled "1"
+
+config rule
+	option name "WebUI_WrongPass"
+	option pattern 'Bad WebUI password attempt for '\''%s'\'' from %s %s %s'
+	option pattern_ok 'WebUI password auth succeeded for '\''%s'\'' from %s %s %s'
+	option fields 'user proto_type interface ip'
+	option script "/usr/bin/ipblock"
+	option maxfail "5"
+	option enabled "1"
+
+config rule
+	option name "WebUI_nonexistent"
+	option pattern 'WebUI Login attempt for nonexistent '\''%s'\'' from %s %s %s'
+	option pattern_ok 'WebUI password auth succeeded for '\''%s'\'' from %s %s %s'
+	option fields 'user prot_type interface ip'
+	option script "/usr/bin/ipblock"
+	option maxfail "5"
+	option enabled "1"
+

@@ -1,0 +1,17 @@
+config tunnel ipsec1
+	list   'p1_proposal' 'pre_3des_sha1'
+	list   'sainfo' 'lan1'
+
+
+config p1_proposal pre_3des_sha1
+	option 'authentication_method' 'pre_shared_key'
+
+
+config p2_proposal g2_aes_sha1
+
+
+config sainfo lan1
+	option p2_proposal g2_aes_sha1
+
+
+config keepalive keepalive

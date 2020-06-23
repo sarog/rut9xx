@@ -1,0 +1,85 @@
+# Generated from applications/luci-ddns/luasrc/model/cbi/ddns/ddns.lua
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2010-04-02 13:44+0100\n"
+"PO-Revision-Date: 2012-04-01 16:47+0200\n"
+"Last-Translator: juhosg <juhosg@openwrt.org>\n"
+"Language-Team: none\n"
+"Language: hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Pootle 2.0.4\n"
+
+msgid "Dynamic DNS"
+msgstr "Dinamikus DNS"
+
+msgid ""
+"Dynamic DNS allows that your router can be reached with a fixed hostname "
+"while having a dynamically changing IP address."
+msgstr ""
+"A dinamikus DNS lehetővé teszi, hogy a routere elérhető legyen egy fix host "
+"névvel akkor is ha dinamikusan változó IP címmel rendelkezik."
+
+msgid "Enable"
+msgstr "Engedélyezés"
+
+msgid "Service"
+msgstr "Szervíz"
+
+msgid "custom"
+msgstr "egyéni"
+
+msgid "Custom update-URL"
+msgstr "Egyéni update-URL"
+
+msgid "Hostname"
+msgstr "Hostnév"
+
+msgid "Username"
+msgstr "Felhasználónév"
+
+msgid "Password"
+msgstr "Jelszó"
+
+msgid "Source of IP address"
+msgstr "Az IP cím forrása"
+
+msgid "network"
+msgstr "hálózat"
+
+msgid "interface"
+msgstr "interfész"
+
+msgid "URL"
+msgstr "URL"
+
+msgid "Network"
+msgstr "Hálózat"
+
+msgid "Interface"
+msgstr "Interfész"
+
+msgid "Check for changed IP every"
+msgstr "IP-cím változás ellenőrzése minden"
+
+msgid "Check-time unit"
+msgstr "Időegység"
+
+# Minutes (not minimum)
+msgid "min"
+msgstr "perc"
+
+# Hours
+msgid "h"
+msgstr "óra"
+
+msgid "Force update every"
+msgstr "Frissítés erőltetése minden"
+
+msgid "Force-time unit"
+msgstr "Időegység"

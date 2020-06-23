@@ -1,0 +1,140 @@
+Index: rpcd/file.c
+===================================================================
+--- rpcd.orig/file.c	2016-02-05 16:36:20.223192009 +0200
++++ rpcd/file.c	2016-02-05 16:37:16.291192916 +0200
+@@ -38,7 +38,8 @@
+ 
+ /* limit of regular files and command output data */
+ #define RPC_FILE_MAX_SIZE		(4096 * 64)
+-#define RPC_FILE_MAX_RUNTIME	(3 * 1000)
++//#define RPC_FILE_MAX_RUNTIME	(3 * 1000)
++#define RPC_FILE_MAX_RUNTIME	(9 * 1000)
+ 
+ #define ustream_for_each_read_buffer(stream, ptr, len) \
+ 	for (ptr = ustream_get_read_buf(stream, &len);     \
+@@ -118,6 +119,15 @@
+ 	[RPC_E_ENV]  = { .name = "env",     .type = BLOBMSG_TYPE_TABLE  },
+ };
+ 
++enum {
++	RPC_E2_CMD,
++	__RPC_E2_MAX,
++};
++
++static const struct blobmsg_policy rpc_exec2_policy[__RPC_E2_MAX] = {
++	[RPC_E2_CMD]  = { .name = "command", .type = BLOBMSG_TYPE_STRING },
++};
++
+ static const char *d_types[] = {
+ 	[DT_BLK]     = "block",
+ 	[DT_CHR]     = "char",
+@@ -586,6 +596,78 @@
+ }
+ 
+ static int
++rpc_file_exec2_run(const char *cmd,
++                  struct ubus_context *ctx, struct ubus_request_data *req){
++	pid_t pid;
++	int opipe[2];
++	int epipe[2];
++	int fe, fo;
++
++	struct rpc_file_exec_context *c;
++
++	c = malloc(sizeof(*c));
++
++	if (!c)
++		return UBUS_STATUS_UNKNOWN_ERROR;
++
++	if (pipe(opipe) || pipe(epipe))
++		return rpc_errno_status();
++
++	switch ((pid = fork()))
++	{
++	case -1:
++		return rpc_errno_status();
++
++	case 0:
++		uloop_done();
++		if (strlen(cmd) > 1 && !strncmp(&cmd[strlen(cmd) - 1], "&",1)){
++			fo = open("/dev/null", O_CREAT|O_TRUNC|O_WRONLY, 0644);
++			fe = open("/dev/null", O_CREAT|O_TRUNC|O_WRONLY, 0644);
++			dup2(fo, 1);
++			dup2(fe, 2);
++			close(fo);
++			close(fe);
++		}else{
++			dup2(opipe[1], 1);
++			dup2(epipe[1], 2);
++		}
++
++		close(0);
++		close(opipe[0]);
++		close(opipe[1]);
++		close(epipe[0]);
++		close(epipe[1]);
++
++		if(system(cmd))
++			_exit(EXIT_FAILURE);
++		else
++			_exit(EXIT_SUCCESS);
++	default:
++		memset(c, 0, sizeof(*c));
++
++		ustream_declare(c->opipe, opipe[0], exec_opipe);
++		ustream_declare(c->epipe, epipe[0], exec_epipe);
++
++
++		c->process.pid = pid;
++		c->process.cb = rpc_file_exec_process_cb;
++		uloop_process_add(&c->process);
++
++		c->timeout.cb = rpc_file_exec_timeout_cb;
++		uloop_timeout_set(&c->timeout, RPC_FILE_MAX_RUNTIME);
++
++		close(opipe[1]);
++		close(epipe[1]);
++
++		c->context = ctx;
++		ubus_defer_request(ctx, req, &c->request);
++	}
++
++	return UBUS_STATUS_OK;
++}
++
++
++static int
+ rpc_file_exec_run(const char *cmd,
+                   const struct blob_attr *arg, const struct blob_attr *env,
+                   struct ubus_context *ctx, struct ubus_request_data *req)
+@@ -697,6 +779,22 @@
+ }
+ 
+ static int
++rpc_file_exec2(struct ubus_context *ctx, struct ubus_object *obj,
++              struct ubus_request_data *req, const char *method,
++              struct blob_attr *msg)
++{
++	struct blob_attr *tb[__RPC_E2_MAX];
++
++	blobmsg_parse(rpc_exec2_policy, __RPC_E2_MAX, tb,
++	              blob_data(msg), blob_len(msg));
++
++	if (!tb[RPC_E2_CMD])
++		return UBUS_STATUS_INVALID_ARGUMENT;
++
++	return rpc_file_exec2_run(blobmsg_data(tb[RPC_E2_CMD]), ctx, req);
++}
++
++static int
+ rpc_file_exec(struct ubus_context *ctx, struct ubus_object *obj,
+               struct ubus_request_data *req, const char *method,
+               struct blob_attr *msg)
+@@ -724,6 +822,7 @@
+ 		UBUS_METHOD("stat",    rpc_file_stat,  rpc_file_r_policy),
+ 		UBUS_METHOD("md5",     rpc_file_md5,   rpc_file_r_policy),
+ 		UBUS_METHOD("exec",    rpc_file_exec,  rpc_exec_policy),
++		UBUS_METHOD("exec2",    rpc_file_exec2,  rpc_exec2_policy),
+ 	};
+ 
+ 	static struct ubus_object_type file_type =

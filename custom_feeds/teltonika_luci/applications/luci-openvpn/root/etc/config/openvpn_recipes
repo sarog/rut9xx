@@ -1,0 +1,119 @@
+#
+# PTP server with pre-shared key
+#
+
+config openvpn_recipe server_ptp_preshared
+	option _description		"Point-to-Point server with Pre-Shared (Static) key"
+	option _role			"server"
+	option dev				"tun"
+	option port				"1194"
+	option proto			"udp"
+	option ifconfig			"10.0.0.1 10.0.0.2"
+	option secret			"static.key"
+	option keepalive		"10 60"
+	option route			"10.0.0.0 255.255.255.0 10.0.0.2"
+	option persist_key		"1"
+	option persist_tun		"1"
+
+#
+# PTP client with pre-shared key
+#
+
+config openvpn_recipe client_ptp_preshared
+	option _description		"Point-to-Point client with Pre-Shared (Static) key"
+	option _role			"client"
+	option dev				"tun"
+	option port				"1194"
+	option proto			"udp"
+	list   remote			"vpnserver.example.org 1194"
+	option ifconfig			"10.0.0.2 10.0.0.1"
+	option secret			"static.key"
+	option keepalive		"10 60"
+	option route			"10.0.0.0 255.255.255.0 10.0.0.1"
+	option persist_key		"1"
+	option persist_tun		"1"
+ 
+#
+# PTP server with TLS
+#
+
+config openvpn_recipe server_ptp_tls
+	option _description		"Point-to-Point server with TLS"
+	option _role			"server"
+	option tls_server		"1"
+	option dev				"tun"
+	option port				"1194"
+	option proto			"udp"
+	option ifconfig			"10.0.0.1 10.0.0.2"
+	option ca				"ca.crt"
+	option cert				"server.crt"
+	option key 				"server.key"
+	option dh 				"dh1024.pem"
+	option keepalive		"10 60"
+	option route			"10.0.0.0 255.255.255.0 10.0.0.2"
+	option persist_key		"1"
+	option persist_tun		"1"
+
+#
+# PTP client with TLS
+#
+
+config openvpn_recipe client_ptp_tls
+	option _description		"Point-to-Point client with TLS"
+	option _role			"client"
+	option tls_client		"1"
+	option dev				"tun"
+	option port				"1194"
+	option proto			"udp"
+	list   remote			"vpnserver.example.org 1194"
+	option ifconfig			"10.0.0.2 10.0.0.1"
+	option ca				"ca.crt"
+	option cert				"server.crt"
+	option key 				"server.key"
+	option keepalive		"10 60"
+	option route			"10.0.0.0 255.255.255.0 10.0.0.1"
+	option persist_key		"1"
+	option persist_tun		"1"
+
+#
+# STAR server with TLS
+#
+
+config openvpn_recipe server_star_tls
+	option _description		"Star topology (multi-client) server with TLS"
+	option _role			"server"
+	option mode 			"server"
+	option tls_server		"1"
+	option dev				"tun"
+	option port				"1194"
+	option proto			"udp"
+	option ifconfig			"10.0.0.1 10.0.0.2"
+	option ifconfig_pool	"10.0.0.10 10.0.0.100"
+	option ca				"ca.crt"
+	option cert				"server.crt"
+	option key 				"server.key"
+	option dh 				"dh1024.pem"
+	option keepalive		"10 60"
+	option persist_key		"1"
+	option persist_tun		"1"
+
+#
+# STAR client with TLS
+#
+
+config openvpn_recipe client_star_tls
+	option _description		"Star topology client with TLS"
+	option _role			"client"
+	option tls_client		"1"
+	option pull				"1"
+	option dev				"tun"
+	option port				"1194"
+	option proto			"udp"
+	list   remote			"vpnserver.example.org 1194"
+	option ca				"ca.crt"
+	option cert				"server.crt"
+	option key 				"server.key"
+	option keepalive		"10 60"
+	option persist_key		"1"
+	option persist_tun		"1"
+

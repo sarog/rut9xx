@@ -1,0 +1,80 @@
+<script type="text/javascript">//<![CDATA[
+	XHR.poll(5, '<%=luci.dispatcher.build_url("admin", "network", "balancing", "status")%>', null,
+		function(x, st)
+		{
+			var tx = document.getElementById('balancing_status_text');
+			if (tx)
+			{
+				if (st && st.interfaces )
+				{
+					var temp = '';
+					
+					for( var i = 0; i < st.interfaces.length; i++ )
+					{
+						var stat = '<%:Unknown%>';
+						var cssc = '';
+
+						switch (st.interfaces[i].status)
+						{
+							case 'online':
+								stat = 'Online';
+								cssc = 'inuse';
+								break;
+
+							case 'offline':
+								stat = 'Offline';
+								cssc = 'wanko';
+								break;
+
+							case 'disabled':
+								stat = 'Disabled';
+								cssc = 'wanko';
+								break;
+
+							case 'error':
+								stat = 'Error';
+								cssc = 'wanko';
+								break;
+						}
+
+						if ( stat == "Online" && st.policies[i]){
+							temp += String.format(
+								'<span class="%s"><strong>%s (%s):</strong> %s</span>',
+									cssc, st.interfaces[i].name, st.policies[i].usage, stat
+							);
+						}
+						else
+						{
+							temp += String.format(
+								'<span class="%s"><strong>%s:</strong> %s</span>',
+									cssc, st.interfaces[i].name, stat
+							);
+						}
+					}
+					tx.innerHTML = temp;
+				}
+				else
+				{
+					tx.innerHTML = '<span class="wanko"><%=translate("Load balancing is disabled")%></span>';
+				}
+			}
+		}
+	);
+//]]></script>
+
+<style type="text/css">
+  .wanok { background-color: #E8F28D; }
+  .wanko { background-color: #FCA57F; }
+  .wanrecov { background-color: #D0E1EF; }
+  .inuse { background-color: #ABEBAB; }
+  .wanfail { background-color: #DDDDDD; }
+  .wanko, .wanok, .wanrecov, .inuse, .wanfail {
+	padding: 0.4em;
+	margin: 0.4em;
+  }
+</style>
+
+<fieldset class="cbi-section">
+	<legend><%=translate("Load Balancing Status")%></legend>
+	<div id="balancing_status_text" style="text-align:center; padding-top:15px;"><em><%=translate("Collecting data...")%></em></div>
+</fieldset>

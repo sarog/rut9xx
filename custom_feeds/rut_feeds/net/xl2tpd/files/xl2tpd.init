@@ -1,0 +1,110 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2015 OpenWrt.org
+
+START=60
+USE_PROCD=1
+
+BIN=/usr/sbin/xl2tpd
+RUN_D="/var/run/xl2tpd"
+PID_F="/var/run/xl2tpd.pid"
+CHAP_SECRETS=/var/etc/xl2tp-chap-secrets
+SECRETS=/var/etc/xl2tp-secrets
+CONFIG=/var/etc/xl2tpd.conf
+OPTIONS=/var/etc/options.xl2tpd
+SERVER=
+
+service_triggers()
+{
+	procd_add_reload_trigger "xl2tpd"
+}
+
+setup_config() {
+	local section="$1"
+	local enabled localip start limit
+
+	config_get enabled "$section" enabled 0
+	[ "$enabled" -eq 0 ] && return 1
+
+	config_get localip "$section" localip
+	config_get remoteipstart "$section" start
+	config_get remoteipend "$section" limit
+
+	if [ -n "$remoteipstart" ] && [ -n "$remoteipend" ]; then
+		remoteip="${remoteipstart}-${remoteipend}"
+	else
+		config_get remoteip "$section" remoteip
+	fi
+
+	[ -n "$remoteip" -a -n "$localip" ] && {
+		SERVER=/var/etc/xl2tpd.conf
+		echo "local ip = $localip" >> $CONFIG
+		echo "ip range = $remoteip" >> $CONFIG
+		echo "ms-dns $localip" >> $OPTIONS
+		counter=$(( counter + 1 ))
+	}
+}
+
+setup_login() {
+	local section="$1"
+	local username password remoteip
+
+	[ "$counter" -gt 0 ] || return
+
+	config_get username "$section" username
+	config_get password "$section" password
+	config_get remoteip "$section" remoteip
+
+	[ -n "$username" ] || return 0
+	[ -n "$password" ] || return 0
+
+	echo "$username xl2tp-server $password ${remoteip:-*}" >> $CHAP_SECRETS
+}
+
+count_clients(){
+	local section="$1"
+
+	config_get proto "$section" proto
+	config_get enabled "$section" enabled 0
+
+	[ "$proto" = "l2tp" -a "$enabled" = "1" ] && counter=$(( counter + 1 ))
+}
+
+start_service() {
+
+	local counter=0
+	cp /etc/xl2tpd/xl2tpd.conf $CONFIG
+	cp /etc/ppp/options.xl2tpd $OPTIONS
+	mkdir -p /var/etc
+	config_load xl2tpd
+	config_foreach setup_config service
+	config_foreach setup_login login
+
+	config_load network
+	config_foreach count_clients interface
+
+	[ "$counter" -gt 0 ] && {
+		rm -rf "$RUN_D"
+		mkdir -p "$RUN_D"
+
+		procd_open_instance
+		procd_set_param command $BIN -D -l -p $PID_F ${SERVER:+-c $SERVER}
+		procd_set_param stdout 1 # forward stdout of the command to logd
+		procd_set_param stderr 1 # same for stderr
+		procd_set_param respawn
+		procd_close_instance
+	}
+}
+
+stop_service() {
+	local CHAP_SECRETS=/var/etc/xl2tp-chap-secrets
+	local CONFIG=/var/etc/xl2tpd.conf
+	rm -rf "$RUN_D"
+	rm -rf "$PID_F"
+	[ -e "$CONFIG" ] && rm -rf "$CONFIG"
+	[ -e "$CHAP_SECRETS" ] &&rm -rf "$CHAP_SECRETS"
+}
+
+reload_service() {
+	stop
+	start
+}

@@ -1,0 +1,50 @@
+<%+cbi/valueheader%>
+
+	<% if self.noautocomplete then %>
+		<input type="text" style="visibility: hidden; display: none">
+		<input type="password" style="visibility: hidden; display: none">
+	<% end %>
+	
+<div class="cbi-value" >
+	<label class="cbi-value-title">
+		<span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('Message to be sent. Allowed characters: (a-zA-Z0-9!@#$%&*+-/=?^_`{|}~.)')%>')"</span><%=translate("Message text")%>
+	</label>
+
+	<div class="cbi-value-field">
+		<textarea class="cbi-input-textarea" style="width: 385px; height: 90px;" onchange="cbi_d_update(this.id);" onKeyDown="setTimeout(function() { cbi_d_counter(id) }, 1 )" name="cbid.sms_utils.1.message" id="cbid.sms_utils.1.message" rows="4" maxlength="480"><%=(self:cfgvalue(section) or "")%></textarea>
+	</div>
+	<div id="counter" style="margin-left: 315px;" class="cbi-input-textarea-count" ></div>
+	
+</div>
+
+	<% if self.password then %><img src="<%=resource%>/cbi/reload.gif" style="vertical-align:sub" title="<%:Reveal/hide password%>" onclick="var e = document.getElementById('<%=cbid%>'); e.type = (e.type=='password') ? 'text' : 'password';"/><% end %>
+	<% if #self.keylist > 0 or self.datatype then -%>
+	<script type="text/javascript">//<![CDATA[
+	<% if #self.keylist > 0 then -%>
+		cbi_combobox_init('<%=cbid%>', {
+		<%-
+			for i, k in ipairs(self.keylist) do
+			-%>
+			<%-=string.format("%q", k) .. ":" .. string.format("%q", self.vallist[i])-%>
+		<%-if i<#self.keylist then-%>,<%-end-%>
+		<%-
+			end
+		-%>
+		}, '<%- if not self.rmempty and not self.optional then -%>
+		<%-: -- Please choose -- -%>
+		<%- end -%>', '
+		<%- if self.combobox_manual then -%>
+		<%-=self.combobox_manual-%>
+			<%- else -%>
+		<%-: -- custom -- -%>
+		<%- end -%>'
+		<%- if self.maxWidth then -%>
+			, '<%= self.maxWidth %>'
+		<%- end -%>);
+		<%- end %>
+		<% if self.datatype then -%>
+		cbi_validate_field('<%=cbid%>', <%=tostring((self.optional or self.rmempty) == true)%>, '<%=self.datatype:gsub("'", "\\'")%>');
+		<%- end %>
+	//]]></script>
+	<% end -%>
+<%+cbi/valuefooter%>

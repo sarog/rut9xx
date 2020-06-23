@@ -1,0 +1,21 @@
+config general 'general'
+	option enabled '0'
+
+config member 'wan_m1_w3'
+	option interface 'wan'
+	option metric '1'
+	option weight '3'
+
+config member 'wan2_m1_w2'
+	option interface 'wan2'
+	option metric '1'
+	option weight '2'
+
+config policy 'balanced'
+	list use_member 'wan_m1_w3'
+	list use_member 'wan2_m1_w2'
+
+config rule 'default_rule'
+	option dest_ip '0.0.0.0/0'
+	option use_policy 'balanced'
+

@@ -1,0 +1,158 @@
+local pop3 = require "pop3"
+local mime = require "mime"
+local b64enc = mime.b64
+
+function trim(s)
+  return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+function read_output(command)
+	local f = io.popen(command)
+	local l = f:read("*a")
+	f:close()
+	return trim(l)
+end
+
+function send_big_sms(number, text, limit)
+	if #text == 0 or #text > limit then
+		return false
+	end
+
+	local MAX_SMS_SIZE = 1200
+	local is_absolute_unit = (#text > MAX_SMS_SIZE)
+	local no = 1
+	while #text > MAX_SMS_SIZE do
+		local txt = "SMS-CHAIN#" .. tostring(no) .. "\n" .. text:sub(1, MAX_SMS_SIZE)
+		local data = b64enc(txt)
+		local file = io.open("/tmp/.smstext", "w")
+		text = text:sub(MAX_SMS_SIZE + 1)
+		no = no + 1
+
+		file:write(data)
+		file:close()
+		response=os.execute("gsmctl -Sb "..number)
+	end
+
+	if is_absolute_unit then
+		text = "SMS-CHAIN#" .. tonumber(no) .. "\n" .. text
+	end
+	local data = b64enc(text)
+	local file = io.open("/tmp/.smstext", "w")
+
+	file:write(data)
+	file:close()
+	response=os.execute("gsmctl -Sb "..number)
+	--print("====\n"..response.."\n=======")
+	--print("SMS: ["..#v.text.."]================\n".. v.text.."===================")
+
+	return true
+end
+
+enabled = read_output("uci get -q sms_gateway.pop3.enabled")
+function main()
+	if tonumber(enabled) == 1 then
+		ssl=read_output("uci get -q sms_gateway.pop3.ssl");
+		local some_mail = {
+			host	 = read_output("uci get -q sms_gateway.pop3.host");
+			username = read_output("uci get -q sms_gateway.pop3.username");
+			password = read_output("uci get -q sms_gateway.pop3.password");
+			port = read_output("uci get -q sms_gateway.pop3.port");
+			limit = read_output("uci get -q sms_gateway.pop3.limit");
+			--host     = os.getenv("LUA_MAIL_HOST") or 'pop.gmail.com';
+			--port = '995';
+		}
+		some_mail.limit = tonumber(some_mail.limit) and tonumber(some_mail.limit) or 160
+		local mbox = pop3.new()
+		if tonumber(ssl) == 1 then
+			mbox:open_tls(some_mail.host, some_mail.port)
+		else
+			mbox:open(some_mail.host, some_mail.port)
+		end
+		print('open   :', mbox:is_open())
+		if mbox:is_open() then
+			mbox:auth(some_mail.username, some_mail.password)
+			if mbox:is_auth() then
+				print('auth   :', mbox:is_auth())
+				for k, msg in mbox:messages() do
+					local anytext = nil
+					local plaintext = nil
+					number=msg:subject()
+					for i,v in ipairs(msg:full_content()) do
+						if v.text then
+							if number:match('^[0-9+]+$') ~= nil then
+								if v.type == "text/plain" then
+									plaintext = v.text
+								else
+									anytext = v.text
+								end
+							end
+						end
+					end
+					local mytext = (plaintext ~= nil) and plaintext or anytext
+					if mytext ~= nil and send_big_sms(number, mytext, some_mail.limit) then
+						mbox:dele(k)
+					end
+				end
+			end
+		end
+		--print('test   :', mbox:close())
+		mbox:close()
+	end
+end
+
+function start()
+	local reboot=0
+	local find = read_output("grep -q /usr/bin/pop3_ets /etc/crontabs/root; echo $?")
+	if tonumber(find) == 0 then
+		os.execute("sed -i '\\/usr\\/bin\\/pop3_ets/d' /etc/crontabs/root")
+		reboot=1
+	end
+	if tonumber(enabled) == 1 then
+		local command=""
+		local time_format = read_output("uci get -q sms_gateway.pop3.time")
+		if time_format == "min" then
+			local min_number = read_output("uci get -q sms_gateway.pop3.min")
+			command = 'echo "*/'..tonumber(min_number)..' * * * * lua /usr/bin/pop3_ets read" >>/etc/crontabs/root'
+		elseif time_format == "hour" then
+			local hour_number = read_output("uci get -q sms_gateway.pop3.hour")
+			command = 'echo "0 */'..tonumber(hour_number)..' * * * lua /usr/bin/pop3_ets read" >>/etc/crontabs/root'
+		elseif time_format == "day" then
+			local day_number = read_output("uci get -q sms_gateway.pop3.day")
+			command = 'echo "0 0 */'..tonumber(day_number)..' * * lua /usr/bin/pop3_ets read" >>/etc/crontabs/root'
+		end
+		reboot=1
+		print(command)
+		os.execute(command)
+	end
+	if tonumber(reboot) == 1 then
+		os.execute("/etc/init.d/cron restart")
+	end
+end
+
+function stop()
+	local find = read_output("grep -q /usr/bin/pop3_ets /etc/crontabs/root; echo $?")
+	if tonumber(find) == 0 then
+		os.execute("sed -i '\\/usr\\/bin\\/pop3_ets/d' /etc/crontabs/root")
+		os.execute("/etc/init.d/cron restart")
+	end
+end
+local out =
+[[unknown command line argument.
+
+usage:
+  pop3_ets read
+  pop3_ets start
+]]
+--
+-- Program execution
+--
+if #arg > 0 and #arg < 2 then
+	if arg[1] == "read" then main()
+	elseif arg[1] == "start" then start()
+	elseif arg[1] == "stop" then stop()
+	else
+		print(out)
+	end
+else
+	print(out)
+end

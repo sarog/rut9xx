@@ -1,0 +1,42 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2018 Teltonika
+#. /lib/teltonika-functions.sh
+#. /lib/functions.sh
+START=99
+
+USE_PROCD=1
+enable=$(uci get cli.status.enable)
+uhttpd_cert=$(uci get uhttpd.main.cert)
+uhttpd_key=$(uci get uhttpd.main.key)
+shell_cert="/tmp/certificate.pem"
+
+start_service()
+{
+	if [ "$enable" == "1" ]; then
+		if [ ! -s "$shell_cert" ]; then
+			openssl x509 -inform DER -in "$uhttpd_cert" -outform PEM | cat "$uhttpd_key" - > /tmp/shellinabox.tmp
+			mv /tmp/shellinabox.tmp "$shell_cert"
+		fi
+	fi
+}
+
+stop_service()
+{
+	rm -f "$shell_cert"
+	killall shellinaboxd
+}
+
+restart_service()
+{
+	rm -f "$shell_cert"
+	killall shellinaboxd
+	if [ "$enable" == "1" ]; then
+		openssl x509 -inform DER -in "$uhttpd_cert" -outform PEM | cat "$uhttpd_key" - > /tmp/shellinabox.tmp
+		mv /tmp/shellinabox.tmp "$shell_cert"
+	fi
+}
+
+reload_service()
+{
+	restart_service
+}

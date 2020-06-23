@@ -1,0 +1,6 @@
+#!/bin/sh
+uci batch <<-EOF
+	set luci.themes.Default=/luci-static/default
+	commit luci
+EOF
+exit 0

@@ -1,0 +1,173 @@
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -19,6 +19,7 @@
+ #include <linux/usb/cdc.h>
+ #include <linux/usb/usbnet.h>
+ #include <linux/usb/cdc-wdm.h>
++#include <linux/version.h>
+ 
+ /* This driver supports wwan (3G/LTE/?) devices using a vendor
+  * specific management protocol called Qualcomm MSM Interface (QMI) -
+@@ -46,7 +47,6 @@
+  
+  #if 1
+ //Added by Quectel
+-#include <linux/etherdevice.h>
+ struct sk_buff *qmi_wwan_tx_fixup(struct usbnet *dev, struct sk_buff *skb, gfp_t flags)
+ {
+ 	if (dev->udev->descriptor.idVendor != cpu_to_le16(0x2C7C))
+@@ -77,6 +77,17 @@
+ 
+ /* default ethernet address used by the modem */
+ static const u8 default_modem_addr[ETH_ALEN] = {0x02, 0x50, 0xf3};
++
++#define QUEC_NET_MSG_SPEC		(0x80)
++
++#define QUEC_NET_MSG_ID_IP_DATA		(0x00)
++
++struct quec_net_package_header {
++	unsigned char msg_spec;
++	unsigned char msg_id;
++	unsigned short payload_len;
++	unsigned char reserve[16];
++} __packed;
+ 
+ /* Make up an ethernet header if the packet doesn't have one.
+  *
+@@ -98,13 +109,16 @@
+  * to 00:a0:c6:00:00:00 despite the host address being different.
+  * This function will also fixup such packets.
+  */
+-static int qmi_wwan_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
++ 
++static int prefix_mac_header(struct usbnet *dev, struct sk_buff *skb)
+ {
+ 	__be16 proto;
+ 
+-	/* This check is no longer done by usbnet */
+-	if (skb->len < dev->net->hard_header_len)
++	//this check is no longer done by usbnet
++	if (skb->len < dev->net->hard_header_len) {
+ 		return 0;
++	}
++
+ 
+ 	switch (skb->data[0] & 0xf0) {
+ 	case 0x40:
+@@ -114,24 +128,90 @@
+ 		proto = htons(ETH_P_IPV6);
+ 		break;
+ 	case 0x00:
+-		if (is_multicast_ether_addr(skb->data))
++		if (is_multicast_ether_addr(skb->data)) {
+ 			return 1;
+-		/* possibly bogus destination - rewrite just in case */
++		}
+ 		skb_reset_mac_header(skb);
+ 		goto fix_dest;
++
+ 	default:
+-		/* pass along other packets without modifications */
+-		return 1;
+-	}
+-	if (skb_headroom(skb) < ETH_HLEN)
+ 		return 0;
++	}
++
++	if (skb_headroom(skb) < ETH_HLEN) {
++		return 0;
++	}
++
+ 	skb_push(skb, ETH_HLEN);
+ 	skb_reset_mac_header(skb);
+ 	eth_hdr(skb)->h_proto = proto;
++	memset(eth_hdr(skb)->h_source, 0, ETH_ALEN);
+ 	memcpy(eth_hdr(skb)->h_source, "\x00\x11\x22\x33\x44\x55", ETH_ALEN);
+ fix_dest:
+ 	memcpy(eth_hdr(skb)->h_dest, dev->net->dev_addr, ETH_ALEN);
++
+ 	return 1;
++}
++
++
++static struct sk_buff *quec_net_skb_clone(struct usbnet *dev,
++                struct sk_buff *skb, int len)
++{
++	struct sk_buff *new_skb;
++
++	new_skb = skb_clone(skb, GFP_ATOMIC);
++
++	if (new_skb) {
++		skb_trim(new_skb, len);
++	} else {
++		if (netif_msg_rx_err(dev))
++			netdev_err(dev->net, "failed to get skb\n");
++		dev->net->stats.rx_dropped++;
++	}
++
++	return new_skb;
++}
++
++static int qmi_wwan_rx_fixup(struct usbnet *dev, struct sk_buff *skb) {
++	struct quec_net_package_header package_header;
++	struct sk_buff* new_skb;
++
++	if (dev->udev->descriptor.idVendor != cpu_to_le16(0x2c7c)) {
++		return 1;
++	}
++
++	while (likely(skb->len)) {
++		if (skb->len < sizeof(package_header)) {
++			return prefix_mac_header(dev, skb);
++		}
++
++		memcpy(&package_header, skb->data, sizeof(package_header));
++		package_header.payload_len = ntohs(package_header.payload_len);
++	
++		if (package_header.msg_spec != QUEC_NET_MSG_SPEC || package_header.msg_id != QUEC_NET_MSG_ID_IP_DATA) {
++			return prefix_mac_header(dev, skb);
++		}
++
++		if (skb->len < (package_header.payload_len + sizeof(package_header))) {
++			return prefix_mac_header(dev, skb);
++		}
++
++		skb_pull(skb, sizeof(package_header));
++		if (skb->len == package_header.payload_len) {
++			return prefix_mac_header(dev, skb);
++		}
++		new_skb = quec_net_skb_clone(dev, skb, package_header.payload_len);
++	
++		if (new_skb) {
++			if (prefix_mac_header(dev, new_skb)) {
++				usbnet_skb_return(dev, new_skb);
++			}
++		}
++
++		skb_pull(skb, package_header.payload_len);
++	}
++
++	return 0;
+ }
+ 
+ /* very simplistic detection of IPv4 or IPv6 headers */
+@@ -226,7 +306,7 @@
+ 
+ 	/* register subdriver */
+ 	subdriver = usb_cdc_wdm_register(info->control, &dev->status->desc,
+-					 4096, &qmi_wwan_cdc_wdm_manage_power);
++					 512, &qmi_wwan_cdc_wdm_manage_power);
+ 	if (IS_ERR(subdriver)) {
+ 		dev_err(&info->control->dev, "subdriver registration failed\n");
+ 		rv = PTR_ERR(subdriver);
+@@ -366,7 +446,9 @@
+ 		dev->net->dev_addr[0] &= 0xbf;	/* clear "IP" bit */
+ 	}
+ 	dev->net->netdev_ops = &qmi_wwan_netdev_ops;
+-	
++
++	dev->rx_urb_size = 7600;
++
+ #if 1 //Added by Quectel
+ 	if (dev->udev->descriptor.idVendor == cpu_to_le16(0x2C7C)) {
+ 		dev_info(&intf->dev, "Quectel EC21&EC25&EC20 R2.0 work on RawIP mode\n");

@@ -1,0 +1,26 @@
+#!/bin/sh
+# Copyright (C) 2015 Teltonika
+
+. /lib/functions.sh
+SMS_CONFIG="sms_utils"
+
+check_sms_utils() {
+	config_get action "$1" "action"
+	if [ "$action" == "gps_coordinates" ] || [ "$action" == "gps" ]; then
+		uci delete -q "$SMS_CONFIG"."$1"
+	fi
+}
+
+check_sms_utils_config_update() {
+	config_get action "$1" "action"
+	if [ "$action" == "config_update" ]; then
+		uci delete -q "$SMS_CONFIG"."$1"
+	fi
+}
+config_load "$SMS_CONFIG"
+config_foreach check_sms_utils_config_update "rule"
+gps=`uci get -q hwinfo.hwinfo.gps`
+if [ "$gps" -eq 0 ]; then
+	config_foreach check_sms_utils "rule"
+fi
+uci commit "$SMS_CONFIG"

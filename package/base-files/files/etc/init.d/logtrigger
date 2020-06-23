@@ -1,0 +1,82 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2017 Teltonika
+
+USE_PROCD=1
+START=18
+STOP=98
+
+. /lib/functions.sh
+
+CONFIG="logtrigger"
+BIN="logtrigger"
+DIR=/usr/bin/
+ENABLED=0
+FOUND=0
+
+clear_block() {
+	local section="$1"
+	uci -q delete blocklist.$section
+}
+
+reboot_clear() {
+	local name
+	local until_reboot
+	local target="$2"
+	config_get until_reboot $1 "until_reboot" "0"
+	if [ "$until_reboot" == "1" ]; then
+		config_get name $1 "name" "0"
+		name=$(echo $name | awk -F '_' '{ print $1 }')
+		if [ "$name" == "$target" ]; then
+			FOUND=1
+			return 1
+		fi
+	fi
+}
+
+boot() {
+	config_load $CONFIG
+	config_foreach reboot_clear "rule" "SSH"
+	if [ $FOUND -eq 1 ]; then
+		config_load "blocklist"
+		config_foreach clear_block "dropbear"
+		uci commit blocklist
+	fi
+	FOUND=0
+	config_load $CONFIG
+	config_foreach reboot_clear "rule" "WebUI"
+	if [ $FOUND -eq 1 ]; then
+		config_load "blocklist"
+		config_foreach clear_block "uhttpd"
+		uci commit blocklist
+	fi
+	start
+}
+
+rule_enabled() {
+	local enabled
+	config_get enabled $1 "enabled" "0"
+	if [ "$enabled" == "1" ]; then
+		ENABLED=1
+		return 1
+	fi
+}
+
+start_service() {
+	config_load $CONFIG
+	config_foreach rule_enabled "rule"
+
+	[ $ENABLED -eq 0 ] && return
+
+	procd_open_instance
+	procd_set_param command $DIR$BIN
+	procd_set_param respawn
+	procd_close_instance
+}
+
+reload_service() {
+	restart
+}
+
+restart_service() {
+	restart
+}

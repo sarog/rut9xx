@@ -1,0 +1,175 @@
+<%
+local uci = require "luci.model.uci".cursor()
+local ds = require "luci.dispatcher"
+local translate, translatef = luci.i18n.translate, luci.i18n.translatef
+local sys = require "luci.sys"
+eventlog = require "tlt_eventslog_lua"
+require "teltonika_lua_functions"
+
+--check device with usb/microsd
+local usb = luci.util.trim(luci.sys.exec("uci get hwinfo.hwinfo.usb"))
+local microsd = luci.util.trim(luci.sys.exec("uci get hwinfo.hwinfo.microsd"))
+
+--find all storage
+local mnt = luci.util.trim(luci.sys.exec("ls -1 /mnt/ | grep -v mtdblock"))
+--local mnt = luci.util.trim(luci.sys.exec("mount | grep /dev/ | grep -v mtdblock | grep -v /dev/root | grep -v /dev/pts | awk -F '[:/ ]' '{print $3}'"))
+mnt = tostring(mnt)
+local mntList = mnt:split("\n")
+local mnttitle
+local j=1
+
+--Storage array with storage name
+local Device = {}
+for i=1, #mntList do
+	mnt_blkid = luci.sys.exec("blkid | grep \"" .. mntList[i] .. "\"");
+	luci.sys.exec("echo '" .. i .. " : " .. mntList[i] .. " : " .. mnt_blkid .. "' >> /tmp/mount.test")
+	if mnt_blkid ~= nil and mnt_blkid ~= "" then
+		Device[j] = {}
+		Device[j][1] = mntList[i]
+		mnttitle = luci.sys.exec("blkid | grep \"" .. mntList[i] .. "\"| awk -F 'LABEL=\"' '{print $2}' | awk -F'\"' '{print $1}'")
+		if mnttitle == "" or mnttitle == nil or mnttitle == "\n" then
+			Device[j][2] = mntList[i]
+		else
+			Device[j][2] = mnttitle
+		end
+		Device[j][3] = luci.sys.exec("du -d 1 /mnt/ | grep \"" .. mntList[i] .. "\" | awk -F ' ' '{print $1}'")
+		j=j+1
+	end
+end
+
+function validate1(string)
+	if #string > 16 then
+		return translate("Restore point title cannot be more than 16 characters.")
+	elseif #string == 0 then
+		return translate("Restore point title cannot be empty.")
+	elseif string.find(string, "%W") then
+		return translate("Restore point title should contain only alphanumeric characters.")
+	end
+end
+
+function validate2(string)
+	if string == nil then
+		return translate("No device selected.")
+	end
+end
+
+download_restore_clicked = luci.http.formvalue("restore-download-button")
+if download_restore_clicked then
+	local title = luci.http.formvalue("restore-add-title")
+	err = validate1(title)
+	if not err then
+		local date = os.date("%F")
+		luci.sys.call("cp /rom/etc/uci-defaults/30_crt_rms /etc/uci-defaults/")
+		status = luci.sys.exec("/sbin/restore-point -t "..title.."_"..date..".rp; echo $?")
+		statusList = status:split("\n")
+		if tonumber(statusList[2]) == 0 then
+			luci.http.header('Content-Disposition', 'attachment; filename="%s_%s.rp"' % {title, date})
+			luci.http.prepare_content("application/bin")
+			luci.ltn12.pump.all( luci.ltn12.source.file(io.open("/tmp/restore-point/"..title.."_"..date..".rp")), luci.http.write)
+
+			t = {requests = "insert", table = "EVENTS", type="Restore point", text="Was downloaded."}
+			eventlog:insert(t)
+		end
+	end
+end
+%>
+
+<%+header%>
+	<div id="spin-loader" class="applyChanges" style="display:none;">
+		<span><%=translate("Please wait...")%></span>
+			<img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" />
+	</div>
+	<script>
+		function spin_loader(interval) {
+			document.getElementById("spin-loader").style.display='';
+			setTimeout("document.getElementById('spin-loader').style.display='none'", interval);
+		}
+	</script>
+<%
+
+function createRestore(title, dev)
+	if title then %>
+		<div id="spin" class="applyChanges">
+			<span><%=translate("Please wait...")%></span>
+				<img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" />
+		</div> <%
+		local date = os.date("%F")
+		luci.sys.call("cp /rom/etc/uci-defaults/30_crt_rms /etc/uci-defaults/")
+		status = luci.sys.exec("/sbin/restore-point -c "..dev.." "..title.."_"..date..".rp; echo $?")
+		statusList = status:split("\n")
+		if tonumber(statusList[2]) == 0 then %>
+			<div class="alert-message success"><%=translatef("Restore point \"%s\" created successfully.", title)%></div>
+		<% else %>
+			<div class="alert-message error"><%=translate(statusList[1])%></div>
+		<% end
+	end
+end
+
+add_restore_clicked = luci.http.formvalue("restore-add-button")
+	if add_restore_clicked then
+	local dev = luci.http.formvalue("cbid.system.restore.dev")
+	local restore_dev = luci.http.formvalue("cbid.system.restore.dev")
+	local title = luci.http.formvalue("restore-add-title")
+	err1 = validate1(title)
+	err2 = validate2(restore_dev)
+	if err1 then %>
+		<div class="alert-message error"><%=err1%></div>
+	<% elseif err2 then %>
+		<div class="alert-message error"><%=err2%></div>
+	<% else
+		createRestore(title, dev)
+	end
+end
+
+download_restore_clicked = luci.http.formvalue("restore-download-button")
+if download_restore_clicked then
+	local title = luci.http.formvalue("restore-add-title")
+	if err then %>
+		<div class="alert-message error"><%=err%></div>
+	<% else
+		if tonumber(statusList[2]) == 1 then %>
+			<div class="alert-message error"><%=translate(statusList[1])%></div>
+		<% end
+	end
+end
+%>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<div class="cbi-map" id="cbi-monitoring">
+	<h2><a><%=translate("Create Restore Point")%></a></h2>
+	<%if tonumber(usb) == 1 or tonumber(microsd) == 1 then%>
+	<p>
+		<fieldset class="cbi-section">
+			<legend><%=translate("Create Restore Point And Write To External Storage Device")%></legend>
+			<form method="post" name="profile-add-form" style="padding-top: 9px;" onsubmit="document.getElementById('spin-loader').style.display='';">
+				<% if #mnt < 1 then %>
+					<span onmouseout="HideHint(this)" style="margin:10px;" onmouseover="ShowHint(this, '<%=translate('No devices for restore point storage found')%>')"><%=translate("There are no devices connected")%> </span>
+				<% else %>
+					<span onmouseout="HideHint(this)" style="margin:10px;" onmouseover="ShowHint(this, '<%=translate('Available device')%>')"><%=translate("Device")%> </span>
+					<select size="1" name="cbid.system.restore.dev" id="cbid.system.restore.dev" onchange="cbi_d_update(this.id)" class="cbi-input-select">
+						<% for i=1, #Device do %>
+							<option value="<%=escapeHTML(Device[i][1])%>" id="<%=escapeHTML(Device[i][1])%>"><%=escapeHTML(Device[i][2])%></option>
+						<% end %>
+					</select>
+					<span onmouseout="HideHint(this)" style="margin:10px;" onmouseover="ShowHint(this, '<%=translate('Give a title to current device configuration')%>')"><%=translate("Title")%> </span>
+					<input type="text" name="restore-add-title" style="width: 150px;">
+					<input class="cbi-button" type="submit" value="<%=translate('Create')%>" name="restore-add-button">
+				<% end %>
+			</form>
+		</fieldset>
+	</p>
+	<%end%>
+	<p>
+		<fieldset class="cbi-section">
+			<legend><%=translate("Create Restore Point And Download")%></legend>
+			<form method="post" name="profile-add-form" style="padding-top: 9px;" onsubmit="spin_loader(12000);" >
+				<span onmouseout="HideHint(this)" style="margin:10px;" onmouseover="ShowHint(this, '<%=translate('Title of the restore point file that will be downloaded')%>')"><%=translate("Title")%> </span>
+				<input type="text" name="restore-add-title" style="width: 150px;">
+				<input class="cbi-button" type="submit" value="<%=translate('Download')%>" name="restore-download-button">
+			</form>
+		</fieldset>
+		<p>
+		<i>*Please note, that the router can only load restore point which was created by this router.</i>
+	</p>
+	</p>
+</div>
+<%+footer%>

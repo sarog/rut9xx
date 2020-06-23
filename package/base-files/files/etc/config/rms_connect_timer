@@ -1,0 +1,14 @@
+config rms_connect_timer 'rms_connect_timer'
+	option level '0'
+	option next_level '0'
+
+config rms_connect_timer 'default'
+	option repeat_time '21600'
+
+config rms_connect_timer_level
+	option repeat_time '120'
+	option whole_time '3600'
+
+config rms_connect_timer_level
+	option repeat_time '300'
+	option whole_time '1209600'

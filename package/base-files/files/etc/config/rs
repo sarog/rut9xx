@@ -1,0 +1,13 @@
+config rs232 'rs232'
+	option enabled '0'
+	option debug '0'
+	option ip_listen '0.0.0.0'
+	option no_leading_zeros '0'
+
+config rs485 'rs485'
+	option enabled '0'
+	option debug '0'
+	option ip_listen '0.0.0.0'
+	option databits '8'
+	option stopbits '1'
+

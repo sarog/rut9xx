@@ -1,0 +1,9 @@
+config wget_reboot 'wget_reboot'
+	option interval '2'
+	option retry '5'
+	option host 'www.google.com'
+	option timeout '2'
+	option enable '0'
+	option action '1'
+	option time '5'
+

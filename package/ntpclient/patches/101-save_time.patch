@@ -1,0 +1,100 @@
+--- a/ntpclient.c
++++ b/ntpclient.c
+@@ -128,6 +128,7 @@
+ 	int cycle_time;
+ 	int goodness;
+ 	int cross_check;
++	int save_time;
+ 	char serv_addr[4];
+ };
+ 
+@@ -169,7 +170,7 @@
+ #endif
+ }
+ 
+-static void set_time(struct ntptime *new)
++static void set_time(struct ntptime *new, struct ntp_control *ntpc)
+ {
+ #ifndef USE_OBSOLETE_GETTIMEOFDAY
+ 	/* POSIX 1003.1-2001 way to set the system clock
+@@ -183,6 +184,12 @@
+ 		perror("clock_settime");
+ 		exit(1);
+ 	}
++	/* Save time in case correct power-off sequence is skipped */
++	if (ntpc->save_time == 1) {
++		if (system("/etc/init.d/luci_fixtime stop; sync") == -1) {
++			perror("save_time");
++		}
++	}
+ 	if (debug) {
+ 		printf("set time to %lu.%.9lu\n", tv_set.tv_sec, tv_set.tv_nsec);
+ 	}
+@@ -198,6 +205,12 @@
+ 		perror("settimeofday");
+ 		exit(1);
+ 	}
++	/* Save time in case correct power-off sequence is skipped */
++	if (ntpc->save_time == 1) {
++		if (system("/etc/init.d/luci_fixtime stop; sync") == -1) {
++			perror("save_time");
++		}
++	}
+ 	if (debug) {
+ 		printf("set time to %lu.%.6lu\n", tv_set.tv_sec, tv_set.tv_usec);
+ 	}
+@@ -401,7 +414,7 @@
+ 
+ 	/* XXX should I do this if debug flag is set? */
+ 	if (ntpc->set_clock) { /* you'd better be root, or ntpclient will exit here! */
+-		set_time(&xmttime);
++		set_time(&xmttime, ntpc);
+ 	}
+ 
+ 	/* Not the ideal order for printing, but we want to be sure
+@@ -590,7 +603,7 @@
+ #ifdef ENABLE_REPLAY
+ 	" [-r]"
+ #endif
+-	" [-s] [-t]\n",
++	" [-s] [-t] [-S]\n",
+ 	argv0);
+ }
+ 
+@@ -609,9 +622,10 @@
+ 	ntpc.cycle_time=600;          /* seconds */
+ 	ntpc.goodness=0;
+ 	ntpc.cross_check=1;
++	ntpc.save_time=0;
+ 
+ 	for (;;) {
+-		c = getopt( argc, argv, "c:" DEBUG_OPTION "f:g:h:i:lp:q:" REPLAY_OPTION "stD");
++		c = getopt( argc, argv, "c:" DEBUG_OPTION "f:g:h:i:lp:q:" REPLAY_OPTION "stDS");
+ 		if (c == EOF) break;
+ 		switch (c) {
+ 			case 'c':
+@@ -659,6 +673,10 @@
+ 			case 't':
+ 				(ntpc.cross_check)=0;
+ 				break;
++				
++			case 'S':
++				(ntpc.save_time)=1;
++				break;
+ 
+ 			case 'D':
+ 				daemon(0, 0);
+@@ -694,10 +712,11 @@
+ 		"  -p local_port  %d\n"
+ 		"  -q min_delay   %f\n"
+ 		"  -s set_clock   %d\n"
+-		"  -x cross_check %d\n",
++		"  -x cross_check %d\n"
++		"  -S save_time   %d\n",
+ 		ntpc.probe_count, debug, ntpc.goodness,
+ 		hostname, ntpc.cycle_time, ntpc.live, udp_local_port, min_delay,
+-		ntpc.set_clock, ntpc.cross_check );
++		ntpc.set_clock, ntpc.cross_check, ntpc.save_time );
+ 	}
+ 
+ 	/* Startup sequence */

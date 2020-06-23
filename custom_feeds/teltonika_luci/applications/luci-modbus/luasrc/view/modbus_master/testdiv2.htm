@@ -1,0 +1,47 @@
+<script type="text/javascript">
+function dotest(s,S) {
+	var stxhr = new XHR();
+	var testarea = document.getElementById("test-area");
+	testarea.innerHTML = "<pre>Loading...</pre>";
+	stxhr.get('<%=luci.dispatcher.build_url("admin", "services", "modbus", "serial_test")%>', {cfg:s},
+		function(x) {
+			if (x.responseText) {
+				var n = x.responseText.indexOf("html");
+				if (n == "-1") {
+					testarea.innerHTML = "<pre>" + x.responseText + "</pre>"
+				}
+			} else {
+					testarea.innerHTML = "<pre>No response!</pre>"
+			}
+		}
+	);
+}
+
+function do_test(s,S) {
+	var stxhr = new XHR();
+	var testarea = document.getElementById("test-area");
+	testarea.innerHTML = "<pre>Loading...</pre>";
+
+	ip       = document.getElementById("cbid.modbus_tcp_master." + S + ".dev_ipaddr").value;
+	port     = document.getElementById("cbid.modbus_tcp_master." + S + ".port").value;
+	timeout  = document.getElementById("cbid.modbus_tcp_master." + S + ".timeout").value;
+	slave_id = document.getElementById("cbid.modbus_tcp_master." + S + ".slave_id").value;
+	fc       = document.getElementById("cbid.modbus_tcp_master." + s + ".function").value;
+	regaddr  = document.getElementById("cbid.modbus_tcp_master." + s + ".first_reg").value - 1;
+	payload  = document.getElementById("cbid.modbus_tcp_master." + s + ".reg_count").value;
+	datatype = document.getElementById("cbid.modbus_tcp_master." + s + ".data_type").value;
+
+	stxhr.get('<%=luci.dispatcher.build_url("admin", "services", "modbus", "test")%>', {ip:ip, port:port, timeout:timeout, slave_id:slave_id, fc:fc, regaddr:regaddr, payload:payload, datatype:datatype},
+		function(x) {
+			if (x.responseText) {
+				var n = x.responseText.indexOf("html");
+				if (n == "-1") {
+					testarea.innerHTML = "<pre>" + x.responseText + "</pre>"
+				}
+			} else {
+					testarea.innerHTML = "<pre>No response!</pre>"
+			}
+		}
+	);
+}
+</script>

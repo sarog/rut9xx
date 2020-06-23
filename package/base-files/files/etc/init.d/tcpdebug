@@ -1,0 +1,59 @@
+#!/bin/sh /etc/rc.common
+
+
+START=99
+STOP=99
+USE_PROCD=1
+ENABLED=`uci -q get system.system.tcp_dump`
+
+
+check_value(){
+	value="$1"
+	variable="$2"
+
+	if [ "$value" == "" ]; then
+		echo "$value"
+	else
+		echo "$variable $value"
+	fi
+}
+
+start_service(){
+	echo "start"
+	if [ "$ENABLED" = "1" ]; then
+		local options=""
+		procd_open_instance
+		echo "enabled"
+		STORAGE=`uci -q get system.system.tcp_mount`
+		FILTER=`uci -q get system.system.tcp_dump_filter`
+		INTERFACE=`uci -q get system.system.tcp_dump_interface`
+		if [ $STORAGE = "/tmp" ]; then
+			options="-C 20 -W 1"
+		fi
+		HOST=`uci -q get system.system.tcp_host`
+		PORT=`uci -q get system.system.tcp_port`
+		DIRECTION=`uci -q get system.system.tcp_inout`
+		HOST=`check_value "$HOST" "host"`
+		
+		if [ "$HOST" == "" ]; then	
+			PORT=`check_value "$PORT" "port"`
+		else
+			PORT=`check_value "$PORT" "and port"`
+		fi
+		
+		DIRECTION=`check_value "$DIRECTION" "-Q"`
+		
+		STORAGE=`check_value "$STORAGE" "-w"`
+		INTERFACE=`check_value "$INTERFACE" "-i"`
+		echo $FILTER $INTERFACE $DIRECTION $options $HOST $PORT $STORAGE"/tcpdebug.pcap"
+		procd_set_param command /usr/sbin/tcpdump $FILTER $INTERFACE $DIRECTION $options $HOST $PORT $STORAGE"/tcpdebug.pcap"
+		procd_set_param respawn
+		procd_close_instance
+		echo "paleido"
+	fi
+	
+}
+
+stop_service(){
+	killall tcpdump
+}

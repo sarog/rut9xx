@@ -1,0 +1,11 @@
+<%+cbi/valueheader%>
+	<% if self:cfgvalue(section) ~= false then %>
+			<input
+				class="cbi-button cbi-input-<%=self.inputstyle or "button" %>"
+				onclick="<%=self.fn%>('<%=section%>', document.querySelectorAll('.cbi-input-checkbox')[0].id.split('.')[2])"
+				type="button"<%= attr("name", cbid) .. attr("id", cbid) .. attr("value", self.inputtitle or self.title)%>
+			/>
+	<% else %>
+		-
+	<% end %>
+<%+cbi/valuefooter%>

@@ -1,0 +1,97 @@
+<script type="text/javascript">
+	var cfg_name = document.getElementsByClassName("cbi-value")[0].id.split("-");
+	cfg_name = cfg_name[2];
+
+	if(window.addEventListener) {
+		document.getElementById("cbid.modbus_master_alarms." + cfg_name + ".f_code").addEventListener('change', check_conditions, false);
+	} else if (window.attachEvent){
+		document.getElementById("cbid.modbus_master_alarms." + cfg_name + ".f_code").attachEvent("onchange", check_conditions);
+	}
+
+	function check_conditions(){
+	}
+
+	check_conditions();
+
+	function change_validation(id, function_code){
+		if(id && function_code){
+			conf_name_array = id.split(".");
+			if(conf_name_array[2]){
+				var num_field_id = conf_name_array[0] + "." + conf_name_array[1] + "." + conf_name_array[2] + ".modbus_reg_count"
+				var num_field = document.getElementById(num_field_id);
+
+				if(num_field) {
+					var el = num_field;
+					var elClone = el.cloneNode(true);
+					el.parentNode.replaceChild(elClone, el);
+					num_field = elClone;
+
+					if (function_code == 1 || function_code == 2) {
+						num_field.addEventListener("change", function () {
+							cbi_validate_field(this, false, 'range(1,2000)');
+						}, false);
+						num_field.placeholder = "1-2000";
+					} else if (function_code == 3 || function_code == 4) {
+						num_field.addEventListener("change", function () {
+							cbi_validate_field(this, false, 'range(1,125)');
+						}, false);
+						num_field.placeholder = "1-125";
+					} else if (function_code == 5) {
+						num_field.addEventListener("change", function () {
+							cbi_validate_field(this, false, 'FF_or_0()');
+						}, false);
+						num_field.placeholder = "65280=ON, 0=OFF";
+					} else if (function_code == 6) {
+						num_field.addEventListener("change", function () {
+							cbi_validate_field(this, false, 'range(0,65535)');
+						}, false);
+						num_field.placeholder = "0-65535";
+					} else if (function_code == 15) {
+						num_field.addEventListener("change", function () {
+							cbi_validate_field(this, false, 'multiple_coil_values()');
+						}, false);
+						num_field.placeholder = "Up to 246 8bit numbers";
+					} else if (function_code == 16) {
+						num_field.addEventListener("change", function () {
+							cbi_validate_field(this, false, 'multiple_register_values()');
+						}, false);
+						num_field.placeholder = "Up to 123 16bit numbers";
+					}
+
+					if ("createEvent" in document) {
+						var evt = document.createEvent("HTMLEvents");
+						evt.initEvent("change", false, true);
+						num_field.dispatchEvent(evt);
+					} else {
+						num_field.fireEvent("onchange");
+					}
+				}
+			}
+		}
+	}
+
+	action_select_input = document.getElementById("cbid.modbus_master_alarms."+cfg_name+".action");
+	function_code_select_input = document.getElementById("cbid.modbus_master_alarms."+cfg_name+".modbus_function");
+	modbus_reg_count_input = document.getElementById("cbid.modbus_master_alarms."+cfg_name+".modbus_reg_count");
+
+	if (action_select_input){
+		action_select_input.addEventListener("change", function(){trigger_change(function_code_select_input, this.value);});
+
+		if(modbus_reg_count_input){
+			function_code_select_input.addEventListener("change", function(){change_validation(modbus_reg_count_input.id,function_code_select_input.value);}, false);
+			trigger_change(function_code_select_input, action_select_input.value);
+		}
+	}
+
+	function trigger_change(function_code_select_input, action){
+		if(function_code_select_input && action == "modbus_tcp"){
+			if ("createEvent" in document) {
+				var evt = document.createEvent("HTMLEvents");
+				evt.initEvent("change", false, true);
+				function_code_select_input.dispatchEvent(evt);
+			}
+			else
+				function_code_select_input.fireEvent("onchange");
+		}
+	}
+</script>

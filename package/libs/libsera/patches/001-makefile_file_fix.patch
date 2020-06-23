@@ -1,0 +1,30 @@
+--- libsera-1.2.2.orig/Makefile
++++ libsera-1.2.2/Makefile
+@@ -1,4 +1,4 @@
+-SR_PLUGIN_LUA:=0
++SR_PLUGIN_LUA:=1
+ SR_PROTO_HTTP_VERSION:=1.1
+ SR_SOCK_RXBUF_SIZE:=1024
+ SR_AGENT_VAL:=5
+@@ -8,6 +8,7 @@
+ SR_CURL_SIGNAL:=1
+ SR_SSL_VERIFYCERT:=1
+ SR_FILEBUF_PAGE_SCALE:=3
++SR_SSL_CACERT:=/etc/cacert.pem
+
+ BUILD:=release
+
+@@ -37,10 +38,11 @@
+ CPPFLAGS+=-DSR_CURL_SIGNAL=$(SR_CURL_SIGNAL)
+ CPPFLAGS+=-DSR_SSL_VERIFYCERT=$(SR_SSL_VERIFYCERT)
+ CPPFLAGS+=-DSR_FILEBUF_PAGE_SCALE=$(SR_FILEBUF_PAGE_SCALE)
++CPPFLAGS+=-DSR_SSL_CACERT=\"$(SR_SSL_CACERT)\"
+ CFLAGS+=-fPIC -pipe -MMD
+ CXXFLAGS+=-std=c++11 -fPIC -pipe -pthread -MMD
+ LDFLAGS+=-Wl,-soname,$(SONAME) -Wl,--no-undefined -shared -ldl
+-LDLIBS+=-pthread
++LDLIBS+=-pthread -lcurl -llua
+
+ ifeq ($(SR_PLUGIN_LUA), 0)
+ SRC:=$(filter-out src/srluapluginmanager.cc,$(SRC))
+

@@ -1,0 +1,80 @@
+<% 
+local sendPressed = luci.http.formvalue("cbid.sms_utils.message._sendBtn") 
+local text = luci.http.formvalue("cbid.sms_utils.message._custom")
+if sendPressed and text and text ~= "" then
+%>
+
+<script type="text/javascript">//<![CDATA[
+	var map = document.getElementsByClassName("cbi-map");
+	if (map){
+		var s = '<fieldset class="section" id="sms_status" style="float: right;">\
+		<div class="applyChanges">\
+		<span id="sms_status_spin">Sending...</span>\
+		\
+		<img src="/luci-static/resources/icons/loading.gif" alt="Loading">\
+		\
+		</div>\
+		</fieldset>';
+		map[0].insertAdjacentHTML("afterBegin", s)
+	}
+	
+	XHR.poll(5, '<%=luci.dispatcher.build_url("admin", "services", "sms", "sms_stat")%>', null,
+		function(x, info)
+		{
+			var e = document.getElementById("succ_message");
+			var spin = document.getElementById("sms_status_spin");
+			var f = document.getElementById("sms_status");
+			
+			
+			
+			if (info && e) {
+				var msg_field = info.slice(0,2);
+				var show_spin = info.slice(3,4);
+				var status = info.slice(5,6);
+				var text = info.slice(7);
+				
+				if (show_spin == "1") {
+					
+					if (f) {
+						f.style.display="inline"
+					}
+				
+					if (status == "W") {
+						if (spin) {
+							spin.textContent="Waiting..."
+						}
+					}
+					else if (status = "S") {
+						if (spin) {
+							spin.textContent="Sending..."
+						}
+					}
+					
+				}
+				else if (show_spin = "0") {
+					if (f) {
+						f.style.display="none"
+					}
+				}
+				
+				if (msg_field == "SC") {
+					if (e) {
+						e.className="alert-message success";
+					}
+				}
+				else if (msg_field == "ER") {
+					if (e) {
+						e.className="alert-message error";
+					}
+				}
+				
+				if (text) {
+					e.textContent=text;
+				}
+			}
+		}
+	);
+//]]></script>
+<% end %>
+
+

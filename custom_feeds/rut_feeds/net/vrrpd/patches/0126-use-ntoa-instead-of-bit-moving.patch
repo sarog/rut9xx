@@ -1,0 +1,89 @@
+--- a/vrrpd.c	2019-10-21 07:02:32.680729211 +0000
++++ b/vrrpd.c	2019-10-21 07:01:55.639636052 +0000
+@@ -61,7 +61,6 @@
+ int daemonize = 0;
+ 
+ static void write_ip_to_file( vrrp_rt *vsrv);
+-char *ipaddr_to_str(uint32_t ipaddr);
+ static int open_sock( vrrp_rt *vsrv );
+ static char	PidDir[FILENAME_MAX+1];
+ static char	scriptdown[FILENAME_MAX+1];
+@@ -1384,23 +1383,12 @@
+ 		if (!strcmp(status , "Master")) {
+ 			fprintf(f, "%s\n\n",status);
+ 		} else {
+-			fprintf(f, "%s\n%s\n",status, ipaddr_to_str(master_ipaddr));
++			fprintf(f, "%s\n%s\n",status, inet_ntoa(*(struct in_addr *) &master_ipaddr));
+ 		}
+ 		fclose(f);
+ 	}
+ }
+ 
+-char *ipaddr_to_str(uint32_t ipaddr)
+-{
+-	static char temp_ipaddr[32];
+-	snprintf(temp_ipaddr, 32, "%d.%d.%d.%d", 
+-			(unsigned char)(ipaddr & 0xff),
+-			(unsigned char)((ipaddr >> 8) & 0xff),
+-			(unsigned char)((ipaddr >> 16) & 0xff),
+-			(unsigned char)((ipaddr >> 24) & 0xff));
+-	return temp_ipaddr;
+-}
+-
+ /****************************************************************
+ ********************write master ip to file**********************
+ ****************************************************************/
+@@ -1429,7 +1417,7 @@
+ 		if (f == NULL){
+ 			printf("Error opening file!\n");
+ 		}else{
+-			fprintf(f, "%s\n%s\n",status, ipaddr_to_str(master_ipaddr));
++			fprintf(f, "%s\n%s\n", status, inet_ntoa(*(struct in_addr *) &master_ipaddr));
+ 			fclose(f);
+ 		}
+ 	}
+@@ -1471,7 +1459,7 @@
+ 		return;
+ 	}
+  
+-	vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%swe are now the master router.", vsrv->vrid, vif->ifname,master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is down, " : "");
++	vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%swe are now the master router.", vsrv->vrid, vif->ifname,master_ipaddr ? inet_ntoa(*(struct in_addr *) &master_ipaddr) : "", master_ipaddr ? " is down, " : "");
+ 	strcpy(backup_reason,"");
+ 	char status[10];
+ 	struct eventslog new_task;
+@@ -1577,7 +1565,7 @@
+ 	new_task.requests = INSERT;
+ 	new_task.table = "EVENTS";
+ 	new_task.type = "VRRP";
+-	vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%s - INIT State (backup) -", vsrv->vrid, vsrv->vif.ifname, master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is up, " : "");
++	vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%s - INIT State (backup) -", vsrv->vrid, vsrv->vif.ifname, master_ipaddr ? inet_ntoa(*(struct in_addr *) &master_ipaddr) : "", master_ipaddr ? " is up, " : "");
+ 	if ( vsrv->priority == VRRP_PRIO_OWNER ) {
+ 		 state_goto_master( vsrv );
+ 	}
+@@ -1587,7 +1575,7 @@
+ 		int delay = 3*vsrv->adver_int + VRRP_TIMER_SKEW(vsrv);
+ 		VRRP_TIMER_SET( vsrv->ms_down_timer, delay );
+ 		vsrv->state = VRRP_STATE_BACK;
+-		vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%s - INIT State (backup) -", vsrv->vrid, vsrv->vif.ifname, master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is up, " : "");
++		vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%s - INIT State (backup) -", vsrv->vrid, vsrv->vif.ifname, master_ipaddr ? inet_ntoa(*(struct in_addr *) &master_ipaddr) : "", master_ipaddr ? " is up, " : "");
+ 		if (vsrv->instance_name) {
+ 			new_task.text = (char *) malloc(sizeof(char) * (28 + strlen(vsrv->instance_name)));
+ 			if (new_task.text != NULL)
+@@ -1603,7 +1591,7 @@
+ 		write_to_file(vsrv, status);
+ 		if ((master_ipaddr) && (vsrv->wantstate == VRRP_STATE_BACK)){
+ 			strcpy(backup_reason,"Read packet from peer");
+-			vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: be backup %s%s - Receive packet from Master -", vsrv->vrid, vsrv->vif.ifname, master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is up, " : "");
++			vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: be backup %s%s - Receive packet from Master -", vsrv->vrid, vsrv->vif.ifname, master_ipaddr ? inet_ntoa(*(struct in_addr *) &master_ipaddr) : "", master_ipaddr ? " is up, " : "");
+ 		}
+ 	        if (timenow != ((time_t)-1)){
+        			timenow = time(NULL);
+@@ -1697,7 +1685,7 @@
+ 			state_leave_master( vsrv, 0 );
+ 			vsrv->state	= VRRP_STATE_BACK;
+ 			vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%swe are now a backup router.", vsrv->vrid, vsrv->vif.ifname,
+-				master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is up, " : "");
++				master_ipaddr ? inet_ntoa(*(struct in_addr *) &master_ipaddr) : "", master_ipaddr ? " is up, " : "");
+             if (vsrv->instance_name) {
+                 new_task.text = (char *) malloc(sizeof(char) * (28 + strlen(vsrv->instance_name)));
+                 if (new_task.text != NULL)

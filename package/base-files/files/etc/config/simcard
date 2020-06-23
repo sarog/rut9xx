@@ -1,0 +1,28 @@
+config sim1 'sim1'
+	option proto '3g'
+	option dialnumber '*99#'
+	option ifname '3g-ppp'
+	option reconnect '5'
+	option ltebandval '1a0000800d5'
+	option bandval 'ffff'
+	option auto_apn '1'
+
+config sim2 'sim2'
+	option proto '3g'
+	option dialnumber '*99#'
+	option ifname '3g-ppp'
+	option reconnect '5'
+	option ltebandval '1a0000800d5'
+	option bandval 'ffff'
+	option auto_apn '1'
+
+config interface 'ppp'
+
+config option 'option'
+
+config rules 'rules'
+
+config bands 'bands'
+
+config simcard 'simcard'
+	option default 'sim1'

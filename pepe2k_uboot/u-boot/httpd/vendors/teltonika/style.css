@@ -1,0 +1,284 @@
+html, body {
+	margin: 0;
+	padding: 0;
+}
+
+h1,
+h2,
+p,
+a,
+img,
+strong,
+li,
+ol,
+ul,
+form,
+label,
+button,
+tr,
+th,
+td {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-weight: normal;
+	font-style: normal;
+	font-size: 100%;
+	line-height: 1;
+	font-family: inherit;
+}
+
+body {
+	background-color: #ffffff;
+	margin: 0;
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 14px;
+	font-weight: normal;
+	line-height: 18px;
+	color: #404040;
+	padding-top: 80px;
+}
+
+
+#m {
+	max-width: 750px;
+	margin: 30px auto 10px;
+	border: solid 1px #BABABA;
+	background: #FFF;
+	border-radius: 7px;
+	box-shadow: 0 0 10px #D2D1D1;
+}
+
+#m > * {
+	padding: 20px;
+}
+
+h1 {
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 30px;
+	border-bottom: solid 1px #E8E8E8;
+	font-weight: bold;
+	margin-bottom: 20px;
+	color: #2450AD;
+	text-decoration: none;
+}
+
+a {
+	color: #404040;
+	text-decoration: none;
+}
+
+.i {
+	margin: 20px;
+	border-radius: 7px;
+	text-align: justify;
+}
+
+.w {
+	background: #FEFDCE;
+	border: solid 1px #FFC643;
+}
+
+.e {
+	background: #FFE7E7;
+	border:solid 1px #FE7171;
+}
+
+#f {
+	text-align: center;
+	color: #969393;
+}
+
+form,
+p,
+h1 {
+	text-align: center;
+}
+
+form {
+	margin-bottom: 20px;
+}
+
+ul {
+	list-style: square;
+	margin: 0 0 0 20px;
+}
+
+.i strong {
+	margin: 0 0 5px;
+	display: block;
+}
+
+header {
+	height: 40px;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 10000;
+	overflow: visible;
+	color: #BFBFBF
+}
+
+header a {
+	color: #fff;
+	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+	font-size: 15px;
+	font-weight: bold;
+}
+
+header h3 a, header .brand {
+	float: left;
+	display: block;
+	padding: 8px 20px 12px;
+	margin-left: -20px;
+	color: #ffffff;
+	font-size: 20px;
+	font-weight: 200;
+	line-height: 1;
+}
+
+header p {
+	margin: 0;
+	line-height: 40px;
+}
+
+header .fill {
+	background-color: #000;
+	background-color: #000;
+	background-repeat: repeat-x;
+	background-image: -khtml-gradient(linear, left top, left bottom, from(#000), to(#000));
+	background-image: -moz-linear-gradient(top, #000, #000);
+	background-image: -ms-linear-gradient(top, #000, #000);
+	background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #000), color-stop(100%, #000));
+	background-image: -webkit-linear-gradient(top, #000, #000);
+	background-image: -o-linear-gradient(top, #000, #000);
+	background-image: linear-gradient(top, #000, #000);
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#000', endColorstr='#000', GradientType=0);
+	-webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+	-moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+div.container img.logo {
+	margin-top: 6px;
+}
+
+.container {
+	width: 100%;
+	max-width: 940px;
+	margin-left: auto;
+	margin-right: auto;
+	zoom: 1;
+}
+
+.alert-message {
+	position: relative;
+	padding: 7px 15px;
+	margin-bottom: 18px;
+	color: #404040;
+	background-color: #eedc94;
+	background-repeat: repeat-x;
+	background-image: -khtml-gradient(linear, left top, left bottom, from(#fceec1), to(#eedc94));
+	background-image: -moz-linear-gradient(top, #fceec1, #eedc94);
+	background-image: -ms-linear-gradient(top, #fceec1, #eedc94);
+	background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #fceec1), color-stop(100%, #eedc94));
+	background-image: -webkit-linear-gradient(top, #fceec1, #eedc94);
+	background-image: -o-linear-gradient(top, #fceec1, #eedc94);
+	background-image: linear-gradient(top, #fceec1, #eedc94);
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#fceec1', endColorstr='#eedc94', GradientType=0);
+	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+	border-color: #eedc94 #eedc94 #e4c652;
+/*   border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25); */
+	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+	border-width: 1px;
+	border-style: solid;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+	-webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+	-moz-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.alert-message.error {
+	color: white;
+	background-color: #c43c35;
+	background-repeat: repeat-x;
+	background-image: -khtml-gradient(linear, left top, left bottom, from(#ee5f5b), to(#c43c35));
+	background-image: -moz-linear-gradient(top, #ee5f5b, #c43c35);
+	background-image: -ms-linear-gradient(top, #ee5f5b, #c43c35);
+	background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #ee5f5b), color-stop(100%, #c43c35));
+	background-image: -webkit-linear-gradient(top, #ee5f5b, #c43c35);
+	background-image: -o-linear-gradient(top, #ee5f5b, #c43c35);
+	background-image: linear-gradient(top, #ee5f5b, #c43c35);
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ee5f5b', endColorstr='#c43c35', GradientType=0);
+	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+	border-color: #c43c35 #c43c35 #882a25;
+/* 	border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25); */
+}
+
+#l {
+	height:80px;
+	width:80px;
+	margin:0 auto 20px;
+	-webkit-animation:r 1s infinite linear;
+	-moz-animation:r 1s infinite linear;
+	-o-animation:r 1s infinite linear;
+	animation:r 1s infinite linear;
+	border-left:7px solid #EAF1FF;
+	border-right:7px solid #EAF1FF;
+	border-bottom:7px solid #EAF1FF;
+	border-top:7px solid #2450AD;
+	border-radius:100%
+}
+
+@-webkit-keyframes r{
+	from{
+		-webkit-transform:rotate(0deg)
+	}
+	to{
+		-webkit-transform:rotate(359deg)
+	}
+}
+
+@-moz-keyframes r {
+	from{
+		-moz-transform:rotate(0deg)
+	}
+	to{
+		-moz-transform:rotate(359deg)
+	}
+}
+
+@-o-keyframes r{
+	from{
+		-o-transform:rotate(0deg)
+	}
+	to{
+		-o-transform:rotate(359deg)
+	}
+}
+
+@keyframes r {
+	from{
+		transform:rotate(0deg)
+	}
+	to{
+		transform:rotate(359deg)
+	}
+}
+
+p {
+	margin-bottom: 20px;
+}
+
+.footer {
+	padding: 25px 25px 25px 25px; 
+	background: none repeat scroll 0% 0% rgb(245, 245, 245); 
+	border-top: 1px solid #DDD;
+}
+
+.heading{
+	text-align: left;
+}

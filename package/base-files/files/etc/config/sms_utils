@@ -1,0 +1,270 @@
+config status 'auto_reply'
+	option enabled '0'
+	option delete_msg '1'
+	option mode 'everyone'
+
+config smsreboot 'smsreboot'
+	option enabled '0'
+	option tel ''
+	option message ''
+
+config sms_utils 'sim'
+	option enabled '1'
+	option free '1'
+
+config limit_wrn
+
+config message 'message'
+
+config cfgsms 'cfgsms'
+
+config post_get 'post_get'
+	option enabled '0'
+
+config rule
+	option action 'reboot'
+	option enabled '1'
+	option smstext 'reboot'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option status_sms '1'
+	option message 'Router name - %rn; WAN IP - %wi; Data Connection state - %cs; Connection type - %ct; Signal Strength - %ss; New FW available - %fs;'
+	option to_other_phone '0'
+
+config rule
+	option action 'send_status'
+	option enabled '1'
+	option smstext 'status'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option message 'Router name - %rn; WAN IP - %wi; Data Connection state - %cs; Connection type - %ct; Signal Strength - %ss; New FW available - %fs;'
+	option to_other_phone '0'
+
+config rule
+	option action 'iostatus'
+	option enabled '1'
+	option smstext 'iostatus'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'vpnstatus'
+	option enabled '1'
+	option smstext 'vpnstatus'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'wifi'
+	option enabled '1'
+	option value 'on'
+	option smstext 'wifion'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option write_wifi '1'
+	option to_other_phone '0'
+
+config rule
+	option action 'wifi'
+	option enabled '1'
+	option value 'off'
+	option smstext 'wifioff'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option write_wifi '1'
+	option to_other_phone '0'
+
+config rule
+	option action 'mobile'
+	option enabled '1'
+	option value 'on'
+	option smstext 'mobileon'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option write_mobile '1'
+	option to_other_phone '0'
+
+config rule
+	option action 'mobile'
+	option enabled '1'
+	option value 'off'
+	option smstext 'mobileoff'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option write_mobile '1'
+	option to_other_phone '0'
+
+config rule
+	option action 'vpn'
+	option enabled '1'
+	option value 'on'
+	option smstext 'vpnon'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'vpn'
+	option enabled '1'
+	option value 'off'
+	option smstext 'vpnoff'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'change_mobile_settings'
+	option enabled '1'
+	option smstext 'cellular'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option simcard 'sim1'
+	option to_other_phone '0'
+
+config rule
+	option action 'list_of_profile'
+	option enabled '1'
+	option smstext 'profdisp'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'change_profile'
+	option enabled '1'
+	option smstext 'pr'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'ssh_access'
+	option enabled '1'
+	option smstext 'ssh'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option ssh_access_enabled '1'
+	option ssh_access_remote '1'
+	option to_other_phone '0'
+
+config rule
+	option action 'web_access'
+	option enabled '1'
+	option smstext 'web'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option web_access_enabled '1'
+	option web_access_enabled_https '1'
+	option web_access_http '1'
+	option web_access_https '1'
+	option to_other_phone '0'
+
+config rule
+	option action 'firstboot'
+	option enabled '1'
+	option smstext 'restore'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'get_configure'
+	option enabled '1'
+	option smstext 'get_configure'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'set_configure'
+	option enabled '1'
+	option smstext 'send_configure'
+	option authorisation 'no'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'switch_sim'
+	option enabled '1'
+	option smstext 'switch_sim'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'gps_coordinates'
+	option enabled '1'
+	option smstext 'gps'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'gps'
+	option enabled '1'
+	option value 'off'
+	option smstext 'gps_off'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'gps'
+	option enabled '1'
+	option value 'on'
+	option smstext 'gps_on'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'fw_upgrade'
+	option enabled '1'
+	option smstext 'fw_upgrade'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'monitoring'
+	option enabled '1'
+	option value 'on'
+	option smstext 'monitoringon'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'monitoring'
+	option enabled '1'
+	option value 'off'
+	option smstext 'monitoringoff'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'monitoring_status'
+	option enabled '1'
+	option smstext 'monitoring_status'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'uci'
+	option enabled '1'
+	option smstext 'uci'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'
+
+config rule
+	option action 'more'
+	option enabled '1'
+	option smstext 'more'
+	option authorisation 'password'
+	option allowed_phone 'all'
+	option to_other_phone '0'

@@ -1,0 +1,6 @@
+#!/bin/sh
+uci batch <<-EOF
+	set luci.themes.Teltonika_Experimental=/luci-static/teltonikaExp
+	commit luci
+EOF
+exit 0

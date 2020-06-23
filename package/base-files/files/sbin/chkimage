@@ -1,0 +1,57 @@
+#!/bin/sh
+
+# FILE: chkimage
+#
+# USAGE: chkimage <filename> <fw name>
+#
+# RETURN: MD5 sum of image on success or "0" on failure
+#
+# DESCRIPTION: This script checks MD5 checksum of RUT900
+# WEBUI image. Fw name and MD5 checksum itself is appended
+#to raw "sysupgrade" image at image compile time, so script
+# takes last 22 bytes (6 for name, 16 for md5) of the image
+# and compares it with predefined name and MD5 of the image.
+
+FILENAME=$1
+
+if [ "$#" -lt 1 -o "$#" -gt 2 ]; then
+        echo "0"
+
+	exit 1
+else
+	if [ ! -f $FILENAME ]; then
+		echo "0"
+		exit 1
+	else
+		FWNAME="${2:-master}"
+		validate="${3:-1}"
+		file_size=`ls -la $FILENAME 2>/dev/null | awk '{ print $5}' 2>/dev/null`
+		check_length=`expr $file_size - 16 2>/dev/null`
+		name_offset=`expr $file_size - 22 2>/dev/null`
+		md5_calculated=`head -c $check_length $FILENAME 2>/dev/null | md5sum 2>/dev/null | awk '{print $1}' 2>/dev/null`
+		md5_extracted=`hexdump -s $check_length -n 16 -e '16/1 "%02x"' $FILENAME 2>/dev/null`
+		md5_len=${#md5_calculated}
+		fw_name=`dd if=$FILENAME bs=1 skip=$name_offset count=6 2>/dev/null`
+		validation_number=`dd if=$FILENAME bs=1 skip=63 count=1 2>/dev/null`
+		serial_number=`mnf_info sn`
+		device_flash_id=$(cat /sys/bus/spi/devices/spi0.0/flash_name)
+		
+
+		if [ "$device_flash_id" == "gd25q128" -a "$validation_number" != "$validate" ]; then
+                        echo "1"
+                        exit 1
+		fi
+		
+		# patikrina serial numerio ilgi, jei 10 tai neleis irasyti senesnio fw nei RUT9XX_R_00.03.491
+		if [ "${#serial_number}" = "10" -a "$validation_number" != "$validate" ]; then
+                        echo "1"
+                        exit 1
+		fi
+		
+		if [ "$md5_calculated" = "$md5_extracted" -a  "$md5_len" = "32" -a "$fw_name" = "$FWNAME" ]; then
+			echo "$md5_calculated"
+		else
+			echo "0"
+		fi
+	fi
+fi

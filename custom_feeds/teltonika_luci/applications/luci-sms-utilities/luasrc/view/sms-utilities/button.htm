@@ -1,0 +1,7 @@
+<%+cbi/valueheader%>
+	<% if self:cfgvalue(section) ~= false then %>
+		<input style="float: right;" class="cbi-button cbi-input-<%=self.inputstyle or "button" %>"  type="submit" <%= attr("name", cbid) .. attr("id", cbid) .. attr("value", self.value)%> />
+	<% else %>
+		-
+	<% end %>
+<%+cbi/valuefooter%>

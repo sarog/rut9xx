@@ -1,0 +1,14 @@
+#!/bin/sh
+
+tar_file="/etc/default-config/config.tar.gz"
+
+[ ! -f "$tar_file" ] && {
+	echo "Archive file not found"
+	return 1
+}
+
+ps | grep led_reset_count.sh | awk '{print $1}' | xargs kill
+/usr/sbin/ledbar.sh blink green
+cp $tar_file /tmp/user_defaults.tgz
+mtd -e rootfs_data jffs2write /tmp/user_defaults.tgz rootfs_data
+return 0

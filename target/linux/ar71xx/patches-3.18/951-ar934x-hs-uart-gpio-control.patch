@@ -1,0 +1,61 @@
+--- a/drivers/tty/serial/ar934x_hs_uart.c
++++ b/drivers/tty/serial/ar934x_hs_uart.c
+@@ -28,6 +28,7 @@
+ #include <linux/io.h>
+ #include <linux/irq.h>
+ #include <linux/clk.h>
++#include <linux/gpio.h>
+ 
+ #include <asm/div64.h>
+ 
+@@ -48,6 +49,9 @@
+ 
+ #define AR934X_HS_DUMMY_STATUS_RD	0x01
+ 
++#define RS485_D		0
++#define RS485_R		63
++
+ #define dprintk(args...) \
+     do { \
+        printk(KERN_INFO " ar934x-hs-uart : " args); \
+@@ -127,11 +131,39 @@
+ static inline void ar934x_hs_uart_putc(struct ar934x_hs_uart_port *up, int ch)
+ {
+ 	unsigned int rdata;
++	unsigned int baud;
++	unsigned int timeout = 0;
++
++	baud = up->port.state->port.tty->termios.c_ospeed;
++	if (baud == 9600)
++		timeout = 500;
++	else if (baud == 4800)
++		timeout = 1500;
++	else if (baud == 2400)
++		timeout = 3500;
++	else if (baud == 1200)
++		timeout = 8500;
++	else if (baud == 600)
++		timeout = 16500;
++	else if (baud == 300)
++		timeout = 32500;
+ 
++	//timeout = 9120000/baud;
+ 	rdata = ch & AR934X_HS_UART_DATA_TX_RX_MASK;
+ 	rdata |= AR934X_HS_UART_DATA_TX_CSR;
+-	// dprintk("%s() write 0x%08X value 0x%08X\n", __func__, rdata, AR934X_HS_UART_DATA_REG);
++
++	gpio_set_value_cansleep(RS485_R, 1);
++	gpio_set_value(RS485_D, 0);
++	
++	//dprintk("%s() write 0x%08X value 0x%08X\n", __func__, rdata, AR934X_HS_UART_DATA_REG);
+ 	ar934x_hs_uart_write(up, AR934X_HS_UART_DATA_REG, rdata);
++	
++	while (timeout != 0) {
++		--timeout;
++		udelay(1);
++	} 
++	gpio_set_value_cansleep(RS485_R, 0);
++	gpio_set_value(RS485_D, 1);
+ }
+ 
+ static unsigned int ar934x_hs_uart_tx_empty(struct uart_port *port)

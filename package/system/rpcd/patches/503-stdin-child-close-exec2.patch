@@ -1,0 +1,22 @@
+--- a/file.c
++++ b/file.c
+@@ -601,7 +601,7 @@
+ 	pid_t pid;
+ 	int opipe[2];
+ 	int epipe[2];
+-	int fe, fo;
++	int fe, fo, nfd;
+
+ 	struct rpc_file_exec_context *c;
+
+@@ -638,6 +638,10 @@
+ 		close(epipe[0]);
+ 		close(epipe[1]);
+
++		nfd = open("/dev/null", O_RDWR);
++		dup2(nfd, 0);
++		if (nfd > 2) close(nfd);
++
+ 		if(system(cmd))
+ 			_exit(EXIT_FAILURE);
+ 		else

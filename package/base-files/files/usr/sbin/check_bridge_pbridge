@@ -1,0 +1,103 @@
+#!/bin/sh
+
+set_proto() {
+	. /lib/teltonika-functions.sh
+	local ext_vidpid=`get_ext_vidpid_tlt`
+	local sim="$1"
+
+	case "$ext_vidpid" in
+		1BC7:0021) # Telit HE910-EUD
+			uci -q set network.ppp.proto='3g'
+			uci -q set network.ppp.ifname='3g-ppp'
+			uci -q set simcard.sim"$sim".proto='3g'
+			uci -q set simcard.sim"$sim".ifname='3g-ppp'
+			;;
+
+		1BC7:1201) # Telit LE910
+			uci -q set network.ppp.proto='qmi'
+			uci -q set network.ppp.ifname='wwan0'
+			uci -q set simcard.sim"$sim".proto='qmi'
+			uci -q set simcard.sim"$sim".ifname='wwan0'
+			;;
+		1BC7:0036) # Telit LE910_V2
+			uci -q set network.ppp.proto='ncm'
+			uci -q set network.ppp.ifname='wwan0'
+			uci -q set simcard.sim"$sim".proto='ncm'
+			uci -q set simcard.sim"$sim".ifname='wwan0'
+			;;
+				# Huawei ME909u # Huawei ME906s # Huawei ME909s
+		12D1:1573 |\
+		12D1:15C1 |\
+		12D1:15C3 |\
+		12D1:15BB)
+			uci -q set network.ppp.proto='ndis'
+			uci -q set network.ppp.ifname='eth2'
+			uci -q set simcard.sim"$sim".proto='ndis'
+			uci -q set simcard.sim"$sim".ifname='eth2'
+			;;
+			# Quectel EC20 # Quectel EC25 # Quectel UC20
+		05C6:9215 |\
+		2C7C:0125 |\
+		05C6:9003)
+			uci -q set network.ppp.proto='qmi2'
+			uci -q set network.ppp.ifname='wwan0'
+			uci -q set network.ppp.device='/dev/cdc-wdm0'
+			uci -q set simcard.sim"$sim".proto='qmi2'
+			uci -q set simcard.sim"$sim".ifname='wwan0'
+			uci -q set simcard.sim"$sim".device='/dev/cdc-wdm0'
+			;;
+		# unknown device
+		*)
+			echo "$0: unknown device, aborting"
+			exit 0
+			;;
+	esac
+
+	uci commit network
+	uci commit simcard
+
+}
+
+method=$(uci -q get network.ppp.method)
+current_sim=$(/sbin/gpio.sh get SIM)
+
+if [ "$method" = "bridge" ]; then
+
+	set_proto "$current_sim"
+
+	enabled=$(uci get network.ppp.enabled)
+	uci -q set network.wan.enabled="$enabled"
+
+	uci -q set network.lan.ifname='eth0 tap0'
+	uci -q set network.lan.proto='static'
+
+	section=$(uci -q get network.lan2)
+	if [ "$section" != "" ]; then
+		ipaddr=$(uci -q get network.lan2.ipaddr)
+		netmask=$(uci -q get network.lan2.netmask)
+		uci -q set network.lan.ipaddr="$ipaddr"
+		uci -q set network.lan.netmask="$netmask"
+
+		uci -q delete network.lan2
+	fi
+
+	uci commit network
+	rm /usr/sbin/check_bridge_pbridge
+	/etc/init.d/network restart
+
+elif [ "$method" = "pbridge" ]; then
+
+	set_proto "$current_sim"
+
+	uci -q del dhcp.lan.ignore
+	uci commit dhcp
+
+	uci -q set firewall.pbridge.enabled="0"
+	uci commit firewall
+
+
+	rm /usr/sbin/check_bridge_pbridge
+	/etc/init.d/network restart
+fi
+
+

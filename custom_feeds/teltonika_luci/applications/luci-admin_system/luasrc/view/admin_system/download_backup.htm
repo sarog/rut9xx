@@ -1,0 +1,103 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: applyreboot.htm 7773 2011-10-24 01:10:34Z jow $
+
+-%>
+<%+header%>
+<style>
+	.tabs li:nth-child(2){
+		display:none;
+	}
+</style>
+	<script type="text/javascript" src="/luci-static/resources/spin.js"></script>
+	<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+	<script type="text/javascript">//<![CDATA[
+
+		function checkDownload() {
+			XHR.poll(4, '<%=luci.dispatcher.build_url("admin", "system", "admin","check_download")%>', null,
+				function(x, info) {
+					if(info.download_err != 0) {
+						document.getElementById("download_interupt").submit();
+					}
+				}
+			);
+		}
+
+		function refreshPage() {
+			XHR.poll(3, '<%=luci.dispatcher.build_url("admin", "system", "admin","check_status")%>', { status: 1 },
+				function(x, info) {
+					if(info){
+						document.getElementById('id_progress').innerHTML = info.uptime;
+						if (info.uptime == "done"){
+							document.getElementById('spinner').style.display = 'none';
+							document.getElementById("download_form").submit();
+						}
+					}
+				}
+			);
+		}
+	// admin/system/admin/auto (backup)
+	function download(){
+		XHR.get('<%=luci.dispatcher.build_url("admin", "system", "admin", "download_backup")%>', { status: 1 },
+		function(x, info) {
+			checkDownload();
+			refreshPage();
+		}
+	);
+}
+	//AddWindowOnLoadEvent(refreshPage);
+	AddWindowOnLoadEvent(download);
+//]]></script>
+
+		<div class="cbi-map-descr"><%=translate("")%> </div>
+			<h2><a id="content" name="content"><%=translate("Downloading...")%></a> <span id="id_progress" style="color: green;">0 %</span></h2>
+			<fieldset class="cbi-section">
+				<div class="spin_wrapper">
+					<div id="spinner"></div>
+				</div>
+					<p1 style="position: relative; top: 150px; left: 375px; "><%=translate("The new config is downloading.")%></p1>
+					<p2 style="position: relative; top: 185px; left: 165px; "><%=translate("<b>DO NOT POWER OFF THE DEVICE!</b>")%></p2>
+					<!--<p3><%translate("It might be necessary to change your computer\'s network settings to reach the device again, depending on your configuration.")%></p3> -->
+			</fieldset>
+
+			<form id="download_form" style="display:inline" action="<%=luci.dispatcher.build_url("admin", "system", "admin","upgrade")%>" method="get">
+				<input type="hidden" name="restore" value="1"/>
+				<input type="hidden" name="archive" value="1"/>
+			</form>
+
+			<form id="download_interupt" style="display:inline" action="<%=luci.dispatcher.build_url("admin", "system", "admin","backup")%>" method="post">
+				<input type="hidden" name="redirect" value="1"/>
+			</form>
+
+		</div>
+		<script type="text/javascript">//<![CDATA[
+			//var apply_xhr = new XHR();
+			var opts = {
+				lines: 14, // The number of lines to draw
+				length: 13, // The length of each line
+				width: 5, // The line thickness
+				radius: 17, // The radius of the inner circle
+				rotate: 0, // The rotation offset
+				color: '#000', // #rgb or #rrggbb
+				speed: 1.7, // Rounds per second
+				trail: 64, // Afterglow percentage
+				shadow: false, // Whether to render a shadow
+				hwaccel: true, // Whether to use hardware acceleration
+				className: 'spinner', // The CSS class to assign to the spinner
+				zIndex: 2e9, // The z-index (defaults to 2000000000)s
+				top: 50, // Top position relative to parent in px
+				left: 'auto' // Left position relative to parent in px
+			};
+			var target = document.getElementById('spinner');
+			var spinner = new Spinner(opts).spin(target);
+	//]]></script>
+<%+footer%>

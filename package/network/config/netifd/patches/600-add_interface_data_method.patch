@@ -1,0 +1,42 @@
+Index: netifd-2018-02-05/proto-shell.c
+===================================================================
+--- netifd-2018-02-05.orig/proto-shell.c
++++ netifd-2018-02-05/proto-shell.c
+@@ -755,6 +755,28 @@ proto_shell_setup_failed(struct proto_sh
+ }
+ 
+ static int
++proto_shell_update_data(struct proto_shell_state *state, struct blob_attr **tb)
++{
++	struct blob_attr *cur;
++
++	if (state->sm == S_TEARDOWN || state->sm == S_SETUP_ABORT)
++		return UBUS_STATUS_PERMISSION_DENIED;
++
++	if (!tb[NOTIFY_DATA])
++		return UBUS_STATUS_INVALID_ARGUMENT;
++
++	if ((cur = tb[NOTIFY_DATA]))
++		proto_shell_parse_data(state->proto.iface, cur);
++
++	if ((state->sm != S_SETUP_ABORT) && (state->sm != S_TEARDOWN)) {
++		state->proto.proto_event(&state->proto, IFPEV_UP);
++		state->sm = S_IDLE;
++	}
++
++	return 0;
++}
++
++static int
+ proto_shell_notify(struct interface_proto_state *proto, struct blob_attr *attr)
+ {
+ 	struct proto_shell_state *state;
+@@ -783,6 +806,8 @@ proto_shell_notify(struct interface_prot
+ 		return proto_shell_add_host_dependency(state, tb);
+ 	case 7:
+ 		return proto_shell_setup_failed(state);
++	case 8:
++		return proto_shell_update_data(state, tb);
+ 	default:
+ 		return UBUS_STATUS_INVALID_ARGUMENT;
+ 	}

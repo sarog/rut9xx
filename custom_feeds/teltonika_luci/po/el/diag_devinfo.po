@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"PO-Revision-Date: 2012-03-19 15:30+0200\n"
+"Last-Translator: Vasilis <acinonyx@openwrt.gr>\n"
+"Language-Team: none\n"
+"Language: el\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Pootle 2.0.4\n"
+
+msgid "Edit"
+msgstr "Επεξεργασία"
+
+msgid "Delete"
+msgstr "Διαγραφή"
+
+msgid "Add"
+msgstr "Προσθήκη"
+
+msgid "Invalid"
+msgstr "Μη έγκυρο"
+
+msgid "No SIP devices"
+msgstr "Δεν υπάρχουν συσκευές SIP"
+
+msgid "No devices detected"
+msgstr "Δεν ανιχνεύτηκαν συσκευές"
+
+msgid "check other networks"
+msgstr "έλεγχος άλλων δικτύων"
+
+#. Devices discovered for
+msgid "Devices discovered for"
+msgstr "Devices discovered for"
+
+msgid "IP Address"
+msgstr "Διεύθυνση IP"
+
+msgid "MAC Address"
+msgstr "Διεύθυνση MAC"
+
+msgid "Link to Device"
+msgstr "Ζεύξη με Συσκευή"
+
+msgid "Raw"
+msgstr "Ανεπεξέργαστα"
+
+msgid "Enable"
+msgstr "Ενεργοποίηση"
+
+msgid "Interface"
+msgstr "Διεπαφή"
+
+msgid "Subnet"
+msgstr "Υποδίκτυο"
+
+msgid "Timeout"
+msgstr ""
+
+msgid "Time to wait for responses in seconds (default 10)"
+msgstr ""
+
+msgid "Repeat Count"
+msgstr "Επανάληψη Μέτρησης"
+
+msgid "Number of times to send requests (default 1)"
+msgstr ""
+
+msgid "Sleep Between Requests"
+msgstr ""
+
+msgid "Milliseconds to sleep between requests (default 100)"
+msgstr ""
+
+msgid "Phones"
+msgstr "Τηλέφωνα"
+
+msgid "Configure"
+msgstr "Παραμετροποίηση"
+
+msgid "SIP Devices on Network"
+msgstr "Συσκευές SIP στο Δίκτυο"
+
+msgid "SIP Device Scan"
+msgstr "Σάρωση για συσκευές SIP"
+
+msgid "Devices on Network"
+msgstr "Συσκευές στο Δίκτυο"
+
+msgid "Phone Scan"
+msgstr "Σάρωση Τηλεφώνων"
+
+msgid "Config Phone Scan"
+msgstr "Ρύθμιση Σάρωσης Τηλεφώνων"
+
+msgid "Device Scan Config"
+msgstr "Ρύθμιση Σάρωσης Συσκευών"
+
+msgid "SIP Device Scanning Configuration"
+msgstr "Παραμετροποίηση Σάρωσης Συσκευών SIP"
+
+msgid "SIP Device Information"
+msgstr "Πληροφορίες Συσκευής SIP"
+
+msgid "Phone Information"
+msgstr "Πληροφορίες Τηλεφώνου"
+
+msgid ""
+"Override the information returned by the MAC to Device Info Script (mac-to-"
+"devinfo) for a specified range of MAC Addresses"
+msgstr ""
+
+msgid "MAC Device Override"
+msgstr ""
+
+msgid "MAC range and information used to override system and IEEE databases"
+msgstr ""
+
+msgid "Name"
+msgstr "Όνομα"
+
+msgid "Beginning of MAC address range"
+msgstr "Αρχή εύρους διευθύνσεων MAC"
+
+msgid "End of MAC address range"
+msgstr "Τέλος εύρους διευθύνσεων MAC"
+
+msgid "OUI Owner"
+msgstr "Ιδιοκτήτης OUI"
+
+msgid "Scan for devices on specified networks."
+msgstr "Σάρωση για συσκευές σε καθορισμένα δίκτυα."
+
+msgid "Phone Scanning Configuration"
+msgstr "Παραμετροποίηση Σάρωσης Τηλεφώνων"
+
+msgid "l_d_d_nd_netdiscover_to_devinfo_descr"
+msgstr "l_d_d_nd_netdiscover_to_devinfo_descr"

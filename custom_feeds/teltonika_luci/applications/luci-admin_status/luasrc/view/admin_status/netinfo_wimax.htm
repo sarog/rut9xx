@@ -1,0 +1,326 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: index.htm 8408 2012-04-02 22:50:26Z jow $
+
+-%>
+
+<%
+	require "luci.fs"
+	require "luci.tools.status"
+	luci.util   = require "luci.util"
+
+	local has_ipv6 = luci.fs.access("/proc/net/ipv6_route")
+	local has_backupLink = luci.fs.access("/tmp/.mwan/cache")
+	local has_dhcp = luci.fs.access("/etc/config/dhcp")
+	local has_wifi = luci.fs.stat("/etc/config/wireless")
+	      has_wifi = has_wifi and has_wifi.size > 0
+	local has_3g   = false
+	local has_3g_ppp= false
+	local has_lte= false
+	local activeConnection
+	local moduleType = luci.util.trim(luci.sys.exec("uci get -q system.module.type"))
+	local moduleIface = luci.util.trim(luci.sys.exec("uci get -q system.module.iface"))
+	local moduleDev = luci.util.trim(luci.sys.exec("uci get -q network.ppp.device"))
+	local ModuleName = luci.util.trim(luci.sys.exec("uci get -q system.module.name"))
+	local modelservice = "3G"
+	local moduleVidPid = luci.util.trim(luci.sys.exec("uci get -q system.module.vid"))..":"..luci.util.trim(luci.sys.exec("uci get -q system.module.pid"))
+ 	local bridge_on = luci.util.trim(luci.sys.exec("uci get -q network.ppp.bridge"))
+	local wimax_port = luci.util.trim(luci.sys.exec("uci get -q firewall.E_WIMAX_WEBUI.src_dport"))
+	local ip_address = luci.util.trim(luci.sys.exec("uci get -q network.lan.ipaddr"))
+	local ds = require "luci.dispatcher"
+ 	local function cecho(string)
+	luci.sys.call("echo \"" .. string .. "\" >> /tmp/log.log")
+	end
+ 
+	local ntm = require "luci.model.network".init()
+	local nw  = require "luci.model.network"
+	isSta = nw.get_override()
+	
+	step = tonumber(luci.http.formvalue("step"))
+	if step == 1 then
+		function modem_restart()
+			local ret = nw:rr_wimax()
+		end
+		modem_restart()
+		rv = {
+				progress = "0"
+			}
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(rv)
+		return
+	end
+	
+	if luci.http.formvalue("status") == "1" then
+
+-------------WiMAX information gathering-----
+
+				wtime   = nw:wimaxCGICall({ call ="time" })
+				if wtime ~= nil and wtime ~= "" and wtime ~= "401" then
+					wstate  = nw:wimaxCGICall({ call = "state" })
+					wsigstr = nw:wimaxCGICall({ call ="signal-strength" })
+					wsigqual= nw:wimaxCGICall({ call ="signal-quality-dbm" })
+					wupcd   = nw:wimaxCGICall({ call ="uplink-coding" })
+					wdowncd = nw:wimaxCGICall({ call ="downlink-coding" })
+					wmac    = nw:wimaxCGICall({ call ="macaddress" })
+					wver    = nw:wimaxCGICall({ call ="os-version" })
+					wbsid   = nw:wimaxCGICall({ call ="bsid" })
+					wip   = nw:wimaxCGICall({ call ="extip" })
+				end
+---------------------------------------------
+
+		local rv = {
+			wstate     = wstate,
+			wtime      = wtime,
+			wsigstr    = wsigstr,
+			wsigqual   = wsigqual,
+			wupcd      = wupcd,
+			wdowncd    = wdowncd,
+			wmac       = wmac,
+			wver       = wver,
+			wbsid      = wbsid,
+			wip        = wip,
+			
+		}
+
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(rv)
+
+		return
+	end
+
+	local system, model = luci.sys.sysinfo()
+-%>
+
+<%+header%>
+<script type="text/javascript">
+
+</script>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+
+function get_icon_str(avail, srenght)
+{
+var icon;
+	if (!avail)
+		icon = "<%=resource%>/icons/signal0.png";
+	else if (srenght >= -60)
+		icon = "<%=resource%>/icons/signal100.png";
+	else if (srenght >= -70)
+		icon = "<%=resource%>/icons/signal80.png";
+	else if (srenght >= -80)
+		icon = "<%=resource%>/icons/signal60.png";
+	else if (srenght >= -90)
+		icon = "<%=resource%>/icons/signal40.png";
+	else if (srenght >= -105)
+		icon = "<%=resource%>/icons/signal20.png";
+	else if (srenght < -105)
+		icon = "<%=resource%>/icons/signal-0.png";
+ return icon;
+}
+	var wifidevs = <%=luci.http.write_json(netdevs)%>;
+	var arptable = <%=luci.http.write_json(arpcache)%>;
+
+function refreshPage(){
+	document.getElementById("refresh").disabled = true;
+	XHR.get('<%=luci.dispatcher.build_url("admin", "status", "netinfo", "wimax")%>', { status: 1 },
+		function(x, info)
+		{
+			var tableStart = '<table width="100%" cellspacing="10">';
+			var tableEnd = '</table>';
+			if (info.wtime && info.wtime != "401"){
+				var e;
+				var wicon;
+				wicon = get_icon_str((info.wsigstr != undefined) && (info.wsigstr != "0"), info.wsigstr);
+
+				if (e = document.getElementById('wimaxBar0'))
+				{
+					e.src = wicon;
+				}
+				if (e = document.getElementById('wTime'))
+					e.innerHTML = (String.format('%T', info.wtime));
+
+				if (e = document.getElementById('wState'))
+					(info.wstate) ? e.innerHTML = info.wstate : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wSigstr'))
+					(info.wsigstr) ? e.innerHTML = String.format('%d dBm', info.wsigstr) : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wSigqual'))
+					(info.wsigqual) ? e.innerHTML = info.wsigqual : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wIp'))
+					(info.wip) ? e.innerHTML = info.wip : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wMac'))
+					(info.wmac) ? e.innerHTML = info.wmac : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wUpMod'))
+					(info.wupcd) ? e.innerHTML = info.wupcd : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wDownMod'))
+					(info.wdowncd) ? e.innerHTML = info.wdowncd : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wVer'))
+					(info.wver) ? e.innerHTML = info.wver : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wBSMac'))
+					(info.wbsid) ? e.innerHTML = info.wbsid : e.innerHTML     = "N/A";
+			}
+			else{
+				clear_table_view(1);
+			}
+			
+		document.getElementById("refresh").disabled = false;
+		}
+		
+	);
+}
+AddWindowOnLoadEvent(refreshPage);
+
+function disable_refresh(){
+	document.getElementById("reboot_wimax").disabled = false;
+	document.getElementById("refresh").disabled = false;
+	refreshPage();
+}
+
+function enable_progress(){
+	var connect = document.getElementById('applyConnection');
+		if (connect ){
+			connect.style.display="inline";
+		}
+}
+function disable_progress(){
+	var connect = document.getElementById('applyConnection');
+		if (connect ){
+			connect.style.display="none";
+		}
+}
+function clear_table_view(err){
+	
+	if (e = document.getElementById('wimaxBar0'))
+		e.src = "<%=resource%>/icons/signalnone.png";
+		
+	if (e = document.getElementById('wTime'))
+		e.innerHTML = "-";
+
+	if (e = document.getElementById('wState'))
+		e.innerHTML = "-";
+		
+	if (e = document.getElementById('wSigstr'))
+		e.innerHTML = "-";
+	
+	if (e = document.getElementById('wSigqual'))
+		e.innerHTML = "-";
+	
+	if (e = document.getElementById('wIp'))
+		e.innerHTML = "-";
+			
+	if (e = document.getElementById('wMac'))
+		e.innerHTML = "-";
+
+	if (e = document.getElementById('wUpMod'))
+		e.innerHTML = "-";
+				
+	if (e = document.getElementById('wDownMod'))
+		e.innerHTML = "-";
+				
+	if (e = document.getElementById('wVer'))
+		e.innerHTML = "-";
+		
+	if (e = document.getElementById('wBSMac'))
+		e.innerHTML = "-";
+	if(err == 1){
+		if (e = document.getElementById('ShowError')){
+			e.style.display="inline";
+		}
+	}
+}
+
+function reboot_wimax(){
+	clear_table_view(0);
+	enable_progress();
+	document.getElementById("reboot_wimax").disabled = true;
+	document.getElementById("refresh").disabled = true;
+	XHR.get('<%=luci.dispatcher.build_url("admin", "status", "netinfo", "wimax" )%>', { step: 1 },
+	function(x, info){
+		setTimeout(function(){ disable_refresh(); disable_progress(); }, 18000);
+	}
+	);
+}
+
+function wimaxLoad0()
+{
+  if (e = document.getElementById('wimaxBar1'))
+	e.style.visibility = 'hidden';
+  if (e = document.getElementById('wimaxBar0'))
+	e.style.visibility = 'visible';
+}
+AddWindowOnLoadEvent(wimaxLoad0);
+
+
+
+function show(id){
+	e = document.getElementById(id);
+	if (e && id) {
+		if (e.style.display == "none") {
+			e.style.display="";
+		}
+		else
+		{
+			e.style.display="none";
+		}
+	}
+}
+//]]></script>
+
+<fieldset class="cbi-section" >
+	<div class="applyChanges" id="applyConnection" style="display: none;">
+		<span id="cbi-apply-system-status"><%=translate("Rebooting...")%></span>
+		<img src="/luci-static/resources/icons/loading.gif" alt="Loading">
+	</div>
+	<h2><a id="content" name="content"><%=translate("WiMAX Information")%></a></h2>
+</fieldset>
+<fieldset class="cbi-section" >
+	<div id="g3BarsShow" class="overlayParent">
+		<div class="overlayLegend" style="height: 18px;">
+			
+			<div style="float: left; margin-top: 10px; ">
+				<%=translate("WiMAX")%>&#160;
+				<span onmouseout="HideHint(this)" onmouseover="ShowHint(this, \'<%=translate("Configuration")%>\')"style="color:rgb(64, 64, 64);"><a class="overview-mini-settings_icon" href="<%='http://' .. ip_address .. ':' .. wimax_port%>" target="_blank"></a></span>
+			</div>
+			<div style="float: right;">
+				<img id="wimaxBar0" style="visibility: visible; height: 23px; float:none; margin-right: 10px;"  onload="wimaxLoad0()" src="<%=resource%>/icons/signal0.png" />
+			</div>
+			<div style="margin-top: 10px; float: right;" >
+				<a id="ShowError" style="display: none;" href="<%=ds.build_url('admin/system/admin/wimax/')%>" class="wimaxErrorLink"> <%=translate('Invalid WiMAX user password. Please click here to navigate to relevant configuration page')%>&#160; </a>
+			</div>
+		</div>
+	<table width="100%" cellspacing="10">
+		<tr><td width="33%"><%=translate("Uptime")%></td><td                id="wTime"><%: - %>            </td></tr>
+		<tr><td width="33%"><%=translate("State")%></td><td                 id="wState"><%: - %>           </td></tr>
+		<tr><td width="33%"><%=translate("Singal Strength")%></td><td       id="wSigstr"><%: -  %></td></tr>
+		<tr><td width="33%"><%=translate("Signal Quality")%></td><td        id="wSigqual"><%: - %></td></tr>
+		<tr><td width="33%"><%=translate("IPv4 address")%></td><td          id="wIp"><%: -  %></td></tr>
+		<tr><td width="33%"><%=translate("MAC address")%></td><td           id="wMac"><%: -  %></td></tr>
+		<tr><td width="33%"><%=translate("BS MAC address")%></td><td        id="wBSMac"><%: - %></td></tr>
+		<tr><td width="33%"><%=translate("Uplink Modulation")%></td><td     id="wUpMod"><%: -  %></td></tr>
+		<tr><td width="33%"><%=translate("Downlink Modulation")%></td><td   id="wDownMod"><%: -  %></td></tr>
+		<tr><td width="33%"><%=translate("Version")%></td><td               id="wVer"><%: -  %></td></tr>
+	</table>
+</fieldset>
+
+<fieldset class="cbi-section">
+	<button id="refresh" class="cbi-button-refresh"  style="float: right;" disabled onClick="refreshPage()"><%=translate("Refresh")%></button>
+	<button id="reboot_wimax" class="cbi-button-refresh"  style="float: left;" onClick="reboot_wimax()"><%=translate("Reboot WiMAX modem")%></button>
+</fieldset>
+<%+footer%>

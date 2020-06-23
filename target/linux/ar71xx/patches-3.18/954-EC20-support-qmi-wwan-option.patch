@@ -1,0 +1,20 @@
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -961,6 +961,7 @@
+ 	{QMI_GOBI_DEVICE(0x03f0, 0x251d)},	/* HP Gobi 2000 Modem device (VP412) */
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9215)},	/* Acer Gobi 2000 Modem device (VP413) */
+ 	{QMI_FIXED_INTF(0x05c6, 0x9003, 4)},    /* Quectel UC20 */
++	{QMI_FIXED_INTF(0x05c6, 0x9215, 4)},    /* Quectel EC20 */
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9265)},	/* Asus Gobi 2000 Modem device (VR305) */
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9235)},	/* Top Global Gobi 2000 Modem device (VR306) */
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9275)},	/* iRex Technologies Gobi 2000 Modem device (VR307) */
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -1173,6 +1173,7 @@
+ 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, 0x0023)}, /* ONYX 3G device */
+ 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, 0x9000)}, /* SIMCom SIM5218 */
+ 	{ USB_DEVICE(QUALCOMM_VENDOR_ID, 0x9003)}, /* Quectel UC20*/
++	{ USB_DEVICE(QUALCOMM_VENDOR_ID, 0x9215)}, /* Quectel EC20*/
+ 	{ USB_DEVICE_INTERFACE_CLASS(SIERRA_VENDOR_ID, 0x68c0, 0xff),
+ 	  .driver_info = (kernel_ulong_t)&sierra_mc73xx_blacklist }, /* MC73xx */
+ 	{ USB_DEVICE_INTERFACE_CLASS(SIERRA_VENDOR_ID, 0x9041, 0xff),

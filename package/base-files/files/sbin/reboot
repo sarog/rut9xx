@@ -1,0 +1,90 @@
+#!/bin/sh
+Delay=
+TEXT=1
+FORCE=
+while getopts "wvscipeubrotd:nf" opt; do
+
+	case $opt in
+		w) TEXT="Request from Web UI"
+			;;
+		s) TEXT="Request from SMS"
+			;;
+		c) TEXT="Request from Call"
+			;;
+		i) TEXT="Request from Input/Output"
+			;;
+		p) TEXT="Request from ping reboot"
+			;;
+		e) TEXT="Request from periodic reboot"
+			;;
+		v) TEXT="Request from wget reboot"
+			;;
+		u) TEXT="Request after FW upgrade"
+			;;
+		b) TEXT="Request from button"
+			;;
+		r) TEXT="Request after factory reset button"
+			;;
+		o) TEXT="Request after restore to default"
+			;;
+# reboot after restore point
+		t) TEXT="Request after restore"
+			;;
+		d) Delay="$2"
+			;;
+		n) notsync=1
+			;;
+		f) force=1
+			;;
+		#*) checkname=1;;
+		\?) reboot=0 >&2 ;;
+	esac
+done
+if [ "$reboot" != "0" ]; then
+	if [ "$TEXT" = "1" ]; then
+		parentPPID=`cat /proc/"$PPID"/status 2>/dev/null | grep "PPid:" | awk -F' ' '{print $2}'`
+		parentPname=`cat /proc/"$PPID"/status 2>/dev/null | grep "Name:" | awk -F' ' '{print $2}'`
+		parentName=`cat /proc/"$parentPPID"/status 2>/dev/null | grep "Name:" | awk -F' ' '{print $2}'`
+		parentpid=`cat /proc/"$parentPPID"/status 2>/dev/null | grep "PPid:" | awk -F' ' '{print $2}'`
+
+		case "$parentName" in
+			"dropbear")
+				TEXT="Request from SSH"
+			;;
+			"procd")
+				TEXT="Request from UART"
+			;;
+			*)
+				TEXT="Other"
+			;;
+		esac
+	fi
+	/usr/bin/eventslog -i -t EVENTS -n Reboot -e "$TEXT" &
+	sleep 1;
+	return=$(ps w | grep "/usr/sbin/messaged" | grep -v "grep")
+	timeOut=0;
+	while [ -n "$return" ] && [ $timeOut -lt 30 ]
+	do
+		return=$(ps w | grep "/usr/sbin/messaged" | grep -v "grep")
+		timeOut=$((timeOut+1))
+		sleep 1;
+	done
+	uci set system.device_info.reboot=1
+	uci commit system
+
+	if [ "$notsync" = "1" ] || [ "$force" = "1" ] || [ $Delay ]; then
+		var="-"
+		if [ "$notsync" = "1" ]; then
+			var="$var""n"
+		fi
+		if [ "$force" = "1" ]; then
+			var="$var""f"
+		fi
+		if [ $Delay ]; then
+			var="$var""d$Delay"
+		fi
+	else
+		var=""
+	fi
+	/bin/busybox reboot "$var"
+fi

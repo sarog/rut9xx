@@ -1,0 +1,26 @@
+<%+cbi/valueheader%>
+	<input type="hidden" value="1"<%=
+		attr("name", "cbi.cbe." .. self.config .. "." .. section .. "." .. self.option)
+	%> />
+	<% if self.alert then%>
+		<input class="cbi-input-checkbox" type="checkbox" onclick="cbi_d_update(this.id); alert_message(this.id, '<%=self.alert[1]%>', '<%=self.alert[2]%>');"
+		<%=attr("id", cbid) .. attr("name", cbid) .. attr("value", self.enabled or 1) ..
+		ifattr((self:cfgvalue(section) or self.default) == self.enabled, "checked", "checked") .. 
+		ifattr(self.hardDisabled == true, "disabled", "disabled")
+	%> />
+	<% else %>
+		<input type="radio" class="cbi-input-checkbox" onclick="cbi_d_update(this.id)" onchange="cbi_d_update(this.id); hide_show(this.id)" type="checkbox"<%=
+			attr("id", cbid) .. attr("name", "main_wan") .. attr("value", section) ..
+			ifattr((self:cfgvalue(section) or self.default) == self.enabled, "checked", "checked") .. 
+			ifattr(self.hardDisabled == true, "disabled", "disabled")
+		%> style="-webkit-box-shadow: none; box-shadow: none;" />
+		<% if self.info then%>
+			<span style="color: rgb(64, 64, 64);" onmouseover="ShowHint(this, '')" onmouseout="HideHint(this)">
+				<% if self.url then%>
+					<a class="overview-mini-info_icon" href="<%=self.url%>"></a>
+				<% end %>
+			</span>
+			<label class="enthcon" ><%=self.info %></label>
+		<% end %>
+	<%end%>
+<%+cbi/valuefooter%>

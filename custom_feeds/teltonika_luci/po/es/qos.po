@@ -1,0 +1,108 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2010-03-25 22:10+0100\n"
+"PO-Revision-Date: 2012-03-18 18:49+0200\n"
+"Last-Translator: josevteg <josevteg@gmail.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Pootle 2.0.4\n"
+
+msgid "Quality of Service"
+msgstr "Calidad de Servicio (QoS)"
+
+msgid ""
+"With <abbr title=\"Quality of Service\">QoS</abbr> you can prioritize "
+"network traffic selected by addresses, ports or services."
+msgstr ""
+"Con QoS puede priorizar el tráfico de la red seleccionando por direcciones, "
+"puertos o servicios."
+
+msgid "Interfaces"
+msgstr "Interfaces"
+
+msgid "Enable"
+msgstr "Activar"
+
+msgid "Classification group"
+msgstr "Grupo de clasificación"
+
+msgid "default"
+msgstr "por defecto"
+
+msgid "Calculate overhead"
+msgstr "Calcular sobrecarga"
+
+msgid "Half-duplex"
+msgstr "Semi dúplex"
+
+msgid "Download speed (kbit/s)"
+msgstr "Velocidad de descarga (Kbit/s)"
+
+msgid "Upload speed (kbit/s)"
+msgstr "Velocidad de subida (Kbit/s)"
+
+msgid "Classification Rules"
+msgstr "Reglas de clasificación"
+
+msgid "Target"
+msgstr "Destino"
+
+msgid "priority"
+msgstr "prioridad"
+
+msgid "express"
+msgstr "exprés"
+
+msgid "normal"
+msgstr "normal"
+
+msgid "low"
+msgstr "bajo"
+
+msgid "Source host"
+msgstr "Máquina de origen"
+
+msgid "all"
+msgstr "todos"
+
+msgid "Destination host"
+msgstr "Máquina de destino"
+
+msgid "Service"
+msgstr "Servicio"
+
+msgid "Protocol"
+msgstr "Protocolo"
+
+msgid "Ports"
+msgstr "Puertos"
+
+msgid "Number of bytes"
+msgstr "Número de bytes"
+
+#~ msgid "Downlink"
+#~ msgstr "Enlace de bajada (downlink)"
+
+#~ msgid "Uplink"
+#~ msgstr "Enlace de subida (uplink)"
+
+#~ msgid "Prioritization"
+#~ msgstr "Priorización"
+
+#~ msgid "source network / source host"
+#~ msgstr "red de origen / host de origen"
+
+#~ msgid "target network / target host"
+#~ msgstr "red de destino / host de destino"
+
+#~ msgid "portrange"
+#~ msgstr "rango de puerto"
+
+#~ msgid "Bytes sent"
+#~ msgstr "Bytes enviados"

@@ -1,0 +1,46 @@
+#!/usr/bin/expect
+spawn ssh root@192.168.99.161
+expect "root@192.168.99.161's password:"
+send "root\n"
+
+#controller
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/controller/cfgwzd-module.lua -r luciwzd/luasrc/controller/cfgwzd-module.lua 192.168.99.156\n"
+
+
+
+#cbi models
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/model/cbi/cfgwzd-module/step_1_pwd.lua -r luciwzd/luasrc/model/cbi/cfgwzd-module/step_1_pwd.lua 192.168.99.156\n"
+
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/model/cbi/cfgwzd-module/step_2_wifi.lua -r luciwzd/luasrc/model/cbi/cfgwzd-module/step_2_wifi.lua 192.168.99.156\n"
+
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/model/cbi/cfgwzd-module/step_3_wan.lua -r luciwzd/luasrc/model/cbi/cfgwzd-module/step_3_wan.lua 192.168.99.156\n"
+
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/model/cbi/cfgwzd-module/step_31_3g.lua -r luciwzd/luasrc/model/cbi/cfgwzd-module/step_31_3g.lua 192.168.99.156\n"
+
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/model/cbi/cfgwzd-module/step_32_wire.lua -r luciwzd/luasrc/model/cbi/cfgwzd-module/step_32_wire.lua 192.168.99.156\n"
+
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/model/cbi/cfgwzd-module/step_4_lan.lua -r luciwzd/luasrc/model/cbi/cfgwzd-module/step_4_lan.lua 192.168.99.156\n"
+
+
+#templates
+expect "root@Teltonika:"
+send "mkdir /usr/lib/lua/luci/view/cfgwzd-module\n"
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/view/cfgwzd-module/wifi_status.htm -r luciwzd/luasrc/view/cfgwzd-module/wifi_status.htm 192.168.99.156\n"
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/view/cfgwzd-module/next_apply.htm -r luciwzd/luasrc/view/cfgwzd-module/next_apply.htm 192.168.99.156\n"
+expect "root@Teltonika:"
+send "tftp -g -l /usr/lib/lua/luci/view/cbi/map.htm -r map.htm 192.168.99.156\n"
+
+
+
+expect "root@Teltonika:"
+send "exit\n"
+interact

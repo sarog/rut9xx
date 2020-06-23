@@ -1,0 +1,5 @@
+<%+cbi/valueheader%>
+	<div style="width: auto; margin-top: 8px" <%=
+		attr("name", cbid) .. ifattr(self.size, "size").. ifattr(self.hardDisabled == true, "disabled", "disabled")
+	%> > <%if self:cfgvalue(section) ~= nil then%> <%=self:cfgvalue(section)%><% else %><%:N/A%><% end %></div>
+<%+cbi/valuefooter%>

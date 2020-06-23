@@ -1,0 +1,54 @@
+<%+cbi/valueheader%>
+<%
+	local uci = require "luci.model.uci".cursor()
+	local selected = uci:get(self.config, section, self.option)
+	local list_options = {
+		{value = "theme1", name = "Theme 1", selected = false},
+		{value = "theme2", name = "Theme 2", selected = false},
+		{value = "theme3", name = "Theme 3", selected = false},
+		{value = "theme4", name = "Theme 4", selected = false},
+		{value = "custom", name = "Custom", selected = false}
+	}
+	
+%>
+<script type="text/javascript">
+	function visible(value) {
+		var sections = ["terms", "image", "logo", "link", "page", "button", "input"];
+		var users = [];
+		for (i = 0; i < sections.length; i++) {
+			var section_id = <%="\"cbi-".. self.config .."-\""%> + sections[i];
+			console.log(section_id)
+			users[i] = document.getElementById(section_id);
+		}
+		if (users) {
+			if (value == "custom") {
+				for (i = 0; i < users.length; i++) {
+					users[i].style.display="";
+				}
+
+			}
+			else
+			{
+				for (i = 0; i < users.length; i++) {
+					users[i].style.display="none";
+				}
+			}
+		}
+	}
+	document.addEventListener('DOMContentLoaded', function() {
+	e = document.getElementById("<%=cbid%>");
+   if (e){
+		visible(e.value);
+   }
+}, false);
+</script>
+	<select class="cbi-input-select" onchange="cbi_d_update(this.id)" onclick="visible(this.value)" id="<%=cbid%>" name="<%=cbid%>" size="1">
+		<% for i, val in ipairs(list_options) do 
+		if selected == val.value then
+			val.selected = true
+		end%>
+		<option id="<%=cbid%>-<%=val.value%>" value="<%=val.value%>" <%= ifattr(val.selected, "selected", "selected")%> ><%=val.name%></option>
+	<% end	%>
+	</select>
+	
+<%+cbi/valuefooter%>

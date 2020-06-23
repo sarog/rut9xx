@@ -1,0 +1,29 @@
+<%+cbi/valueheader%>
+<% if self.widget == "select" then %>
+	<select class="cbi-input-select" onchange="cbi_d_update(this.id)<% if self.checklease == true then %>; validate_lease(this.id)<% end%>"<%= attr("id", cbid) .. attr("name", cbid) .. ifattr(self.size, "size") %> <%- if self.maxWidth then -%> style="max-width:<%=self.maxWidth%>;" <%- end -%>>
+	<% for i, key in pairs(self.keylist) do -%>
+		<option id="cbi-<%=self.config.."-"..section.."-"..self.option.."-"..key%>"<%= attr("value", key) .. ifattr(tostring(self:cfgvalue(section) or self.default) == key, "selected", "selected") %>><%=striptags(self.vallist[i])%></option>
+	<%- end %>
+	</select>
+	<script>
+        function validate_lease(config) {
+            if(config.indexOf("dhcp") !== -1) {
+				config = "cbid.dhcp.<%=section%>.time";
+                cbi_validate_field(config, true, "leasetime_check(\"dhcp\")");
+            } else {
+				config = "cbid.network.<%=section%>.time";
+                cbi_validate_field(config, true, "leasetime_check(\"network\")");
+            }
+        }
+	</script>
+<% elseif self.widget == "radio" then
+	local c = 0
+	for i, key in pairs(self.keylist) do
+	c = c + 1
+%>
+	<input class="cbi-input-radio" onclick="cbi_d_update(this.id)" onchange="cbi_d_update(this.id)" type="radio"<%= attr("id", cbid..c) .. attr("name", cbid) .. attr("value", key) .. ifattr((self:cfgvalue(section) or self.default) == key, "checked", "checked") %> />
+	<label<%= attr("for", cbid..c) %>><%=self.vallist[i]%></label>
+<% if c == self.size then c = 0 %><% if self.orientation == "horizontal" then %>&#160;<% else %><br /><% end %>
+<% end end %>
+<% end %>
+<%+cbi/valuefooter%>

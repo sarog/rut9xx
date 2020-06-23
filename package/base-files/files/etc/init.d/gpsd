@@ -1,0 +1,111 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=45
+USE_PROCD=1
+
+. /lib/teltonika-functions.sh
+module_vidpid=`get_ext_vidpid_tlt`
+
+GPSD_BIN="/usr/sbin/gpsd"
+
+start_service() {
+	if [[ "`uci get -q gps.gpsd.enabled`" == "1" && "`uci get -q hwinfo.hwinfo.gps`" == "1" ]]; then
+	    if ! start_nmea; then
+	        echo "Failed to start nmea logging"
+	        exit 1
+	    fi
+
+		procd_open_instance gpsd
+		procd_set_param respawn
+		procd_set_param command "$GPSD_BIN"
+		procd_close_instance
+	fi
+}
+
+service_triggers()
+{
+	stop_service
+	start_service
+}
+
+stop_service() {
+	killall gpsd 2>/dev/null >/dev/null
+
+	case "$module_vidpid" in
+		12D1:1573)
+			gsmctl -A AT^WPEND 2>/dev/null >/dev/null
+			;;
+		12D1:15C1)
+			gsmctl -A AT^WPEND 2>/dev/null >/dev/null
+			;;
+		05C6:9215)
+			gsmctl -A AT+QGPSEND 2>/dev/null >/dev/null
+			;;
+		2C7C:0125)
+			gsmctl -A AT+QGPSEND 2>/dev/null >/dev/null
+			;;
+		1199:68C0)
+			stty raw -F /dev/gps; echo \$GPS_STOP >/dev/gps
+			;;
+		*)
+			echo "$0: unknown or no GPS device, aborting"
+			;;
+	esac
+}
+
+start_nmea() {
+	case "$module_vidpid" in
+		12D1:1573)
+			gsmctl -A AT^WPDOM=0 2>/dev/null >/dev/null
+			gsmctl -A AT^WPDST=1 2>/dev/null >/dev/null
+			gsmctl -A AT^WPDFR=0,1 2>/dev/null >/dev/null
+			gsmctl -A AT^WPQOS=255,500 2>/dev/null >/dev/null
+			gsmctl -A AT^WPDGP 2>/dev/null >/dev/null
+			;;
+		12D1:15C1)
+			gsmctl -A AT^WPDOM=0 2>dev/null >/dev/null
+			gsmctl -A AT^WPDGL=0 2>/dev/null >/dev/null
+			gsmctl -A AT^WPDGP 2>/dev/null >/dev/null
+			;;
+			# Quectel EC20 && Quectel EC25
+		05C6:9215 | \
+		2C7C:0125)
+			resp=""
+			count=0
+			count_max=30
+
+			# Wait for maximum of 30 seconds for gsmd to show up
+			while [ -n "$resp" ] && [ "$count" -lt "$count_max" ]; do
+				resp=$(pidof gsmd)
+				sleep 1
+			done
+
+			if [ "$count" -eq "$count_max" ]; then
+				echo "gsmd not running"
+				return 1
+			fi
+
+			count=0
+			resp=""
+			sleep 5
+			# Try for maximum of 30 times to send an AT command which starts GPS nmea logging
+			while [ "$resp" != "OK" -a "$resp" != "+CME ERROR: 504" -a  "$count" -lt "$count_max" ]; do
+				resp=$(gsmctl -A AT+QGPS=1)
+				count=$((count+1))
+				sleep 1
+			done
+
+			if [ "$count" -eq "$count_max" ]; then
+				echo "failed to start NMEA logging"
+				return 1
+			fi
+			;;
+		1199:68C0)
+			stty raw -F /dev/gps; echo \$GPS_START >/dev/gps
+			;;
+		*)
+			echo "$0: unknown or no GPS device, aborting"
+			;;
+	esac
+}

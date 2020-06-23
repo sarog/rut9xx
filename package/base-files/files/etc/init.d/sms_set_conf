@@ -1,0 +1,39 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2014 Teltonika
+
+. /lib/functions.sh
+
+SCRIPT="lua /sbin/sms_utils/sms_set_conf"
+
+process_stop()
+{
+	pid_sms=`pidof $SCRIPT`
+	if [ -n "$pid_sms" ]; then
+		kill -9 $pid_sms
+	fi
+}
+
+process_start()
+{
+	config_load sms_utils
+	config_get enabled "message" "set_enabled" "0"
+
+	if [ "$enabled" == "1" ]; then
+		/sbin/sms_utils/sms_set_conf & 2>/dev/null
+	fi
+}
+
+boot()
+{
+	process_start
+}
+
+stop()
+{
+	process_stop
+}
+
+start()
+{
+	process_start
+}

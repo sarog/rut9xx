@@ -1,0 +1,4 @@
+config reregister 'reregister'
+	option enabled	'0'
+	option force_reregister '0'
+	option interval	'300'

@@ -1,0 +1,4 @@
+config system 'sys'
+	option first_login '1'
+	option module 'option'
+	option shw3g '0'

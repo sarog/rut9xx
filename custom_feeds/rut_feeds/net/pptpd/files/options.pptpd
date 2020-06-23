@@ -1,0 +1,28 @@
+proxyarp
+#debug
+#logfile /tmp/pptp-server.log
+ip-up-script /etc/ppp/pptpd-up
+ifname pptp
+encounter
+auth
+name "pptp-server"
+lcp-echo-failure 3
+lcp-echo-interval 60
+default-asyncmap
+mtu 1482
+mru 1482
+nobsdcomp
+nodeflate
+#noproxyarp
+#nomppc
+mppe required,no40,no56,stateless
+require-mschap-v2
+refuse-chap
+refuse-mschap
+refuse-eap
+refuse-pap
+logfd 2
+#ms-dns 172.16.1.1
+#plugin radius.so
+#radius-config-file /etc/radius.conf
+chap-secrets /var/etc/pptpd-chap-secrets

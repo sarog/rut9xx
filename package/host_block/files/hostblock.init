@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2017 Teltonika
+
+START=99
+STOP=99
+SCRIPT_FILE="/usr/sbin/hostblock.sh"
+
+
+start() {
+	$SCRIPT_FILE enable
+}
+
+stop() {
+	$SCRIPT_FILE disable
+}
+
+restart() {
+	$SCRIPT_FILE restart
+}

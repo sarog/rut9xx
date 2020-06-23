@@ -1,0 +1,150 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: index.htm 8408 2012-04-02 22:50:26Z jow $
+
+-%>
+
+<%
+	local ds = require "luci.dispatcher"
+	require "luci.fs"
+	require "luci.tools.status"
+	util   = require "luci.util"
+	luci.sys   = require "luci.sys"
+
+	gstate = util.trim(luci.sys.exec("gsmctl -jn"))
+	-- error message
+	function validate(string,current_mac,current_mobile)
+		if #string > 17 then
+			return translate("MAC too long! MAC format must be \"XX:XX:XX:XX:XX:XX\"")
+		elseif #string == 0 then
+			return translate("MAC cannot be empty!")
+		elseif #string <17  then
+			return translate("MAC too short! MAC format must be \"XX:XX:XX:XX:XX:XX\"")
+		elseif string.match (string, '%x%x:%x%x:%x%x:%x%x:%x%x:%x%x') == nil then
+			return translate("MAC must hexadecimal digits! MAC format must be \"XX:XX:XX:XX:XX:XX\" ")
+		elseif string == current_mac then
+			return translate("Wan mac and WiFi mac can not be equals!")
+		elseif string == '00:00:00:00:00:00' then
+			return translate("Can not change MAC to 00:00:00:00:00:00 address!")
+		elseif string.match (string, 'FF:%x%x:%x%x:%x%x:%x%x:%x%x') ~= nil or string.match (string, 'Ff:%x%x:%x%x:%x%x:%x%x:%x%x') ~= nil or string.match (string, 'ff:%x%x:%x%x:%x%x:%x%x:%x%x') ~= nil or string.match (string, 'fF:%x%x:%x%x:%x%x:%x%x:%x%x') ~= nil then
+			return translate("MAC address can not start FF:XX:XX:XX:XX:XX !")
+		elseif gstate == 'disconnected' and current_mobile == 'eth2' then
+			return translate("Can not change mobile MAC. SIM card not ready!")
+		end
+	end
+
+	-- GET mac
+	if luci.http.formvalue("status") == "1" then
+		local addr = luci.http.getenv("REMOTE_ADDR")
+		local macpc = util.trim(luci.sys.exec("arp | grep "..addr.." | awk -F ' ' '{print $4}' "))
+		local rv = macpc
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(rv)
+
+		return
+	end
+%>
+
+<%+header%>
+
+<%	--CHANGE router wan mac
+	clone_wan_clicked = luci.http.formvalue("clonewanmac")
+	if clone_wan_clicked then
+	local mac = luci.http.formvalue("wanmacaddress")
+	local cur_wireless = util.trim(luci.sys.exec("ifconfig wlan0 | grep 'wlan0' | awk -F ' ' '{print $5}'"))
+	local cur_mobile = util.trim(luci.sys.exec("uci get network.wan.ifname"))
+
+		err = validate(mac,cur_wan,cur_mobile)
+		if err then %>
+			<div class="alert-message error"><%=err%></div>
+		<% else
+			if cur_mobile == "wlan0" then
+				set_wire = util.trim(luci.sys.exec("uci set wireless.@wifi-iface[1].macaddr="..mac.." && uci commit wireless"))
+				util.trim(luci.sys.exec("/sbin/wifi down"))
+				util.trim(luci.sys.exec("/sbin/wifi up"))
+			elseif cur_mobile == "eth1" then
+				local set_wan = util.trim(luci.sys.exec("uci set network.wan.macaddr="..mac.." && uci commit network"))
+				util.trim(luci.sys.exec("ifdown wan"))
+				util.trim(luci.sys.exec("ifup wan"))
+			end
+		end
+	end
+
+	--RESTORE WAN MAC
+	restore_clicked = luci.http.formvalue("restorewanmac")
+	local check_ifname = util.trim(luci.sys.exec("uci get network.wan.ifname"))
+	if restore_clicked then
+		if check_ifname == "eth1" then
+			local restore_wan = util.trim(luci.sys.exec("uci delete network.wan.macaddr && uci commit network"))
+			local ethmac = util.trim(luci.sys.exec("/sbin/mnf_info maceth"))
+			util.trim(luci.sys.exec("ifdown wan"))
+			util.trim(luci.sys.exec("ifconfig eth1 hw ether " .. ethmac ))
+			util.trim(luci.sys.exec("ifup wan"))
+		elseif check_ifname == "wlan0" then
+			local restore_wan = util.trim(luci.sys.exec("uci delete network.wan.macaddr && uci commit network"))
+			local restore_wan_wifi = util.trim(luci.sys.exec("uci delete wireless.@wifi-iface[1].macaddr && uci commit wireless"))
+			util.trim(luci.sys.exec("/sbin/wifi down"))
+			util.trim(luci.sys.exec("/sbin/wifi up"))
+		end
+
+	end
+
+	--sys.exec("echo \"GREPINA\" >>/tmp/test.txt")
+	os.execute("sleep " .. tonumber(2))
+
+	--GET router wan mac
+	local ifname = util.trim(luci.sys.exec("uci get network.wan.ifname"))
+	if ifname == "eth1" then
+		cur_wan = util.trim(luci.sys.exec("ifconfig eth1 | grep eth1 | awk -F ' ' '{print $5}'"))
+	elseif ifname == "eth2" then
+		cur_wan = util.trim(luci.sys.exec("ifconfig eth2 | grep eth2 | awk -F ' ' '{print $5}'"))
+	elseif ifname == "wlan0" then
+		cur_wan = util.trim(luci.sys.exec("ifconfig wlan0 | grep wlan0 | awk -F ' ' '{print $5}'"))
+	end
+
+%>
+
+<script>
+function go() {
+	XHR.get('<%=luci.dispatcher.build_url("admin", "system", "admin", "clonemac" )%>', { status: 1 },
+		function(x, info)
+		{
+			var e;
+			var mac = info;
+			document.getElementById('pcmac').value=mac.toUpperCase() ;
+		}
+	);
+}
+</script>
+
+<div class="cbi-map" id="cbi-clonemac">
+	<h2><a id="content" name="content"><%=translate("MAC Address Clone")%></a></h2>
+	<fieldset class="cbi-section">
+		<legend><%=translate("MAC Address Clone")%></legend>
+		<form method="post" action="<%=ds.build_url('admin/system/admin/clonemac')%>">
+			<div class="cbi-section-node">
+				<br>
+				<div class="cbi-value">
+					<label class="cbi-value-title" style="width:200px" ><span onmouseout="HideHint(this)" onmouseover="ShowHint(this, '<%=translate('MAC must hexadecimal digits. MAC format must be (00:00:00:00:00:00) ')%>')"</span><%=translate("WAN MAC address")%></label>
+					<input style="width: 150px; text-transform:capitalize;" type="text"  id="pcmac" value="<%=cur_wan%>" name="wanmacaddress" />
+					<input class="cbi-button cbi-button-apply1" style="float:none; height: 25px;" name="getmac" onclick="go();" type="button" value="<%=translate('Get PC MAC address')%>"
+					/>
+					<input class="cbi-button cbi-button-apply1" style="float:none; height: 25px; margin-left:50px;" name="clonewanmac" type="submit" value="<%=translate('Save')%>" />
+					<input class="cbi-button cbi-button-apply1" style="float:none; height: 25px;" name="restorewanmac" type="submit" value="<%=translate('Restore to default')%>" />
+				</div>
+
+			</div>
+		</form>
+		<br>
+	</fieldset>
+</div>
+<%+footer%>

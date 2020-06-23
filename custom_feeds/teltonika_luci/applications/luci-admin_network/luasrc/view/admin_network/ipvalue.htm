@@ -1,0 +1,200 @@
+<%+cbi/valueheader%>
+       <input type="<%=self.password and 'password" class="cbi-input-password' or self.hidden_field and 'hidden"' or 'text" class="cbi-input-text' %>" autocomplete="<% if self.noautocomplete then %>off<%else%>on<% end %>" onchange="cbi_d_update(this.id)" <% if self.needcalculate == "wzd" then %>onkeyup="calculate('wzd')"<% end%><% if self.needcalculate == "lan" then %>onkeyup="calculate('lan')" <% end%><%=
+               attr("name", cbid) .. attr("id", cbid) .. attr("value", self:cfgvalue(section) or self.default) .. ifattr(self.hardDisabled == true, "disabled", "disabled") ..
+               ifattr(self.size, "size") .. ifattr(self.placeholder, "placeholder")
+       %> <%- if self.maxWidth then -%> style="max-width:<%=self.maxWidth%>;" <%- end -%>/>
+       <% if self.password then %><img src="<%=resource%>/cbi/reload.gif" style="vertical-align:sub" title="<%:Reveal/hide password%>" onclick="var e = document.getElementById('<%=cbid%>'); e.type = (e.type=='password') ? 'text' : 'password';"/><% end %>
+       <% if #self.keylist > 0 or self.datatype then -%>
+       <script type="text/javascript">//<![CDATA[
+
+	   AddWindowOnLoadEvent(function () {
+		   var pathArray = window.location.pathname.split( '/' );
+		   var lanName = pathArray[8];
+		   if (lanName == null || lanName.search("lan_") === -1)
+			   lanName = "lan";
+		   if (document.getElementById('cbid.network.' + lanName + '.ipaddr'))
+			   if (document.getElementById('cbid.network.' + lanName + '.lan.start'))
+				   calculate("wzd");
+			   else
+				   calculate("lan");
+
+	   });
+
+	   function calculate(site) {
+		   var pathArray = window.location.pathname.split( '/' );
+		   var lanName = pathArray[8];
+
+		   if (lanName == null || lanName.search("lan_") === -1) {
+			   lanName = "lan";
+			   site = "lan";
+		   }
+
+		   var section = "<%=section%>";
+		   if (window.location.pathname.search("step-lan") > -1) {
+			   section = "lan";
+			   site = "wzd";
+		   }
+
+		   var nAddr = new Array(0, 0, 0, 0);
+		   var nMask = new Array(0, 0, 0, 0);
+
+		   var ipaddr = document.getElementById('cbid.network.' + lanName + '.ipaddr').value;
+
+		   if (site === "lan") {
+			   var netmask = document.getElementById('cbid.network.' + lanName + '.netmask').value;
+			   var start = document.getElementById('cbid.dhcp.' + section + '.start').value;
+			   var limit = document.getElementById('cbid.dhcp.' + section + '.limit').value;
+			   if (limit == 0) {
+				   limit = "";
+				   document.getElementById('cbid.dhcp.' + section + '.limit').className = "cbi-input-invalid";
+			   } else
+				   document.getElementById('cbid.dhcp.' + section + '.limit').className = "cbi-input-text";
+
+			   nAddr = ipaddr.split('.');
+			   nMask = netmask.split('.');
+
+			   start = parseInt(start);
+			   limit = parseInt(limit);
+
+			   var aStart = getIP(nAddr, nMask, start, 0);
+			   document.getElementById('cbi-dhcp-' + section + '-startip').innerHTML = "<div class=\"cbi-value\" id=\"cbi-dhcp-" + section + "-startip\"><label class=\"cbi-value-title\" for=\"cbid.dhcp." + section + ".startip\"><span style=\"color: rgb(64, 64, 64);\" onmouseover=\"ShowHint(this,'')\" onmouseout=\"HideHint(this)\">Start IP address:</span></label><div class=\"cbi-value-field\" style=\"margin-top: 8px;\">" + aStart[0] + "." + aStart[1] + "." + aStart[2] + "." + aStart[3] + "</div>";
+			   var wc = wildcardMask(nMask);
+			   //              var aEnd = endingIP(nAddr,wc);
+			   var aEnd = getIP2(nAddr, wc, start, limit, nMask);
+
+			   document.getElementById('cbi-dhcp-' + section + '-endip').innerHTML = "<div class=\"cbi-value\" id=\"cbi-dhcp-" + section + "-endip\"><label class=\"cbi-value-title\" for=\"cbid.dhcp." + section + ".endip\"><span style=\"color: rgb(64, 64, 64);\" onmouseover=\"ShowHint(this,'')\" onmouseout=\"HideHint(this)\">End IP address:</span></label><div class=\"cbi-value-field\" style=\"margin-top: 8px;\">" + aEnd[0] + "." + aEnd[1] + "." + aEnd[2] + "." + aEnd[3] + "</div>";
+		   } else {
+			   var netmask = document.getElementById('cbid.network.' + lanName + '.netmask').value;
+			   var start = document.getElementById('cbid.network.' + section + '.start').value;
+			   var limit = document.getElementById('cbid.network.' + section + '.limit').value;
+			   if (limit == 0) {
+				   limit = "";
+				   document.getElementById('cbid.network.' + section + '.limit').className = "cbi-input-invalid";
+			   } else
+				   document.getElementById('cbid.network.' + section + '.limit').className = "cbi-input-text";
+
+			   nAddr = ipaddr.split('.');
+			   nMask = netmask.split('.');
+
+			   start = parseInt(start);
+			   limit = parseInt(limit);
+
+			   var aStart = getIP(nAddr, nMask, start, 0);
+			   document.getElementById('cbi-network-' + section + '-startip').innerHTML = "<div class=\"cbi-value\" id=\"cbi-network-" + section + "-startip\"><label class=\"cbi-value-title\" for=\"cbid.network." + section + ".startip\"><span style=\"color: rgb(64, 64, 64);\" onmouseover=\"ShowHint(this,'')\" onmouseout=\"HideHint(this)\">Start IP address:</span></label><div class=\"cbi-value-field\" style=\"margin-top: 8px;\">" + aStart[0] + "." + aStart[1] + "." + aStart[2] + "." + aStart[3] + "</div>";
+			   var wc = wildcardMask(nMask);
+			   //              var aEnd = endingIP(nAddr,wc);
+			   var aEnd = getIP2(nAddr, wc, start, limit, nMask);
+
+			   document.getElementById('cbi-network-' + section + '-endip').innerHTML = "<div class=\"cbi-value\" id=\"cbi-network-" + section + "-endip\"><label class=\"cbi-value-title\" for=\"cbid.network." + section + ".endip\"><span style=\"color: rgb(64, 64, 64);\" onmouseover=\"ShowHint(this,'')\" onmouseout=\"HideHint(this)\">End IP address:</span></label><div class=\"cbi-value-field\" style=\"margin-top: 8px;\">" + aEnd[0] + "." + aEnd[1] + "." + aEnd[2] + "." + aEnd[3] + "</div>";
+		   }
+	   }
+
+	   function wildcardMask(aMask) {
+		   var a = new Array(0, 0, 0, 0);
+		   for (var i = 0; i < 4; i++) {
+			   a[i] = 255 - aMask[i];
+		   }
+		   return a;
+	   }
+
+	   function getIP2(aNet, aWild, start, limit, aMask) {
+		   // work around int32
+		   var b = new broadcast(aNet, aWild);
+		   var db = octet2dec(b);
+
+		   var a = subnetID(aNet, aMask);
+		   var da = octet2dec(a);
+		   da = da + start + limit;
+
+		   if (da > db)
+			   d = db - 1;
+		   else
+			   d = da - 1;
+		   return dec2octet(d);
+	   }
+
+	   function broadcast(aNet, aWild) {
+		   // work around int32
+		   var a = new Array(0, 0, 0, 0);
+		   for (var i = 0; i < 4; i++) {
+			   a[i] = aNet[i] | aWild[i];
+		   }
+		   return a;
+	   }
+
+	   // Calculate the subnet id available address in the network and return it as an
+	   //      int array.  This is basically one more than the network address (subnet ID).
+	   //      We need the network address and the subnet mask for this.
+	   function getIP(aNet, aMask, start, limit) {
+		   var a = subnetID(aNet, aMask);
+		   var d = octet2dec(a);
+		   d = d + start + limit;
+		   return dec2octet(d);
+	   }
+
+	   // Calculate the subnet id  (the first address in the network) and return it as an
+	   //      int array.
+	   //      We need the network address and the subnet mask for this.
+	   function subnetID(aNet, aMask) {
+		   var a = new Array(0, 0, 0, 0);
+		   for (var i = 0; i < 4; i++) {
+			   a[i] = aNet[i] & aMask[i];
+		   }
+		   return a;
+	   }
+
+	   // Convert our array of 4 ints into a decimal (watch out for 16 bit JS integers here)
+	   function octet2dec(a) {
+		   //alert("octet2dec1 "+a[0]+"\n"+dec2bin(a[0])+"\n"+dec2bin(a[0] * 16777216));
+		   // poor mans bit shifting (Int32 issue)
+		   var d = 0;
+		   d = d + parseInt(a[0]) * 16777216;  //Math.pow(2,24);
+		   d = d + a[1] * 65536;     //Math.pow(2,16);
+		   d = d + a[2] * 256;        //Math.pow(2,8);
+		   d = d + a[3];
+		   return d;
+	   }
+
+	   // Convert decimal to our array of 4 ints.
+	   function dec2octet(d) {
+		   //alert("d="+d+" "+d.toString(2)+"="+d.toString(2).substring(0,8)+"="+parseInt(d.toString(2).substring(0,8),2));
+		   var zeros = "00000000000000000000000000000000";
+		   var b = d.toString(2);
+		   var b = zeros.substring(0, 32 - b.length) + b;
+		   var a = new Array(
+			   parseInt(b.substring(0, 8), 2)    // 32 bit integer issue (d & 4278190080)/16777216   //Math.pow(2,32) - Math.pow(2,24);
+			   , (d & 16711680) / 65536    //Math.pow(2,24) - Math.pow(2,16);
+			   , (d & 65280) / 256                //Math.pow(2,16) - Math.pow(2,8);
+			   , (d & 255)
+		   );                //Math.pow(2,8);
+		   return a;
+	   }
+
+                 <% if #self.keylist > 0 then -%>
+                 cbi_combobox_init('<%=cbid%>', {
+                  <%-
+                          for i, k in ipairs(self.keylist) do
+                  -%>
+                          <%-=string.format("%q", k) .. ":" .. string.format("%q", self.vallist[i])-%>
+                         <%-if i<#self.keylist then-%>,<%-end-%>
+                 <%-
+                         end
+                 -%>
+                 }, '<%- if not self.rmempty and not self.optional then -%>
+                         <%-: -- Please choose -- -%>
+                 <%- end -%>', '
+                 <%- if self.combobox_manual then -%>
+                         <%-=self.combobox_manual-%>
+		   <%- else -%>
+                         <%-: -- custom -- -%>
+                 <%- end -%>'
+                 <%- if self.maxWidth then -%>
+                 , '<%= self.maxWidth %>'
+                 <%- end -%>);
+                 <%- end %>
+                 <% if self.datatype then -%>
+                 cbi_validate_field('<%=cbid%>', <%=tostring((self.optional or self.rmempty) == true)%>, '<%=self.datatype:gsub("'", "\\'")%>');
+                 <%- end %>
+         //]]></script>
+         <% end -%>
+<%+cbi/valuefooter%>

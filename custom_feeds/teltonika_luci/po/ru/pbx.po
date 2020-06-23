@@ -1,0 +1,197 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"PO-Revision-Date: 2012-04-02 15:43+0200\n"
+"Last-Translator: Kamal <kamal.aliev@epscom.ru>\n"
+"Language-Team: none\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Pootle 2.0.4\n"
+
+msgid "Account Status"
+msgstr "Статус учетной записи"
+
+msgid "Account Status Message"
+msgstr "Статус сообщение учетной записи"
+
+msgid "Advanced Settings"
+msgstr "Расширенные установки"
+
+msgid "Available"
+msgstr "Доступен"
+
+msgid ""
+"Avoid using anything but alpha-numeric characters, space, comma, and period."
+msgstr ""
+"Старайтесь не использовать ничего, кроме алфавитно-цифровых символов, "
+"пробелов, запятых и точек."
+
+msgid "Away"
+msgstr "Отошел"
+
+msgid "Blacklisted Numbers"
+msgstr "Номера в \"черном\" списке"
+
+msgid "Call Routing"
+msgstr "Маршрутизация вызовов"
+
+msgid "Call-through Numbers"
+msgstr "Номера сквозных вызовов"
+
+msgid "Copy-paste large lists of numbers here."
+msgstr "Вставьте большие списки номеров здесь"
+
+msgid "Do Not Disturb"
+msgstr "Не беспокоить"
+
+msgid "Domain Name/Dynamic Domain Name"
+msgstr "Имя домена/Динамическое имя домена"
+
+msgid "Dynamic List of Blacklisted Numbers"
+msgstr "Динамический список запрещенных номеров"
+
+msgid "Email"
+msgstr "Эл. почта"
+
+msgid "Enable Incoming Calls (Register via SIP)"
+msgstr "Разрешить входящие вызовы (регистрация через SIP)"
+
+msgid "Enable Incoming Calls (See Status, Message below)"
+msgstr "Разрешить входящие вызовы (см. статус, сообщение ниже)"
+
+msgid "Enable Outgoing Calls"
+msgstr "Разрешить исходящие вызовы"
+
+msgid "Enabled"
+msgstr "Включено"
+
+msgid "External SIP Port"
+msgstr "Внешний порт SIP"
+
+msgid "Full Name"
+msgstr "Полное имя"
+
+msgid "General Settings"
+msgstr "Общие установки"
+
+msgid "Google Accounts"
+msgstr "Учетные записи Google"
+
+msgid "Google Voice/Talk Accounts"
+msgstr "Учетные записи Google Voice/Talk"
+
+msgid "Incoming Calls"
+msgstr "Входящие вызовы"
+
+msgid "Insert QoS Rules"
+msgstr "Вставить правила QoS"
+
+msgid "Makes Outgoing Calls"
+msgstr "Совершает исходящие вызовы"
+
+msgid "No"
+msgstr "Нет"
+
+msgid "Outbound Proxy"
+msgstr "Outbound прокси сервер"
+
+msgid "Outgoing Calls"
+msgstr "Исходящие вызовы"
+
+msgid "PBX Main Page"
+msgstr "Главная страница АТС"
+
+msgid "PIN"
+msgstr "PIN"
+
+msgid "Password"
+msgstr "Пароль"
+
+msgid "Port Setting for SIP Devices"
+msgstr "Настройки порта устройств SIP"
+
+msgid "Providers Used for Outgoing Calls"
+msgstr "Провайдеры исходящих вызовов"
+
+msgid "QoS Settings"
+msgstr "Установки QoS"
+
+msgid "RTP Port Range End"
+msgstr "Конец диапазона портов RTP"
+
+msgid "RTP Port Range Start"
+msgstr "Начало диапазоно портов RTP"
+
+msgid "Receives Incoming Calls"
+msgstr "Принимает входящие вызовы"
+
+msgid "Remote Usage"
+msgstr "Удаленное использование"
+
+msgid "SIP Accounts"
+msgstr "Учетные записи SIP"
+
+msgid "SIP Device/Softphone Accounts"
+msgstr "Учетные записи SIP устройства/программного телефона"
+
+msgid "SIP Provider Accounts"
+msgstr "Учетные записи SIP провайдера"
+
+msgid "SIP Realm (needed by some providers)"
+msgstr "SIP Realm (нужен для некоторых провайдеров)"
+
+msgid "SIP Server/Registrar"
+msgstr "SIP Сервер/Регистратор"
+
+msgid "SIP Server/Registrar Port"
+msgstr "Порт SIP Сервера/Регистратора"
+
+msgid "Server Setting"
+msgstr "Настройки сервера"
+
+msgid "Server Setting for Local SIP Devices"
+msgstr "Установки сервера для локальных SIP устройств"
+
+msgid "Server Setting for Remote SIP Devices"
+msgstr "Настройки сервера для удаленных SIP устройств"
+
+msgid "Service Control and Connection Status"
+msgstr "Управление сервисом и статус соединения"
+
+msgid "Service Status"
+msgstr "Состояние сервиса"
+
+msgid "Space-Separated List of Blacklisted Numbers"
+msgstr "Черный список номеров (пробел между номерами для разделения)"
+
+msgid "Specify numbers individually here. Press enter to add more numbers."
+msgstr "Укажите отдельные номера. Нажмите enter, чтобы добавить больше номеров."
+
+msgid ""
+"Use this account to make outgoing calls as configured in the \"Call Routing"
+"\" section."
+msgstr ""
+"Использовать эту учетную запись для исходящих вызовов в соответстии с "
+"наcтройками секции \"Маршрутизация вызовов\"."
+
+msgid "Use this account to make outgoing calls."
+msgstr "Использовать эту учетную запись для исходящих вызовов"
+
+msgid "User Accounts"
+msgstr "Учетные записи пользователя"
+
+msgid "User Agent String"
+msgstr "Строка агента пользователя"
+
+msgid "User Name"
+msgstr "Имя пользователя"
+
+msgid "Yes"
+msgstr "Да"
+
+msgid "You can specify a real name to show up in the Caller ID here."
+msgstr "Здесь Вы можете указать имя для отображения вместо ID звонящего."

@@ -1,0 +1,131 @@
+#!/bin/sh
+
+# This is experimental script only! I did it just for
+# testing alternative ways to extract router status.
+# Script reports status parameters as well as updates
+# temporary status file to reduce AT request rate for GSMD.
+. /lib/functions.sh
+
+show_options()
+{
+	# TODO: implement multiple options
+	printf "usage: sysget <OPTION>\n"
+	printf "  imei\n"
+	printf "  model\n"
+	printf "  manuf\n"
+	printf "  revision\n"
+	printf "  serial\n"
+	printf "  simstate\n"
+	printf "  pinstate\n"
+	printf "  imsi\n"
+	printf "  netstate\n"
+	printf "  signal\n"
+	printf "  operator\n"
+	printf "  opernum\n"
+	printf "  connstate\n"
+	printf "  conntype\n"
+	printf "  help\n"
+}
+
+get_type() {
+	local input_type
+	config_get input_type $1 "type"
+
+	[ "$input_type" = "analog" ] && config_get analog_type $1 "analogtype"
+}
+
+if [ "$#" != "1" ]
+then
+	show_options
+	return 1
+else
+	case "$1" in
+		imei)
+			echo "$(gsmctl --imei )"
+			;;
+		model)
+			echo "$(gsmctl --model )"
+			;;
+		manuf)
+			echo "$(gsmctl --manuf )"
+			;;
+		revision)
+			echo "$(gsmctl --revision )"
+			;;
+		serial)
+			echo "$(gsmctl --serial )"
+			;;
+		simstate)
+			echo "$(gsmctl --simstate )"
+			;;
+		pinstate)
+			echo "$(gsmctl --pinstate )"
+			;;
+		imsi)
+			echo "$(gsmctl --imsi )"
+			;;
+		netstate)
+			echo "$(gsmctl --netstate )"
+			;;
+		signal)
+			echo "$(gsmctl --signal )"
+			;;
+		operator)
+			echo "$(gsmctl --operator )"
+			;;
+		opernum)
+			echo "$(gsmctl --opernum )"
+			;;
+		connstate)
+			echo "$(gsmctl --connstate )"
+			;;
+		conntype)
+			echo "$(gsmctl --conntype )"
+			;;
+		temperature)
+			tem=`gsmctl --temp`
+			te=$((tem/10))
+			echo "$te"
+			;;
+		analogcount)
+			config_load "ioman"
+			analog_type="V"
+			ganalog=`cat /sys/class/hwmon/hwmon0/device/in0_input`
+			analog=""; anformultiply=""; analogunit="";
+
+			if [ "$ganalog" -ge 0 ]; then
+				congig_foreach get_type "rule"
+				config_get analogunit "iolabels" "anformeasunit" "V"
+
+				if [ "$analog_type" = "currenttype" ]; then
+			    analogunit="mA"
+					analog="$(($ganalog*(131000+$gresistor)/(131000*$gresistor))) $analogunit"
+				else
+					config_get anformultiply "iolabels" "anformultiply" "1"
+					config_get anforadd "iolabels" "anforadd" "0"
+					config_get anforoffset "iolabels" "anforoffset" "0"
+					config_get anfordivide "iolabels" "anfordivide" "1"
+
+					if [ "$anformultiply" != "1" -o "$anforoffset" != "0" -o "$anforadd" != "0" -o "$anfordivide" != "1" ]; then
+						analogunit="$analogunit (recalculated value)"
+					fi
+
+					analog="$(($anformultiply*((($ganalog/1000)+$anforadd)/$anfordivide)+$anforoffset)) $analogunit"
+				fi
+			else
+				analog="N/A"
+			fi
+
+			echo "$analog"
+			;;
+		help)
+			show_options
+			;;
+		*)
+			show_options
+			return 1
+			;;
+	esac
+fi
+
+return 0

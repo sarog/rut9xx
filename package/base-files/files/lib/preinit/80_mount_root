@@ -1,0 +1,39 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+restore_config() {
+	cd /
+	mv "$1" /tmp
+	tar xzf /tmp/"$1"
+	echo "etc/config/fstab" > /tmp/tmpfilename
+	tar x -O -z -f /tmp/"$1" -T /tmp/tmpfilename > /tmp/tmpfile
+	cp /rom/etc/config/hwinfo /etc/config
+}
+
+do_mount_root() {
+	mount_root
+	boot_run_hook preinit_mount_root
+	if [ -f /user_defaults.tgz ]; then
+		echo "- restoring user config -"
+		restore_config "user_defaults.tgz"
+		mkdir /etc/default-config
+		mv /tmp/user_defaults.tgz /etc/default-config/config.tar.gz
+		rm -f /tmp/user_defaults.tgz
+		sync
+	elif [ -f /sysupgrade.tgz ]; then
+		echo "- config restore -"
+		restore_config "sysupgrade.tgz"
+		rm -f /tmp/sysupgrade.tgz
+		sync
+	fi
+
+	if [ -f /tmp/tmpfile ] && grep -q "/overlay" /tmp/tmpfile
+	then
+		# reboot after everything else is done (in /etc/init.d/done)
+		touch /tmp/memoryexpansion
+		sync
+	fi
+}
+
+[ "$INITRAMFS" = "1" ] || boot_hook_add preinit_main do_mount_root

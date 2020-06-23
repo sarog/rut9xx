@@ -1,0 +1,25 @@
+#!/bin/sh
+# Looks for unnamed sections of type "zone" inside /etc/config/firewall,
+# checks if ZONES variable contains the value of "name" option of the zone,
+# and changes the zone name to zone_name format.
+
+source /lib/functions.sh
+ZONES="vpn"
+
+zone_cb() {
+        local type="$1"
+        local opt_name
+
+        if [ -n "${type##*_zone*}" ]; then
+                config_get opt_name "$type" "name"
+                if [ -z "${ZONES##*$opt_name*}" ]; then
+                        uci rename firewall."$type"="$opt_name"_zone
+                        uci commit firewall
+                        logger rename_fw_zones: renamed firewall."$type" to firewall."$opt_name"_zone
+                fi
+        fi
+}
+
+config_load firewall
+config_foreach zone_cb "zone"
+

@@ -1,0 +1,19 @@
+ 
+config ntpserver
+	option hostname	'0.europe.pool.ntp.org'
+
+config ntpserver
+	option hostname	'1.europe.pool.ntp.org'
+
+config ntpserver
+	option hostname	'2.europe.pool.ntp.org'
+
+config ntpserver
+	option hostname	'3.europe.pool.ntp.org'
+
+config ntpdrift
+	option freq	'0'
+
+config ntpclient
+	option interval	'3660'
+	option enabled	'1'

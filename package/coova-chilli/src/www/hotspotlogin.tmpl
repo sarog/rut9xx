@@ -1,0 +1,90 @@
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>$pageTitle$</title>
+	<link rel="stylesheet" href="/luci-static/default/style.css">
+	<link rel="stylesheet" href="/luci-static/resources/loginpage.css">
+	<link rel="shortcut icon" href="/luci-static/default/favicon.ico">
+	<style>
+		.login_button {
+			margin-top: 15px;
+			text-align: center
+		}
+
+		.cbi-map-descr {
+			text-align: center;
+		}
+
+		input {
+			height: auto;
+		}
+
+		#logo_container {
+			text-align: center;
+		}
+
+		#maincontent {
+			min-width: 0px;
+		}
+
+		#link{
+			text-decoration: underline;
+		}
+
+		.hidden_box {
+			display: none;
+		}
+	</style>
+</head>
+
+<body class="lang_en nil">
+	<div id="maincontent" class="container">
+		<div id="logo_container" >
+			<img id="logo" src="/luci-static/resources/logo_image">
+		</div>
+		$formHeader$
+			<h2 style="text-align: center;">
+				<a class="$statusTitleId$">$statusTitle$</a>
+			</h2>
+			<div class="cbi-map-descr">
+				<div class="$statusContentClass$">$statusContent$</div>
+				<div class="limit_expiration_text">$dateUse$</div>
+				<div class="$loginLogoutClass$">$loginLogout$</div>
+				<div class="requested_web">$requestedWeb$</div>
+			</div>
+
+			<fieldset class="cbi-section $loginClass$" id="login_box">
+				<fieldset class="cbi-section-node">
+					<div id="username_box" class="cbi-value" style="text-align: center;">
+						<div class="value-field">
+							$inputUsername$
+						</div>
+					</div>
+					<div id="password_box" class="cbi-value cbi-value-last">
+						<div class="value-field" style="text-align: center;">
+							$inputPassword$
+						</div>
+					</div>
+				</fieldset>
+			</fieldset>
+
+			<div class="cbi-map-descr terms" style="text-align: center;">
+				$inputTos$
+			</div>
+
+			<div class="login_button">
+				$submitButton$
+			</div>
+
+			<div class="cbi-map-descr link-sms" style="text-align: center;">
+				$smslink$
+			</div>
+
+			<div class="cbi-map-descr link" style="text-align: center;">
+				$link$
+			</div>
+		</form>
+	</div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+#!/bin/sh
+
+SECTION="hwinfo"
+CONFIG="hwinfo"
+
+get_hw_functions() {
+	name=$(/sbin/mnf_info "name")
+	if [ -z "$name" -o ${#name} != 12 ]; then
+		echo "$0: Product code not found or not correct: $name"
+		return 1
+	fi
+
+	param_list="usb gps rs232 rs485 in_out microsd"
+
+	if [ ! -d "/sys/bus/i2c/devices/0-0074/gpio" ]; then
+		default_list="dual_sim 4pin_io"
+	else
+		default_list="dual_sim"
+	fi
+
+	#Create config section
+	uci set $CONFIG.$SECTION=$SECTION
+
+	for bit in $default_list; do
+		uci set $CONFIG.$SECTION.$bit=1
+	done
+
+	hwcode=$(echo ${name:5:1})
+	for bit in $param_list; do
+		if [ $hwcode == "5" -o $hwcode == "6" ];then
+			value=1
+		else
+			value=0
+		fi
+		uci set $CONFIG.$SECTION.$bit=$value
+	done
+	uci commit $CONFIG
+}
+
+get_hw_info() {
+	param=$(/sbin/mnf_info "sn")
+	[ -n "$param" -a ${#param} == 8 ] && uci set $CONFIG.$SECTION."serial"=$param
+	[ -n "$param" -a ${#param} == 10 ] && uci set $CONFIG.$SECTION."serial"=$param
+	
+	param=$(/sbin/mnf_info "name")
+	[ -n "$param" -a ${#param} == 12 ] && uci set $CONFIG.$SECTION."mnf_code"=$param && uci set "system"."system"."device_code"=$param
+	
+	param=$(cat /etc/version)
+	[ -n "$param" ] && uci set "system"."system"."device_fw_version"=$param
+	
+	param=$(/sbin/mnf_info "batch")
+	[ -n "$param" -a ${#param} == 4 ] && uci set $CONFIG.$SECTION."batch"=$param
+	
+	param=$(/sbin/mnf_info "hwver")
+	[ -n "$param" -a ${#param} == 4 ] && uci set $CONFIG.$SECTION."hwver"=$param
+	
+	uci commit $CONFIG
+	uci commit "system"
+}
+
+# get device information
+echo "Reading device information"
+get_hw_functions
+get_hw_info
+
+exit 0

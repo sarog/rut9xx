@@ -1,0 +1,106 @@
+Index: busybox-1.24.2/mailutils/sendmail.c
+===================================================================
+--- busybox-1.24.2.orig/mailutils/sendmail.c	2016-02-11 13:50:37.000000000 +0200
++++ busybox-1.24.2/mailutils/sendmail.c	2018-03-01 11:26:28.914544176 +0200
+@@ -89,10 +89,12 @@
+ 
+ #include "libbb.h"
+ #include "mail.h"
++#include <fcntl.h>
+ 
+ // limit maximum allowed number of headers to prevent overflows.
+ // set to 0 to not limit
+ #define MAX_HEADERS 256
++#define MY_PIPE "/tmp/my_pipe"
+ 
+ static void send_r_n(const char *s)
+ {
+@@ -206,6 +208,12 @@
+ 	free(str);
+ }
+ 
++int FileExist(const char *filename) {
++      struct stat st;
++      int result = stat(filename, &st);
++      return result == 0;
++}
++
+ int sendmail_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+ int sendmail_main(int argc UNUSED_PARAM, char **argv)
+ {
+@@ -216,6 +224,7 @@
+ 	char *host = sane_address(safe_gethostname());
+ 	unsigned nheaders = 0;
+ 	int code;
++        int l = 0;
+ 	enum {
+ 		HDR_OTHER = 0,
+ 		HDR_TOCC,
+@@ -223,6 +232,11 @@
+ 	} last_hdr = 0;
+ 	int check_hdr;
+ 	int has_to = 0;
++        
++        /* create the FIFO (named pipe) */
++        if (!FileExist(MY_PIPE)) {
++            mkfifo(MY_PIPE, 0666);
++        }
+ 
+ 	enum {
+ 	//--- standard options
+@@ -237,7 +251,7 @@
+ 		OPT_a = 1 << 7,         // authentication tokens
+ 		OPT_v = 1 << 8,         // verbosity
+ 	};
+-
++        
+ 	// init global variables
+ 	INIT_G();
+ 
+@@ -273,7 +287,10 @@
+ 	//bb_info_msg("OPT[%x] AU[%s], AP[%s], AM[%s], ARGV[%s]", opts, au, ap, am, *argv);
+ 
+ 	// connect to server
+-
++        
++        /* write to the FIFO */
++        l = open(MY_PIPE, O_WRONLY | O_NONBLOCK);
++        
+ 	// connection helper ordered? ->
+ 	if (opts & OPT_H) {
+ 		const char *args[] = { "sh", "-c", opt_connect, NULL };
+@@ -296,13 +313,18 @@
+ 		// is sent by server.
+ 		// Ideas? (--delay SECS opt? --assume-starttls-helper opt?)
+ 		code = smtp_check("NOOP", -1);
+-		if (code == 220)
++		if (code == 220){
+ 			// we got 220 - this is not STARTTLSed connection,
+ 			// eat 250 response to our NOOP
+ 			smtp_check(NULL, 250);
+-		else
+-		if (code != 250)
++                }else if (code != 250){
+ 			bb_error_msg_and_die("SMTP init failed");
++                }
++                
++                //irsyti i pipe, kad network ok
++                if (l != -1) {
++                    write(l, "Network ok", strlen("Network ok"));
++                 }
+ 	} else {
+ 		// vanilla connection
+ 		int fd;
+@@ -480,6 +502,12 @@
+ 	// ... and say goodbye
+ 	smtp_check("QUIT", 221);
+ 	// cleanup
++        //irasyti i pipe, kad mail issiustas
++        if (l != -1) {
++            write(l, "Email sent", strlen("Email sent"));
++            close(l);
++        }
++        /* remove the FIFO */
+ 	if (ENABLE_FEATURE_CLEAN_UP)
+ 		fclose(G.fp0);
+ 

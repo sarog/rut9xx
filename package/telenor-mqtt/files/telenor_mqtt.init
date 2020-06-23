@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2018 Teltonika
+
+USE_PROCD=1
+START=99
+STOP=99
+APP=/usr/sbin/telenor_mqtt
+
+start_service() {
+	ENABLED=`uci -q get telenor_mqtt.telenor_mqtt.enabled`
+    if [ "$ENABLED" = "1" ]; then
+	    procd_open_instance
+	    procd_set_param command $APP
+	    procd_set_param respawn
+	    procd_close_instance
+	fi
+}
+
+reload_service() {
+restart
+}

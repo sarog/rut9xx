@@ -1,0 +1,4 @@
+config call 'call'
+	option ringing '0'
+	option reject_incoming_calls '1'
+	option enabled '1'

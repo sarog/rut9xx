@@ -1,0 +1,29 @@
+<%
+local myTable = {}
+local df =  luci.util.trim(luci.sys.exec("ifconfig | grep \"Link encap\""))
+df = tostring(df)
+local dfList = df:split("\n")
+local splitas
+function all_trim(s)
+   return s:match( "^%s*(.-)%s*$" )
+end
+%>
+
+<div class="cbi-section-create">
+	<% if self.invalid_cts then -%><div class="cbi-section-error"><% end %>
+	<label class="cbi-value-title-2"<%= attr("for", cbid) %>><span onmouseover="ShowHint(this, 'A interface that new  instance will have')" onmouseout="HideHint(this)"><%=translate("Interface")%></span></label>
+	<select class="cbi-section-create-name" name="cbid.<%=self.config%>.<%=self.sectiontype%>.interface_name">
+		<%for i=1, #dfList do
+			splitas = dfList[i]:split(" Link")
+			for j=1, #splitas, 2 do
+				myTable[i] = all_trim(splitas[j]) %>
+				<option value="<%=myTable[i]%>"><%=myTable[i]%></option>
+			<%end%>
+		<%end%>
+	</select>
+
+	<input class="cbi-button cbi-button-add" name="cbid.<%=self.config%>.<%=self.sectiontype%>.add" type="submit" value="<%:Add New%>" title="<%=translate('Add New')%>" />
+	<% if self.invalid_cts then %><br /><%=translate("Invalid")%></div><% end %>
+</div>
+</br>
+</br>

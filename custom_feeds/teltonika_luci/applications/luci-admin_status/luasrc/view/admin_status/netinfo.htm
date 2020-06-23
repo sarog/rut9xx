@@ -1,0 +1,1095 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: index.htm 8408 2012-04-02 22:50:26Z jow $
+
+-%>
+
+<%
+	require "luci.fs"
+	require "luci.tools.status"
+	luci.util   = require "luci.util"
+
+	local has_ipv6 = luci.fs.access("/proc/net/ipv6_route")
+	local has_backupLink = luci.fs.access("/tmp/.mwan/cache")
+	local has_dhcp = luci.fs.access("/etc/config/dhcp")
+	local has_wifi = luci.fs.stat("/etc/config/wireless")
+		has_wifi = has_wifi and has_wifi.size > 0
+	local has_3g   = false
+	local has_3g_ppp= false
+	local has_wimax= false
+	local has_lte= false
+	local activeConnection
+	local moduleType = luci.util.trim(luci.sys.exec("uci get -q system.module.type"))
+	local moduleIface = luci.util.trim(luci.sys.exec("uci get -q system.module.iface"))
+	local moduleDev = luci.util.trim(luci.sys.exec("uci get -q network.ppp.device"))
+	local ModuleName = luci.util.trim(luci.sys.exec("uci get -q system.module.name"))
+	local modelservice = "3G"
+	local moduleVidPid = luci.util.trim(luci.sys.exec("uci get -q system.module.vid"))..":"..luci.util.trim(luci.sys.exec("uci get -q system.module.pid"))
+ 	local bridge_on = luci.util.trim(luci.sys.exec("uci get -q network.ppp.bridge"))
+
+	if moduleDev == "/dev/ttyHS5" then
+		moduleDev = false
+	else
+		moduleDev = true
+	end
+	local isSta = false
+	if moduleType == "3g" then
+		has_3g = true
+	end
+	if moduleType == "3g_ppp" then
+		has_3g_ppp = true;
+	end
+	if moduleVidPid == "12D1:1573" or moduleVidPid == "12D1:15C1" or moduleVidPid == "12D1:15C3" or moduleVidPid == "1BC7:1201" or moduleVidPid == "1BC7:0036" then
+		has_lte = true
+ 	end
+	if moduleType == "wimax" and ( moduleIface == "eth1(wimax)" or moduleIface == "wm0" ) then
+		has_wimax = true
+	end
+	if has_lte then
+		modelservice = "LTE"
+	end
+	local ntm = require "luci.model.network".init()
+	local nw  = require "luci.model.network"
+	isSta = nw.get_override()
+	if luci.http.formvalue("status") == "1" then
+
+		local dr4 = luci.sys.net.defaultroute()
+		local dr6 = luci.sys.net.defaultroute6()
+		local wan, wan6, lan
+		if has_backupLink then
+			activeConnection = "wan"
+			local cachefile = luci.fs.readfile("/tmp/.mwan/cache")
+			_, _, wan_fail_map = string.find(cachefile, "wan_fail_map=\"([^\"]*)\"")
+			if wan_fail_map == "wan[x]" then
+				activeConnection = "wan2"
+			elseif wan_fail_map == "wan2[x]" then
+				activeConnection = "wan"
+			elseif wan_fail_map == "wan[x]wan2[x]" then
+				activeConnection = nil
+			end
+			if activeConnection == "wan2" then
+				wan = nw:get_network(activeConnection)
+				if wan:ifname() == "3g-ppp" then
+					customInterface = true
+					wan = nw:get_network("ppp")
+				end
+			end
+			if not customInterface then
+				wan = nw:get_network(activeConnection)
+			end
+		else
+			if dr4 and dr4.device then
+				wan = ntm:get_interface(dr4.device)
+				wan = wan and wan:get_network()
+			end
+		end
+
+		if dr6 and dr6.device then
+			wan6 = ntm:get_interface(dr6.device)
+			wan6 = wan6 and wan6:get_network()
+		end
+
+		lan = ntm:get_interface("br-lan")
+		lan = lan and lan:get_network()
+		if bridge_on == "1" then
+		lan["sid"] = "lan2"
+		end
+		local gstate, gimei, gsigstr, goper, gctype, grecv, gsent, gpin
+		local wstate, wtime, wsigstr, wsigqual, wupcd, wdowncd, wmac, wver, wbsid, wip
+
+----------- 3G information gathering -------
+		if has_3g or has_3g_ppp then
+			local data = nw:new_get_info()
+			if (data ~= nil) then
+			netstate = data["netstate"]
+			gstate  = data["state"]
+			gsigstr = data["signal"]
+			gimei   = data["imei"]
+			goper   = data["oper"]
+			gctype  = data["ntype"]
+			if gctype ~= nil then
+				if gctype:match("^CDMA") or gctype:match("^EDGE") or gctype:match("^GPRS")
+				then
+					gctype = "2G " .. "(" .. gctype .. ")"
+				elseif gctype:match("^WCDMA") or gctype:match("^HSDPA") or gctype:match("^HSUPA") or gctype:match("^HSPA") or gctype:match("^HSPA+")
+				then
+					gctype = "3G " .. "(" .. gctype .. ")"
+				elseif gctype:match("^LTE")
+				then
+					gctype = "4G " .. "(" .. gctype .. ")"
+				end
+			end
+			grecv   = data["rxbytes"]
+			gsent   = data["txbytes"]
+			gsim    = data["simstate"]
+			gpin    = data["pinstate"]
+			if gsim ~= nil then
+			if gsim:match("^inserted") and gpin ~= nil then
+				if gpin:match("disabled") or gpin:match("READY")
+				then
+					gsim = translate("OK" )
+				elseif gpin:match("not initialized")
+				then
+					gsim = translate("Rejected")
+					gsigstr = "N/A"
+				elseif gpin:match("blocked")
+				then
+					gsim = translatef("PUK required. %d attempts left.", data["pinleft"])
+					gsigstr = "N/A"
+				elseif gpin:match("permanently blocked")
+				then
+					gsim = translate("Blocked")
+					gsigstr = "N/A"
+				elseif gpin:match("enabled, not verified")
+				then
+					gsim = translatef("PIN required. %d attempts left.", data["pinleft"])
+					gsigstr = "N/A"
+				elseif gpin:match("SIM PIN")
+				then
+					gsim = translate("PIN required")
+					gsigstr = "N/A"
+				elseif gpin:match("SIM PUK")
+				then
+					gsim = translate("PUK required")
+					gsigstr = "N/A"
+				elseif gpin:match("SIM PIN2")
+				then
+					gsim = translate("PIN2 required")
+					gsigstr = "N/A"
+				elseif gpin:match("SIM PUK2")
+				then
+					gsim = translate("PUK2 required")
+					gsigstr = "N/A"
+				elseif gpin:match("enabled, verified")
+				then
+					gsim = translate("OK")
+				elseif gpin:match("unknown")
+				then
+					gsim = translate("SIM error")
+					gsigstr = "N/A"
+				end
+			else
+				gsim = translate("Not inserted")
+				gsigstr = "N/A"
+			end
+			end
+			end
+		end
+-------------WiMAX information gathering-----
+		if has_wimax then
+			if ModuleName == "TELTONIKA-WIMAX" then
+				wtime   = nw:wimaxCGICall({ call ="time" })
+				if wtime ~= nil and wtime ~= ""  then
+					wstate  = nw:wimaxCGICall({ call = "state" })
+					wsigstr = nw:wimaxCGICall({ call ="signal-strength" })
+					wsigqual= nw:wimaxCGICall({ call ="signal-quality-dbm" })
+					wupcd   = nw:wimaxCGICall({ call ="uplink-coding" })
+					wdowncd = nw:wimaxCGICall({ call ="downlink-coding" })
+					wmac    = nw:wimaxCGICall({ call ="macaddress" })
+					wver    = nw:wimaxCGICall({ call ="os-version" })
+					wbsid   = nw:wimaxCGICall({ call ="bsid" })
+					wip   = nw:wimaxCGICall({ call ="extip" })
+				end
+			elseif ModuleName == "TELTONIKA-GCT" then
+				local WimaxDataTable = nw:gct_wimax_syscall()
+				if WimaxDataTable ~= nil then
+					wstate		= WimaxDataTable["state"]
+					wsigqual	= WimaxDataTable["signal_quality"]
+					wsigstr 	= WimaxDataTable["signal_strength"]
+					wbsid 		= WimaxDataTable["bsid"]
+					wupcd 		= WimaxDataTable["uplink_coding"]
+					wdowncd 	= WimaxDataTable["downlink_coding"]
+					wmac 		= WimaxDataTable["macaddress"]
+				end
+			end
+
+		end
+---------------------------------------------
+
+		local rv = {
+			netstate	= netstate,
+			gstate     = gstate,
+			gsigstr    = gsigstr,
+			gimei      = gimei,
+			goper      = goper,
+			gctype     = gctype,
+			grecv      = grecv,
+			gsent      = gsent,
+			gsim       = gsim,
+			wstate     = wstate,
+			wtime      = wtime,
+			wsigstr    = wsigstr,
+			wsigqual   = wsigqual,
+			wupcd      = wupcd,
+			wdowncd    = wdowncd,
+			wmac       = wmac,
+			wver       = wver,
+			wbsid      = wbsid,
+			wip        = wip,
+			ac         = activeConnection,
+			leases     = luci.tools.status.dhcp_leases(),
+			wifinets   = luci.tools.status.wifi_networks(),
+			port_stat  = luci.tools.status.switch_status("switch0")
+		}
+
+		if wan then
+			rv.wan = {
+				ipaddr  = wan:ipaddr(),
+				gwaddr  = wan:gwaddr(),
+				netmask = wan:netmask(),
+				dns     = wan:dnsaddrs(),
+				expires = wan:expires(),
+				uptime  = wan:uptime(),
+				proto   = wan:proto(),
+				ifname  = wan:ifname(),
+				link    = wan:adminlink()
+			}
+			----------------
+			-- Workaround --
+			----------------
+			if ModuleName == "TELTONIKA-GCT" and rv.wan.dns[1] == nil then
+				rv.wan.dns[1] = luci.sys.exec("head -1 /tmp/resolv.conf.auto | cut -d ' ' -f 2")
+				rv.wan.dns[2] = luci.sys.exec("tail -n1 /tmp/resolv.conf.auto | cut -d ' ' -f 2")
+			end
+		end
+
+		if lan then
+			rv.lan = {
+				ipaddr  = lan:ipaddr(),
+				netmask = lan:netmask(),
+				uptime  = lan:uptime()
+			}
+		end
+
+		if wan6 then
+			rv.wan6 = {
+				ip6addr = wan6:ip6addr(),
+				gw6addr = wan6:gw6addr(),
+				dns     = wan6:dns6addrs(),
+				uptime  = wan6:uptime(),
+				ifname  = wan6:ifname(),
+				link    = wan6:adminlink()
+			}
+		end
+
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(rv)
+
+		return
+	end
+
+	local system, model = luci.sys.sysinfo()
+-%>
+
+<%+header%>
+<script type="text/javascript">
+
+</script>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+	function progressbar(v, m)
+	{
+		var vn = parseInt(v) || 0;
+		var mn = parseInt(m) || 100;
+		var pc = Math.floor((100 / mn) * vn);
+
+		return String.format(
+			'<div style="width:200px; position:relative; border: 0px solid black; background-color:#e7ffce;">' +
+				'<div style="background-color:#9dc2e2; width:%d%%; height:15px">' +
+					'<div style="position:absolute; left:0; top:0; text-align:center; width:100%%; color:#404040">' +
+						'<small>%s / %s (%d%%)</small>' +
+					'</div>' +
+				'</div>' +
+			'</div>', pc, v, m, pc
+		);
+	}
+function get_icon(avail, quality)
+{
+var icon;
+	if (!avail)
+		icon = "<%=resource%>/icons/signal-none.png";
+	else if (quality == 0)
+		icon = "<%=resource%>/icons/signal-0.png";
+	else if (quality < 25)
+		icon = "<%=resource%>/icons/signal-0-25.png";
+	else if (quality < 50)
+		icon = "<%=resource%>/icons/signal-25-50.png";
+	else if (quality < 75)
+		icon = "<%=resource%>/icons/signal-50-75.png";
+	else
+		icon = "<%=resource%>/icons/signal-75-100.png";
+ return icon;
+}
+function get_icon_str(avail, srenght)
+{
+var icon;
+	if (!avail)
+		icon = "<%=resource%>/icons/signal-none.png";
+	else if (srenght >= -60)
+		icon = "<%=resource%>/icons/signal-75-100.png";
+	else if (srenght >= -78)
+		icon = "<%=resource%>/icons/signal-50-75.png";
+	else if (srenght >= -90)
+		icon = "<%=resource%>/icons/signal-25-50.png";
+	else if (srenght >= -105)
+		icon = "<%=resource%>/icons/signal-0-25.png";
+	else if (srenght < -105)
+		icon = "<%=resource%>/icons/signal-0.png";
+ return icon;
+}
+	var wifidevs = <%=luci.http.write_json(netdevs)%>;
+	var arptable = <%=luci.http.write_json(arpcache)%>;
+
+function refreshPage(){
+	document.getElementById("toprefresh").disabled = true;
+	document.getElementById("refresh").disabled = true;
+	XHR.get('<%=luci.dispatcher.build_url("admin", "status", "netinfo")%>', { status: 1 },
+		function(x, info)
+		{
+
+			//-----------------------------------------------------------------------------
+			//----- Potrt info-------------------------------------------------------------
+			//-----------------------------------------------------------------------------
+				var tableStart = '<table width="100%" cellspacing="10"><tr>';
+				var tableEnd = '</tr></table>';
+				var switches = "switch0";
+				var ports = info.port_stat[switches];
+				var s = '';
+				if (ports && ports.length)
+				{
+					for (var j = 2; j <  ports.length; j++)
+					{
+							if (ports[j].link)
+							{
+								if (e = document.getElementById('port'+(j-2)))
+									{
+										e.src = "<%=resource%>/icons/lan_up.png";
+									}
+							}
+							else
+							{
+								if (e = document.getElementById('port'+(j-2)))
+									{
+										e.src = "<%=resource%>/icons/lan_down.png";
+									}
+							}
+// 						}
+					}
+				}
+
+			//-----------------------------------------------------------------------------
+			//----- Wan status ------------------------------------------------------------
+			//-----------------------------------------------------------------------------
+
+			var ifc;
+			var ss;
+			var tableStart = '<table width="100%" cellspacing="10">';
+			var tableEnd = '</table>';
+			if (info.wan != null)
+			{
+				ifc = info.wan;
+			}
+			ss = document.getElementById('WAN');
+
+			var s = '';
+			if (ifc && ifc.ifname && ifc.proto != 'none')
+			{
+
+				if (ifc.ifname == 'eth1(wimax)' && '<%=moduleType%>' == 'wimax' && '<%=bridge_on%>' != '1' )
+				{
+					s = String.format(
+						'<tr><td width="33%%"><%:Interface%> </td><td>WiMAX</td></tr>' +
+						'<tr><td width="33%%"><%:Type%> </td><td>DHCP</td></tr>' +
+						'<tr><td width="33%%"><%:IP address%> </td><td>%s</td></tr>',
+						(info.wip) ? info.wip : '0.0.0.0'
+					);
+				}
+				else
+				{
+					s = String.format(
+						'<tr><td width="33%%"><%:Interface%> </td><td>%s</td></tr>' +
+						'<tr><td width="33%%"><%:Type%> </td><td>%s</td></tr>' +
+						'<tr><td width="33%%"><%:IP address%> </td><td>%s</td></tr>' +
+						'<tr><td width="33%%"><%:Netmask%> </td><td>%s</td></tr>' +
+						'<tr><td width="33%%"><%:Gateway%> </td><td>%s</td></tr>',
+							(ifc.ifname == 'wm0') ? 'WiMAX' : (ifc.ifname == 'eth1(wimax)' && '<%=moduleType%>' == 'wimax') ? 'WiMAX' : (ifc.ifname == 'usb0') ? '3G' : (ifc.ifname == 'wlan0') ? 'Wifi' : (ifc.ifname == '3g-ppp') ? '3G-ppp' : (ifc.ifname == 'eth2' && ('<%=moduleType%>' == '3g_ppp' || '<%=moduleType%>' == '3g') ) ? 'Eth2' : 'Wired',
+							(ifc.proto == 'dhcp') ? 'DHCP' : ('<%=has_lte%>' && ifc.ifname == '3g-ppp' ) ? '<%=modelservice%>' :(ifc.proto == 'ndis') ? 'NDIS' : ifc.proto,
+							(ifc.ipaddr) ? ifc.ipaddr : '0.0.0.0',
+							(ifc.netmask && ifc.netmask != ifc.ipaddr) ? ifc.netmask : '255.255.255.255',
+							(ifc.gwaddr) ? ifc.gwaddr : '0.0.0.0'
+					);
+
+					for (var i = 0; i < ifc.dns.length; i++)
+					{
+						s += String.format(
+							'<tr><td width="33%%"><%=translate("DNS")%> %d </td><td>%s</td></tr>',
+							i + 1, ifc.dns[i]
+						);
+					}
+
+					if (ifc.expires > -1)
+					{
+						s += String.format(
+							'<tr><td width="33%%"><%=translate("Expires")%> </td><td>%t</td></tr>',
+							ifc.expires
+						);
+					}
+
+					if (ifc.uptime > 0)
+					{
+						s += String.format(
+							'<tr><td width="33%%"><%=translate("Connected")%> </td><td>%t</td></tr>',
+							ifc.uptime
+						);
+					}
+				}
+				ss.innerHTML = tableStart + String.format('%s', s) ;
+
+			}
+			else
+			{
+			if ('<%=bridge_on%>' == '1' )
+				{
+					s += '<tr><td><em><%=translate("Bridge mode")%></em></td></tr>';
+				}
+				else
+				{
+					s += '<tr><td><em><%=translate("WAN not connected.")%></em></td></tr>';
+				}
+
+				if (ss)
+					ss.innerHTML = tableStart + String.format('%s', s) + tableEnd;
+			}
+
+// 			<% if has_ipv6 then %>
+// 			var ss6 = document.getElementById('WAN');
+// 			var ifc6 = info.wan6;
+//
+// 			if (ifc6 && ifc6.ifname && ifc6.proto != 'none')
+// 			{
+// 				s += String.format(
+// 					'<tr><td width="33%%"><%: IPv6 Address%></td><td>%s</td></tr>' +
+// 					'<tr><td width="33%%"><%:Gateway%></td><td>%s</td></tr>',
+// 						(ifc6.ip6addr) ? ifc6.ip6addr : '::',
+// 						(ifc6.gw6addr) ? ifc6.gw6addr : '::'
+// 				);
+//
+// 				for (var i = 0; i < ifc6.dns.length; i++)
+// 				{
+// 					s += String.format(
+// 						'<tr><td width="33%%"><%:DNS%> %d</td><td>%s</td></tr>',
+// 						i + 1, ifc6.dns[i]
+// 					);
+// 				}
+//
+// 				if (ifc6.uptime > 0)
+// 				{
+// 					s += String.format(
+// 						'<tr><td width="33%%"><%:Connected%></td><td>%t</td></tr>',
+// 						ifc6.uptime
+// 					);
+// 				}
+//
+// 				ss6.innerHTML = tableStart + String.format('%s', s) + tableEnd;
+// 			}
+// 			else
+// 			{
+// 				ss6.innerHTML = tableStart + '<em><%:Not connected%></em>' + tableEnd;
+// 			}
+// 			<% end %>
+
+			//-----------------------------------------------------------------------------
+			//----- Lan status ------------------------------------------------------------
+			//-----------------------------------------------------------------------------
+
+			ifc = info.lan;
+			ss = document.getElementById('LAN');
+
+			s = '';
+			if (ifc)
+			{
+				s = String.format(
+					'<tr><td width="33%%"><%=translate("IP address")%> </td><td>%s</td></tr>' +
+					'<tr><td width="33%%"><%=translate("Netmask")%> </td><td>%s</td></tr>',
+						ifc.ipaddr,
+						ifc.netmask
+				);
+				if (ifc.uptime > 0)
+				{
+					s += String.format(
+						'<tr><td width="33%%"><%=translate("Connected")%> </td><td>%t</td></tr>',
+						ifc.uptime
+					);
+				}
+				ss.innerHTML = tableStart + String.format('%s', s) + tableEnd;
+
+			}
+			else
+			{
+				ss.innerHTML = tableStart + '<br /><tr><em><%=translate("Not connected via WAN.")%></em></tr> </br>' + tableEnd;
+			}
+
+			//-----------------------------------------------------------------------------
+
+			<% if has_dhcp then %>
+			var ls = document.getElementById('lease_status_table');
+			if (ls)
+			{
+				/* clear all rows */
+				while( ls.rows.length > 1 )
+					ls.rows[0].parentNode.deleteRow(1);
+
+				for( var i = 0; i < info.leases.length; i++ )
+				{
+					var timestr;
+
+					if (info.leases[i].expires <= 0)
+						timestr = '<em><%=translate("expired")%></em>';
+					else
+						timestr = String.format('%t', info.leases[i].expires);
+
+					var tr = ls.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row cbi-rowstyle-' + ((i % 2) + 1);
+
+					tr.insertCell(-1).innerHTML = info.leases[i].hostname ? info.leases[i].hostname : '?';
+					tr.insertCell(-1).innerHTML = info.leases[i].ipaddr;
+					tr.insertCell(-1).innerHTML = info.leases[i].macaddr;
+					tr.insertCell(-1).innerHTML = timestr;
+				}
+
+				if( ls.rows.length == 1 )
+				{
+					var tr = ls.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row';
+
+					var td = tr.insertCell(-1);
+						td.colSpan = 4;
+						td.innerHTML = '<em><%=translate("There are no active leases.")%></em>';
+				}
+			}
+			<% end %>
+
+			//-------------------------------------------------------------------------------
+			//------------Wifi info----------------------------------------------------------
+			//-------------------------------------------------------------------------------
+
+			<% if has_wifi then %>
+			var assoclist = [ ];
+
+			var ws = document.getElementById('wifi_status_table');
+			if (ws)
+			{
+				var wsbody = ws.rows[0].parentNode;
+				while (ws.rows.length > 0)
+					wsbody.deleteRow(0);
+
+				for (var didx = 0; didx < info.wifinets.length; didx++)
+				{
+					var dev = info.wifinets[didx];
+
+					var s = '';
+
+					for (var nidx = 0; nidx < dev.networks.length; nidx++)
+					{
+						var net = dev.networks[nidx];
+
+						var is_assoc = (net.bssid != '00:00:00:00:00:00' && net.channel);
+
+						if (net.mode == 'Unknown') continue;
+
+						var icon;
+						icon = get_icon(is_assoc, net.quality);
+
+						if (e = document.getElementById('wifiBar0'))
+						{
+							if (e.style.visibility == 'hidden')
+							e.src = icon;
+						}
+
+						if (e = document.getElementById('wifiBar1'))
+						{
+							if (e.style.visibility == 'hidden')
+							e.src = icon;
+						}
+						<% if isSta then %>
+							s += String.format('<tr><td width="33%%"><%=translate("Signal quality")%></td><td>%d%%</td></tr>', net.quality);
+						<% end %>
+						s += String.format(
+								'<tr><td width="33%%"><%=translate("SSID")%></td><td>%s</td></tr>' +
+								'<tr><td width="33%%"><%=translate("Mode")%></td><td>%s</td></tr>' +
+								'<tr><td width="33%%"><%=translate("Channel")%></td><td>%d (%.2f GHz)</td></tr>',
+								escapeHTML(net.ssid),
+								net.mode,
+								net.channel, net.frequency
+								|| '?'
+						);
+
+						if (is_assoc)
+						{
+							s += String.format(
+								'<tr><td width="33%%"><%=translate("BSSID")%></td><td>%s</td></tr>' +
+								'<tr><td width="33%%"><%=translate("Encryption")%></td><td>%s</td></tr>' +
+								'<tr><td width="33%%"><%=translate("Bit rate")%></td><td>%.1f MBit/s</td></tr>' +
+								'<tr><td width="33%%"><%=translate("Country")%></td><td>%s</td></tr>',
+									net.bssid,
+									net.encryption, net.bitrate ? net.bitrate : 0, net.country
+							);
+						}
+
+						for (var bssid in net.assoclist)
+						{
+							assoclist.push({
+								bssid:    bssid,
+								signal:   net.assoclist[bssid].signal,
+								noise:    net.assoclist[bssid].noise,
+								rx_rate:  net.assoclist[bssid].rx_rate,
+								rx_mcs:   net.assoclist[bssid].rx_mcs,
+								rx_40mhz: net.assoclist[bssid].rx_40mhz,
+								tx_rate:  net.assoclist[bssid].tx_rate,
+								tx_mcs:   net.assoclist[bssid].tx_mcs,
+								tx_40mhz: net.assoclist[bssid].tx_40mhz,
+								link:     net.link,
+								name:     net.name
+							});
+						}
+					}
+
+					if (!s)
+						s = '<tr><td><em><%=translate("No information available")%></em><tr><td>';
+					ws = document.getElementById('wifi_status');
+					ws.innerHTML = '<table id="wifi_status_table" width="100%" cellspacing="10">' + s + tableEnd;
+				}
+			}
+
+			var ac = document.getElementById('wifi_assoc_table');
+			if (ac)
+			{
+				/* clear all rows */
+				while( ac.rows.length > 1 )
+					ac.rows[0].parentNode.deleteRow(1);
+
+				assoclist.sort(function(a, b) {
+					return (a.name == b.name)
+						? (a.bssid < b.bssid)
+						: (a.name  > b.name )
+					;
+				});
+
+				for( var i = 0; i < assoclist.length; i++ )
+				{
+					var tr = ac.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row cbi-rowstyle-' + (1 + (i % 2));
+
+					tr.insertCell(-1).innerHTML = assoclist[i].bssid;
+
+					tr.insertCell(-1).innerHTML = String.format(
+						'<a href="%s">%h</a>',
+							assoclist[i].link,
+							assoclist[i].name
+					);
+
+					tr.insertCell(-1).innerHTML = String.format('%d dBm', assoclist[i].signal);
+
+					tr.insertCell(-1).innerHTML = (assoclist[i].rx_mcs > -1)
+						? String.format('%.1f Mbit/s, MCS %d, %dMHz', assoclist[i].rx_rate / 1000, assoclist[i].rx_mcs, assoclist[i].rx_40mhz ? 40 : 20)
+						: String.format('%.1f Mbit/s', assoclist[i].rx_rate / 1000)
+					;
+
+					tr.insertCell(-1).innerHTML = (assoclist[i].tx_mcs > -1)
+						? String.format('%.1f Mbit/s, MCS %d, %dMHz', assoclist[i].tx_rate / 1000, assoclist[i].tx_mcs, assoclist[i].tx_40mhz ? 40 : 20)
+						: String.format('%.1f Mbit/s', assoclist[i].tx_rate / 1000)
+					;
+				}
+
+				if (ac.rows.length == 1)
+				{
+					var tr = ac.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row';
+
+					var td = tr.insertCell(-1);
+						td.colSpan = 7;
+						td.innerHTML = '<tr><td><em><%=translate("No information available")%></em><tr><td>';
+				}
+			}
+			<% end %>
+
+			var e;
+
+			<% if has_3g or has_3g_ppp then %>
+			var gicon;
+
+			gicon = get_icon_str((info.gsigstr != undefined) && (info.gsigstr != 0) && (info.gsigstr != "N/A"), parseInt(info.gsigstr));
+			if (gicon && (gicon != undefined))
+			{
+				if (e = document.getElementById('3gBar0'))
+				{
+					if (e.style.visibility == 'hidden')
+					e.src = gicon;
+				}
+
+				if (e = document.getElementById('3gBar1'))
+				{
+					if (e.style.visibility == 'hidden')
+					e.src = gicon;
+				}
+			}
+				if (e = document.getElementById('3gState'))
+					(info.gstate) ? e.innerHTML = info.gstate : e.innerHTML   = "N/A";
+
+				if (e = document.getElementById('3gOperState'))
+					(info.netstate ) ? e.innerHTML = info.netstate : e.innerHTML   = "N/A";
+
+				if (e = document.getElementById('3gImei'))
+					(info.gimei) ? e.innerHTML = info.gimei : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('3gSim'))
+					(info.gsim) ? e.innerHTML = info.gsim : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('3gStr'))
+					(info.gsigstr == 'N/A') ? e.innerHTML = info.gsigstr : (info.gsigstr) ? e.innerHTML = String.format('%d dBm', info.gsigstr) : e.innerHTML = "N/A";
+
+				if (e = document.getElementById('3gProv'))
+					(info.goper) ? e.innerHTML = info.goper : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('3gCType'))
+					(info.gctype) ? e.innerHTML = info.gctype : e.innerHTML   = "N/A";
+
+				if (e = document.getElementById('3gRecv'))
+					(info.grecv) ? e.innerHTML = info.grecv : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('3gSent'))
+					(info.gsent) ? e.innerHTML = info.gsent : e.innerHTML     = "N/A";
+			<% end %>
+
+			<% if has_wimax then %>
+			var wicon;
+			wicon = get_icon_str((info.wsigstr != undefined) && (info.wsigstr != "0"), info.wsigstr);
+
+			if (e = document.getElementById('wimaxBar0'))
+			{
+				if (e.style.visibility == 'hidden')
+				e.src = wicon;
+			}
+
+			if (e = document.getElementById('wimaxBar1'))
+			{
+				if (e.style.visibility == 'hidden')
+				e.src = wicon;
+			}
+				if (e = document.getElementById('wTime'))
+					(info.wtime) ? e.innerHTML = info.wtime : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wState'))
+					(info.wstate) ? e.innerHTML = info.wstate : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wSigstr'))
+					e.innerHTML = String.format('%d dBm', info.wsigstr);
+
+				if (e = document.getElementById('wSigqual'))
+					(info.wsigqual) ? e.innerHTML = info.wsigqual : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wMac'))
+					(info.wmac) ? e.innerHTML = info.wmac : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wUpMod'))
+					(info.wupcd) ? e.innerHTML = info.wupcd : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wDownMod'))
+					(info.wdowncd) ? e.innerHTML = info.wdowncd : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wVer'))
+					(info.wver) ? e.innerHTML = info.wver : e.innerHTML     = "N/A";
+
+				if (e = document.getElementById('wBSMac'))
+					(info.wbsid) ? e.innerHTML = info.wbsid : e.innerHTML     = "N/A";
+			<% end %>
+
+			if (e = document.getElementById('localtime'))
+				e.innerHTML = info.localtime;
+
+			if (e = document.getElementById('uptime'))
+				e.innerHTML = String.format('%t', info.uptime);
+
+			if (e = document.getElementById('loadavg'))
+				e.innerHTML = String.format('%.02f, %.02f, %.02f',
+					info.loadavg[0], info.loadavg[1], info.loadavg[2]);
+
+			if (e = document.getElementById('memtotal'))
+				e.innerHTML = progressbar(
+					(info.memfree + info.membuffers + info.memcached) + " kB",
+					info.memtotal + " kB"
+				);
+
+			if (e = document.getElementById('memfree'))
+				e.innerHTML = progressbar(
+					info.memfree + " kB", info.memtotal + " kB"
+				);
+
+			if (e = document.getElementById('memcache'))
+				e.innerHTML = progressbar(
+					info.memcached + " kB", info.memtotal + " kB"
+				);
+
+			if (e = document.getElementById('membuff'))
+				e.innerHTML = progressbar(
+					info.membuffers + " kB", info.memtotal + " kB"
+				);
+
+			if (e = document.getElementById('conns'))
+				e.innerHTML = progressbar(info.conncount, info.connmax);
+			document.getElementById('toprefresh').disabled = false;
+			document.getElementById('refresh').disabled = false;
+		}
+	);
+}
+AddWindowOnLoadEvent(refreshPage);
+function wifiLoad0()
+{
+  if (e = document.getElementById('wifiBar1'))
+	e.style.visibility = 'hidden';
+  if (e = document.getElementById('wifiBar0'))
+	e.style.visibility = 'visible';
+}
+function wifiLoad1()
+{
+  if (e = document.getElementById('wifiBar1'))
+	e.style.visibility = 'visible';
+  if (e = document.getElementById('wifiBar0'))
+	e.style.visibility = 'hidden';
+}
+AddWindowOnLoadEvent(wifiLoad0);
+AddWindowOnLoadEvent(wifiLoad1);
+<% if has_3g or has_3g_ppp then %>
+function g3Load0()
+{
+  if (e = document.getElementById('3gBar1'))
+	e.style.visibility = 'hidden';
+  if (e = document.getElementById('3gBar0'))
+	e.style.visibility = 'visible';
+}
+function g3Load1()
+{
+  if (e = document.getElementById('3gBar1'))
+	e.style.visibility = 'visible';
+
+  if (e = document.getElementById('3gBar0'))
+	e.style.visibility = 'hidden';
+}
+AddWindowOnLoadEvent(g3Load0);
+AddWindowOnLoadEvent(g3Load1);
+<% end %>
+<% if has_wimax then %>
+function wimaxLoad1()
+{
+  if (e = document.getElementById('wimaxBar1'))
+	e.style.visibility = 'visible';
+  if (e = document.getElementById('wimaxBar0'))
+	e.style.visibility = 'hidden';
+}
+function wimaxLoad0()
+{
+  if (e = document.getElementById('wimaxBar1'))
+	e.style.visibility = 'hidden';
+  if (e = document.getElementById('wimaxBar0'))
+	e.style.visibility = 'visible';
+}
+AddWindowOnLoadEvent(wimaxLoad0);
+AddWindowOnLoadEvent(wimaxLoad1);
+<% end %>
+
+function show(id){
+	e = document.getElementById(id);
+	if (e && id) {
+		if (e.style.display == "none") {
+			e.style.display="";
+		}
+		else
+		{
+			e.style.display="none";
+		}
+	}
+}
+//]]></script>
+
+<h2><a id="content" name="content"><%=translate("Network information")%></a></h2>
+
+<fieldset class="cbi-section" style="padding-top:0px;margin-bottom:-20px;">
+	
+	<button id="toprefresh" class="cbi-button-refresh"  style="float: right;" disabled onClick="refreshPage()"><img style="float: right;" src="/luci-static/resources/cbi/refresh71.png"> </img><%=translate("Refresh")%></button>
+</fieldset>
+	<% if has_3g or has_3g_ppp then %>
+<fieldset class="cbi-section">
+	<div id="g3BarsShow" class="overlayParent" onmouseout="show('3gTable')">
+		<div class="overlayLegend"><%=pcdata(modelservice)%>&#160;&#160;<img id="3gBar0" style="visibility: visible" onload="g3Load0()" src="<%=resource%>/icons/signal-0.png" /></div>
+		<div class="overlayLegend"><%=pcdata(modelservice)%>&#160;&#160;<img id="3gBar1" style="visibility: hidden" onload="g3Load1()" src="<%=resource%>/icons/signal-0.png" /></div>
+
+ 	</div>
+	<table id="3gTable" width="100%" cellspacing="10" class="cbi-section-table">
+		<% if moduleDev == true then %>
+		<tr class="cbi-section-table-row"><td width="33%"><img src="/luci-static/resources/icons/ok.png" style="height:18px"><%=translate("State")%></td><td id="3gState"><img src="/luci-static/resources/icons/wrn.png" style="height:18px"><%: - %></td></tr>
+		<% end %>
+		<tr class="cbi-section-table-row"><td width="33%"><%=translate("IMEI")%></td><td            id="3gImei"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%"><%=translate("Sim card state")%></td><td  id="3gSim"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%"><%=translate("Signal strength")%></td><td id="3gStr"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%"><%=translate("Operator")%></td><td        id="3gProv"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%"><%=translate("Operator state")%></td><td        id="3gOperState"><%: - %></td></tr>
+		<% if moduleDev == true then %>
+		<tr class="cbi-section-table-row"><td width="33%"><%=translate("Connection type")%></td><td id="3gCType"><%: - %></td></tr>
+		<% end %>
+		<tr class="cbi-section-table-row"><td width="33%"><%=translate("Bytes received")%></td><td  id="3gRecv"><%: - %></td></tr>
+		<tr class="cbi-section-table-row"><td width="33%"><%=translate("Bytes sent")%></td><td      id="3gSent"><%: - %></td></tr>
+	</table>
+</fieldset>
+	<% end %>
+	<% if has_wimax then %>
+<fieldset class="cbi-section">
+	<div id="wimaxBarsShow" class="overlayParent">
+		<div class="overlayLegend"><%=translate("WiMAX")%>&#160;&#160;<img id="wimaxBar0" style="visibility: visible"  onload="wimaxLoad0()" src="<%=resource%>/icons/signal-0.png" /></div>
+		<div class="overlayLegend"><%=translate("WiMAX")%>&#160;&#160;<img id="wimaxBar1" style="visibility: hidden" onload="wimaxLoad1()" src="<%=resource%>/icons/signal-0.png" /></div>
+	</div>
+	<table width="100%" cellspacing="10">
+		<% if ModuleName == "TELTONIKA-WIMAX" then %>
+			<tr><td width="33%"><%=translate("Uptime")%></td><td                id="wTime"><%: - %>            </td></tr>
+		<% end %>
+		<tr><td width="33%"><%=translate("State")%></td><td                 id="wState"><%: - %>           </td></tr>
+		<tr><td width="33%"><%=translate("Singal Strength")%></td><td       id="wSigstr"><%: -  %></td></tr>
+		<tr><td width="33%"><%=translate("Signal Quality")%></td><td        id="wSigqual"><%: - %></td></tr>
+		<tr><td width="33%"><%=translate("MAC address")%></td><td           id="wMac"><%: -  %></td></tr>
+		<tr><td width="33%"><%=translate("BS MAC address")%></td><td        id="wBSMac"><%: - %></td></tr>
+		<tr><td width="33%"><%=translate("Uplink Modulation")%></td><td     id="wUpMod"><%: -  %></td></tr>
+		<tr><td width="33%"><%=translate("Downlink Modulation")%></td><td   id="wDownMod"><%: -  %></td></tr>
+		<% if ModuleName == "TELTONIKA-WIMAX" then %>
+			<tr><td width="33%"><%=translate("Version")%></td><td               id="wVer"><%: -  %></td></tr>
+		<% end %>
+	</table>
+</fieldset>
+	<% end %>
+
+<fieldset class="cbi-section">
+	<legend><%=translate("WAN")%></legend>
+<div id="WAN">
+	<table width="100%" cellspacing="10">
+		<tr>
+				<td id="wan4_s" style="vertical-align:middle; padding: 3px"><em><%=translate("Collecting data...")%></em></td>
+		</tr>
+		<% if has_ipv6 then %>
+		<tr>
+				<td width="33%" style="vertical-align:top"><%=translate("IPv6 WAN Status")%></td>
+				<td id="wan6_s" style="vertical-align:middle; padding: 3px"><em><%=translate("Collecting data...")%></em></td>
+		</tr>
+		<% end %>
+	</table>
+</div>
+</fieldset>
+
+<fieldset class="cbi-section">
+	<legend><%=translate("LAN")%></legend>
+<div id="LAN">
+	<table width="100%" cellspacing="10">
+		<tr>
+				<td id="wan4_s" style="vertical-align:middle; padding: 3px"><em><%=translate("Collecting data...")%></em></td>
+		</tr>
+		<% if has_ipv6 then %>
+		<tr>
+				<td width="33%" style="vertical-align:top"><%=translate("IPv6 WAN Status")%></td>
+				<td id="wan6_s" style="vertical-align:middle; padding: 3px"><em><%=translate("Collecting data...")%></em></td>
+		</tr>
+		<% end %>
+	</table>
+</div>
+</fieldset>
+
+<% if has_wifi then %>
+<fieldset class="cbi-section">
+	<div id="wifiBarsShow" class="overlayParent">
+		<% if isSta == true then%>
+		<div class="overlayLegend"><%=translate("Wireless")%>&#160;&#160;<img style="visibility: visible" id="wifiBar0"  onload="wifiLoad0()" src="<%=resource%>/icons/signal-0.png" /></div>
+		<div class="overlayLegend"><%=translate("Wireless")%>&#160;&#160;<img style="visibility: hidden" id="wifiBar1"  onload="wifiLoad1()" src="<%=resource%>/icons/signal-0.png" /></div>
+	`	<% else %>
+		<div class="overlayLegend"><%=translate("Wireless")%></div>
+		<% end %>
+	</div>
+<div id="wifi_status">
+	<table id="wifi_status_table" width="100%" cellspacing="10">
+		<tr><td><em><%=translate("Collecting data...")%></em></td></tr>
+	</table>
+</div>
+</fieldset>
+<% end %>
+
+<% if has_wifi then %>
+<fieldset class="cbi-section">
+	<legend><%=translate("Associated Stations")%></legend>
+
+	<table class="cbi-section-table" id="wifi_assoc_table">
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell"><%=translate("MAC Address")%></th>
+			<th class="cbi-section-table-cell"><%=translate("Network")%></th>
+			<th class="cbi-section-table-cell"><%=translate("Signal")%></th>
+			<th class="cbi-section-table-cell"><%=translate("RX Rate")%></th>
+			<th class="cbi-section-table-cell"><%=translate("TX Rate")%></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td colspan="7"><em><br /><%=translate("Collecting data...")%></em></td>
+		</tr>
+	</table>
+</fieldset>
+<% end %>
+
+<% if has_dhcp then %>
+<fieldset class="cbi-section">
+	<legend><%=translate("DHCP Leases")%></legend>
+
+	<table class="cbi-section-table" id="lease_status_table">
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell"><%=translate("Hostname")%></th>
+			<th class="cbi-section-table-cell"><%=translate("IP Address")%></th>
+			<th class="cbi-section-table-cell"><%=translate("MAC Address")%></th>
+			<th class="cbi-section-table-cell"><%=translate("Leasetime remaining")%></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td colspan="4"><em><br /><%=translate("Collecting data...")%></em></td>
+		</tr>
+	</table>
+</fieldset>
+<% end %>
+<fieldset class="cbi-section">
+	<legend><%=translate("Ports")%></legend>
+	<div style=" padding:3px; width:100%;  align:center;">
+		<div style="position:relative; margin:auto; background-image:url('<%=resource%>/icons/RUT900_back.png'); background-size: 100%; background-repeat:no-repeat; height: 140px; width:326px;" id="PRT">
+			<div style="position:absolute; top: 13px; right: 70px;">
+				<div style="float:right;"><img id='port0' width="49px" height="54px" src="<%=resource%>/icons/lan_down.png" /></div>
+				<div style="margin-right:0px; float:right;"><img id='port1' width="49px" height="54px" src="<%=resource%>/icons/lan_down.png" /></div>
+				<div style="margin-right:0px;float:right;"><img id='port2' width="49px" height="54px" src="<%=resource%>/icons/lan_down.png" /></div>
+				<div style="margin-right:0px; float:right;"><img id='port3' width="49px" height="54px" src="<%=resource%>/icons/lan_down.png" /></div>
+			</div>
+		</div>
+	</div>
+</fieldset>
+<%-
+	require "luci.util"
+	require "nixio.fs"
+
+	local plugins = nixio.fs.dir(luci.util.libpath() .. "/view/admin_status/index")
+	if plugins then
+		local inc
+		for inc in plugins do
+			if inc:match("%.htm$") then
+				include("admin_status/index/" .. inc:gsub("%.htm$", ""))
+			end
+		end
+	end
+-%>
+<fieldset class="cbi-section">
+	<button id="refresh" class="cbi-button-refresh"  style="float: right;" disabled onClick="refreshPage()"></img><%=translate("Refresh")%></button>
+</fieldset>
+<%+footer%>

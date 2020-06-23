@@ -1,0 +1,103 @@
+<script type="text/javascript">
+	function add_sim_row(sim_info) {
+		var tableRef = document.getElementById('results').getElementsByTagName('tbody')[0];
+		var newRow = tableRef.insertRow(tableRef.rows.length);
+		for (var i = 0; i < sim_info.length; i++) {
+			var newCell = newRow.insertCell(i);
+			if (sim_info[i]) {
+				var newText = document.createTextNode(sim_info[i]);
+			} else {
+				var newText = document.createTextNode("-");
+			}
+			newCell.appendChild(newText);
+		}
+	}
+	function clear_sim_rows(){
+		var table = document.getElementById("results");
+		var rowCount = table.rows.length; while(--rowCount) table.deleteRow(rowCount);
+	}
+	function disable_mobile() {
+		XHR.get('<%=luci.dispatcher.build_url("admin", "network", "mobile", "sim_idle_protection", "disable")%>', null, null);
+	}
+	/*
+	 * Because Javascript is Asynchroniuos and we need to call these actions in strict order
+	 * we will have a slightly large XHR.get() tree which uses their callbacks to call the next function.
+	*/
+	function start_queries() {
+		var was_mobile_enabled = "1";
+		var test_button = document.getElementById("test");
+		var loading = document.getElementById("loading");
+		var spin_text = document.getElementById("spin_text");
+		test_button.disabled = true;
+		loading.style.display = "inline";
+		spin_text.innerHTML = "Checking if mobile is enabled";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "network", "mobile", "sim_idle_protection", "enable")%>', null, function(me, mobile_en) {
+			if (mobile_en) {
+				was_mobile_enabled = mobile_en.was_enabled;
+				spin_text.innerHTML = "Pinging main SIM";
+				XHR.get('<%=luci.dispatcher.build_url("admin", "network", "mobile", "sim_idle_protection", "get_test_results")%>', { step : 1 }, function(x, info) {
+					if (info) {
+						spin_text.innerHTML = "Switching to backup SIM";
+						add_sim_row(info);
+						XHR.get('<%=luci.dispatcher.build_url("admin", "network", "mobile", "sim_idle_protection", "switch")%>', { step : 2 }, function(y, info_switch) {
+							if (info_switch) {
+								spin_text.innerHTML = "Pinging from backup SIM";
+								XHR.get('<%=luci.dispatcher.build_url("admin", "network", "mobile", "sim_idle_protection", "get_test_results")%>', { step : 2 }, function(z, info_backup) {
+									if (info_backup) {
+										spin_text.innerHTML = "Switching back to main SIM";
+										add_sim_row(info_backup);
+										XHR.get('<%=luci.dispatcher.build_url("admin", "network", "mobile", "sim_idle_protection", "switch")%>', { step : 1 }, function(e, info_switch_back) {
+											if (info_switch_back) {
+												spin_text.innerHTML = "Done";
+												test_button.disabled = false;
+												loading.style.display = "none";
+												if (was_mobile_enabled == "0") {
+													disable_mobile();
+												}
+											}
+										});
+									}
+								});
+							}
+						});
+					}
+				});
+			}
+		});
+	}
+	function start_test() {
+		document.getElementById("results").hidden = false;
+		clear_sim_rows();
+		start_queries();
+	}
+</script>
+
+<%+header%>
+<div class="cbi-map">
+	<div id="message"></div>
+	<div style="display: inline-block; width: 100%">
+		<h2 style="display: inline;"><a id="content" name="content">SIM Idle Protection Test</a></h2>
+		<div id="loading" style="display: none; float: right;">
+			<span id="spin_text" style="position: relative; bottom 12px;"></span>
+			<img src="/luci-static/resources/icons/loading.gif" alt="Loading">
+		</div>
+	</div>
+	<fieldset>
+		<input type="button" class="cbi-button" value="Test" id="test" onclick="HideHint(this); start_test()" onmouseout="HideHint(this)" onmouseover="ShowHint(this, 'Test Sim Idle Protection')">
+		<table hidden id="results" cellspacing="1" class="cbi-section-table" style="float: left;">
+			<thead>
+				<tr class="cbi-section-table-row" style="height: 40px;">
+					<th style="vertical-align: middle;">SIM</th>
+					<th style="vertical-align: middle;">SIM State</th>
+					<th style="vertical-align: middle;">IMSI</th>
+					<th style="vertical-align: middle;">ICCID</th>
+					<th style="vertical-align: middle;">SIM IP</th>
+					<th style="vertical-align: middle;">Ping IP</th>
+					<th style="vertical-align: middle;">Ping</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</fieldset>
+</div>
+<%+footer%>

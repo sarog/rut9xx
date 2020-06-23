@@ -1,0 +1,6 @@
+<div class="cbi-section-create">
+	<label class="cbi-value-title-2" style="padding-left:10px;"<%= attr("for", cbid) %>><%=translate("New contact name:")%></label>
+	<input type="text" class="cbi-section-create-name" name="cbid.<%=self.config%>.<%=self.sectiontype%>.name" />
+	<input class="cbi-button cbi-button-add" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.add_con "type="submit" value="<%:Add New%>" title="<%=translate('Add New')%>" />
+	<% if self.invalid_cts then %><br /><%=translate("Invalid")%></div><% end %>
+</div>

@@ -1,0 +1,126 @@
+#!/bin/sh /etc/rc.common
+APP=/usr/sbin/mosquitto
+CONFIG=/etc/mosquitto.conf
+setup_config() {
+	
+	address=`uci -q get mosquitto.mqtt.local_addr`
+	port=`uci -q get mosquitto.mqtt.local_port`
+
+	use_acl=`uci -q get mosquitto.mqtt.use_acl`
+	acl_file_path=`uci -q get mosquitto.mqtt.acl_file_path`
+
+	use_pass_file=`uci -q get mosquitto.mqtt.use_pass_file`
+	password_file=`uci -q get mosquitto.mqtt.password_file`
+
+	use_tls_ssl=`uci -q get mosquitto.mqtt.use_tls_ssl`
+	secure_port=`uci -q get mosquitto.mqtt.secure_port`		
+
+	use_remote_tls=`uci -q get mosquitto.mqtt.use_remote_tls`
+
+	use_bridge_login=`uci -q get mosquitto.mqtt.use_bridge_login`
+	remote_username=`uci -q get mosquitto.mqtt.remote_username`
+	remote_password=`uci -q get mosquitto.mqtt.remote_password`
+	remote_clientid=`uci -q get mosquitto.mqtt.remote_clientid`
+	
+	bridge_role=`uci -q get mosquitto.mqtt.bridge_role`
+	connection_name=`uci -q get mosquitto.mqtt.connection_name`
+	remote_addr=`uci -q get mosquitto.mqtt.remote_addr`
+	remote_port=`uci -q get mosquitto.mqtt.remote_port`
+	
+	ca_file=`uci -q get mosquitto.mqtt.ca_file`
+	cert_file=`uci -q get mosquitto.mqtt.cert_file`
+	key_file=`uci -q get mosquitto.mqtt.key_file`
+	
+	bridge_ca_file=`uci -q get mosquitto.mqtt.bridge_cafile`
+	bridge_cert_file=`uci -q get mosquitto.mqtt.bridge_certfile`
+	bridge_key_file=`uci -q get mosquitto.mqtt.bridge_keyfile`
+	
+	try_private=`uci -q get mosquitto.mqtt.try_private`
+	cleansession=`uci -q get mosquitto.mqtt.clean_session`
+	persistence=`uci -q get mosquitto.mqtt.persistence`
+	
+	topic=`uci -q get mosquitto.mqtt.topic`
+	echo "Bridge role = $bridge_role"
+}
+
+fill_config() {
+
+	echo "user root" > $CONFIG
+	echo "bind_address $address" >> $CONFIG
+	echo "port $port" >> $CONFIG
+
+	echo "allow_anonymous true" >> $CONFIG
+	if [ "$use_pass_file" == "1" ]; then
+		echo "password_file $password_file" >> $CONFIG
+	fi
+	# Use access control list
+	if [ "$use_acl" == "1" ]; then
+		echo "acl_file $acl_file_path" >> $CONFIG
+	fi	
+	
+	# Connect to server if bridge role is "client"	
+	if [ "$bridge_role" == "bridge_client" ]; then
+		echo "Creating bridge"
+		echo "connection $connection_name" >> $CONFIG
+		echo "address $remote_addr:$remote_port" >> $CONFIG
+		
+		# Use TLS/SSL for bridge connection
+		if [ "$use_remote_tls" == "1" ]; then
+			echo "bridge_cafile $bridge_ca_file" >> $CONFIG
+			echo "bridge_certfile $bridge_cert_file" >> $CONFIG
+			echo "bridge_keyfile $bridge_key_file" >> $CONFIG		
+		fi
+		
+		# Use remote login
+		if [ "$use_bridge_login" == "1" ]; then
+			echo "remote_clientid $remote_clientid" >> $CONFIG
+			echo "remote_username $remote_username" >> $CONFIG
+			echo "remote_password $remote_password" >> $CONFIG
+		fi
+
+		# Set topic (-s)
+		for t in `echo $topic|tr ' ' '\n'`; do
+			echo "topic $t" >> $CONFIG
+		done
+	fi	
+
+	# Listen on additional port if using TLS/SSL
+	if [ "$use_tls_ssl" == "1" ]; then
+		echo "listener $secure_port" >> $CONFIG
+	fi
+	
+	# Use TLS/SSL for connection
+	if [ "$use_tls_ssl" == "1" ]; then
+		echo "cafile $ca_file" >> $CONFIG
+		echo "certfile $cert_file" >> $CONFIG
+		echo "keyfile $key_file" >> $CONFIG
+	fi
+	
+	# Set other options	
+	if [ "$try_private" == "1" ]; then
+		echo "try_private true" >> $CONFIG
+	fi
+	
+	if [ "$cleansession" == "1" ]; then
+		echo "cleansession true" >> $CONFIG
+	fi
+	
+	if [ "$persistence" == "1" ]; then
+		echo "persistence true" >> $CONFIG
+	fi		
+}
+
+start() {
+	ENABLED=`uci -q get mosquitto.mqtt.enabled`
+
+	if [ "$ENABLED" == "1" ]; then
+		setup_config
+		fill_config
+		service_start $APP -d -c $CONFIG
+	fi		
+}
+
+stop() {
+	service_stop $APP
+}
+

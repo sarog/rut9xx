@@ -1,0 +1,33 @@
+#!/bin/sh /etc/rc.common
+
+START=61
+STOP=61
+USE_PROCD=1
+
+PROC_BIN="/usr/bin/mwan"
+rm -rf /tmp/.mwan/cache
+
+start_service() {
+	[ "`uci get multiwan.config.enabled`" -gt 0 ] || return 1
+	rm -rf /tmp/.mwan/cache
+
+	procd_open_instance
+	procd_set_param respawn
+
+	procd_set_param command "$PROC_BIN"
+
+	procd_close_instance
+}
+
+stop_service() {
+	ip rule del table wan &>/dev/null
+	ip rule del table wan2 &>/dev/null
+	ip rule del table wan3 &>/dev/null
+	rm -rf /tmp/.mwan/cache
+	killall -9 mwan
+}
+
+reload_service() {
+        stop
+        start
+}

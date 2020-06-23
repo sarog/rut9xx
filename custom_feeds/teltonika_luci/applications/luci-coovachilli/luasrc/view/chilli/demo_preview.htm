@@ -1,0 +1,13 @@
+<%+cbi/valueheader%>
+<%local ipaddr = os.getenv("PATH_INFO")%>
+<script type="text/javascript">
+	function open_page() {
+		window.open("/cgi-bin/demo_preview.cgi");
+	}
+
+</script>
+<label class="cbi-value-title" for="cbid.landingpage.general.theme"></label>
+<div class="cbi-value-field" style="">
+	<input onclick="open_page()" class="cbi-button cbi-input-button" type="button" name="cbid.landingpage.general._button" id="cbid.landingpage.general._button" value="Demo preview">
+</div>
+<%+cbi/valuefooter%>

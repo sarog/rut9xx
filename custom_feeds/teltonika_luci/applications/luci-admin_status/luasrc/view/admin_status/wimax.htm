@@ -1,0 +1,225 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2010 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: load.htm 8325 2012-03-04 14:06:30Z jow $
+
+-%>
+
+<%+header%>
+<%local ds = require "luci.dispatcher"%>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+	var bwxhr = new XHR();
+
+	var G;
+	var TIME = 0;
+	var L01   = 1;
+
+	var width  = 760;
+	var height = 300;
+	var step   = 5;
+
+	var data_wanted = Math.floor(width / step);
+	var data_fill   = 0;
+	var data_stamp  = 0;
+
+	var data_01  = [ ];
+
+
+	var line_01;
+
+
+	var label_25;
+	var label_050;
+	var label_75;
+
+	var label_01_cur;
+	var label_01_avg;
+	var label_01_peak;
+
+	var label_05_cur;
+	var label_05_avg;
+	var label_05_peak;
+
+	var label_15_cur;
+	var label_15_avg;
+	var label_15_peak;
+
+	var label_scale;
+	var all_dbm = 0;
+	var count = 0;
+
+
+	/* wait for SVG */
+	window.setTimeout(
+		function() {
+			var svg = document.getElementById('bwsvg');
+
+			try {
+				G = svg.getSVGDocument
+					? svg.getSVGDocument() : svg.contentDocument;
+			}
+			catch(e) {
+				G = document.embeds['bwsvg'].getSVGDocument();
+			}
+
+			if (!G)
+			{
+				window.setTimeout(arguments.callee, 1000);
+			}
+			else
+			{
+				/* find sizes */
+				width       = svg.offsetWidth  - 2;
+				height      = svg.offsetHeight - 2;
+				data_wanted = Math.ceil(width / step);
+
+				/* prefill datasets */
+				for (var i = 0; i < data_wanted; i++)
+				{
+					data_01[i] = 0;
+				}
+
+				/* find svg elements */
+				line_01 = G.getElementById('load01');
+
+				label_25 = G.getElementById('label_25');
+				label_50 = G.getElementById('label_50');
+				label_75 = G.getElementById('label_75');
+
+				label_01_cur  = document.getElementById('str_cur');
+				label_01_avg  = document.getElementById('str_avg');
+				label_01_peak = document.getElementById('str_peak');
+
+				label_scale   = document.getElementById('scale');
+
+
+				/* plot horizontal time interval lines */
+				for (var i = width % (step * 60); i < width; i += step * 60)
+				{
+					var line = G.createElementNS('http://www.w3.org/2000/svg', 'line');
+						line.setAttribute('x1', i);
+						line.setAttribute('y1', 0);
+						line.setAttribute('x2', i);
+						line.setAttribute('y2', '100%');
+						line.setAttribute('style', 'stroke:black;stroke-width:0.1');
+
+					var text = G.createElementNS('http://www.w3.org/2000/svg', 'text');
+						text.setAttribute('x', i + 5);
+						text.setAttribute('y', 15);
+						text.setAttribute('style', 'fill:#999999; font-size:9pt');
+						text.appendChild(G.createTextNode(Math.round((width - i) / step / 60) + 'm'));
+
+					label_25.parentNode.appendChild(line);
+					label_25.parentNode.appendChild(text);
+				}
+				var data_avg = -120;
+				var data_peak = -120;
+				label_scale.innerHTML = String.format('<%:(%d minutes window, %d second interval)%>', data_wanted / 60, 1);
+
+				/* render datasets, start update interval */
+				XHR.poll(1, '<%=build_url("admin/status/realtime/wimax_status")%>', null,
+					function(x, data)
+					{
+						var data_max   = 0;
+						var data_scale = 0;
+						var noise_floor = -120;
+						console.log(data[0][0] +":"+ data[0][1]);
+						var dbm = data[0][1];
+						if ( dbm == "401"){
+							document.getElementById("str_cur").innerHTML = "-";
+							document.getElementById("str_peak").innerHTML = "-";
+							document.getElementById("str_avg").innerHTML = "-";
+							if(e = document.getElementById("errorLink"))
+								e.style.display="inline";
+						}
+						else{
+						document.getElementById("str_cur").innerHTML = parseInt(dbm) + " dBm";
+						
+						if(dbm != 120){
+							count++;
+							all_dbm += dbm;
+						}
+
+							/* skip overlapping entries */
+							if (data[0][TIME] >= data_stamp)
+								data_01.push(data[0][L01]- noise_floor);
+
+						/* cut off outdated entries */
+						data_01 = data_01.slice(data_01.length - data_wanted, data_01.length);
+
+						/* find peak */
+						for (var i = 0; i < data_01.length; i++)
+						{
+							data_max = Math.max(data_01[i], data_max);
+						}
+						data_peak = Math.max(data_peak, dbm);
+						document.getElementById("str_peak").innerHTML = parseInt(data_peak) + " dBm";
+						data_avg = (data_avg + dbm) / 2;
+						document.getElementById("str_avg").innerHTML = (all_dbm / count).toFixed(1) + " dBm";
+
+						/* remember current timestamp, calculate horizontal scale */
+						data_stamp = data[0][TIME];
+						data_scale = (height / (data_max * 1.1)).toFixed(1);
+
+						/* plot data */
+						var pt_01 = '0,' + height;
+						var y_01 = 0;
+						for (var i = 0; i < data_01.length; i++)
+						{
+							var x = i * step;
+							y_01 = height - Math.floor(data_01[i] * data_scale);
+							pt_01 += ' ' + x + ',' + y_01;
+						}
+						pt_01 += ' ' + width + ',' + y_01 + ' ' + width + ',' + height;
+						line_01.setAttribute('points', pt_01);
+
+						function str(dbm)
+						{
+								return String.format("%d dBm", noise_floor + dbm);
+						}
+						label_25.firstChild.data = str(1.1 * 0.25 * data_max);
+						label_50.firstChild.data = str(1.1 * 0.50 * data_max);
+						label_75.firstChild.data = str(1.1 * 0.75 * data_max);
+					}
+					}
+					
+				);
+			}
+		}, 1000
+	);
+//]]></script>
+
+<h2><a id="content" name="content"><%=translate("WiMAX Signal Strength")%></a></h2>
+<a id="errorLink" href="<%=ds.build_url('admin/system/admin/wimax/')%>" style="float:right; display:none;" class="wimaxErrorLink"> <%=translate('Invalid WiMAX user password. Please click here to navigate to relevant configuration page')%> </a> &#160;
+
+<embed id="bwsvg" style="width:100%; height:300px; border:1px solid #000000; background-color:#FFFFFF" src="<%=resource%>/mobilerate.svg" />
+<div style="text-align:right"><small id="scale">-</small></div>
+<br />
+
+<table style="width:100%; table-layout:fixed" cellspacing="5">
+	<tr>
+		<td style="text-align:right; vertical-align:top"><strong onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("Connection type:")%></strong></td>
+		<td id="con_type"><strong style="border-bottom:4px solid #FF0000" onmouseover="ShowHint(this, '<%=translate('')%>')" onmouseout="HideHint(this)"><%=translate("WiMAX ")%></strong></td>
+		
+		<td style="text-align:right; vertical-align:top"><strong onmouseover="ShowHint(this, '<%=translate('Shows signal\\\'s strength in dBm over time')%>')" onmouseout="HideHint(this)"><%=translate("Signal:")%></strong></td>
+		<td id="str_cur">0 dBm</td>
+
+		<td style="text-align:right; vertical-align:top"><strong onmouseover="ShowHint(this, '<%=translate('Shows signal\\\'s average value in dBm over time')%>')" onmouseout="HideHint(this)"><%=translate("Average:")%></strong></td>
+		<td id="str_avg">0 dBm</td>
+
+		<td style="text-align:right; vertical-align:top"><strong onmouseover="ShowHint(this, '<%=translate('Shows maximum signal\\\'s value in dBm over time')%>')" onmouseout="HideHint(this)"><%=translate("Peak:")%></strong></td>
+		<td id="str_peak">0 dBm</td>
+	</tr>
+</table>
+
+<br>
+
+<%+footer%>

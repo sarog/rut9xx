@@ -1,0 +1,92 @@
+#!/usr/bin/env lua
+local sqlite = require "lsqlite3"
+--local inspect = require "inspect"
+
+-- Database variables
+local dbPath = "/var/" -- place for running database
+local dbName = "mdcollectd.db" -- database file name
+local dbFullPath = dbPath .. dbName -- full path to database file
+local dbTables = { current = "current", days = "days" } -- table names used in database
+local db -- database identifier
+
+--
+-- Helper functions
+--
+function fileExists(path, name)
+	local string = "ls ".. path
+	local h = io.popen(string)
+	local t = h:read("*all")
+	h:close()
+
+	for i in string.gmatch(t, "%S+") do
+		if i == name then
+			return 1
+		end
+	end
+end
+
+--
+-- Database functions
+--
+function selectDB(query)
+	local list = {}
+	local stmt = db:prepare(query)
+
+	if stmt then
+		for row in db:urows(query) do
+			list[#list+1] = row
+		end
+	end
+
+	if #list > 0 then
+		return list
+	end
+end
+
+function getTotalDB(value, date)
+	if fileExists(dbPath, dbName) then
+		local year, month, day = tonumber(os.date("%Y", time)), tonumber(os.date("%m", time)), tonumber(os.date("%d", time))
+		local query
+		local result
+		local time = nil
+
+		query = "SELECT %s FROM %s"
+		query = string.format(query, value, dbTables.days)
+
+		db = sqlite.open(dbFullPath)
+		local result = selectDB(query)
+		db:close()
+
+		if result[#result - 1] and date == "-y" then
+			return result[#result - 1]
+        elseif result and date ~= "-y" then
+            return result[#result]
+        else
+            return "No data has been collected yet"
+		end
+	end
+end
+
+--
+-- Program execution
+--
+if #arg > 0 then
+	if arg[1] == "rx" then print(getTotalDB("rx"))
+	elseif arg[1] == "tx" then print(getTotalDB("tx"))
+	elseif arg[1] == "-y" and arg[2] == "rx" then print(getTotalDB("rx", arg[1]))
+	elseif arg[1] == "-y" and arg[2] == "tx" then print(getTotalDB("tx", arg[1]))
+	else
+		local out =
+[[unknown command line argument.
+
+usage:
+  mdcget rx
+  mdcget tx
+  mdcget -y rx
+  mdcget -y tx
+]]
+		print(out)
+	end
+else
+	status()
+end

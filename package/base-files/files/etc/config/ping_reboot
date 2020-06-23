@@ -1,0 +1,11 @@
+config ping_reboot
+	option enable '0'
+	option action '1'
+	option time '5'
+	option host '8.8.8.8'
+	option retry '2'
+	option fail_counter '0'
+	option packet_size '56'
+	option time_out '5'
+	option interface '1'
+	option stop_action '0'
