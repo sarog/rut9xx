@@ -12,8 +12,8 @@ Linux, BSD, OSX or WSL required for compilation. Cygwin will not work due to run
 ```
 ## Example commands for Ubuntu:
 $ sudo apt-get update
-$ sudo apt-get install -y build-essential curl devscripts gawk gcc-multilib gengetopt gettext git groff file flex \
-    libncurses5-dev libssl-dev python3 subversion unzip zlib1g-dev wget
+$ sudo apt install -y build-essential ccache ecj fastjar file g++ gawk gettext git java-propose-classpath libelf-dev libncurses5-dev libncursesw5-dev libssl1.0-dev python python3 unzip wget python3-distutils python3-setuptools rsync subversion swig time libffi-dev libtool xsltproc zlib1g-dev u-boot-tools nodejs nodejs-dev node-gyp npm jq
+
 ```
 
 2. Extract the archive to an empty folder:
@@ -25,16 +25,12 @@ $ tar -xf RUT9XX_R_GPL_00.XX.YY.tar -C RUT9XX_R_GPL
 ```
 $ cd RUT9XX_R_GPL
 $ ./scripts/feeds update -a
-$ ./scripts/feeds install -a
 ```    
 4. Configure and build the image:
 ```
 $ make menuconfig
 $ make
 ```
-
-To avoid having to install texinfo for `automake` docs:
-`ln -s /usr/bin/true ~/.local/bin/makeinfo`
 
 After successful build you will get the image file "RUT9XX_R_GPL_00.XX.YY_WEBUI.bin" in "bin/ar71xx/tltFws/".
 
