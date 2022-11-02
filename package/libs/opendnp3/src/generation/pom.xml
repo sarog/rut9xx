@@ -22,7 +22,7 @@
 	    <maven-scala.plugin.version>4.4.0</maven-scala.plugin.version>
         <maven-source-plugin.version>2.1.2</maven-source-plugin.version>
         <maven-bundle.version>2.1.0</maven-bundle.version>
-        <scala.version>2.13.2</scala.version>
+        <scala.version>2.13.9</scala.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
