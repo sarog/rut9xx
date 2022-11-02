@@ -1,0 +1,12 @@
+case "${ACTION}" in
+	connected | ifup)
+		act="ifup"
+	;;
+	disconnected | ifdown)
+		act="ifdown"
+	;;
+esac
+
+[ -n "$act" ] || return
+
+ubus send "network.interface" "{\"interface\":\"${INTERFACE}\", \"action\":\"${act}\"}"

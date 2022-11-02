@@ -1,0 +1,73 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+
+FOUND_APN_SIM1="0"
+FOUND_APN_SIM2="0"
+
+search_apn() {
+	section="$1"
+	local apn=""
+
+	if [ "$section" = "lan" ] || [ "$section" = "loopback" ] || [ "$section" = "wan" ]; then
+		return
+	fi
+
+	config_get sim "$section" "sim" ""
+	config_get apn "$section" "apn" ""
+
+	if [ "$apn" != "" ]; then
+		case "$sim" in
+			"1")
+				FOUND_APN_SIM1="1"
+				;;
+			"2")
+				FOUND_APN_SIM2="1"
+				;;
+		esac
+	fi
+}
+
+set_option() {
+	section="$1"
+	config_get modem $section "modem" ""
+	config_get position $section "position" ""
+	config_get auto_apn $section "auto_apn" "0"
+	config_get force_apn $section "force_apn" "-2"
+
+	# If Auto APN: auto_apn 1; force_apn doesn't exist; apn option exists
+	# If APN from dropdown: auto_apn 0; force_apn >= 1; apn option exists
+	# If custom APN: auto_apn 0; force_apn = -1; apn option exists
+	# If empty custom APN: auto_apn 0; force_apn = -1; apn option doesn't exist
+
+	case "$position" in
+		"1")
+			if [ "$FOUND_APN_SIM1" = "0" ] && [ "$force_apn" -lt "-1" ]; then # APN doesn't found and force_apn doesn't found
+				uci_set simcard "$section" auto_apn "1"
+				return
+			fi
+			;;
+		"2") # Same logic as for "1"
+			if [ "$FOUND_APN_SIM2" = "0" ] && [ "$force_apn" -lt "-1" ]; then
+				uci_set simcard "$section" auto_apn "1"
+				return
+			fi
+			;;
+	esac
+
+	if [ "$auto_apn" = "0" ] && [ "$force_apn" -lt "-1" ]; then # auto_apn doesn't found or set to 0 and force_apn doesn't found
+		uci_set simcard "$section" auto_apn "0"
+		uci_set simcard "$section" force_apn "-1"
+	fi
+}
+
+config_load network
+config_foreach search_apn "interface"
+
+config_load simcard
+config_foreach set_option "sim"
+
+uci_commit "simcard"
+
+exit 0

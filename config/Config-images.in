@@ -1,20 +1,28 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
 # Copyright (C) 2006-2013 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 menu "Target Images"
+
+	config BUILD_FACTORY_IMAGE
+		bool "Build Factory Image"
+		select BUILD_BOOTLOADER
+
+	config BUILD_VERIFIED_BOOT_IMAGE
+		bool "Build Factory image with verified boot bootloader"
 
 	menuconfig TARGET_ROOTFS_INITRAMFS
 		bool "ramdisk"
 		default y if USES_INITRAMFS
 		help
-		  Embed the rootfs into the kernel (initramfs)
+		  Embed the root filesystem into the kernel (initramfs).
 
 		choice
 			prompt "Compression"
-			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ar71xx
+			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_apm821xx
+			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ath79_mikrotik
+			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_lantiq
+			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_mpc85xx
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ramips
 			default TARGET_INITRAMFS_COMPRESSION_NONE
 			depends on TARGET_ROOTFS_INITRAMFS
@@ -48,7 +56,14 @@ menu "Target Images"
 			prompt "Use external cpio" if TARGET_ROOTFS_INITRAMFS
 			default ""
 			help
-			  Kernel uses specified external cpio as INITRAMFS_SOURCE
+			  Kernel uses specified external cpio as INITRAMFS_SOURCE.
+
+		config TARGET_INITRAMFS_FORCE
+                        bool "Force"
+                        depends on TARGET_ROOTFS_INITRAMFS
+                        default n
+                        help
+                          Ignore the initramfs passed by the bootloader.
 
 	comment "Root filesystem archives"
 
@@ -56,58 +71,106 @@ menu "Target Images"
 		bool "cpio.gz"
 		default y if USES_CPIOGZ
 		help
-		  Build a compressed cpio archive of the the root filesystem
+		  Build a compressed cpio archive of the root filesystem.
 
 	config TARGET_ROOTFS_TARGZ
 		bool "tar.gz"
 		default y if USES_TARGZ
 		help
-		  Build a compressed tar archive of the the root filesystem
+		  Build a compressed tar archive of the root filesystem.
 
 	comment "Root filesystem images"
 
-	config TARGET_ROOTFS_EXT4FS
+	menuconfig TARGET_ROOTFS_EXT4FS
 		bool "ext4"
 		default y if USES_EXT4
 		help
-		  Ext4 file system with some free space for uml images
+		  Build an ext4 root filesystem.
 
-	config TARGET_ROOTFS_ISO
-		bool "iso"
-		default n
-		depends on TARGET_x86_generic
-		help
-		  Create some bootable ISO image
+		config TARGET_EXT4_RESERVED_PCT
+			int "Percentage of reserved blocks in root filesystem"
+			depends on TARGET_ROOTFS_EXT4FS
+			default 0
+			help
+			  Select the percentage of reserved blocks in the root filesystem.
+
+		choice
+			prompt "Root filesystem block size"
+			default TARGET_EXT4_BLOCKSIZE_4K
+			depends on TARGET_ROOTFS_EXT4FS
+			help
+			  Select the block size of the root filesystem.
+
+			config TARGET_EXT4_BLOCKSIZE_4K
+				bool "4k"
+
+			config TARGET_EXT4_BLOCKSIZE_2K
+				bool "2k"
+
+			config TARGET_EXT4_BLOCKSIZE_1K
+				bool "1k"
+		endchoice
+
+		config TARGET_EXT4_BLOCKSIZE
+			int
+			default 4096 if TARGET_EXT4_BLOCKSIZE_4K
+			default 2048 if TARGET_EXT4_BLOCKSIZE_2K
+			default 1024 if TARGET_EXT4_BLOCKSIZE_1K
+			depends on TARGET_ROOTFS_EXT4FS
+
+		config TARGET_EXT4_JOURNAL
+			bool "Create a journaling filesystem"
+			depends on TARGET_ROOTFS_EXT4FS
+			default n
+			help
+			  Create an ext4 filesystem with a journal.
 
 	config TARGET_ROOTFS_JFFS2
 		bool "jffs2"
-		default y if USES_JFFS2
+		depends on USES_JFFS2
 		help
-		  Build a jffs2 root filesystem
+		  Build a JFFS2 root filesystem.
 
 	config TARGET_ROOTFS_JFFS2_NAND
 		bool "jffs2 for NAND"
 		default y if USES_JFFS2_NAND
 		depends on USES_JFFS2_NAND
 		help
-		  Build a jffs2 root filesystem for NAND flash
+		  Build a JFFS2 root filesystem for NAND flash.
 
-	config TARGET_ROOTFS_SQUASHFS
+	config TARGET_TRB14X_LEGACY_IMAGE
+		bool "TRB14X Legacy (sysup) Image"
+		depends on TARGET_mdm9x07
+
+	config TARGET_TRB14X_STATIC_IMAGE
+		bool "TRB14X Static (sysupgrade) Image"
+		depends on TARGET_mdm9x07
+
+	config INSERT_TRB14X_MODEM_IMAGE_LEGACY
+		bool "Insert modem image into TRB14X Legacy (sysup) Image"
+		depends on TARGET_mdm9x07
+
+	menuconfig TARGET_ROOTFS_SQUASHFS
 		bool "squashfs"
 		default y if USES_SQUASHFS
 		help
-		  Build a squashfs-lzma root filesystem
+		  Build a squashfs-lzma root filesystem.
+
+		config TARGET_SQUASHFS_BLOCK_SIZE
+			int "Block size (in KiB)"
+			depends on TARGET_ROOTFS_SQUASHFS
+			default 64
 
 	menuconfig TARGET_ROOTFS_UBIFS
 		bool "ubifs"
 		default y if USES_UBIFS
 		depends on USES_UBIFS
 		help
-		  Build a ubifs root filesystem
+		  Build a UBIFS root filesystem.
 
 		choice
 			prompt "compression"
-			default TARGET_UBIFS_COMPRESSION_NONE
+			default TARGET_UBIFS_COMPRESSION_ZLIB
 			depends on TARGET_ROOTFS_UBIFS
 			help
 			  Select compression type
@@ -126,7 +189,7 @@ menu "Target Images"
 			bool "free space fixup" if TARGET_ROOTFS_UBIFS
 			default y
 			help
-			  The file-system free space has to be fixed up on first mount
+			  The filesystem free space has to be fixed up on first mount.
 
 		config TARGET_UBIFS_JOURNAL_SIZE
 			string
@@ -135,66 +198,82 @@ menu "Target Images"
 
 	config GRUB_IMAGES
 		bool "Build GRUB images (Linux x86 or x86_64 host only)"
-		depends on TARGET_x86_64 || (TARGET_x86 && !(TARGET_x86_olpc || TARGET_x86_rdc))
-		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+		depends on TARGET_x86
+		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 		select PACKAGE_grub2
+		default y
+
+	config GRUB_EFI_IMAGES
+		bool "Build GRUB EFI images (Linux x86 or x86_64 host only)"
+		depends on TARGET_x86
+		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+		select PACKAGE_grub2
+		select PACKAGE_grub2-efi
+		select PACKAGE_kmod-fs-vfat
 		default y
 
 	config GRUB_CONSOLE
 		bool "Use Console Terminal (in addition to Serial)"
-		depends on GRUB_IMAGES
-		default n if (TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501 || TARGET_x86_geos || TARGET_x86_alix2)
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
 		default y
 
 	config GRUB_SERIAL
 		string "Serial port device"
-		depends on GRUB_IMAGES
-		default "hvc0" if TARGET_x86_xen_domu
-		default "ttyS0" if ! TARGET_x86_xen_domu
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
+		default "ttyS0"
 
 	config GRUB_BAUDRATE
 		int "Serial port baud rate"
-		depends on GRUB_IMAGES
-		default 19200 if TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501
-		default 38400 if TARGET_x86_alix2
-		default 115200 if TARGET_x86_geos || TARGET_x86_kvm_guest
-		default 38400
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
+		default 38400 if TARGET_x86_generic
+		default 115200
+
+	config GRUB_FLOWCONTROL
+		bool "Use RTE/CTS on serial console"
+		depends on GRUB_SERIAL != ""
+		default n
 
 	config GRUB_BOOTOPTS
 		string "Extra kernel boot options"
-		depends on GRUB_IMAGES
-		default "xencons=hvc" if TARGET_x86_xen_domu
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
 		help
 		  If you don't know, just leave it blank.
 
 	config GRUB_TIMEOUT
 		string "Seconds to wait before booting the default entry"
-		depends on GRUB_IMAGES
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
 		default "5"
 		help
 		  If you don't know, 5 seconds is a reasonable default.
 
+	config GRUB_TITLE
+		string "Title for the menu entry in GRUB"
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
+		default "OpenWrt"
+		help
+		  This is the title of the GRUB menu entry.
+		  If unspecified, it defaults to OpenWrt.
+
+	config ISO_IMAGES
+		bool "Build LiveCD image (ISO)"
+		depends on TARGET_x86
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
+
 	config VDI_IMAGES
 		bool "Build VirtualBox image files (VDI)"
-		depends on TARGET_x86 || TARGET_x86_64
-		select GRUB_IMAGES
-		select TARGET_ROOTFS_EXT4FS
+		depends on TARGET_x86
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
 		select PACKAGE_kmod-e1000
 
 	config VMDK_IMAGES
 		bool "Build VMware image files (VMDK)"
-		depends on TARGET_x86 || TARGET_x86_64
-		select GRUB_IMAGES
-		select TARGET_ROOTFS_EXT4FS
+		depends on TARGET_x86
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
 		select PACKAGE_kmod-e1000
-
-	config TARGET_IMAGES_PAD
-		bool "Pad images to filesystem size (for JFFS2)"
-		depends on OLPC_BOOTSCRIPT_IMAGES || GRUB_IMAGES
 
 	config TARGET_IMAGES_GZIP
 		bool "GZip images"
-		depends on TARGET_IMAGES_PAD || TARGET_ROOTFS_EXT4FS
+		depends on TARGET_ROOTFS_EXT4FS || TARGET_x86 || TARGET_armvirt || TARGET_malta
 		default y
 
 	comment "Image Options"
@@ -203,78 +282,24 @@ menu "Target Images"
 
 	config TARGET_KERNEL_PARTSIZE
 		int "Kernel partition size (in MB)"
-		depends on OLPC_BOOTSCRIPT_IMAGES || GRUB_IMAGES
-		default 4
+		depends on USES_BOOT_PART
+		default 8 if TARGET_apm821xx_sata
+		default 64 if TARGET_bcm27xx
+		default 16
 
 	config TARGET_ROOTFS_PARTSIZE
 		int "Root filesystem partition size (in MB)"
-		depends on GRUB_IMAGES || TARGET_ROOTFS_EXT4FS || TARGET_rb532
-		default 48
+		depends on USES_ROOTFS_PART || TARGET_ROOTFS_EXT4FS || TARGET_omap || TARGET_sunxi || TARGET_uml
+		default 104
 		help
-		  Allows you to change the root filesystem partition size
+		  Select the root filesystem partition size.
 
 	config TARGET_ROOTFS_PARTNAME
 		string "Root partition on target device"
-		depends on OLPC_BOOTSCRIPT_IMAGES || GRUB_IMAGES
-		default "/dev/vda2" if TARGET_x86_kvm_guest
-		default "/dev/xvda2" if TARGET_x86_xen_domu
-		default "/dev/sda2" if ! (TARGET_x86_kvm_guest || TARGET_x86_xen_domu)
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
 		help
-		  The root partition on the final device.  If you don't know,
-		  you probably want the default (/dev/sda2).
-
-	config TARGET_ROOTFS_MAXINODE
-		int "Maximum number of inodes in root filesystem"
-		depends on TARGET_ROOTFS_EXT4FS
-		default 6000
-		help
-		  Allows you to change the maximum number of inodes in the root filesystem
-
-	config TARGET_ROOTFS_RESERVED_PCT
-		int "Percentage of reserved blocks in root filesystem"
-		depends on TARGET_ROOTFS_EXT4FS
-		default 0
-		help
-		  Allows you to change the percentage of reserved blocks in the root filesystem
-
-	menuconfig TARGET_ROOTFS_INCLUDE_KERNEL
-		bool "Include kernel in root filesystem"
-		depends on TARGET_ROOTFS_UBIFS || TARGET_ROOTFS_EXT4FS
-		default n
-		help
-		  Include the kernel image in the rootfs. Typically the image is placed
-		  below /boot.
-
-		config TARGET_ROOTFS_INCLUDE_UIMAGE
-			bool "include uImage" if TARGET_ROOTFS_INCLUDE_KERNEL
-			default y
-			help
-			  This option might not apply to all targets. Make sure
-			  to check target/linux/<your_target>/image/Makefile to
-			  see if this option will have any effect.
-
-		config TARGET_ROOTFS_INCLUDE_ZIMAGE
-			bool "include zImage" if TARGET_ROOTFS_INCLUDE_KERNEL
-			default y
-			help
-			  This option might not apply to all targets. Make sure
-			  to check target/linux/<your_target>/image/Makefile to
-			  see if this option will have any effect.
-
-		config TARGET_ROOTFS_INCLUDE_FIT
-			bool "include FIT" if TARGET_ROOTFS_INCLUDE_KERNEL
-			default y
-			help
-			  This option might not apply to all targets. Make sure
-			  to check target/linux/<your_target>/image/Makefile to
-			  see if this option will have any effect.
-
-	config TARGET_ROOTFS_INCLUDE_DTB
-		bool "Include DTB in root filesystem"
-		depends on USES_DEVICETREE && (TARGET_ROOTFS_UBIFS || TARGET_ROOTFS_EXT4FS)
-		default n
-		help
-		  Include the device tree blob file(s) in the rootfs. Typically the DTBs
-		  are placed below /boot.
+		  Override the root partition on the final device. If left empty,
+		  it will be mounted by PARTUUID which makes the kernel find the
+		  appropriate disk automatically.
 
 endmenu

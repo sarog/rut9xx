@@ -9,11 +9,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zlib
 PKG_VERSION:=1.2.11
-PKG_RELEASE:=2
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@SF/libpng http://www.zlib.net
-PKG_MD5SUM:=85adef240c5f370b308da8c938951a68
+PKG_HASH:=4ff941449631ace0d4d203e3483be9dbc9da454084111f97ea0a2114e19bf066
 
 PKG_LICENSE:=Zlib
 PKG_LICENSE_FILES:=README
@@ -21,7 +21,6 @@ PKG_CPE_ID:=cpe:/a:gnu:zlib
 
 PKG_CONFIG_DEPENDS:= CONFIG_ZLIB_OPTIMIZE_SPEED
 
-include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
@@ -95,6 +94,5 @@ define Package/zlib-dev/install
 	  $(1)/usr/lib/pkgconfig/
 endef
 
-$(eval $(call HostBuild))
 $(eval $(call BuildPackage,zlib))
 $(eval $(call BuildPackage,zlib-dev))

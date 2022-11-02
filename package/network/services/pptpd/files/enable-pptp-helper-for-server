@@ -1,0 +1,43 @@
+#!/bin/sh
+. /lib/functions.sh
+
+ADD_HELPER=0
+
+check_pptp_helper() {
+	local section="$1"
+	local enabled
+
+	config_get enabled "$section" "enabled"
+	[ "$enabled" = "1" ] && {
+		ADD_HELPER=1
+	}
+}
+
+add_firewall_helper() {
+	local section="$1"
+	local name helper device
+
+	config_get name "$section" "name"
+	config_get helper "$section" helper
+
+	[ "$name" = "wan" ] && {
+		#exit if helper is there already
+		list_contains helper pptp && exit 0
+
+		uci_add_list firewall "$section" helper pptp
+		uci_add_list firewall "$section" device "lo"
+		uci_commit firewall
+		exit 0
+	}
+
+}
+
+config_load pptpd
+config_foreach check_pptp_helper service
+
+[ "$ADD_HELPER" = "1" ] && {
+	config_load firewall
+	config_foreach add_firewall_helper zone
+}
+
+exit 0

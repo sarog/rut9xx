@@ -1,34 +1,30 @@
 #!/bin/sh
 
-LOG_FILE_PATH="/tmp/"
-MAX_LOG_FILE_SIZE=102400	#100 KB
-
-state="$1"
+action="$1"
 lease_mac="$2"
 ip="$3"
 dev_name="$4"
-conn_inter=""
-small_mac=""
+conn_inter="LAN"
 
-if [ "$ip" != "" ]; then
-	small_mac=`cat /var/dhcp.leases | grep $ip | awk -F ' ' '{print $2}'`
-fi
+[ -z "$dev_name" ] && exit
 
-mac=$(echo "$small_mac" | awk '{print toupper($0)}')
+[ -n "$lease_mac" ] && hash iw 2>/dev/null && {
+	for ifname in $(wifi status | grep ifname | awk '{print $2}' | tr -d '",'); do
+		iw dev "$ifname" station dump | grep -q "$lease_mac" && {
+			conn_inter="WiFi"
+			break
+		}
+	done
+}
 
-if [ "$small_mac" != "" ]; then
-	conn_inter=`iw dev wlan0 station dump | grep $small_mac`
-fi
-
-if [ "$conn_inter" != "" ]; then
-	conn_inter="WiFi"
-else
-	conn_inter="LAN"
-fi
-
-if [ -n "$dev_name" ] && [ "$dev_name" != "" ]; then
-	/usr/bin/eventslog -i -t EVENTS -n "DHCP" -e "Leased $ip IP address for client $mac - $dev_name in $conn_inter"
-else
-	/usr/bin/eventslog -i -t EVENTS -n "DHCP" -e "Leased $ip IP address for $mac in $conn_inter"
-fi
-
+# todo: maybe we need different messages for every action
+case "$1" in
+	add)
+		ubus call log write_ext "{
+			\"event\": \"Leased $ip IP address for client $lease_mac - $dev_name in $conn_inter\",
+			\"sender\": \"DHCP\",
+			\"table\": 2,
+			\"write_db\": 1,
+		}"
+	;;
+esac

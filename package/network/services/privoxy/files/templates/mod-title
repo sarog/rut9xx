@@ -1,0 +1,3 @@
+        <h1>
+          This is <a href="@homepage@">Privoxy</a> @version@ on @my-hostname@ (@my-ip-address@), port @my-port@
+        </h1>

@@ -1,0 +1,32 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+delete_overview_section() {
+	local section="$1"
+	local interface="$2"
+	config_get id "$section" id
+	config_get section_name "$section" section_name
+
+	[ "$id" = "mobile_data_limit" ] || return
+	[ "$section_name" = "$interface" ] || return
+	uci -q delete overview."$section"
+	uci commit overview
+}
+
+delete_network_section() {
+	local section="$1"
+	local interface=$(uci -q get network."$section")
+
+	[ -z "$interface" ] && {
+		uci -q delete quota_limit."$section"
+		uci commit quota_limit
+		config_load overview
+		config_foreach delete_overview_section overview "$section"
+	}
+}
+
+config_load quota_limit
+config_foreach delete_network_section interface
+
+exit 0

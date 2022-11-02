@@ -1,0 +1,57 @@
+Index: linux-4.14.221/drivers/net/phy/ar8216.c
+===================================================================
+--- linux-4.14.221.orig/drivers/net/phy/ar8216.c
++++ linux-4.14.221/drivers/net/phy/ar8216.c
+@@ -196,6 +196,39 @@ ar8xxx_phy_check_aneg(struct phy_device
+ 	return phy_write(phydev, MII_BMCR, ret);
+ }
+ 
++static int
++ar8xxx_sw_delay_reset(struct switch_dev *dev, const struct switch_attr *attr,
++					  struct switch_val *value)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	struct mii_bus *bus;
++	int i;
++
++	bus = priv->sw_mii_bus ?: priv->mii_bus;
++	for (i = 0; i < AR8XXX_NUM_PHYS - 1; i++) {
++		mdiobus_write(bus, i, MII_CTRL1000, 0);
++		mdiobus_write(bus, i, MII_ADVERTISE, 0);
++		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
++	}
++
++	msleep(1000 * value->value.i);
++
++	for (i = 0; i < AR8XXX_NUM_PHYS - 1; i++) {
++		if (priv->chip->phy_fixup)
++			priv->chip->phy_fixup(priv, i);
++
++		/* initialize the port itself */
++		mdiobus_write(bus, i, MII_ADVERTISE,
++			ADVERTISE_ALL | ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM);
++		if (ar8xxx_has_gige(priv))
++			mdiobus_write(bus, i, MII_CTRL1000, ADVERTISE_1000FULL);
++		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
++	}
++
++	ar8xxx_phy_poll_reset(bus);
++	return 0;
++}
++
+ void
+ ar8xxx_phy_init(struct ar8xxx_priv *priv)
+ {
+@@ -1997,6 +2029,12 @@ static const struct switch_attr ar8xxx_s
+ 		.description = "Flush ARL table",
+ 		.set = ar8xxx_sw_set_flush_arl_table,
+ 	},
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "soft_reset",
++		.description = "Switch soft reset with delay (seconds)",
++		.set = ar8xxx_sw_delay_reset
++	},
+ };
+ 
+ const struct switch_attr ar8xxx_sw_attr_port[] = {

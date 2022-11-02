@@ -1,7 +1,7 @@
 /*
  * swconfig.c: Switch configuration utility
  *
- * Copyright (C) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2008 Felix Fietkau <nbd@nbd.name>
  * Copyright (C) 2010 Martin Mares <mj@ucw.cz>
  *
  * This program is free software; you can redistribute it and/or
@@ -39,6 +39,7 @@ enum {
 	CMD_GET,
 	CMD_SET,
 	CMD_LOAD,
+	CMD_RESET_AND_LOAD,
 	CMD_HELP,
 	CMD_SHOW,
 	CMD_PORTMAP,
@@ -84,9 +85,27 @@ list_attributes(struct switch_dev *dev)
 	print_attrs(dev->port_ops);
 }
 
+static const char *
+speed_str(int speed)
+{
+	switch (speed) {
+	case 10:
+		return "10baseT";
+	case 100:
+		return "100baseT";
+	case 1000:
+		return "1000baseT";
+	default:
+		break;
+	}
+
+	return "unknown";
+}
+
 static void
 print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
 {
+	struct switch_port_link *link;
 	int i;
 
 	switch (attr->type) {
@@ -103,6 +122,21 @@ print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
 				(val->value.ports[i].flags &
 				 SWLIB_PORT_FLAG_TAGGED) ? "t" : "");
 		}
+		break;
+	case SWITCH_TYPE_LINK:
+		link = val->value.link;
+		if (link->link)
+			printf("port:%d link:up speed:%s %s-duplex %s%s%s%s%s",
+				val->port_vlan,
+				speed_str(link->speed),
+				link->duplex ? "full" : "half",
+				link->tx_flow ? "txflow " : "",
+				link->rx_flow ? "rxflow " : "",
+				link->eee & SWLIB_LINK_FLAG_EEE_100BASET ? "eee100 " : "",
+				link->eee & SWLIB_LINK_FLAG_EEE_1000BASET ? "eee1000 " : "",
+				link->aneg ? "auto" : "");
+		else
+			printf("port:%d link:down", val->port_vlan);
 		break;
 	default:
 		printf("?unknown-type?");
@@ -199,6 +233,47 @@ out:
 	exit(ret);
 }
 
+static void
+swconfig_reset_and_load_uci(struct switch_dev *dev, const char *name)
+{
+	struct switch_attr *attr;
+
+	struct uci_context *ctx;
+	struct uci_package *p = NULL;
+	int ret = -1;
+
+	attr = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_GLOBAL, "soft_reset");
+	if (!attr) {
+		fprintf(stderr, "soft_reset is unavailable, just loading config\n");
+	} else {
+		ret = swlib_set_attr_string(dev, attr, -1, "0");
+		if (ret < 0) {
+			nl_perror(-ret, "Failed to set attribute.");
+			exit(ret);
+		}
+	}
+
+	ctx = uci_alloc_context();
+	if (!ctx) {
+		fprintf(stderr, "Couldn't allocate UCI context.\n");
+		return;
+	}
+
+	uci_load(ctx, name, &p);
+	if (!p) {
+		uci_perror(ctx, "Failed to load config file: ");
+		goto out;
+	}
+
+	ret = swlib_apply_from_uci(dev, p);
+	if (ret < 0)
+		fprintf(stderr, "Failed to apply configuration for switch '%s'\n", dev->dev_name);
+
+	out:
+	uci_free_context(ctx);
+	exit(ret);
+}
+
 int main(int argc, char **argv)
 {
 	int retval = 0;
@@ -252,6 +327,11 @@ int main(int argc, char **argv)
 				print_usage();
 			cmd = CMD_LOAD;
 			ckey = argv[++i];
+		} else if (!strcmp(arg, "reset_and_load") && i+1 < argc) {
+			if ((cport >= 0) || (cvlan >= 0))
+				print_usage();
+			cmd = CMD_RESET_AND_LOAD;
+			ckey = argv[++i];
 		} else if (!strcmp(arg, "portmap")) {
 			if (i + 1 < argc)
 				csegment = argv[++i];
@@ -302,10 +382,10 @@ int main(int argc, char **argv)
 		if(cvlan > -1)
 			cport = cvlan;
 
-		if(swlib_set_attr_string(dev, a, cport, cvalue) < 0)
+		retval = swlib_set_attr_string(dev, a, cport, cvalue);
+		if (retval < 0)
 		{
-			fprintf(stderr, "failed\n");
-			retval = -1;
+			nl_perror(-retval, "Failed to set attribute");
 			goto out;
 		}
 		break;
@@ -314,10 +394,10 @@ int main(int argc, char **argv)
 			val.port_vlan = cvlan;
 		if(cport > -1)
 			val.port_vlan = cport;
-		if(swlib_get_attr(dev, a, &val) < 0)
+		retval = swlib_get_attr(dev, a, &val);
+		if (retval < 0)
 		{
-			fprintf(stderr, "failed\n");
-			retval = -1;
+			nl_perror(-retval, "Failed to get attribute");
 			goto out;
 		}
 		print_attr_val(a, &val);
@@ -325,6 +405,9 @@ int main(int argc, char **argv)
 		break;
 	case CMD_LOAD:
 		swconfig_load_uci(dev, ckey);
+		break;
+	case CMD_RESET_AND_LOAD:
+		swconfig_reset_and_load_uci(dev, ckey);
 		break;
 	case CMD_HELP:
 		list_attributes(dev);

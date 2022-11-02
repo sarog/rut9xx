@@ -1,0 +1,40 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=99
+USE_PROCD=1
+
+start_service() {
+	local enabled storage filter interface host port direction host_port
+	local options=""
+	config_load "system"
+
+	config_get enabled "system" tcp_dump ""
+	[ "$enabled" = "1" ] || return
+
+	config_get storage "system" tcp_mount ""
+	config_get filter "system" tcp_dump_filter ""
+	config_get interface "system" tcp_dump_interface ""
+	config_get host "system" tcp_host ""
+	config_get port "system" tcp_port ""
+	config_get direction "system" tcp_inout ""
+
+	[ "$storage" = "/tmp" ] && options="-C 20 -W 1"
+	[ "$host" != "" -a "$port" != "" ] && options="$options host $host and port $port"
+	[ "$host" != "" -a "$port" = "" ] && options="$options host $host"
+	[ "$host" = "" -a "$port" != "" ] && options="$options port $port"
+
+	procd_open_instance
+	procd_set_param command /usr/sbin/tcpdump
+	[ -n "$interface" ] && procd_append_param command -i "$interface"
+	[ -n "$direction" ] && procd_append_param command -Q "$direction"
+	[ -n "$filter" ] && procd_append_param command "$filter"
+	procd_append_param command "$options"
+	procd_append_param command -w "$storage"/tcpdebug.pcap
+	procd_set_param respawn
+	procd_close_instance
+}
+
+service_triggers() {
+	procd_add_reload_trigger "system"
+}

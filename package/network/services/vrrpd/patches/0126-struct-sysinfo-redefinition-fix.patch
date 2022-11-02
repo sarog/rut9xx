@@ -1,0 +1,24 @@
+--- a/ipaddr.c
++++ b/ipaddr.c
+@@ -22,7 +22,7 @@ REMARK      :
+ #include <netinet/in.h>
+ #include <arpa/inet.h>
+ #include <time.h>
+-#include <sys/errno.h>
++#include <errno.h>
+ #include <net/if.h>
+ #include <net/if_arp.h>
+ #include <net/ethernet.h>
+--- a/vrrpd.c
++++ b/vrrpd.c
+@@ -28,8 +28,8 @@ REMARK      :
+ #include <arpa/inet.h>
+ #include <stddef.h>
+ #include <time.h>
+-#include <sys/sysinfo.h>
+-#include <sys/errno.h>
++//#include <sys/sysinfo.h>
++#include <errno.h>
+ #include <net/if.h>
+ #include <net/if_arp.h>
+ #include <net/ethernet.h>

@@ -1,0 +1,46 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+fix_section() {
+        config_get ifconfig "$1" ifconfig 0
+        config_get route "$1" route 0
+	config_get auth_key_direction "$1" auth_key_direction
+	config_get key_direction "$1" key_direction
+	config_get tls_auth "$1" tls_auth
+	config_get tls_crypt "$1" tls_crypt
+
+        [ "$ifconfig" -eq 0 ] || {
+                local_ip="$(echo ${ifconfig} | cut -d' ' -f1)"
+                remote_ip="$(echo ${ifconfig} | cut -d' ' -f2)"
+
+                uci_set openvpn "$1" local_ip "$local_ip"
+                uci_set openvpn "$1" remote_ip "$remote_ip"
+
+                uci_remove openvpn "$1" ifconfig
+        }
+        [ "$route" -eq 0 ] || {
+                network_ip="$(echo ${route} | cut -d' ' -f1)"
+                network_mask="$(echo ${route} | cut -d' ' -f2)"
+
+                uci_set openvpn "$1" network_ip "$network_ip"
+                uci_set openvpn "$1" network_mask "$network_mask"
+
+                uci_remove openvpn "$1" route
+        }
+	if [ "$tls_auth" == "${tls_auth##* }" ];then
+		[ -z "$key_direction" ] && [ -n "$auth_key_direction" ] && {
+			uci_remove openvpn "$1" auth_key_direction
+			uci_set openvpn "$1" key_direction "$auth_key_direction"
+		}
+	else
+		[ -n "$auth_key_direction" ] && uci_remove openvpn "$1" auth_key_direction
+		[ -z "$key_direction" ] && uci_set openvpn "$1" key_direction "${tls_auth##* }"
+		uci_set openvpn "$1" tls_auth "${tls_auth% *}"
+	fi
+	[ -n "$tls_crypt" ] && uci_set openvpn "$1" tls_crypt "${tls_crypt% *}"
+}
+
+config_load openvpn
+config_foreach fix_section openvpn
+uci_commit

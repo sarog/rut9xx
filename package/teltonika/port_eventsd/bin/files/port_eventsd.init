@@ -1,0 +1,43 @@
+#!/bin/sh /etc/rc.common
+
+START=22
+STOP=60
+
+USE_PROCD=1
+
+SUPPRESS_TOPOLOGY=1
+NAME=port_eventsd
+PROG=/usr/bin/$NAME
+
+check_for_topology() {
+	local event
+	local enable
+	config_get event $1 "event"
+	config_get enable $1 "enable"
+
+	if [[ "$event" == "Switch Topology" ]] && [[ "$enable" == "1" ]]; then
+		SUPPRESS_TOPOLOGY=0
+		break
+	fi
+}
+
+start_service() {
+	. /lib/functions.sh
+	config_load 'events_reporting'
+	config_foreach check_for_topology 'rule'
+
+	procd_open_instance
+	procd_set_param command "$PROG"
+	if [[ ${SUPPRESS_TOPOLOGY} == 1 ]]; then
+		procd_append_param command --suppress-topology
+	fi
+	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+
+	procd_close_instance
+}
+
+reload_service() {
+	restart_service
+}

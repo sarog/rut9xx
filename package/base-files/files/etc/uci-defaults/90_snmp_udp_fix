@@ -1,0 +1,14 @@
+#!/bin/sh
+. /lib/functions.sh
+
+to_udp() {
+	local section="$1"
+	local proto
+
+	config_get proto "$section" "proto"
+	[ "$proto" = "udp" ] || uci_set "snmpd" "$section" "proto" "udp"
+}
+
+config_load snmpd
+config_foreach to_udp agent
+uci_commit snmpd

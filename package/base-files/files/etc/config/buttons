@@ -1,0 +1,17 @@
+config button
+	option min '0'
+	option max '5'
+	option handler 'reboot'
+	option action 'released'
+
+config button
+	option min '6'
+	option max '11'
+	option handler 'default'
+	option action 'released'
+
+config button
+	option min '12'
+	option max '20'
+	option handler 'firstboot'
+	option action 'released'

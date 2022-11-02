@@ -5,7 +5,10 @@
 			"ubus": {
 				"*": [ "*" ]
 			},
-			"uci": [ "*" ]
+			"uci": [ "*" ],
+		  	"file": {
+				"*": [ "read", "write", "exec" ]
+			}
 		},
 		"write": {
 			"ubus": {

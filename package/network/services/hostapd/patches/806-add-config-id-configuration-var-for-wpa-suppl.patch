@@ -1,0 +1,40 @@
+--- a/wpa_supplicant/config.c
++++ b/wpa_supplicant/config.c
+@@ -2679,6 +2679,7 @@
+ 	{ INT_RANGE(beacon_prot, 0, 1) },
+ 	{ INT_RANGE(transition_disable, 0, 255) },
+ 	{ INT_RANGE(sae_pk, 0, 2) },
++	{ STR(config_id) },
+ };
+ 
+ #undef OFFSET
+@@ -2880,6 +2881,7 @@
+ #ifdef CONFIG_SAE
+ 	sae_deinit_pt(ssid->pt);
+ #endif /* CONFIG_SAE */
++	os_free(ssid->config_id);
+ 	bin_clear_free(ssid, sizeof(*ssid));
+ }
+ 
+--- a/wpa_supplicant/config_file.c
++++ b/wpa_supplicant/config_file.c
+@@ -940,6 +940,7 @@
+ 	INT(beacon_prot);
+ 	INT(transition_disable);
+ 	INT(sae_pk);
++	STR(config_id);
+ #ifdef CONFIG_HT_OVERRIDES
+ 	INT_DEF(disable_ht, DEFAULT_DISABLE_HT);
+ 	INT_DEF(disable_ht40, DEFAULT_DISABLE_HT40);
+--- a/wpa_supplicant/config_ssid.h
++++ b/wpa_supplicant/config_ssid.h
+@@ -1149,6 +1149,8 @@
+ 	 * 2 = disable SAE-PK (allow SAE authentication only without SAE-PK)
+ 	 */
+ 	enum sae_pk_mode sae_pk;
++
++	char *config_id;
+ };
+ 
+ #endif /* CONFIG_SSID_H */
+

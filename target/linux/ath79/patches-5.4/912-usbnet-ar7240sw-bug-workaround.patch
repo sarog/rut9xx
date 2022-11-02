@@ -1,0 +1,27 @@
+Index: linux-5.4.124/drivers/net/usb/usbnet.c
+===================================================================
+--- linux-5.4.124.orig/drivers/net/usb/usbnet.c
++++ linux-5.4.124/drivers/net/usb/usbnet.c
+@@ -64,6 +64,8 @@
+ 
+ // between wakeups
+ #define UNLINK_TIMEOUT_MS	3
++#define ETHERNET_MTU	1518
++#define EC25_AGGR_SIZE	8192
+ 
+ /*-------------------------------------------------------------------------*/
+ 
+@@ -348,7 +350,12 @@ void usbnet_update_max_qlen(struct usbne
+ 		goto insanity;
+ 	switch (speed) {
+ 	case USB_SPEED_HIGH:
+-		dev->rx_qlen = MAX_QUEUE_MEMORY / dev->rx_urb_size;
++		if (dev->rx_urb_size < ETHERNET_MTU)
++			dev->rx_qlen = MAX_QUEUE_MEMORY / dev->rx_urb_size;
++		else if (dev->rx_urb_size < EC25_AGGR_SIZE)
++			dev->rx_qlen = 12;
++		else
++			dev->rx_qlen = 1;
+ 		dev->tx_qlen = MAX_QUEUE_MEMORY / dev->hard_mtu;
+ 		break;
+ 	case USB_SPEED_SUPER:

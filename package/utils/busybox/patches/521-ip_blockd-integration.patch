@@ -1,0 +1,150 @@
+--- a/Makefile
++++ b/Makefile
+@@ -600,7 +600,7 @@ libs-y		:= $(libs-y1) $(libs-y2)
+ # System.map is generated to document addresses of all kernel symbols
+ 
+ busybox-all  := $(core-y) $(libs-y)
+-
++CONFIG_EXTRA_LDLIBS:=ubus ubox uci
+ # Rule to link busybox - also used during CONFIG_KALLSYMS
+ # May be overridden by arch/$(ARCH)/Makefile
+ quiet_cmd_busybox__ ?= LINK    $@
+--- a/loginutils/login.c
++++ b/loginutils/login.c
+@@ -69,6 +69,14 @@
+ #include "libbb.h"
+ #include "common_bufsiz.h"
+ #include <syslog.h>
++#include <libubus.h>
++#include <libubox/blobmsg.h>
++#include <string.h>
++#include <uci.h>
++
++static char ip_address[46];
++
++void block_ip(char *ip);
+ 
+ #if ENABLE_SELINUX
+ # include <selinux/selinux.h>  /* for is_selinux_enabled()  */
+@@ -520,6 +528,9 @@ int login_main(int argc UNUSED_PARAM, ch
+ 		puts("Login incorrect");
+ 		syslog(LOG_WARNING, "invalid password for '%s'%s",
+ 					username, fromhost);
++
++		block_ip(opt_host);
++
+ 		if (++count == 3) {
+ 			if (ENABLE_FEATURE_CLEAN_UP)
+ 				free(fromhost);
+@@ -616,3 +627,110 @@ int login_main(int argc UNUSED_PARAM, ch
+ 
+ 	/* return EXIT_FAILURE; - not reached */
+ }
++
++char *replace_symbol(char *text, char s_to_replace, char replace_with){
++	int i = 0;
++	while (text[i]) {
++		if (text[i] == s_to_replace)
++		{
++			text[i] = replace_with;
++		}
++		i++;
++	}
++	return text;
++}
++
++void fix_mapped_ip(char *host){
++	char *host_copy = strdup(host);
++	char *token	= strtok(host_copy, ":");
++	while (token != NULL) {
++		strncpy(ip_address,token,sizeof(ip_address));
++		token = strtok(NULL, ":");
++	}
++	free(host_copy);
++}
++
++const char *get_port(){
++	const char *CONFIG_NAME = "cli";
++	const char *SECTION_NAME = "status";
++	const char *OPTION_NAME = "port";
++	struct uci_context *ctx;
++	struct uci_package *pkg;
++	struct uci_element *el;
++	const char *port = NULL;
++
++	ctx = uci_alloc_context();
++
++	if (!ctx) {
++		syslog(LOG_ERR, "Failed to allocate uci context\n");
++		return port;
++	}
++
++	if (uci_load(ctx, CONFIG_NAME, &pkg)) {
++		syslog(LOG_ERR, "Failed to load '%s' package\n", CONFIG_NAME);
++		goto end;
++	}
++
++	uci_foreach_element (&pkg->sections, el) {
++		struct uci_section *sec = uci_to_section(el);
++		if (!strcmp(sec->type, SECTION_NAME)) {
++			port = uci_lookup_option_string(ctx, sec, OPTION_NAME);
++			break;
++		}
++	}
++
++	uci_unload(ctx, pkg);
++end:
++	uci_free_context(ctx);
++	return port;
++}
++
++void block_ip(char* host){
++	struct ubus_context *ubus;
++	struct blob_buf b = { 0 };
++	uint32_t id	  = 0;
++	int ret		  = 0;
++	char *port = NULL;
++	const char *temp_port;
++
++	if (!host) {
++		return;
++	}
++
++	ubus = ubus_connect(NULL);
++
++	if (!ubus) {
++		syslog(LOG_ERR, "Failed to connect to ubus");
++		goto end;
++	}
++
++	temp_port = get_port();
++
++	if (!temp_port) {
++		goto end;
++	}
++
++	port = strdup(temp_port);
++	port = replace_symbol(port, '-', ':');
++
++	if (strstr(host,".")) { //if host is IPv4 mapped IPv6 address
++		fix_mapped_ip(host);
++	} else {
++		strncpy(ip_address,host,sizeof(ip_address));
++	}
++
++	ret = ubus_lookup_id(ubus, "ip_block", &id);
++	if (ret) {
++		syslog(LOG_ERR, "Failed to find 'ip_block' object");
++		goto end;
++	}
++	blob_buf_init(&b, 0);
++	blobmsg_add_string(&b, "ip", ip_address);
++	blobmsg_add_string(&b, "port", port);
++	ubus_invoke(ubus, id, "push", b.head, NULL, NULL, 1000);
++
++end:
++	blob_buf_free(&b);
++	ubus_free(ubus);
++	free(port);
++}
+\ No newline at end of file

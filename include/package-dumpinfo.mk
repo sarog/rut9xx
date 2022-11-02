@@ -1,29 +1,20 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2006-2020 OpenWrt.org
 
 ifneq ($(DUMP),)
 
-dumpinfo: FORCE
 
-define Config/template
-Preconfig: $(1)
-Preconfig-Type: $(2)
-Preconfig-Default: $(3)
-Preconfig-Label: $(4)
+define SOURCE_INFO
+$(if $(PKG_BUILD_DEPENDS),Build-Depends: $(PKG_BUILD_DEPENDS)
+)$(if $(HOST_BUILD_DEPENDS),Build-Depends/host: $(HOST_BUILD_DEPENDS)
+)$(if $(BUILD_TYPES),Build-Types: $(BUILD_TYPES)
+)
 
-endef
-
-define Config
-  Preconfig/$(1) = $$(call Config/template,$(1),$(2),$(3),$(4))
-  preconfig_$$(1) += $(1)
 endef
 
 define Dumpinfo/Package
-$(info Package: $(1)
+$(info $(SOURCE_INFO)Package: $(1)
 $(if $(MENU),Menu: $(MENU)
 )$(if $(SUBMENU),Submenu: $(SUBMENU)
 )$(if $(SUBMENUDEP),Submenu-Depends: $(SUBMENUDEP)
@@ -31,18 +22,21 @@ $(if $(MENU),Menu: $(MENU)
 )$(if $(findstring $(PREREQ_CHECK),1),Prereq-Check: 1
 )Version: $(VERSION)
 Depends: $(call PKG_FIXUP_DEPENDS,$(1),$(DEPENDS))
+Conflicts: $(CONFLICTS)
 Menu-Depends: $(MDEPENDS)
 Provides: $(PROVIDES)
 $(if $(VARIANT),Build-Variant: $(VARIANT)
-)$(if $(PKG_BUILD_DEPENDS),Build-Depends: $(PKG_BUILD_DEPENDS)
-)$(if $(HOST_BUILD_DEPENDS),Build-Depends/host: $(HOST_BUILD_DEPENDS)
-)$(if $(BUILD_TYPES),Build-Types: $(BUILD_TYPES)
-)Section: $(SECTION)
+$(if $(DEFAULT_VARIANT),Default-Variant: $(VARIANT)
+))Section: $(SECTION)
 Category: $(CATEGORY)
-Title: $(TITLE)
+$(if $(filter nonshared,$(PKGFLAGS)),,Repository: $(if $(FEED),$(FEED),base)
+)Title: $(TITLE)
 Maintainer: $(MAINTAINER)
-Source: $(PKG_SOURCE)
-Type: $(if $(Package/$(1)/targets),$(Package/$(1)/targets),$(if $(PKG_TARGETS),$(PKG_TARGETS),ipkg))
+$(if $(USERID),Require-User: $(USERID)
+)Source: $(PKG_SOURCE)
+$(if $(LICENSE),License: $(LICENSE)
+)$(if $(LICENSE_FILES),LicenseFiles: $(LICENSE_FILES)
+)Type: $(if $(Package/$(1)/targets),$(Package/$(1)/targets),$(if $(PKG_TARGETS),$(PKG_TARGETS),ipkg))
 $(if $(KCONFIG),Kernel-Config: $(KCONFIG)
 )$(if $(BUILDONLY),Build-Only: $(BUILDONLY)
 )$(if $(HIDDEN),Hidden: $(HIDDEN)
@@ -53,33 +47,11 @@ $(if $(URL),$(URL)
 $(if $(Package/$(1)/config),Config:
 $(Package/$(1)/config)
 @@
-)$(foreach pc,$(preconfig_$(1)),
-$(Preconfig/$(pc))))
+))
+SOURCE_INFO :=
 endef
 
-define Feature/Default
-  TARGET_NAME:=
-  TARGET_TITLE:=
-  PRIORITY:=
-  NAME:=
-endef
-
-define Feature
-  $(eval $(Feature/Default))
-  $(eval $(Feature/$(1)))
-  $(if $(DUMP),$(call Dumpinfo/Feature,$(1)))
-endef
-
-define Dumpinfo/Feature
-$(info Feature: $(TARGET_NAME)_$(1)
-Target-Name: $(TARGET_NAME)
-Target-Title: $(TARGET_TITLE)
-Feature-Name: $(NAME)
-$(if $(PRIORITY),Feature-Priority: $(PRIORITY)
-)Feature-Description:
-$(Feature/$(1)/description)
-@@
-)
-endef
+dumpinfo: FORCE
+	$(if $(SOURCE_INFO),$(info $(SOURCE_INFO)))
 
 endif

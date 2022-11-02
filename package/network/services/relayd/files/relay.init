@@ -15,8 +15,6 @@ validate_proto_relayd()
 		'table:range(0, 65535):16800' \
 		'forward_bcast:bool:1' \
 		'forward_dhcp:bool:1'
-
-	return $?
 }
 
 resolve_ifname() {
@@ -35,13 +33,13 @@ resolve_network() {
 
 start_relay() {
 	local cfg="$1"
-	local proto enabled
+	local proto disabled
 
 	config_get proto "$cfg" proto
 	[ "$proto" = "relay" ] || return 0
 
-	config_get_bool enabled "$cfg" enabled 0
-	[ "$enabled" -eq 0 ] && return 0
+	config_get_bool disabled "$cfg" disabled 0
+	[ "$disabled" -gt 0 ] && return 0
 
 	local resolved_ifnames
 	local net networks

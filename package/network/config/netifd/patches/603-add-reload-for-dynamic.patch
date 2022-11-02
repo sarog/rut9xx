@@ -1,0 +1,11 @@
+--- a/ubus.c
++++ b/ubus.c
+@@ -148,6 +148,8 @@ netifd_add_dynamic(struct ubus_context *
+ 	if (!interface_add(iface, config))
+ 		goto error_free_config;
+ 
++	netifd_reload();
++
+ 	return UBUS_STATUS_OK;
+ 
+ error_free_config:

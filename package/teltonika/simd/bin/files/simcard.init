@@ -1,0 +1,210 @@
+#!/bin/sh /etc/rc.common
+
+. /lib/functions/board.sh
+
+START=13
+USE_PROCD=1
+
+check_dual_sim_flg() {
+	json_init
+	json_load_file /etc/board.json || {
+		logger -t "simcard.init" "/etc/board.json file not found"
+		return 0
+	}
+
+	json_select hwinfo && {
+		json_get_vars dual_sim
+	}
+
+	[ -z "$dual_sim" ] || [ "$dual_sim" -ne 0 ] && {
+		return 0
+	}
+
+	return 1
+}
+
+check_at_sim_flg() {
+	json_init
+	json_load_file /etc/board.json || {
+		logger -t "simcard.init" "/etc/board.json file not found"
+		return 0
+	}
+
+	json_select hwinfo && {
+		json_get_vars at_sim
+	}
+
+	[ -z "$at_sim" ] || [ "$at_sim" -ne 1 ] && {
+		return 0
+	}
+
+	return 1
+}
+
+handle_mnf_pin() {
+	local builtin=$1
+	local position=$2
+	local pin=$3
+
+	if [ "$builtin" = "2" ]; then
+		if [ "$position" = "1" ]; then
+			/sbin/mnf_info --set_simpin 3 --pin "$pin"
+		elif [ "$position" = "2" ]; then
+			/sbin/mnf_info --set_simpin 4 --pin "$pin"
+		fi
+	else
+		if [ "$position" = "1" ]; then
+			/sbin/mnf_info --set_simpin 1 --pin "$pin"
+		elif [ "$position" = "2" ]; then
+			/sbin/mnf_info --set_simpin 2 --pin "$pin"
+		fi
+	fi
+}
+
+save_sim() {
+	local sim="$1"
+	local pin
+	local modem
+	local position
+	local primary
+	local sim_count
+
+	json_init
+	json_load_file /etc/board.json
+	json_get_keys modems modems
+	json_select modems
+
+	config_get pin "$sim" pincode ""
+	config_get modem "$sim" modem
+	config_get position "$sim" position
+	config_get primary "$sim" primary 0
+
+	local builtin=$(is_builtin_modem "$modem")
+
+	[ "$builtin" -eq 0 ] && {
+		return
+	}
+
+	[ -z "$pin" ] && {
+		pin="erase"
+	}
+
+	modem_id="$modem"
+
+	for modem in $modems; do
+		json_select "$modem"
+		json_get_var sim_count simcount
+	done
+
+	[ "$sim_count" -gt 1 ] && [ "$primary" -eq 1 ] && [ -n "$modem" ] && {
+		switch_sim "$position" "$modem" "$modem_id"
+	}
+
+	handle_mnf_pin "$builtin" "$position" "$pin"
+}
+
+save_pin() {
+	local sim="$1"
+	local pin
+	local modem
+	local position
+	local primary
+	local sim_count
+
+	config_get pin "$sim" pincode ""
+	config_get modem "$sim" modem
+	config_get position "$sim" position
+
+	local builtin=$(is_builtin_modem "$modem")
+
+	[ "$builtin" -eq 0 ] && {
+		return
+	}
+
+	[ -z "$pin" ] && {
+		pin="erase"
+	}
+
+	handle_mnf_pin "$builtin" "$position" "$pin"
+}
+
+get_active_sim() {
+	local active_sim
+
+	json_init
+	json_load "$(ubus call sim get "{\"modem\":\"$1\"}")"
+	json_get_var active_sim "sim"
+
+	echo "$active_sim"
+}
+
+switch_sim() {
+	local position="$1"
+	local modem="$2"
+	local modem_id="$3"
+	local sim=$(get_active_sim "$modem")
+
+
+	while [ -z "$sim" -o "$sim" -eq 0 ]; do
+		logger -t "simcard" "Failed to retrieve active simcard. retrying..."
+		sleep 1
+		sim=$(get_active_sim "$modem")
+	done
+
+	if [ "$position" -ne "$sim" ]; then
+		gsmctl -A "AT+CFUN=0" -O "$modem_id"
+		sleep 1
+		#TODO: ubus sim object doesn't have modem policy. Need to fix it??
+		/bin/ubus call sim change "{\"modem\":\"$modem\"}"
+	fi
+}
+
+check_sim_ubus() {
+	local cnt=0
+	while [ "$cnt" -ne "30" ];
+	do
+		if [ "$(ubus list sim)" = "sim" ]; then
+			return 0
+		elif [ "$cnt" -eq "1" ]; then
+			logger -t "simcard" "sim UBUS object isn't started yet. Wait ~1 minute for loading to complete!"
+		fi
+		sleep 2
+		let cnt=cnt+1
+	done
+	return 1
+}
+
+service_triggers() {
+	procd_add_reload_trigger "simcard"
+}
+
+handle_sim_set() {
+	if check_sim_ubus; then
+		logger -t "simcard" "sim UBUS object was found! Loading simcard configuration."
+		config_load simcard
+		config_foreach save_sim sim
+	else
+		logger -t "simcard" "sim UBUS object was not found! Exiting..."
+		exit 0
+	fi
+}
+
+reload_service() {
+	check_dual_sim_flg && {
+		handle_sim_set
+		return 0
+	}
+
+	config_load simcard
+	config_foreach save_pin sim
+}
+
+start_service() {
+	check_dual_sim_flg && check_at_sim_flg && {
+		handle_sim_set
+		return 0
+	}
+
+	config_load simcard
+	config_foreach save_pin sim
+}

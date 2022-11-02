@@ -1,0 +1,27 @@
+--- a/system-linux.c
++++ b/system-linux.c
+@@ -3364,10 +3364,14 @@ static void system_vxlan_map_bool_attr(s
+ 		if (invert)
+ 			val = !val;
+ 
++#ifdef IFLA_VXLAN_GBP
+ 		if ((attrtype == IFLA_VXLAN_GBP) && val)
+ 			nla_put_flag(msg, attrtype);
+ 		else 
+ 			nla_put_u8(msg, attrtype, val);
++#else
++		nla_put_u8(msg, attrtype, val);
++#endif // IFLA_VXLAN_GBP
+ 
+ 	}
+ }
+@@ -3517,7 +3521,9 @@ static int system_add_vxlan(const char *
+ 	system_vxlan_map_bool_attr(msg, tb_data, IFLA_VXLAN_PROXY , VXLAN_DATA_ATTR_PROXY, false);
+ 	system_vxlan_map_bool_attr(msg, tb_data, IFLA_VXLAN_L2MISS , VXLAN_DATA_ATTR_L2MISS, false);
+ 	system_vxlan_map_bool_attr(msg, tb_data, IFLA_VXLAN_L3MISS , VXLAN_DATA_ATTR_L3MISS, false);
++#ifdef IFLA_VXLAN_GBP
+ 	system_vxlan_map_bool_attr(msg, tb_data, IFLA_VXLAN_GBP , VXLAN_DATA_ATTR_GBP, false);
++#endif // IFLA_VXLAN_GBP
+ 
+ 	if ((cur = tb_data[VXLAN_DATA_ATTR_AGEING])) {
+ 		uint32_t ageing = blobmsg_get_u32(cur);

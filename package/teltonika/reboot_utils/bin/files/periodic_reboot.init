@@ -1,0 +1,72 @@
+#!/bin/sh /etc/rc.common
+
+START=54
+STOP=10
+USE_PROCD=1
+
+CRONTAB_FILE='/etc/crontabs/root'
+IDENTIFYING_STRING='# periodic_reboot'
+
+generate_crontab_rule() {
+	local time=$1
+	local days=$2
+	local reboot=$3
+	local hour=$(echo "$time" | cut -d':' -f1)
+	local minute=$(echo "$time" | cut -d':' -f2)
+
+	[ -z "$hour" ] || [ -z "$minute" ] && {
+		logger -t "periodic_reboot" "Invalid 'time' option"
+		return
+	}
+
+	echo -e "$minute $hour * * $days $reboot $IDENTIFYING_STRING" >>"$CRONTAB_FILE"
+}
+
+generate_instance() {
+	local enable
+	local action
+	local modem
+	local reboot=""
+	local days
+
+	config_get enable "$1" enable 0
+	[ "$enable" -eq 1 ] || return
+
+	config_get action "$1" action
+	config_get days "$1" days
+	config_get modem "$1" modem
+
+	[ -z "$action" ] && logger -t "periodic_reboot" "No 'action' option"
+	[ -z "$days" ] && logger -t "periodic_reboot" "No 'days' option"
+
+	case $action in
+	1)
+		reboot="/sbin/reboot -e"
+		;;
+	2)
+		reboot="/usr/sbin/reboot_modem.sh $modem"
+		;;
+	esac
+
+	config_list_foreach "$1" "time" generate_crontab_rule "$days" "$reboot"
+}
+
+start_service() {
+	. /lib/functions.sh
+	config_load periodic_reboot
+	config_foreach generate_instance "reboot_instance"
+	/etc/init.d/cron restart
+}
+
+stop_service() {
+	sed -i "/$IDENTIFYING_STRING/d" "$CRONTAB_FILE"
+}
+
+service_triggers() {
+	procd_add_reload_trigger "periodic_reboot"
+}
+
+reload_service(){
+	stop
+	start
+}

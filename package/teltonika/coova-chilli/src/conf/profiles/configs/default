@@ -1,0 +1,19 @@
+config group
+	option name 'default'
+
+config chilli
+	option enabled '0'
+	option net '192.168.2.0/24'
+	option uamlisten '192.168.2.254'
+	option dns1 '8.8.8.8'
+	option dns2 '8.8.4.4'
+	option uamlogoutip '1.0.0.0'
+	option uamport '3990'
+	option ipup '/etc/chilli/up.sh'
+	option ipdown '/etc/chilli/down.sh'
+	option dbpath '/var/hotspot.db'
+	option usersdbpath '/etc/chilli/users.db'
+	option _mode 'local'
+	option _landingpage 'int'
+	option _success 'uam'
+	option _protocol 'http'

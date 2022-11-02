@@ -1,0 +1,42 @@
+From 7a4633413938d32bf035689e1ed6b57b96aa5532 Mon Sep 17 00:00:00 2001
+From: Christian Franke <chris@opensourcerouting.org>
+Date: Sat, 25 Aug 2018 17:50:03 +0200
+Subject: [PATCH] watchfrr: fix global restart
+
+watchfrr needs to handle a SIGCHLD also when it calls a global restart
+command. Before this patch, it would lead to the following behavior:
+
+15:44:28: zebra state -> down : unexpected read error: Connection reset by peer
+15:44:33: Forked background command [pid 6392]: /usr/sbin/frr.init watchrestart all
+15:44:53: Warning: restart all child process 6392 still running after 20 seconds, sending signal 15
+15:44:53: waitpid returned status for an unknown child process 6392
+15:44:53: background (unknown) process 6392 terminated due to signal 15
+15:45:13: Warning: restart all child process 6392 still running after 40 seconds, sending signal 9
+15:45:33: Warning: restart all child process 6392 still running after 60 seconds, sending signal 9
+15:45:53: Warning: restart all child process 6392 still running after 80 seconds, sending signal 9
+15:46:13: Warning: restart all child process 6392 still running after 100 seconds, sending signal 9
+15:46:33: Warning: restart all child process 6392 still running after 120 seconds, sending signal 9
+15:46:53: Warning: restart all child process 6392 still running after 140 seconds, sending signal 9
+
+This is obviously incorrect and can be fixed by comparing the pid to
+the global restart object as well.
+
+Signed-off-by: Christian Franke <chris@opensourcerouting.org>
+---
+ watchfrr/watchfrr.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+Index: watchfrr/watchfrr.c
+===================================================================
+--- frr-5.0.2.orig/watchfrr/watchfrr.c.orig
++++ frr-5.0.2/watchfrr/watchfrr.c
+@@ -309,6 +309,9 @@ static int restart_kill(struct thread *t
+ static struct restart_info *find_child(pid_t child)
+ {
+ 	struct daemon *dmn;
++	if (gs.restart.pid == child)
++		return &gs.restart;
++
+ 	for (dmn = gs.daemons; dmn; dmn = dmn->next) {
+ 		if (dmn->restart.pid == child)
+ 			return &dmn->restart;

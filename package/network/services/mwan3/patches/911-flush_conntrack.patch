@@ -1,0 +1,13 @@
+Index: mwan3-2.10.12/files/etc/hotplug.d/iface/15-mwan3
+===================================================================
+--- mwan3-2.10.12.orig/files/etc/hotplug.d/iface/15-mwan3
++++ mwan3-2.10.12/files/etc/hotplug.d/iface/15-mwan3
+@@ -45,6 +45,8 @@ config_get_bool enabled $INTERFACE 'enab
+ 	exit 0
+ }
+ 
++mwan3_flush_conntrack "$INTERFACE" "$ACTION"
++
+ config_get initial_state $INTERFACE initial_state "online"
+ if [ "$initial_state" = "offline" ]; then
+ 	status=$(cat $MWAN3TRACK_STATUS_DIR/$INTERFACE/STATUS 2>/dev/null || echo unknown)

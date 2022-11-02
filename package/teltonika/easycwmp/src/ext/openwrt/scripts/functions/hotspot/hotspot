@@ -1,0 +1,90 @@
+#!/bin/sh
+# Copyright (C) 2015 PIVA Software <www.pivasoftware.com>
+# 	Author: MOHAMED Kallel <mohamed.kallel@pivasoftware.com>
+
+#common_execute_method_param "$parameter" "$permission" "$get_cmd" "$set_cmd" "xsd:$type" "$forcedinform"
+#  $forcedinform should be set to 1 if the parameter is included in the inform message otherwise empty
+#  Default of $type = string
+
+#############################
+#   Entry point functuons   #
+#############################
+. /lib/functions.sh
+
+prefix_list="$prefix_list $DMROOT.Hotspot."
+entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_Hotpsot"
+entry_execute_method_list_forcedinform="$entry_execute_method_list_forcedinform  entry_execute_method_root_Hotpsot"
+OPTION_LIST="IPP;uamlisten AuthMode;_mode LogoutIP;uamlogoutip Network;network \
+DNS1;dns1 DNS2;dns2 UAMPort;uamport LandingPage;_landingpage"
+
+config_load chilli
+
+list_foreach(){
+	[ "$#" -ge 2 ] || return 0
+	local list=$1; shift
+	local callback=$1; shift
+
+	for element in $list
+	do
+		$callback $element $@
+	done
+}
+
+entry_execute_method_root_Hotpsot() {
+	case "$1" in ""|"$DMROOT."|"$DMROOT.Hotspot."*)
+		common_execute_method_obj "$DMROOT.Hotspot." "0"
+		common_execute_method_obj "$DMROOT.Hotspot.General." "0" "" "" "hotspot_browse_instances $1"
+
+		return 0;
+		;;
+	esac
+	return $E_INVALID_PARAMETER_NAME;
+}
+
+#$1 - section name, $2 - option, $3 - true value, $4 - false value
+Hotspot_Get_Bool() {
+	local val=`$UCI_GET chilli.$1.$2`
+
+	[ "$val" = "1" ] && echo "$3" || echo "$4"
+}
+#$1 - section name, $2 - option, $3 - true value, $4 - false value, $5 - value
+Hotspot_Set_Bool() {
+	common_set_bool "chilli.$1" "$4" "$2" "$3"
+	return $?
+}
+#$1 - section name, $2 - option
+Hotspot_Get() {
+	echo `$UCI_GET chilli.$1.$2`
+}
+#$1 - section name, $2 - option, $3 - value
+Hotspot_Set() {
+	$UCI_SET chilli.$1.$2=$3
+	return $?
+}
+
+
+hotspot_entry(){
+	name=$(echo $1 | awk 'BEGIN { FS = ";" }; {print $1}')
+	param=$(echo $1 | awk 'BEGIN { FS = ";" }; {print $2}')
+	common_execute_method_param "$DMROOT.Hotspot.General.$2.$name" "0" \
+				"Hotspot_Get $2 $param" "" "" "1"
+}
+
+sub_entry_hotpsot_general(){
+	case "$2" in ""|"$DMROOT."|"$DMROOT.MobileInfo.General.$1"*)
+		common_execute_method_obj "$DMROOT.Hotspot.General.$1" "0"
+		common_execute_method_param "$DMROOT.Hotspot.General.$1.Enabled" "1" \
+				"Hotspot_Get_Bool $1 enabled enabled disabled" \
+				"Hotspot_Set_Bool $1.enabled 1 0" "xsd:boolean" "1"
+		common_execute_method_param "$DMROOT.Hotspot.General.$1.Signup" "1" \
+				"Hotspot_Get_Bool $1 registerusers enabled disabled" "" "xsd:boolean" "1"
+		list_foreach "$OPTION_LIST" hotspot_entry $1
+		return 0
+		;;
+	esac
+	return $E_INVALID_PARAMETER_NAME;
+}
+
+hotspot_browse_instances(){
+	config_foreach sub_entry_hotpsot_general chilli $1
+}

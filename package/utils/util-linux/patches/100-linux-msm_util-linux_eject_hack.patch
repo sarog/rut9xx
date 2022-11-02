@@ -1,0 +1,18 @@
+--- a/sys-utils/eject.c_bak	2019-11-27 14:06:31.778149455 +0200
++++ b/sys-utils/eject.c	2019-11-27 14:06:48.288110325 +0200
+@@ -609,10 +609,10 @@
+ 	 * http://www.tldp.org/HOWTO/archived/SCSI-Programming-HOWTO/SCSI-Programming-HOWTO-22.html#sec-sensecodes
+ 	 * -- kzak Jun 2013
+ 	 */
+-	if (io_hdr.driver_status != 0 &&
+-	    !(io_hdr.driver_status == DRIVER_SENSE && io_hdr.sbp &&
+-		                                      io_hdr.sbp[12] == 0x3a))
+-		return 0;
++	//if (io_hdr.driver_status != 0 &&
++	//    !(io_hdr.driver_status == DRIVER_SENSE && io_hdr.sbp &&
++	//	                                      io_hdr.sbp[12] == 0x3a))
++	//	return 0;
+ 
+ 	io_hdr.cmdp = startStop2Blk;
+ 	status = ioctl(ctl->fd, SG_IO, (void *)&io_hdr);
+

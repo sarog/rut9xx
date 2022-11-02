@@ -1,0 +1,10 @@
+--- a/libfstools/overlay.c
++++ b/libfstools/overlay.c
+@@ -354,6 +354,7 @@ static int overlay_mount_fs(struct volum
+ 	}
+ 
+ 	if (mount(v->blk, overlay_mp, fstype,
++		MS_SYNCHRONOUS |
+ #ifdef OVL_MOUNT_FULL_ACCESS_TIME
+ 		MS_RELATIME,
+ #else

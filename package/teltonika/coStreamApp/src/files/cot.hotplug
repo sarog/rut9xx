@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# Copyright (C), 2019 Teltonika
+#
+
+if [ "$ACTION" = "ifup" ]; then
+    /etc/init.d/cot reload
+fi

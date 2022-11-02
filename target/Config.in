@@ -2,6 +2,9 @@ source "tmp/.config-target.in"
 
 # Kernel/Hardware features
 
+config HAS_TESTING_KERNEL
+	bool
+
 config HAS_SPE_FPU
 	depends on powerpc
 	select HAS_FPU
@@ -24,6 +27,9 @@ config PCIE_SUPPORT
 	bool
 
 config PCMCIA_SUPPORT
+	bool
+
+config PWM_SUPPORT
 	bool
 
 config USB_SUPPORT
@@ -63,10 +69,17 @@ config USES_TARGZ
 config USES_CPIOGZ
 	bool
 
-config USES_UBIFS
+config USES_MINOR
 	bool
 
-config PROFILE_KCONFIG
+config USES_UBIFS
+	bool
+	select NAND_SUPPORT
+
+config LOW_MEMORY_FOOTPRINT
+	bool
+
+config SMALL_FLASH
 	bool
 
 config NOMMU
@@ -79,10 +92,44 @@ config HAS_MIPS16
 config RFKILL_SUPPORT
 	bool
 
+config NAND_SUPPORT
+	bool
+
 config ARCH_64BIT
 	bool
 
+config VIRTIO_SUPPORT
+	bool
+
+config BASEBAND_SUPPORT
+	bool
+
+config BYPASS_OFFLOAD_FEATURE
+	bool
+
+config USES_ROOTFS_PART
+	bool
+
+config USES_BOOT_PART
+	bool
+
 # Architecture selection
+
+config aarch64
+	select ARCH_64BIT
+	bool
+
+config aarch64_be
+	select ARCH_64BIT
+	select BIG_ENDIAN
+	bool
+
+config arc
+	bool
+
+config arceb
+	select BIG_ENDIAN
+	bool
 
 config arm
 	bool
@@ -91,23 +138,10 @@ config armeb
 	select BIG_ENDIAN
 	bool
 
-config arm_v4
-	bool
-
-config arm_v5
-	bool
-
 config arm_v6
 	bool
 
 config arm_v7
-	bool
-
-config avr32
-	select BIG_ENDIAN
-	bool
-
-config cris
 	bool
 
 config i386
@@ -168,10 +202,12 @@ config x86_64
 
 config ARCH
 	string
+	default "aarch64"   if aarch64
+	default "aarch64_be" if aarch64_be
+	default "arc"       if arc
+	default "arceb"     if arceb
 	default "arm"       if arm
 	default "armeb"     if armeb
-	default "avr32"     if avr32
-	default "cris"      if cris
 	default "i386"      if i386
 	default "i686"      if i686
 	default "m68k"      if m68k
@@ -180,6 +216,7 @@ config ARCH
 	default "mips64"    if mips64
 	default "mips64el"  if mips64el
 	default "powerpc"   if powerpc
+	default "powerpc64" if powerpc64
 	default "sh3"       if sh3
 	default "sh3eb"     if sh3eb
 	default "sh4"       if sh4

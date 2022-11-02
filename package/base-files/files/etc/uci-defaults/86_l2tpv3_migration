@@ -1,0 +1,24 @@
+#!/bin/sh
+. /lib/functions.sh
+
+change_l2tpv3() {
+	local section="$1"
+	local proto bridge_to ifname_list list
+
+	config_get proto "$section" proto
+	config_get bridge_to "$section" bridge_to
+
+	[ "$proto" = "l2tpv3" ] && [ -n "$bridge_to" ] && \
+	[ "$bridge_to" != "none" ] || return
+
+	ifname_list="$(uci -q get network.${bridge_to}.ifname)"
+
+	list_contains "ifname_list" "l2tp-$section" && {
+		list="${ifname_list/l2tp-$section/@$section}"
+		uci_set "network" "$bridge_to" "ifname" "$list"
+	}
+}
+
+config_load network
+config_foreach change_l2tpv3 interface
+uci_commit network

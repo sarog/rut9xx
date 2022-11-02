@@ -1,0 +1,15 @@
+--- a/src/tun.c
++++ b/src/tun.c
+@@ -591,6 +591,11 @@
+ #endif
+       ;
+ 
++#ifndef CONFIG_MACHINE_RUTX
++  ifr.ifr_flags &= ~(IFF_MULTI_QUEUE);
++  syslog(LOG_INFO, "Multi Queue disabled for tun interface");
++#endif
++
+   if (_options.tundev && *_options.tundev &&
+       strcmp(_options.tundev, "tap") && strcmp(_options.tundev, "tun"))
+     strlcpy(ifr.ifr_name, _options.tundev, IFNAMSIZ);
+

@@ -1,0 +1,31 @@
+#!/bin/sh
+. /lib/functions.sh
+
+SECTION=""
+CONF="ioman"
+
+config_cb() {
+
+        SECTION="$2"
+
+        option_cb() {
+
+                local option="$1"
+                local value="$2"
+                [[ $option == "ui_"* ]] && uci_remove "$CONF" "$SECTION" "$option"
+        }
+
+        list_cb() {
+
+                local option="$1"
+                local value="$2"
+                [[ $option == "ui_"* ]] && uci_remove_list "$CONF" "$SECTION" "$option" "$value"
+
+        }
+
+}
+
+[ -f "/etc/config/$CONF" ] || return 0
+
+config_load "$CONF"
+uci_commit "$CONF"

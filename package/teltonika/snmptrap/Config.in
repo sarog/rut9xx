@@ -1,0 +1,13 @@
+config SNMPTRAP_GSM
+    bool "GSM module"
+    depends on PACKAGE_snmptrap
+    default n
+    help
+        Build with GSM support
+
+config SNMPTRAP_IO
+    bool "I/O module"
+    depends on PACKAGE_snmptrap
+    default n
+    help
+        Build with I/O support

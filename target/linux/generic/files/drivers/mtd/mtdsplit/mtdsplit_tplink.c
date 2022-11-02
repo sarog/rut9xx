@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2013 Gabor Juhos <juhosg@openwrt.org>
- *  Copyright (C) 2014 Felix Fietkau <nbd@openwrt.org>
+ *  Copyright (C) 2014 Felix Fietkau <nbd@nbd.name>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -15,6 +15,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/byteorder/generic.h>
+#include <linux/of.h>
 
 #include "mtdsplit.h"
 
@@ -83,8 +84,8 @@ struct tplink_fw_header {
 };
 
 static int mtdsplit_parse_tplink(struct mtd_info *master,
-				struct mtd_partition **pparts,
-				struct mtd_part_parser_data *data)
+				 const struct mtd_partition **pparts,
+				 struct mtd_part_parser_data *data)
 {
 	struct tplink_fw_header hdr;
 	size_t hdr_len, retlen, kernel_size;
@@ -106,6 +107,7 @@ static int mtdsplit_parse_tplink(struct mtd_info *master,
 			return -EINVAL;
 
 		kernel_size = sizeof(hdr) + be32_to_cpu(hdr.v1.kernel_len);
+		rootfs_offset = be32_to_cpu(hdr.v1.rootfs_ofs);
 		break;
 	case 2:
 	case 3:
@@ -113,6 +115,7 @@ static int mtdsplit_parse_tplink(struct mtd_info *master,
 			return -EINVAL;
 
 		kernel_size = sizeof(hdr) + be32_to_cpu(hdr.v2.kernel_len);
+		rootfs_offset = be32_to_cpu(hdr.v2.rootfs_ofs);
 		break;
 	default:
 		return -EINVAL;
@@ -121,17 +124,15 @@ static int mtdsplit_parse_tplink(struct mtd_info *master,
 	if (kernel_size > master->size)
 		return -EINVAL;
 
-	/* Find the rootfs after the kernel. */
-	err = mtd_check_rootfs_magic(master, kernel_size);
-	if (!err) {
-		rootfs_offset = kernel_size;
-	} else {
+	/* Find the rootfs */
+	err = mtd_check_rootfs_magic(master, rootfs_offset, NULL);
+	if (err) {
 		/*
 		 * The size in the header might cover the rootfs as well.
 		 * Start the search from an arbitrary offset.
 		 */
 		err = mtd_find_rootfs_from(master, TPLINK_MIN_ROOTFS_OFFS,
-					   master->size, &rootfs_offset);
+					   master->size, &rootfs_offset, NULL);
 		if (err)
 			return err;
 	}
@@ -142,7 +143,7 @@ static int mtdsplit_parse_tplink(struct mtd_info *master,
 
 	parts[0].name = KERNEL_PART_NAME;
 	parts[0].offset = 0;
-	parts[0].size = rootfs_offset;
+	parts[0].size = kernel_size;
 
 	parts[1].name = ROOTFS_PART_NAME;
 	parts[1].offset = rootfs_offset;
@@ -152,9 +153,15 @@ static int mtdsplit_parse_tplink(struct mtd_info *master,
 	return TPLINK_NR_PARTS;
 }
 
+static const struct of_device_id mtdsplit_tplink_of_match_table[] = {
+	{ .compatible = "tplink,firmware" },
+	{},
+};
+
 static struct mtd_part_parser mtdsplit_tplink_parser = {
 	.owner = THIS_MODULE,
 	.name = "tplink-fw",
+	.of_match_table = mtdsplit_tplink_of_match_table,
 	.parse_fn = mtdsplit_parse_tplink,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };

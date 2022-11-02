@@ -1,6 +1,6 @@
 ## Firmware Building And Installation
 
-Note: This repo is based on firmware version 6.06.1.
+Note: This repo is based on firmware version 7.02.7.
 
 ### Prerequisites
 
@@ -13,7 +13,7 @@ Linux, BSD, OSX or WSL required for compilation. Cygwin will not work due to run
 ## Example commands for Ubuntu:
 $ sudo apt-get update
 $ sudo apt-get install -y build-essential curl devscripts gawk gcc-multilib gengetopt gettext git groff file flex \
-    libncurses5-dev libssl-dev python2 subversion unzip zlib1g-dev wget
+    libncurses5-dev libssl-dev python3 subversion unzip zlib1g-dev wget
 ```
 
 2. Extract the archive to an empty folder:

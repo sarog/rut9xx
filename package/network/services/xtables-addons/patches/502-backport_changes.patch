@@ -1,0 +1,18 @@
+--- a/extensions/xt_quota2.c
++++ b/extensions/xt_quota2.c
+@@ -168,6 +168,7 @@ q2_get_counter(struct net *net, const st
+ 			spin_unlock_bh(&counter_list_lock);
+ 			return e;
+ 		}
++	spin_unlock_bh(&counter_list_lock);
+ 
+ 	e = q2_new_counter(q, false);
+ 	if (e == NULL)
+@@ -179,6 +180,7 @@ q2_get_counter(struct net *net, const st
+ 	if (p == NULL || IS_ERR(p))
+ 		goto out;
+ 
++	spin_lock_bh(&counter_list_lock);
+ 	e->procfs_entry = p;
+ 	proc_set_user(p, make_kuid(&init_user_ns, quota_list_uid),
+ 	              make_kgid(&init_user_ns, quota_list_gid));

@@ -1,0 +1,40 @@
+#!/bin/sh
+
+[ "$1" = "-h" -o "$1" = "--help" ] && {
+  cat <<EOF
+	Usage: opkg-call [package]
+
+	<package> - if package name is given, the script calculates installed size
+	            of package and all its necessary dependencies
+EOF
+	exit 0
+}
+
+output=$(gzip -cd /var/opkg-lists/tlt_packages)
+
+[ $# -eq 0 ] && {
+	echo "$output"
+	exit 0
+}
+
+checked_list=""
+full_size=0
+
+calculate_size() {
+	local pkg size depends
+	pkg="$1"
+
+	size=$(echo "$output" | sed -n "/Package: $pkg$/,/Package:/p" | grep "Installed-Size" | awk '{print $2}')
+	[ "$size" != "" ] && full_size=$(($full_size + $size))
+	checked_list="$checked_list $pkg"
+	depends=$(echo "$output" | sed -n "/Package: $pkg$/,/Package:/p" | grep "Depends" | awk -F "Depends: " '{print $2}' | sed "s/,//g")
+
+	for d in $depends; do
+		[ $(echo "$checked_list" | grep -wc "$d") -ne 0 ] && continue
+		[ -f /usr/lib/opkg/info/"$d".control ] || calculate_size "$d"
+	done
+}
+
+calculate_size "$1"
+echo "$full_size"
+exit 0

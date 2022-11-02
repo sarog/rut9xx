@@ -1,0 +1,82 @@
+#!/bin/sh
+
+[ "$DEVTYPE" = usb_device ] && [ "${DEVICENAME%%:*}" = "$DEVICENAME" ] && [ -e /var/run/boot-done ] || exit 0
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+json_init
+json_add_string "id" "$DEVICENAME"
+
+[ "$ACTION" = remove ] && ubus send hotplug.modem_removed "$(json_dump)" && exit 0
+json_cleanup
+
+MODEM_FOUND=""
+check_modem_id() {
+	[ -n "$MODEM_FOUND" ] && return
+
+	cfg="$1"
+	current_modem_id="$2"
+	option="$3"
+
+	config_get modem "$cfg" "$option" ""
+	[ "$modem" = "$current_modem_id" ] && {
+		MODEM_FOUND="1"
+		return
+	}
+}
+
+vid=$(cat /sys$DEVPATH/idVendor)
+pid=$(cat /sys$DEVPATH/idProduct)
+[ -f "/lib/network/wwan/$vid:$pid" ] || exit 0
+usb=/lib/network/wwan/$vid:$pid
+devicename="$DEVICENAME"
+
+[ "$ACTION" = "add" ] && [ "$vid" = "05c6" ] && [ "$pid" = "f601" ] && exit 0
+
+json_init
+json_load "$(cat $usb)"
+json_get_vars desc control data boudrate stop_bits
+
+ttys=$(ls -d /sys/bus/usb/devices/$devicename/${devicename}*/tty?* /sys/bus/usb/devices/$devicename/${devicename}*/tty/tty?* | sed "s/.*\///g" | tr "\n" " ")
+at_device=/dev/$(echo $ttys | cut -d" " -f $((control + 1)))
+
+[ -s /etc/config/simcard ] && {
+	config_load "simcard"
+	config_foreach check_modem_id sim "$devicename" modem
+
+	[ -z "$MODEM_FOUND" ] && {
+		section=$(uci -N add simcard sim)
+		uci set simcard.$section.modem="$devicename"
+		uci set simcard.$section.position="1"
+		uci set simcard.$section.primary="1"
+		uci set simcard.$section.auto_apn="1"
+		uci set simcard.$section.volte="auto"
+		uci commit simcard
+
+		[ -f "/bin/trigger_vuci_routes_reload" ] && /bin/trigger_vuci_routes_reload
+	}
+}
+
+MODEM_FOUND=""                                                                                    
+[ -f "/etc/config/sms_gateway" ] && {
+
+		config_load "sms_gateway"
+		config_foreach check_modem_id simman "$devicename" info_modem_id
+
+		[ -z "$MODEM_FOUND" ] && {
+			section=$(uci -N add sms_gateway simman)
+			uci set sms_gateway.$section.info_modem_id="$devicename"
+			uci set sms_gateway.$section.free="5"
+			uci commit sms_gateway
+		}
+}
+
+json_init
+json_add_string "id" "$devicename"
+json_add_string "cmd_port" "$at_device"
+json_add_string "vidpid" "$vid:$pid"
+json_add_int "boudrate" "$boudrate"
+json_add_int "stop_bits" "$stop_bits"
+ubus send hotplug.modem_added "$(json_dump)"
+
+exit 0

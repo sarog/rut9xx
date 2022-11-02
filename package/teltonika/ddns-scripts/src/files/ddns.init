@@ -1,0 +1,36 @@
+#!/bin/sh /etc/rc.common
+
+START=95
+STOP=10
+
+USE_PROCD=1
+STATUS=""
+
+check_enabled() {
+        [ "$STATUS" = "1" ] && return
+        config_get STATUS "$1" "enabled"
+}
+
+start_service() {
+        config_load "ddns"
+        config_foreach check_enabled service
+        [ "$STATUS" != "1" ] && return
+
+        procd_open_instance
+        procd_set_param command /usr/lib/ddns/dynamic_dns_updater.sh -- start
+        procd_close_instance
+}
+
+stop_service() {
+        /usr/lib/ddns/dynamic_dns_updater.sh -- stop
+        sleep 1
+}
+
+reload_service() {
+        pgrep -f /usr/lib/ddns/dynamic_dns_updater.sh | xargs kill
+        start
+}
+
+service_triggers() {
+        procd_add_reload_trigger "ddns"
+}

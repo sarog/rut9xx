@@ -1,0 +1,412 @@
+--- a/extensions/compat_xtables.h
++++ b/extensions/compat_xtables.h
+@@ -22,13 +22,17 @@
+     LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 78) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 0) || \
+     LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 158) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
+ #else
+-#	define ip_route_me_harder(xnet, xsk, xskb, xaddrtype) ip_route_me_harder((xnet), (xskb), (xaddrtype))
+-#	define ip6_route_me_harder(xnet, xsk, xskb) ip6_route_me_harder((xnet), (xskb))
++#	define ip_route_me_harder(xnet, xskb, xaddrtype) ip_route_me_harder((xskb), (xaddrtype))
++#	define ip6_route_me_harder(xnet, xskb) ip6_route_me_harder((xskb))
+ #endif
+ 
+ static inline struct net *par_net(const struct xt_action_param *par)
+ {
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	return dev_net((par->in != NULL) ? par->in : par->out);
++#else
+ 	return par->state->net;
++#endif
+ }
+ 
+ #ifndef NF_CT_ASSERT
+--- a/extensions/xt_CHAOS.c
++++ b/extensions/xt_CHAOS.c
+@@ -58,7 +58,12 @@ xt_chaos_total(struct sk_buff *skb, cons
+ 
+ 	{
+ 		struct xt_action_param local_par;
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++		local_par.in        = par->in,
++		local_par.out       = par->out,
++#else
+ 		local_par.state    = par->state;
++#endif
+ 		local_par.match     = xm_tcp;
+ 		local_par.matchinfo = &tcp_params;
+ 		local_par.fragoff   = fragoff;
+@@ -73,7 +78,12 @@ xt_chaos_total(struct sk_buff *skb, cons
+ 	destiny = (info->variant == XTCHAOS_TARPIT) ? xt_tarpit : xt_delude;
+ 	{
+ 		struct xt_action_param local_par;
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++		local_par.in        = par->in,
++		local_par.out       = par->out,
++#else
+ 		local_par.state    = par->state;
++#endif
+ 		local_par.target   = destiny;
+ 		local_par.targinfo = par->targinfo;
+ 		destiny->target(skb, &local_par);
+@@ -96,7 +106,13 @@ chaos_tg(struct sk_buff *skb, const stru
+ 
+ 	if ((unsigned int)prandom_u32() <= reject_percentage) {
+ 		struct xt_action_param local_par;
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++		local_par.in       = par->in;
++		local_par.out      = par->out;
++		local_par.hooknum  = par->hooknum;
++#else
+ 		local_par.state    = par->state;
++#endif
+ 		local_par.target   = xt_reject;
+ 		local_par.targinfo = &reject_params;
+ 		return xt_reject->target(skb, &local_par);
+@@ -104,7 +120,12 @@ chaos_tg(struct sk_buff *skb, const stru
+ 
+ 	/* TARPIT/DELUDE may not be called from the OUTPUT chain */
+ 	if (iph->protocol == IPPROTO_TCP && info->variant != XTCHAOS_NORMAL &&
+-	    par->state->hook != NF_INET_LOCAL_OUT)
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	    par->hooknum
++#else
++	    par->state->hook
++#endif
++	    != NF_INET_LOCAL_OUT)
+ 		xt_chaos_total(skb, par);
+ 
+ 	return NF_DROP;
+--- a/extensions/xt_DELUDE.c
++++ b/extensions/xt_DELUDE.c
+@@ -139,7 +139,11 @@ static void delude_send_reset(struct net
+ 
+ 	nf_ct_attach(nskb, oldskb);
+ 
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	ip_local_out(nskb);
++#else
+ 	ip_local_out(net, nskb->sk, nskb);
++#endif
+ 	return;
+ 
+  free_nskb:
+@@ -154,7 +158,13 @@ delude_tg(struct sk_buff *skb, const str
+ 	 * a problem, as that is supported since Linux 2.6.35. But since we do not
+ 	 * actually want to have a connection open, we are still going to drop it.
+ 	 */
+-	delude_send_reset(par_net(par), skb, par->state->hook);
++	delude_send_reset(par_net(par), skb,
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++			par->hooknum
++#else
++			par->state->hook
++#endif
++		);
+ 	return NF_DROP;
+ }
+ 
+--- a/extensions/xt_DHCPMAC.c
++++ b/extensions/xt_DHCPMAC.c
+@@ -96,8 +96,12 @@ dhcpmac_tg(struct sk_buff *skb, const st
+ 	struct udphdr udpbuf, *udph;
+ 	unsigned int i;
+ 
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	if (!skb_make_writable(skb, 0))
++#else
+ 	if (skb_ensure_writable(skb, ip_hdrlen(skb) + sizeof(udpbuf) +
+ 				     sizeof(dhcpbuf)))
++#endif
+ 		return NF_DROP;
+ 
+ 	udph = skb_header_pointer(skb, ip_hdrlen(skb),
+--- a/extensions/xt_DNETMAP.c
++++ b/extensions/xt_DNETMAP.c
+@@ -345,7 +345,11 @@ out:
+ static unsigned int
+ dnetmap_tg(struct sk_buff *skb, const struct xt_action_param *par)
+ {
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	struct net *net = dev_net(par->in ? par->in : par->out);
++#else
+ 	struct net *net = dev_net(par->state->in ? par->state->in : par->state->out);
++#endif
+ 	struct dnetmap_net *dnetmap_net = dnetmap_pernet(net);
+ 	enum ip_conntrack_info ctinfo;
+ 	__be32 prenat_ip, postnat_ip, prenat_ip_prev;
+@@ -358,7 +362,11 @@ dnetmap_tg(struct sk_buff *skb, const st
+ #endif
+ 	struct dnetmap_entry *e;
+ 	struct dnetmap_prefix *p;
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	unsigned int hooknum = par->hooknum;
++#else
+ 	unsigned int hooknum = par->state->hook;
++#endif
+ 	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
+ 	__s32 jttl = tginfo->flags & XT_DNETMAP_TTL ? tginfo->ttl * HZ : jtimeout;
+ 
+@@ -480,7 +488,11 @@ bind_new_prefix:
+ 	newrange.max_addr.ip = postnat_ip;
+ 	newrange.min_proto = mr->min_proto;
+ 	newrange.max_proto = mr->max_proto;
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	return nf_nat_setup_info(ct, &newrange, HOOK2MANIP(par->hooknum));
++#else
+ 	return nf_nat_setup_info(ct, &newrange, HOOK2MANIP(par->state->hook));
++#endif
+ no_rev_map:
+ no_free_ip:
+ 	spin_unlock_bh(&dnetmap_lock);
+--- a/extensions/xt_ECHO.c
++++ b/extensions/xt_ECHO.c
+@@ -35,7 +35,11 @@ echo_tg6(struct sk_buff *oldskb, const s
+ 	void *payload;
+ 	struct flowi6 fl;
+ 	struct dst_entry *dst = NULL;
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	struct net *net = dev_net((par->in != NULL) ? par->in : par->out);
++#else
+ 	struct net *net = dev_net((par->state->in != NULL) ? par->state->in : par->state->out);
++#endif
+ 
+ 	/* This allows us to do the copy operation in fewer lines of code. */
+ 	if (skb_linearize(oldskb) < 0)
+@@ -113,7 +117,11 @@ echo_tg6(struct sk_buff *oldskb, const s
+ 		goto free_nskb;
+ 
+ 	nf_ct_attach(newskb, oldskb);
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	ip6_local_out(newskb);
++#else
+ 	ip6_local_out(par_net(par), newskb->sk, newskb);
++#endif
+ 	return NF_DROP;
+ 
+  free_nskb:
+@@ -206,7 +214,11 @@ echo_tg4(struct sk_buff *oldskb, const s
+ 		goto free_nskb;
+ 
+ 	nf_ct_attach(newskb, oldskb);
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	ip_local_out(newskb);
++#else
+ 	ip_local_out(par_net(par), newskb->sk, newskb);
++#endif
+ 	return NF_DROP;
+ 
+  free_nskb:
+--- a/extensions/xt_LOGMARK.c
++++ b/extensions/xt_LOGMARK.c
+@@ -64,7 +64,12 @@ static void logmark_ct(const struct nf_c
+ 		printk("%s""CONFIRMED", prev ? "," : "");
+ 		prev = true;
+ 	}
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	printk(" lifetime=%lus",
++	       (jiffies - ct->timeout.expires) / HZ);
++#else
+ 	printk(" lifetime=%lus", nf_ct_expires(ct) / HZ);
++#endif
+ }
+ 
+ static unsigned int
+@@ -77,7 +82,11 @@ logmark_tg(struct sk_buff *skb, const st
+ 	printk("<%u>%.*s""iif=%d hook=%s nfmark=0x%x "
+ 	       "secmark=0x%x classify=0x%x",
+ 	       info->level, (unsigned int)sizeof(info->prefix), info->prefix,
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	       skb_ifindex(skb), hook_names[par->hooknum],
++#else
+ 	       skb_ifindex(skb), hook_names[par->state->hook],
++#endif
+ 	       skb_nfmark(skb), skb_secmark(skb), skb->priority);
+ 
+ 	ct = nf_ct_get(skb, &ctinfo);
+--- a/extensions/xt_PROTO.c
++++ b/extensions/xt_PROTO.c
+@@ -14,6 +14,7 @@
+ #include <net/checksum.h>
+ #include <linux/netfilter/x_tables.h>
+ #include "xt_PROTO.h"
++#include "compat_xtables.h"
+ 
+ MODULE_AUTHOR("Shanker Wang <i@innull.com>");
+ MODULE_DESCRIPTION("Xtables: Protocol field modification target");
+@@ -26,7 +27,11 @@ proto_tg(struct sk_buff *skb, const stru
+ 	const struct xt_PROTO_info *info = par->targinfo;
+ 	int new_proto;
+ 
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	if (!skb_make_writable(skb, 0))
++#else
+ 	if (skb_ensure_writable(skb, skb->len))
++#endif
+ 		return NF_DROP;
+ 
+ 	iph = ip_hdr(skb);
+@@ -51,7 +56,11 @@ proto_tg6(struct sk_buff *skb, const str
+ 	unsigned int hdr_offset;
+ 	__be16 *fp;
+ 
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	if (!skb_make_writable(skb, 0))
++#else
+ 	if (skb_ensure_writable(skb, skb->len))
++#endif
+ 		return NF_DROP;
+ 
+ 	ip6h = ipv6_hdr(skb);
+--- a/extensions/xt_TARPIT.c
++++ b/extensions/xt_TARPIT.c
+@@ -291,8 +291,13 @@ static void tarpit_tcp4(struct net *net,
+ 		goto free_nskb;
+ 
+ 	nf_ct_attach(nskb, oldskb);
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_OUT, nskb, NULL,
++		skb_dst(nskb)->dev, dst_output);
++#else
+ 	NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_OUT, net, nskb->sk, nskb, NULL,
+ 		skb_dst(nskb)->dev, dst_output);
++#endif
+ 	return;
+ 
+  free_nskb:
+@@ -412,8 +417,13 @@ static void tarpit_tcp6(struct net *net,
+ 	nskb->ip_summed = CHECKSUM_NONE;
+ 
+ 	nf_ct_attach(nskb, oldskb);
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, nskb, NULL,
++	        skb_dst(nskb)->dev, dst_output);
++#else
+ 	NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, net, nskb->sk, nskb, NULL,
+ 	        skb_dst(nskb)->dev, dst_output);
++#endif
+ 	return;
+ 
+  free_nskb:
+@@ -451,7 +461,11 @@ tarpit_tg4(struct sk_buff *skb, const st
+ 	/* We are not interested in fragments */
+ 	if (iph->frag_off & htons(IP_OFFSET))
+ 		return NF_DROP;
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	tarpit_tcp4(par_net(par), skb, par->hooknum, info->variant);
++#else
+ 	tarpit_tcp4(par_net(par), skb, par->state->hook, info->variant);
++#endif
+ 	return NF_DROP;
+ }
+ 
+@@ -492,7 +506,11 @@ tarpit_tg6(struct sk_buff *skb, const st
+ 		pr_debug("addr is not unicast.\n");
+ 		return NF_DROP;
+ 	}
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	tarpit_tcp6(par_net(par), skb, par->hooknum, info->variant);
++#else
+ 	tarpit_tcp6(par_net(par), skb, par->state->hook, info->variant);
++#endif
+ 	return NF_DROP;
+ }
+ #endif
+--- a/extensions/xt_iface.c
++++ b/extensions/xt_iface.c
+@@ -45,9 +45,17 @@ static const struct net_device *iface_ge
+     const struct xt_action_param *par, struct net_device **put)
+ {
+ 	if (info->flags & XT_IFACE_DEV_IN)
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++		return par->in;
++#else
+ 		return par->state->in;
++#endif
+ 	else if (info->flags & XT_IFACE_DEV_OUT)
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++		return par->out;
++#else
+ 		return par->state->out;
++#endif
+ 	return *put = dev_get_by_name(&init_net, info->ifname);
+ }
+ 
+--- a/extensions/xt_lscan.c
++++ b/extensions/xt_lscan.c
+@@ -205,7 +205,11 @@ lscan_mt(const struct sk_buff *skb, stru
+ 		unsigned int n;
+ 
+ 		n = lscan_mt_full(ctdata->mark & connmark_mask, ctstate,
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++		    par->in == init_net.loopback_dev, tcph,
++#else
+ 		    par->state->in == init_net.loopback_dev, tcph,
++#endif
+ 		    skb->len - par->thoff - 4 * tcph->doff);
+ 
+ 		ctdata->mark = (ctdata->mark & ~connmark_mask) | n;
+--- a/extensions/ACCOUNT/xt_ACCOUNT.c
++++ b/extensions/ACCOUNT/xt_ACCOUNT.c
+@@ -221,7 +221,14 @@ static int ipt_acc_table_insert(struct i
+ 			int j;  /* needs to be signed, otherwise we risk endless loop */
+ 
+ 			pr_debug("ACCOUNT: Found free slot: %d\n", i);
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wstringop-truncation"
++#endif
+ 			strncpy(ipt_acc_tables[i].name, name, ACCOUNT_TABLE_NAME_LEN-1);
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++#pragma GCC diagnostic pop
++#endif
+ 
+ 			ipt_acc_tables[i].ip = ip;
+ 			ipt_acc_tables[i].netmask = netmask;
+@@ -484,7 +491,12 @@ static void ipt_acc_depth2_insert(struct
+ static unsigned int
+ ipt_acc_target(struct sk_buff *skb, const struct xt_action_param *par)
+ {
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	struct net *net = dev_net(par->in ? par->in : par->out);
++	struct ipt_acc_net *ian = net_generic(net, ipt_acc_net_id);
++#else
+ 	struct ipt_acc_net *ian = net_generic(par->state->net, ipt_acc_net_id);
++#endif
+ 	struct ipt_acc_table *ipt_acc_tables = ian->ipt_acc_tables;
+ 	const struct ipt_acc_info *info =
+ 		par->targinfo;
+--- a/extensions/pknock/xt_pknock.c
++++ b/extensions/pknock/xt_pknock.c
+@@ -343,10 +343,18 @@ has_logged_during_this_minute(const stru
+  *
+  * @r: rule
+  */
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++static void peer_gc(unsigned long r)
++#else
+ static void peer_gc(struct timer_list *tl)
++#endif
+ {
+ 	unsigned int i;
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	struct xt_pknock_rule *rule = (struct xt_pknock_rule *)r;
++#else
+ 	struct xt_pknock_rule *rule = from_timer(rule, tl, timer);
++#endif
+ 	struct peer *peer;
+ 	struct list_head *pos, *n;
+ 
+@@ -448,7 +456,13 @@ add_rule(struct xt_pknock_mtinfo *info)
+ 	rule->peer_head      = alloc_hashtable(peer_hashsize);
+ 	if (rule->peer_head == NULL)
+ 		goto out;
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++	init_timer(&rule->timer);
++	rule->timer.function	= peer_gc;
++	rule->timer.data	= (unsigned long)rule;
++#else
+ 	timer_setup(&rule->timer, peer_gc, 0);
++#endif
+ 	rule->status_proc = proc_create_data(info->rule_name, 0, pde,
+ 	                    &pknock_proc_ops, rule);
+ 	if (rule->status_proc == NULL)

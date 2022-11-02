@@ -1,0 +1,33 @@
+--- a/drivers/hwmon/mcp3021.c
++++ b/drivers/hwmon/mcp3021.c
+@@ -103,7 +103,7 @@ static DEVICE_ATTR_RO(in0_input);
+ static int mcp3021_probe(struct i2c_client *client,
+ 				const struct i2c_device_id *id)
+ {
+-	int err;
++	int err, idx;
+ 	struct mcp3021_data *data = NULL;
+ 	struct device_node *np = client->dev.of_node;
+ 
+@@ -117,6 +117,21 @@ static int mcp3021_probe(struct i2c_clie
+ 
+ 	i2c_set_clientdata(client, data);
+ 
++	if (np && of_property_read_bool(np, "scan-for-address")) {
++		if (mcp3021_read16(client) < 0) {
++
++			dev_info(&client->dev, "Scanning address range.");
++
++			for(idx = 0; idx < 8; idx++ ) {
++				client->addr = 0x48 + idx;
++				if (mcp3021_read16(client) >= 0) {
++					dev_info(&client->dev, "Found: %s at %02X", id->name, client->addr);
++					break;
++				}
++			}
++		}
++	}
++
+ 	if (np) {
+ 		if (!of_property_read_u32(np, "reference-voltage-microvolt",
+ 					  &data->vdd))

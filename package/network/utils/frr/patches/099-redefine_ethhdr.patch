@@ -1,0 +1,19 @@
+Index: lib/prefix.h
+===================================================================
+--- frr-5.0.2.orig/lib/prefix.h.orig
++++ frr-5.0.2/lib/prefix.h
+@@ -24,12 +24,12 @@
+ 
+ #ifdef SUNOS_5
+ #include <sys/ethernet.h>
+-#else
++/*#else
+ #ifdef GNU_LINUX
+ #include <net/ethernet.h>
+ #else
+ #include <netinet/if_ether.h>
+-#endif
++#endif*/
+ #endif
+ #include "sockunion.h"
+ #include "ipaddr.h"

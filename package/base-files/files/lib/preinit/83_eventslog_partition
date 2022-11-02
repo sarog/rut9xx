@@ -1,0 +1,27 @@
+#!/bin/sh
+# Copyright (C) 2021 Teltonika
+
+LOG_PART="event"
+
+prepare_evtlog() {
+	[ ! -e /log ] && {
+		mkdir /log
+	}
+
+	# prepare jffs2 event-log partition
+	local mtd=$(grep -i -m 1 "$LOG_PART" /proc/mtd | cut -c 4- | cut -d ':' -f1)
+	[ -z "$mtd" ] && {
+		return 0
+	}
+
+	# Unlock event-log partition
+	mtd unlock /dev/mtd$mtd
+
+	local magic="$(hexdump -e '"%02X"' -n 2 /dev/mtdblock$mtd | cut -c -4)"
+	[ -n "$magic" -a "$magic" != "1985" ] && {
+		echo "- preparing events-log partition -"
+		mtd erase /dev/mtd$mtd
+	}
+}
+
+[ "$INITRAMFS" = "1" ] || boot_hook_add preinit_main prepare_evtlog

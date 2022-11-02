@@ -1,0 +1,24 @@
+--- a/upnphttp.c
++++ b/upnphttp.c
+@@ -614,6 +614,7 @@
+ 	struct string_s str;
+ 	char body[4096];
+ 	int a, v, p, i;
++	int connections = 0;
+
+ 	INIT_STR(str, body);
+
+@@ -651,10 +652,11 @@
+ 				i, clients[i].type->name, inet_ntoa(clients[i].addr),
+ 				clients[i].mac[0], clients[i].mac[1], clients[i].mac[2],
+ 				clients[i].mac[3], clients[i].mac[4], clients[i].mac[5], clients[i].connections);
++		connections += clients[i].connections;
+ 	}
+ 	strcatf(&str, "</table>");
+
+-	strcatf(&str, "<br>%d connection%s currently open<br>", number_of_children, (number_of_children == 1 ? "" : "s"));
++	strcatf(&str, "<br>%d connection%s currently open<br>", connections, (connections == 1 ? "" : "s"));
+ 	strcatf(&str, "</BODY></HTML>\r\n");
+
+ 	BuildResp_upnphttp(h, str.data, str.off);
+

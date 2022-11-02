@@ -1,7 +1,7 @@
 /*
  * ar8327.c: AR8216 switch driver
  *
- * Copyright (C) 2009 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
  * Copyright (C) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or
@@ -124,10 +124,50 @@ ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
 		break;
 	}
 
-	if (cfg->mac06_exchange_en)
-		t |= AR8337_PAD_MAC06_EXCHANGE_EN;
-
 	return t;
+}
+
+static void
+ar8327_phy_rgmii_set(struct ar8xxx_priv *priv, struct phy_device *phydev)
+{
+	u16 phy_val = 0;
+	int phyaddr = phydev->mdio.addr;
+	struct device_node *np = phydev->mdio.dev.of_node;
+
+	if (!np)
+		return;
+
+	if (!of_property_read_bool(np, "qca,phy-rgmii-en")) {
+		pr_err("ar8327: qca,phy-rgmii-en is not specified\n");
+		return;
+	}
+	ar8xxx_phy_dbg_read(priv, phyaddr,
+				AR8327_PHY_MODE_SEL, &phy_val);
+	phy_val |= AR8327_PHY_MODE_SEL_RGMII;
+	ar8xxx_phy_dbg_write(priv, phyaddr,
+				AR8327_PHY_MODE_SEL, phy_val);
+
+	/* set rgmii tx clock delay if needed */
+	if (!of_property_read_bool(np, "qca,txclk-delay-en")) {
+		pr_err("ar8327: qca,txclk-delay-en is not specified\n");
+		return;
+	}
+	ar8xxx_phy_dbg_read(priv, phyaddr,
+				AR8327_PHY_SYS_CTRL, &phy_val);
+	phy_val |= AR8327_PHY_SYS_CTRL_RGMII_TX_DELAY;
+	ar8xxx_phy_dbg_write(priv, phyaddr,
+				AR8327_PHY_SYS_CTRL, phy_val);
+
+	/* set rgmii rx clock delay if needed */
+	if (!of_property_read_bool(np, "qca,rxclk-delay-en")) {
+		pr_err("ar8327: qca,rxclk-delay-en is not specified\n");
+		return;
+	}
+	ar8xxx_phy_dbg_read(priv, phyaddr,
+				AR8327_PHY_TEST_CTRL, &phy_val);
+	phy_val |= AR8327_PHY_TEST_CTRL_RGMII_RX_DELAY;
+	ar8xxx_phy_dbg_write(priv, phyaddr,
+				AR8327_PHY_TEST_CTRL, phy_val);
 }
 
 static void
@@ -142,13 +182,10 @@ ar8327_phy_fixup(struct ar8xxx_priv *priv, int phy)
 		break;
 
 	case 2:
-		ar8xxx_phy_mmd_write(priv, phy, 0x7, 0x3c);
-		ar8xxx_phy_mmd_write(priv, phy, 0x4007, 0x0);
+		ar8xxx_phy_mmd_write(priv, phy, 0x7, 0x3c, 0x0);
 		/* fallthrough */
 	case 4:
-		ar8xxx_phy_mmd_write(priv, phy, 0x3, 0x800d);
-		ar8xxx_phy_mmd_write(priv, phy, 0x4003, 0x803f);
-
+		ar8xxx_phy_mmd_write(priv, phy, 0x3, 0x800d, 0x803f);
 		ar8xxx_phy_dbg_write(priv, phy, 0x3d, 0x6860);
 		ar8xxx_phy_dbg_write(priv, phy, 0x5, 0x2c46);
 		ar8xxx_phy_dbg_write(priv, phy, 0x3c, 0x6000);
@@ -229,9 +266,7 @@ ar8327_led_work_func(struct work_struct *work)
 
 	aled = container_of(work, struct ar8327_led, led_work);
 
-	spin_lock(&aled->lock);
 	pattern = aled->pattern;
-	spin_unlock(&aled->lock);
 
 	ar8327_set_led_pattern(aled->sw_priv, aled->led_num,
 			       pattern);
@@ -314,9 +349,7 @@ ar8327_led_enable_hw_mode_show(struct device *dev,
 	struct ar8327_led *aled = led_cdev_to_ar8327_led(led_cdev);
 	ssize_t ret = 0;
 
-	spin_lock(&aled->lock);
-	ret += sprintf(buf, "%d\n", aled->enable_hw_mode);
-	spin_unlock(&aled->lock);
+	ret += scnprintf(buf, PAGE_SIZE, "%d\n", aled->enable_hw_mode);
 
 	return ret;
 }
@@ -511,21 +544,24 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
 
 	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
+	if (chip_is_ar8337(priv) && !pdata->pad0_cfg->mac06_exchange_dis)
+	    t |= AR8337_PAD_MAC06_EXCHANGE_EN;
 	ar8xxx_write(priv, AR8327_REG_PAD0_MODE, t);
+
 	t = ar8327_get_pad_cfg(pdata->pad5_cfg);
 	ar8xxx_write(priv, AR8327_REG_PAD5_MODE, t);
 	t = ar8327_get_pad_cfg(pdata->pad6_cfg);
 	ar8xxx_write(priv, AR8327_REG_PAD6_MODE, t);
 
-	pos = ar8xxx_read(priv, AR8327_REG_POWER_ON_STRIP);
+	pos = ar8xxx_read(priv, AR8327_REG_POWER_ON_STRAP);
 	new_pos = pos;
 
 	led_cfg = pdata->led_cfg;
 	if (led_cfg) {
 		if (led_cfg->open_drain)
-			new_pos |= AR8327_POWER_ON_STRIP_LED_OPEN_EN;
+			new_pos |= AR8327_POWER_ON_STRAP_LED_OPEN_EN;
 		else
-			new_pos &= ~AR8327_POWER_ON_STRIP_LED_OPEN_EN;
+			new_pos &= ~AR8327_POWER_ON_STRAP_LED_OPEN_EN;
 
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, led_cfg->led_ctrl0);
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, led_cfg->led_ctrl1);
@@ -533,7 +569,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 		ar8xxx_write(priv, AR8327_REG_LED_CTRL3, led_cfg->led_ctrl3);
 
 		if (new_pos != pos)
-			new_pos |= AR8327_POWER_ON_STRIP_POWER_ON_SEL;
+			new_pos |= AR8327_POWER_ON_STRAP_POWER_ON_SEL;
 	}
 
 	if (pdata->sgmii_cfg) {
@@ -550,12 +586,12 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 		ar8xxx_write(priv, AR8327_REG_SGMII_CTRL, t);
 
 		if (pdata->sgmii_cfg->serdes_aen)
-			new_pos &= ~AR8327_POWER_ON_STRIP_SERDES_AEN;
+			new_pos &= ~AR8327_POWER_ON_STRAP_SERDES_AEN;
 		else
-			new_pos |= AR8327_POWER_ON_STRIP_SERDES_AEN;
+			new_pos |= AR8327_POWER_ON_STRAP_SERDES_AEN;
 	}
 
-	ar8xxx_write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
+	ar8xxx_write(priv, AR8327_REG_POWER_ON_STRAP, new_pos);
 
 	if (pdata->leds && pdata->num_leds) {
 		int i;
@@ -626,11 +662,11 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 	if (!priv->chip_data)
 		return -ENOMEM;
 
-	if (priv->phy->dev.of_node)
-		ret = ar8327_hw_config_of(priv, priv->phy->dev.of_node);
+	if (priv->pdev->of_node)
+		ret = ar8327_hw_config_of(priv, priv->pdev->of_node);
 	else
 		ret = ar8327_hw_config_pdata(priv,
-					     priv->phy->dev.platform_data);
+					     priv->phy->mdio.dev.platform_data);
 
 	if (ret)
 		return ret;
@@ -692,12 +728,20 @@ ar8327_init_port(struct ar8xxx_priv *priv, int port)
 	else
 		t = AR8216_PORT_STATUS_LINK_AUTO;
 
-	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
+	if (port != AR8216_PORT_CPU && port != 6) {
+		/*hw limitation:if configure mac when there is traffic,
+		port MAC may work abnormal. Need disable lan&wan mac at fisrt*/
+		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
+		msleep(100);
+		t |= AR8216_PORT_STATUS_FLOW_CONTROL;
+		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
+	} else {
+		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
+	}
+
 	ar8xxx_write(priv, AR8327_REG_PORT_HEADER(port), 0);
 
-	t = 1 << AR8327_PORT_VLAN0_DEF_SVID_S;
-	t |= 1 << AR8327_PORT_VLAN0_DEF_CVID_S;
-	ar8xxx_write(priv, AR8327_REG_PORT_VLAN0(port), t);
+	ar8xxx_write(priv, AR8327_REG_PORT_VLAN0(port), 0);
 
 	t = AR8327_PORT_VLAN1_OUT_MODE_UNTOUCH << AR8327_PORT_VLAN1_OUT_MODE_S;
 	ar8xxx_write(priv, AR8327_REG_PORT_VLAN1(port), t);
@@ -744,8 +788,7 @@ ar8327_read_port_eee_status(struct ar8xxx_priv *priv, int port)
 	phy = port - 1;
 
 	/* EEE Ability Auto-negotiation Result */
-	ar8xxx_phy_mmd_write(priv, phy, 0x7, 0x8000);
-	t = ar8xxx_phy_mmd_read(priv, phy, 0x4007);
+	t = ar8xxx_phy_mmd_read(priv, phy, 0x7, 0x8000);
 
 	return mmd_eee_adv_to_ethtool_adv_t(t);
 }
@@ -763,6 +806,63 @@ ar8327_atu_flush(struct ar8xxx_priv *priv)
 			     AR8327_ATU_FUNC_BUSY);
 
 	return ret;
+}
+
+static int
+ar8327_atu_flush_port(struct ar8xxx_priv *priv, int port)
+{
+	u32 t;
+	int ret;
+
+	ret = ar8216_wait_bit(priv, AR8327_REG_ATU_FUNC,
+			      AR8327_ATU_FUNC_BUSY, 0);
+	if (!ret) {
+		t = (port << AR8327_ATU_PORT_NUM_S);
+		t |= AR8327_ATU_FUNC_OP_FLUSH_PORT;
+		t |= AR8327_ATU_FUNC_BUSY;
+		ar8xxx_write(priv, AR8327_REG_ATU_FUNC, t);
+	}
+
+	return ret;
+}
+
+static int
+ar8327_get_port_igmp(struct ar8xxx_priv *priv, int port)
+{
+	u32 fwd_ctrl, frame_ack;
+
+	fwd_ctrl = (BIT(port) << AR8327_FWD_CTRL1_IGMP_S);
+	frame_ack = ((AR8327_FRAME_ACK_CTRL_IGMP_MLD |
+		      AR8327_FRAME_ACK_CTRL_IGMP_JOIN |
+		      AR8327_FRAME_ACK_CTRL_IGMP_LEAVE) <<
+		     AR8327_FRAME_ACK_CTRL_S(port));
+
+	return (ar8xxx_read(priv, AR8327_REG_FWD_CTRL1) &
+			fwd_ctrl) == fwd_ctrl &&
+		(ar8xxx_read(priv, AR8327_REG_FRAME_ACK_CTRL(port)) &
+			frame_ack) == frame_ack;
+}
+
+static void
+ar8327_set_port_igmp(struct ar8xxx_priv *priv, int port, int enable)
+{
+	int reg_frame_ack = AR8327_REG_FRAME_ACK_CTRL(port);
+	u32 val_frame_ack = (AR8327_FRAME_ACK_CTRL_IGMP_MLD |
+			  AR8327_FRAME_ACK_CTRL_IGMP_JOIN |
+			  AR8327_FRAME_ACK_CTRL_IGMP_LEAVE) <<
+			 AR8327_FRAME_ACK_CTRL_S(port);
+
+	if (enable) {
+		ar8xxx_rmw(priv, AR8327_REG_FWD_CTRL1,
+			   BIT(port) << AR8327_FWD_CTRL1_MC_FLOOD_S,
+			   BIT(port) << AR8327_FWD_CTRL1_IGMP_S);
+		ar8xxx_reg_set(priv, reg_frame_ack, val_frame_ack);
+	} else {
+		ar8xxx_rmw(priv, AR8327_REG_FWD_CTRL1,
+			   BIT(port) << AR8327_FWD_CTRL1_IGMP_S,
+			   BIT(port) << AR8327_FWD_CTRL1_MC_FLOOD_S);
+		ar8xxx_reg_clear(priv, reg_frame_ack, val_frame_ack);
+	}
 }
 
 static void
@@ -828,10 +928,19 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 
 	t = pvid << AR8327_PORT_VLAN0_DEF_SVID_S;
 	t |= pvid << AR8327_PORT_VLAN0_DEF_CVID_S;
+	if (priv->vlan && priv->port_vlan_prio[port]) {
+		u32 prio = priv->port_vlan_prio[port];
+
+		t |= prio << AR8327_PORT_VLAN0_DEF_SPRI_S;
+		t |= prio << AR8327_PORT_VLAN0_DEF_CPRI_S;
+	}
 	ar8xxx_write(priv, AR8327_REG_PORT_VLAN0(port), t);
 
 	t = AR8327_PORT_VLAN1_PORT_VLAN_PROP;
 	t |= egress << AR8327_PORT_VLAN1_OUT_MODE_S;
+	if (priv->vlan && priv->port_vlan_prio[port])
+		t |= AR8327_PORT_VLAN1_VLAN_PRI_PROP;
+
 	ar8xxx_write(priv, AR8327_REG_PORT_VLAN1(port), t);
 
 	t = members;
@@ -976,8 +1085,10 @@ ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
 {
 	int timeout = 20;
 
-	while (ar8xxx_mii_read32(priv, r2, r1) & AR8327_ATU_FUNC_BUSY && --timeout)
-                udelay(10);
+	while (ar8xxx_mii_read32(priv, r2, r1) & AR8327_ATU_FUNC_BUSY && --timeout) {
+		udelay(10);
+		cond_resched();
+	}
 
 	if (!timeout)
 		pr_err("ar8327: timeout waiting for atu to become ready\n");
@@ -989,8 +1100,7 @@ static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
 	struct mii_bus *bus = priv->mii_bus;
 	u16 r2, page;
 	u16 r1_data0, r1_data1, r1_data2, r1_func;
-	u32 t, val0, val1, val2;
-	int i;
+	u32 val0, val1, val2;
 
 	split_addr(AR8327_REG_ATU_DATA0, &r1_data0, &r2, &page);
 	r2 |= 0x10;
@@ -1027,12 +1137,7 @@ static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
 		if (!*status)
 			break;
 
-		i = 0;
-		t = AR8327_ATU_PORT0;
-		while (!(val1 & t) && ++i < AR8327_NUM_PORTS)
-			t <<= 1;
-
-		a->port = i;
+		a->portmap = (val1 & AR8327_ATU_PORTS) >> AR8327_ATU_PORTS_S;
 		a->mac[0] = (val0 & AR8327_ATU_ADDR0) >> AR8327_ATU_ADDR0_S;
 		a->mac[1] = (val0 & AR8327_ATU_ADDR1) >> AR8327_ATU_ADDR1_S;
 		a->mac[2] = (val0 & AR8327_ATU_ADDR2) >> AR8327_ATU_ADDR2_S;
@@ -1066,6 +1171,141 @@ ar8327_sw_hw_apply(struct switch_dev *dev)
 	return 0;
 }
 
+int
+ar8327_sw_get_port_igmp_snooping(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	mutex_lock(&priv->reg_mutex);
+	val->value.i = ar8327_get_port_igmp(priv, port);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+int
+ar8327_sw_set_port_igmp_snooping(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	mutex_lock(&priv->reg_mutex);
+	ar8327_set_port_igmp(priv, port, val->value.i);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+int
+ar8327_sw_get_igmp_snooping(struct switch_dev *dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val)
+{
+	int port;
+
+	for (port = 0; port < dev->ports; port++) {
+		val->port_vlan = port;
+		if (ar8327_sw_get_port_igmp_snooping(dev, attr, val) ||
+		    !val->value.i)
+			break;
+	}
+
+	return 0;
+}
+
+int
+ar8327_sw_set_igmp_snooping(struct switch_dev *dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val)
+{
+	int port;
+
+	for (port = 0; port < dev->ports; port++) {
+		val->port_vlan = port;
+		if (ar8327_sw_set_port_igmp_snooping(dev, attr, val))
+			break;
+	}
+
+	return 0;
+}
+
+int
+ar8327_sw_get_igmp_v3(struct switch_dev *dev,
+		      const struct switch_attr *attr,
+		      struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	u32 val_reg;
+
+	mutex_lock(&priv->reg_mutex);
+	val_reg = ar8xxx_read(priv, AR8327_REG_FRAME_ACK_CTRL1);
+	val->value.i = ((val_reg & AR8327_FRAME_ACK_CTRL_IGMP_V3_EN) != 0);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+int
+ar8327_sw_set_igmp_v3(struct switch_dev *dev,
+		      const struct switch_attr *attr,
+		      struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+
+	mutex_lock(&priv->reg_mutex);
+	if (val->value.i)
+		ar8xxx_reg_set(priv, AR8327_REG_FRAME_ACK_CTRL1,
+			       AR8327_FRAME_ACK_CTRL_IGMP_V3_EN);
+	else
+		ar8xxx_reg_clear(priv, AR8327_REG_FRAME_ACK_CTRL1,
+				 AR8327_FRAME_ACK_CTRL_IGMP_V3_EN);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int
+ar8327_sw_set_port_vlan_prio(struct switch_dev *dev, const struct switch_attr *attr,
+			     struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+	if (port == 0 || port == 6)
+		return -EOPNOTSUPP;
+	if (val->value.i < 0 || val->value.i > 7)
+		return -EINVAL;
+
+	priv->port_vlan_prio[port] = val->value.i;
+
+	return 0;
+}
+
+static int
+ar8327_sw_get_port_vlan_prio(struct switch_dev *dev, const struct switch_attr *attr,
+                  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+
+	val->value.i = priv->port_vlan_prio[port];
+
+	return 0;
+}
+
 static const struct switch_attr ar8327_sw_attr_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1080,6 +1320,20 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 		.name = "reset_mibs",
 		.description = "Reset all MIB counters",
 		.set = ar8xxx_sw_set_reset_mibs,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "ar8xxx_mib_poll_interval",
+		.description = "MIB polling interval in msecs (0 to disable)",
+		.set = ar8xxx_sw_set_mib_poll_interval,
+		.get = ar8xxx_sw_get_mib_poll_interval
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "ar8xxx_mib_type",
+		.description = "MIB type (0=basic 1=extended)",
+		.set = ar8xxx_sw_set_mib_type,
+		.get = ar8xxx_sw_get_mib_type
 	},
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1112,13 +1366,42 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 		.set = ar8xxx_sw_set_mirror_source_port,
 		.get = ar8xxx_sw_get_mirror_source_port,
 		.max = AR8327_NUM_PORTS - 1
- 	},
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "arl_age_time",
+		.description = "ARL age time (secs)",
+		.set = ar8xxx_sw_set_arl_age_time,
+		.get = ar8xxx_sw_get_arl_age_time,
+	},
 	{
 		.type = SWITCH_TYPE_STRING,
 		.name = "arl_table",
 		.description = "Get ARL table",
 		.set = NULL,
 		.get = ar8xxx_sw_get_arl_table,
+	},
+	{
+		.type = SWITCH_TYPE_NOVAL,
+		.name = "flush_arl_table",
+		.description = "Flush ARL table",
+		.set = ar8xxx_sw_set_flush_arl_table,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "igmp_snooping",
+		.description = "Enable IGMP Snooping",
+		.set = ar8327_sw_set_igmp_snooping,
+		.get = ar8327_sw_get_igmp_snooping,
+		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "igmp_v3",
+		.description = "Enable IGMPv3 support",
+		.set = ar8327_sw_set_igmp_v3,
+		.get = ar8327_sw_get_igmp_v3,
+		.max = 1
 	},
 };
 
@@ -1144,6 +1427,28 @@ static const struct switch_attr ar8327_sw_attr_port[] = {
 		.get = ar8327_sw_get_eee,
 		.max = 1,
 	},
+	{
+		.type = SWITCH_TYPE_NOVAL,
+		.name = "flush_arl_table",
+		.description = "Flush port's ARL table entries",
+		.set = ar8xxx_sw_set_flush_port_arl_table,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "igmp_snooping",
+		.description = "Enable port's IGMP Snooping",
+		.set = ar8327_sw_set_port_igmp_snooping,
+		.get = ar8327_sw_get_port_igmp_snooping,
+		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "vlan_prio",
+		.description = "Port VLAN default priority (VLAN PCP) (0-7)",
+		.set = ar8327_sw_set_port_vlan_prio,
+		.get = ar8327_sw_get_port_vlan_prio,
+		.max = 7,
+	},
 };
 
 static const struct switch_dev_ops ar8327_sw_ops = {
@@ -1166,6 +1471,7 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 	.apply_config = ar8327_sw_hw_apply,
 	.reset_switch = ar8xxx_sw_reset_switch,
 	.get_port_link = ar8xxx_sw_get_port_link,
+	.get_port_stats = ar8xxx_sw_get_port_stats,
 };
 
 const struct ar8xxx_chip ar8327_chip = {
@@ -1175,11 +1481,12 @@ const struct ar8xxx_chip ar8327_chip = {
 
 	.name = "Atheros AR8327",
 	.ports = AR8327_NUM_PORTS,
-	.vlans = AR8X16_MAX_VLANS,
+	.vlans = AR83X7_MAX_VLANS,
 	.swops = &ar8327_sw_ops,
 
 	.reg_port_stats_start = 0x1000,
 	.reg_port_stats_length = 0x100,
+	.reg_arl_ctrl = AR8327_REG_ARL_CTRL,
 
 	.hw_init = ar8327_hw_init,
 	.cleanup = ar8327_cleanup,
@@ -1189,6 +1496,7 @@ const struct ar8xxx_chip ar8327_chip = {
 	.read_port_status = ar8327_read_port_status,
 	.read_port_eee_status = ar8327_read_port_eee_status,
 	.atu_flush = ar8327_atu_flush,
+	.atu_flush_port = ar8327_atu_flush_port,
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
 	.phy_fixup = ar8327_phy_fixup,
@@ -1198,7 +1506,9 @@ const struct ar8xxx_chip ar8327_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
-	.mib_func = AR8327_REG_MIB_FUNC
+	.mib_func = AR8327_REG_MIB_FUNC,
+	.mib_rxb_id = AR8236_MIB_RXB_ID,
+	.mib_txb_id = AR8236_MIB_TXB_ID,
 };
 
 const struct ar8xxx_chip ar8337_chip = {
@@ -1208,11 +1518,12 @@ const struct ar8xxx_chip ar8337_chip = {
 
 	.name = "Atheros AR8337",
 	.ports = AR8327_NUM_PORTS,
-	.vlans = AR8X16_MAX_VLANS,
+	.vlans = AR83X7_MAX_VLANS,
 	.swops = &ar8327_sw_ops,
 
 	.reg_port_stats_start = 0x1000,
 	.reg_port_stats_length = 0x100,
+	.reg_arl_ctrl = AR8327_REG_ARL_CTRL,
 
 	.hw_init = ar8327_hw_init,
 	.cleanup = ar8327_cleanup,
@@ -1222,15 +1533,18 @@ const struct ar8xxx_chip ar8337_chip = {
 	.read_port_status = ar8327_read_port_status,
 	.read_port_eee_status = ar8327_read_port_eee_status,
 	.atu_flush = ar8327_atu_flush,
+	.atu_flush_port = ar8327_atu_flush_port,
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
 	.phy_fixup = ar8327_phy_fixup,
 	.set_mirror_regs = ar8327_set_mirror_regs,
 	.get_arl_entry = ar8327_get_arl_entry,
 	.sw_hw_apply = ar8327_sw_hw_apply,
+	.phy_rgmii_set = ar8327_phy_rgmii_set,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
-	.mib_func = AR8327_REG_MIB_FUNC
+	.mib_func = AR8327_REG_MIB_FUNC,
+	.mib_rxb_id = AR8236_MIB_RXB_ID,
+	.mib_txb_id = AR8236_MIB_TXB_ID,
 };
-

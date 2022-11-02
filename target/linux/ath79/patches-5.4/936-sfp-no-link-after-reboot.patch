@@ -1,0 +1,31 @@
+Index: linux-5.4.147/drivers/net/phy/at803x.c
+===================================================================
+--- linux-5.4.147.orig/drivers/net/phy/at803x.c
++++ linux-5.4.147/drivers/net/phy/at803x.c
+@@ -18,6 +18,7 @@
+ #include <linux/phylink.h>
+ #include <linux/bitfield.h>
+ 
++#define AT803X_CONTROL_REGISTER	0x00
+ #define AT803X_SPECIFIC_FUNCTION_CONTROL	0x10
+ #define AT803X_SFC_ASSERT_CRS			BIT(11)
+ #define AT803X_SFC_FORCE_LINK			BIT(10)
+@@ -345,7 +346,6 @@ static int at803x_check_mode(struct phy_
+ 	if (phydev->drv->phy_id == ATH8031_PHY_ID) {
+ 
+ 		mode = (phy_read(phydev, AT803X_REG_CHIP_CONFIG)>>4) & AT803X_MODE_CFG_MASK;
+-	//	phydev_info(phydev, "%s() call MODE: %02X \n",__func__, mode);
+ 		mutex_lock(&phydev->mdio.bus->mdio_lock);
+ 
+ 		if (mode == AT803X_MODE_CFG_BX1000_RGMII_50 ||
+@@ -379,6 +379,10 @@ static int at803x_probe(struct phy_devic
+ 	struct at803x_priv *priv;
+ 	int ret;
+ 
++	/* need to reset phy as it do not initialize after reboot*/
++	phy_write(phydev, AT803X_CONTROL_REGISTER, 0x8000); 
++	msleep(5);
++
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+ 		return -ENOMEM;

@@ -1,0 +1,123 @@
+--- a/ubus.c
++++ b/ubus.c
+@@ -21,12 +21,15 @@
+ #include <libubox/blobmsg_json.h>
+ #include <libubox/avl.h>
+ #include <libubox/avl-cmp.h>
++#include <arpa/inet.h>
+ #include <stdio.h>
+ #include <poll.h>
+ 
+ #include "uhttpd.h"
+ #include "plugin.h"
+ 
++#define PORT_SIZE 8
++
+ static const struct uhttpd_ops *ops;
+ static struct config *_conf;
+ #define conf (*_conf)
+@@ -265,6 +268,52 @@ static void uh_ubus_ubus_error(struct cl
+ 	uh_ubus_error(cl, err, ubus_strerror(err));
+ }
+ 
++static int ip_block(struct client *cl, int res)
++{
++	struct blob_buf b = { 0 };
++	uint32_t id;
++	int ret = 0;
++	char str_port[PORT_SIZE] = { 0 };
++
++	if (ubus_lookup_id(ctx, "ip_block", &id)) {
++		return 1;
++	}
++
++	if (blob_buf_init(&b, 0)) {
++		return 1;
++	}
++
++	if (cl->peer_addr.family == AF_INET) {
++		blobmsg_add_string(&b, "ip", inet_ntoa(cl->peer_addr.in));
++		blobmsg_add_string(&b, "destination_ip", inet_ntoa(cl->srv_addr.in));
++	} else {
++		char addr[INET6_ADDRSTRLEN] = { 0 };
++		char dst_addr[INET6_ADDRSTRLEN] = { 0 };
++
++		if (!inet_ntop(AF_INET6, &cl->peer_addr.in6, addr, INET6_ADDRSTRLEN) ||
++				!inet_ntop(AF_INET6, &cl->srv_addr.in6, dst_addr, INET6_ADDRSTRLEN)) {
++			ret = 1;
++			goto error;
++		}
++
++		blobmsg_add_string(&b, "ip", addr);
++		blobmsg_add_string(&b, "destination_ip", dst_addr);
++	}
++
++	snprintf(str_port, PORT_SIZE, "%d", cl->srv_addr.port);
++	blobmsg_add_string(&b, "port", str_port);
++
++	if (ubus_invoke(ctx, id, res ? "push" : "unblock", b.head, NULL, NULL, 3000)) {
++		ret = 1;
++		goto error;
++	}
++
++error:
++	blob_buf_free(&b);
++
++	return ret;
++}
++
+ static void uh_ubus_allowed_cb(struct ubus_request *req, int type, struct blob_attr *msg)
+ {
+ 	struct blob_attr *tb[__SES_MAX];
+@@ -457,10 +506,13 @@ uh_ubus_request_cb(struct ubus_request *
+ 	void *r;
+ 	int rem;
+ 
++	if (du->filter) {
++		ip_block(cl, ret);
++	}
++
+ 	blob_buf_init(&buf, 0);
+ 
+ 	uloop_timeout_cancel(&du->timeout);
+-
+ 	/* Legacy format always uses "result" array - even for errors and empty
+ 	 * results. */
+ 	if (du->legacy) {
+@@ -737,7 +789,13 @@ static void uh_ubus_handle_request_objec
+ 		if (!data.sid || !data.object || !data.function || !data.data)
+ 			goto error;
+ 
++		// Special case for ip_block feature (#6117)
+ 		du->func = data.function;
++		if (!strcmp(data.object, "session") &&
++				!strcmp(du->func, "login")) {
++			du->filter = 1;
++		}
++
+ 		if (ubus_lookup_id(ctx, data.object, &du->obj)) {
+ 			err = ERROR_OBJECT;
+ 			goto error;
+@@ -820,6 +878,11 @@ static void uh_ubus_call(struct client *
+ 		goto error;
+ 
+ 	du->func = data.method;
++	if (!strcmp(path, "session") &&
++			!strcmp(du->func, "login")) {
++		du->filter = 1;
++	}
++
+ 	if (ubus_lookup_id(ctx, path, &du->obj)) {
+ 		err = ERROR_OBJECT;
+ 		goto error;
+--- a/uhttpd.h
++++ b/uhttpd.h
+@@ -216,6 +216,8 @@ struct dispatch_ubus {
+ 
+ 	uint32_t obj;
+ 	const char *func;
++	
++	uint8_t filter;
+ 
+ 	struct blob_buf buf;
+ 	bool req_pending;

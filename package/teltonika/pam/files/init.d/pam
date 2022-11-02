@@ -1,0 +1,103 @@
+#!/bin/sh /etc/rc.common
+
+START=18
+STOP=90
+
+USE_PROCD=1
+
+PAM_DIR="/tmp/pam.d"
+RADIUS_DIR="/tmp/raddb"
+ENABLED=0
+
+radius_pam_conf() {
+	local var="$1" sec="$2"
+	local server secret port timeout
+
+	config_get server "$sec" server
+	config_get secret "$sec" secret
+	config_get port "$sec" port 1812
+	config_get timeout "$sec" timeout 3
+
+	[ -z "$server" ] || [ -z "$secret" ] && {
+		logger -t pam "Radius server ip or secret is not configured"
+		return
+	}
+
+	[ ! -d "$RADIUS_DIR" ] && mkdir "$RADIUS_DIR"
+
+	echo "$server:$port $secret $timeout" > "${RADIUS_DIR}/${sec}"
+
+	eval "$var=\"conf=${RADIUS_DIR}/${sec}\""
+}
+
+tacplus_pam_conf() {
+	local var="$1" sec="$2"
+	local server key
+
+	config_get server "$sec" server
+	config_get key "$sec" secret
+
+	[ -z "$server" ] || [ -z "$key" ] && {
+		logger -t pam "TACACS+ server ip or key is not configured"
+		return
+	}
+
+	eval "$var=\"server=${server} secret=${key}\""
+}
+
+start_pam_cb() {
+	local sec="$1"
+	local module type enabled service extra
+
+	config_get enabled "$sec" enabled
+	[ "$enabled" != "1" ] && return
+
+	ENABLED=1
+	
+	config_get type "$sec" type
+	config_get module "$sec" module
+	config_get service "$sec" service
+	[ -z "$type" ] || [ -z "$module" ] || [ -z "$service" ] && return
+	[ -f "${PAM_DIR}/${service}" ] || \
+		echo "account required pam_permit.so" > "${PAM_DIR}/${service}"
+
+	case $module in
+		radius_auth)
+			radius_pam_conf extra "$sec"
+			;;
+		tacplus)
+			tacplus_pam_conf extra "$sec"
+			;;
+	esac
+
+	echo "auth ${type} pam_${module}.so ${extra}" >> "${PAM_DIR}/${service}"
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger pam
+}
+
+start_service() {
+	config_load pam
+
+	[ ! -d "$PAM_DIR" ] && cp -r /etc/pam.d "/tmp/"
+	
+	config_foreach start_pam_cb pam
+	[ "$ENABLED" -eq 1 ] || return 0
+
+	procd_open_instance
+	procd_set_param command /usr/sbin/pamd
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_close_instance
+}
+
+stop_service() {
+	rm -rf "$PAM_DIR"
+}
+
+reload_service() {
+	stop
+	start
+}

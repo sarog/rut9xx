@@ -1,0 +1,12 @@
+#!/bin/sh
+
+rm -f /tmp/group
+#fix missing colons after upgrade legacy -> 7.1.4 -> develop
+while read line; do
+	nfields=$(echo "$line" | awk -F: '{print NF}')
+	[ "$nfields" = "3" ] && line="$line:"
+	echo "$line" >> /tmp/group
+done < /etc/group
+
+cp -f /tmp/group /etc/group
+rm -f /tmp/group

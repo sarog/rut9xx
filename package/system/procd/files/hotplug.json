@@ -4,38 +4,31 @@
 			[ "if",
 				[ "and",
 					[ "has", "MAJOR" ],
-					[ "has", "MINOR" ],
+					[ "has", "MINOR" ]
 				],
 				[
 					[ "if",
-						[ "or",
-							[ "eq", "DEVNAME",
-								[ "null", "full", "ptmx", "zero" ],
-							],
-							[ "regex", "DEVNAME",
-								[ "^gpio", "^hvc" ],
-							],
+						[ "eq", "DEVNAME",
+							[ "null", "full", "ptmx", "zero", "tty", "net", "random", "urandom" ]
 						],
 						[
 							[ "makedev", "/dev/%DEVNAME%", "0666" ],
-							[ "return" ],
+							[ "return" ]
 						]
 					],
 					[ "if",
-						[ "or",
-							[ "eq", "DEVNAME", "mapper/control" ],
-							[ "regex", "DEVPATH", "^ppp" ],
-						],
-						[
-							[ "makedev", "/dev/%DEVNAME%", "0600" ],
-							[ "return" ],
-						],
+						[ "regex", "DEVNAME", "^snd" ],
+						[ "makedev", "/dev/%DEVNAME%", "0660", "audio" ]
+					],
+					[ "if",
+						[ "regex", "DEVNAME", "^tty" ],
+						[ "makedev", "/dev/%DEVNAME%", "0660", "dialout" ]
 					],
 					[ "if",
 						[ "has", "DEVNAME" ],
-						[ "makedev", "/dev/%DEVNAME%", "0644" ],
-					],
-				],
+						[ "makedev", "/dev/%DEVNAME%", "0600" ]
+					]
+				]
 			],
 			[ "if",
 				[ "has", "FIRMWARE" ],
@@ -45,33 +38,40 @@
 					[ "return" ]
 				]
 			],
+			[ "if",
+				[ "regex", "DEVNAME", "^ttyGS" ],
+				[ "start-console", "%DEVNAME%" ]
+			]
 		],
 		"remove" : [
 			[ "if",
 				[ "and",
 					[ "has", "DEVNAME" ],
 					[ "has", "MAJOR" ],
-					[ "has", "MINOR" ],
+					[ "has", "MINOR" ]
 				],
 				[ "rm", "/dev/%DEVNAME%" ]
 			]
 		]
 	} ],
 	[ "if",
-		[ "eq", "SUBSYSTEM", "platform" ],
-		[ "exec", "/sbin/hotplug-call", "%SUBSYSTEM%" ]
+		[ "and",
+			[ "has", "BUTTON" ],
+			[ "eq", "SUBSYSTEM", "button" ]
+		],
+		[ "button", "/etc/rc.button/%BUTTON%" ]
 	],
 	[ "if",
 		[ "and",
-			[ "has", "BUTTON" ],
-			[ "eq", "SUBSYSTEM", "button" ],
+			[ "eq", "SUBSYSTEM", "usb-serial" ],
+			[ "regex", "DEVNAME",
+				[ "^ttyUSB", "^ttyACM" ]
+			]
 		],
-		[ "exec", "/etc/rc.button/%BUTTON%" ]
-	],
-	[ "if",
-		[ "eq", "SUBSYSTEM",
-			[ "net", "input", "usb", "usbmisc", "ieee1394", "block", "atm", "zaptel", "tty", "button" ]
-		],
-		[ "exec", "/sbin/hotplug-call", "%SUBSYSTEM%" ]
-	],
+		[ "exec", "/sbin/hotplug-call", "tty" ],
+		[ "if",
+			[ "isdir", "/etc/hotplug.d/%SUBSYSTEM%" ],
+			[ "exec", "/sbin/hotplug-call", "%SUBSYSTEM%" ]
+		]
+	]
 ]

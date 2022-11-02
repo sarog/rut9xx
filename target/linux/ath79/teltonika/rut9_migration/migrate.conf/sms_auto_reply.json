@@ -1,0 +1,29 @@
+{
+  "config": {
+	"old_name": "sms_utils",
+	"new_name": "sms_gateway"
+  },
+  "sections": [
+	{
+	  "old_name": "auto_reply",
+	  "new_type": "reply",
+	  "remove": true,
+	  "options": {
+		"enabled": {},
+		"delete_msg": {
+		  "new_name": "delete_sms"
+		},
+		"mode": {
+		  "if": [
+			["list", "list_number"]
+		  ]
+		},
+		"every_sms": {},
+		"msg": {},
+		"number": {
+		  "type": "list"
+		}
+	  }
+	}
+  ]
+}

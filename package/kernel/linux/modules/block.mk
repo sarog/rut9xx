@@ -25,9 +25,12 @@ $(eval $(call KernelPackage,aoe))
 define KernelPackage/ata-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Serial and Parallel ATA support
-  DEPENDS:=@PCI_SUPPORT +kmod-scsi-core
+  DEPENDS:=@PCI_SUPPORT||TARGET_sunxi +kmod-scsi-core
   KCONFIG:=CONFIG_ATA
   FILES:=$(LINUX_DIR)/drivers/ata/libata.ko
+ifneq ($(wildcard $(LINUX_DIR)/drivers/ata/libahci.ko),)
+  FILES+=$(LINUX_DIR)/drivers/ata/libahci.ko
+endif
 endef
 
 $(eval $(call KernelPackage,ata-core))
@@ -35,7 +38,7 @@ $(eval $(call KernelPackage,ata-core))
 
 define AddDepends/ata
   SUBMENU:=$(BLOCK_MENU)
-  DEPENDS+=kmod-ata-core $(1)
+  DEPENDS+=+kmod-ata-core $(1)
 endef
 
 
@@ -43,8 +46,7 @@ define KernelPackage/ata-ahci
   TITLE:=AHCI Serial ATA support
   KCONFIG:=CONFIG_SATA_AHCI
   FILES:= \
-    $(LINUX_DIR)/drivers/ata/ahci.ko \
-    $(LINUX_DIR)/drivers/ata/libahci.ko
+    $(LINUX_DIR)/drivers/ata/ahci.ko
   AUTOLOAD:=$(call AutoLoad,41,libahci ahci,1)
   $(call AddDepends/ata)
 endef
@@ -54,6 +56,23 @@ define KernelPackage/ata-ahci/description
 endef
 
 $(eval $(call KernelPackage,ata-ahci))
+
+
+define KernelPackage/ata-ahci-platform
+  TITLE:=AHCI Serial ATA Platform support
+  KCONFIG:=CONFIG_SATA_AHCI_PLATFORM
+  FILES:= \
+    $(LINUX_DIR)/drivers/ata/ahci_platform.ko \
+    $(LINUX_DIR)/drivers/ata/libahci_platform.ko
+  AUTOLOAD:=$(call AutoLoad,40,libahci libahci_platform ahci_platform,1)
+  $(call AddDepends/ata,@TARGET_ipq806x||TARGET_layerscape||TARGET_sunxi)
+endef
+
+define KernelPackage/ata-ahci-platform/description
+ Platform support for AHCI Serial ATA controllers
+endef
+
+$(eval $(call KernelPackage,ata-ahci-platform))
 
 
 define KernelPackage/ata-artop
@@ -69,25 +88,6 @@ define KernelPackage/ata-artop/description
 endef
 
 $(eval $(call KernelPackage,ata-artop))
-
-
-define KernelPackage/ata-imx
-  TITLE:=Freescale i.MX AHCI SATA support
-  DEPENDS:=@TARGET_imx6
-  KCONFIG:=\
-	CONFIG_AHCI_IMX \
-	CONFIG_SATA_AHCI_PLATFORM \
-	CONFIG_PATA_IMX=n
-  FILES:=$(LINUX_DIR)/drivers/ata/ahci_imx.ko
-  AUTOLOAD:=$(call AutoLoad,41,ahci_imx,1)
-  $(call AddDepends/ata)
-endef
-
-define KernelPackage/ata-imx/description
- SATA support for the Freescale i.MX6 SoC's onboard AHCI SATA
-endef
-
-$(eval $(call KernelPackage,ata-imx))
 
 
 define KernelPackage/ata-marvell-sata
@@ -117,14 +117,13 @@ $(eval $(call KernelPackage,ata-nvidia-sata))
 
 
 define KernelPackage/ata-pdc202xx-old
-  SUBMENU:=$(BLOCK_MENU)
   TITLE:=Older Promise PATA controller support
-  DEPENDS:=kmod-ata-core
   KCONFIG:= \
        CONFIG_ATA_SFF=y \
        CONFIG_PATA_PDC_OLD
   FILES:=$(LINUX_DIR)/drivers/ata/pata_pdc202xx_old.ko
   AUTOLOAD:=$(call AutoLoad,41,pata_pdc202xx_old,1)
+  $(call AddDepends/ata)
 endef
 
 define KernelPackage/ata-pdc202xx-old/description
@@ -206,10 +205,20 @@ endef
 $(eval $(call KernelPackage,block2mtd))
 
 
+define KernelPackage/dax
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=DAX: direct access to differentiated memory
+  KCONFIG:=CONFIG_DAX
+  FILES:=$(LINUX_DIR)/drivers/dax/dax.ko
+endef
+
+$(eval $(call KernelPackage,dax))
+
+
 define KernelPackage/dm
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Device Mapper
-  DEPENDS:=+kmod-crypto-manager
+  DEPENDS:=+kmod-crypto-manager +kmod-dax
   # All the "=n" are unnecessary, they're only there
   # to stop the config from asking the question.
   # MIRROR is M because I've needed it for pvmove.
@@ -218,6 +227,8 @@ define KernelPackage/dm
 	CONFIG_DM_DEBUG=n \
 	CONFIG_DM_UEVENT=n \
 	CONFIG_DM_DELAY=n \
+	CONFIG_DM_LOG_WRITES=n \
+	CONFIG_DM_MQ_DEFAULT=n \
 	CONFIG_DM_MULTIPATH=n \
 	CONFIG_DM_ZERO=n \
 	CONFIG_DM_SNAPSHOT=n \
@@ -226,7 +237,12 @@ define KernelPackage/dm
 	CONFIG_BLK_DEV_DM \
 	CONFIG_DM_CRYPT \
 	CONFIG_DM_MIRROR
-  FILES:=$(LINUX_DIR)/drivers/md/dm-*.ko
+  FILES:= \
+    $(LINUX_DIR)/drivers/md/dm-mod.ko \
+    $(LINUX_DIR)/drivers/md/dm-crypt.ko \
+    $(LINUX_DIR)/drivers/md/dm-log.ko \
+    $(LINUX_DIR)/drivers/md/dm-mirror.ko \
+    $(LINUX_DIR)/drivers/md/dm-region-hash.ko
   AUTOLOAD:=$(call AutoLoad,30,dm-mod dm-log dm-region-hash dm-mirror dm-crypt)
 endef
 
@@ -235,6 +251,49 @@ define KernelPackage/dm/description
 endef
 
 $(eval $(call KernelPackage,dm))
+
+define KernelPackage/dm-raid
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=LVM2 raid support
+  DEPENDS:=+kmod-dm +kmod-md-mod \
+           +kmod-md-raid0 +kmod-md-raid1 +kmod-md-raid10 +kmod-md-raid456
+  KCONFIG:= \
+	CONFIG_DM_RAID
+  FILES:=$(LINUX_DIR)/drivers/md/dm-raid.ko
+  AUTOLOAD:=$(call AutoLoad,31,dm-raid)
+endef
+
+define KernelPackage/dm-raid/description
+ Kernel module necessary for LVM2 raid support
+endef
+
+$(eval $(call KernelPackage,dm-raid))
+
+
+define KernelPackage/iscsi-initiator
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=iSCSI Initiator over TCP/IP
+  DEPENDS:=+kmod-scsi-core +kmod-crypto-hash
+  KCONFIG:= \
+	CONFIG_INET \
+	CONFIG_SCSI_LOWLEVEL=y \
+	CONFIG_ISCSI_TCP \
+	CONFIG_SCSI_ISCSI_ATTRS=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/scsi/iscsi_tcp.ko \
+	$(LINUX_DIR)/drivers/scsi/libiscsi.ko \
+	$(LINUX_DIR)/drivers/scsi/libiscsi_tcp.ko \
+	$(LINUX_DIR)/drivers/scsi/scsi_transport_iscsi.ko
+  AUTOLOAD:=$(call AutoProbe,libiscsi libiscsi_tcp scsi_transport_iscsi iscsi_tcp)
+endef
+
+define KernelPackage/iscsi-initiator/description
+The iSCSI Driver provides a host with the ability to access storage through an
+IP network. The driver uses the iSCSI protocol to transport SCSI requests and
+responses over a TCP/IP network between the host (the "initiator") and "targets".
+endef
+
+$(eval $(call KernelPackage,iscsi-initiator))
 
 
 define KernelPackage/md-mod
@@ -324,7 +383,7 @@ $(eval $(call KernelPackage,md-raid10))
 
 
 define KernelPackage/md-raid456
-$(call KernelPackage/md/Depends,+kmod-lib-raid6 +kmod-lib-xor)
+$(call KernelPackage/md/Depends,+kmod-lib-raid6 +kmod-lib-xor +kmod-lib-crc32c)
   TITLE:=RAID Level 456 Driver
   KCONFIG:= \
        CONFIG_ASYNC_CORE \
@@ -375,115 +434,6 @@ define KernelPackage/md-multipath/description
 endef
 
 $(eval $(call KernelPackage,md-multipath))
-
-
-define KernelPackage/ide-core
-  SUBMENU:=$(BLOCK_MENU)
-  TITLE:=IDE (ATA/ATAPI) device support
-  DEPENDS:=@PCI_SUPPORT
-  KCONFIG:= \
-	CONFIG_IDE \
-	CONFIG_BLK_DEV_IDE \
-	CONFIG_BLK_DEV_IDEDISK \
-	CONFIG_IDE_GD \
-	CONFIG_IDE_GD_ATA=y \
-	CONFIG_IDE_GD_ATAPI=n \
-	CONFIG_IDEPCI_PCIBUS_ORDER=y \
-	CONFIG_BLK_DEV_IDEDMA_PCI=y \
-	CONFIG_BLK_DEV_IDEPCI=y
-  FILES:= \
-	$(LINUX_DIR)/drivers/ide/ide-core.ko \
-	$(LINUX_DIR)/drivers/ide/ide-gd_mod.ko
-endef
-
-define KernelPackage/ide-core/description
- Kernel support for IDE, useful for usb mass storage devices (e.g. on WL-HDD)
- Includes:
- - ide-core
- - ide-gd_mod
-endef
-
-$(eval $(call KernelPackage,ide-core))
-
-
-define AddDepends/ide
-  SUBMENU:=$(BLOCK_MENU)
-  DEPENDS+=kmod-ide-core $(1)
-endef
-
-
-define KernelPackage/ide-generic
-  SUBMENU:=$(BLOCK_MENU)
-  DEPENDS:=@PCI_SUPPORT
-  TITLE:=Kernel support for generic PCI IDE chipsets
-  KCONFIG:=CONFIG_BLK_DEV_GENERIC
-  FILES:=$(LINUX_DIR)/drivers/ide/ide-pci-generic.ko
-  AUTOLOAD:=$(call AutoLoad,30,ide-pci-generic,1)
-  $(call AddDepends/ide)
-endef
-
-$(eval $(call KernelPackage,ide-generic))
-
-
-define KernelPackage/ide-generic-old
-  SUBMENU:=$(BLOCK_MENU)
-  TITLE:=Kernel support for generic (legacy) IDE chipsets
-  KCONFIG:=CONFIG_IDE_GENERIC
-  FILES:=$(LINUX_DIR)/drivers/ide/ide-generic.ko
-  AUTOLOAD:=$(call AutoLoad,30,ide-generic,1)
-  $(call AddDepends/ide)
-endef
-
-$(eval $(call KernelPackage,ide-generic-old))
-
-
-define KernelPackage/ide-aec62xx
-  TITLE:=Acard AEC62xx IDE driver
-  DEPENDS:=@PCI_SUPPORT
-  KCONFIG:=CONFIG_BLK_DEV_AEC62XX
-  FILES:=$(LINUX_DIR)/drivers/ide/aec62xx.ko
-  AUTOLOAD:=$(call AutoLoad,30,aec62xx,1)
-  $(call AddDepends/ide)
-endef
-
-define KernelPackage/ide-aec62xx/description
- Support for Acard AEC62xx (Artop ATP8xx) IDE controllers
-endef
-
-$(eval $(call KernelPackage,ide-aec62xx,1))
-
-
-define KernelPackage/ide-pdc202xx
-  TITLE:=Promise PDC202xx IDE driver
-  DEPENDS:=@PCI_SUPPORT
-  KCONFIG:=CONFIG_BLK_DEV_PDC202XX_OLD
-  FILES:=$(LINUX_DIR)/drivers/ide/pdc202xx_old.ko
-  AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old,1)
-  $(call AddDepends/ide)
-endef
-
-define KernelPackage/ide-pdc202xx/description
- Support for the Promise Ultra 33/66/100 (PDC202{46|62|65|67|68}) IDE
- controllers.
-endef
-
-$(eval $(call KernelPackage,ide-pdc202xx))
-
-
-define KernelPackage/ide-it821x
-  TITLE:=ITE IT821x IDE driver
-  DEPENDS:=@PCI_SUPPORT
-  KCONFIG:=CONFIG_BLK_DEV_IT821X
-  FILES=$(LINUX_DIR)/drivers/ide/it821x.ko
-  AUTOLOAD:=$(call AutoLoad,30,it821x,1)
-  $(call AddDepends/ide)
-endef
-
-define KernelPackage/ide-it821x/description
- Kernel module for the ITE IDE821x IDE controllers
-endef
-
-$(eval $(call KernelPackage,ide-it821x))
 
 
 define KernelPackage/libsas
@@ -565,9 +515,9 @@ define KernelPackage/scsi-core
 	CONFIG_SCSI \
 	CONFIG_BLK_DEV_SD
   FILES:= \
-	$(if $(findstring y,$(CONFIG_SCSI)),,$(LINUX_DIR)/drivers/scsi/scsi_mod.ko) \
+	$(LINUX_DIR)/drivers/scsi/scsi_mod.ko \
 	$(LINUX_DIR)/drivers/scsi/sd_mod.ko
-  AUTOLOAD:=$(call AutoLoad,40,sd_mod,1)
+  AUTOLOAD:=$(call AutoLoad,40,scsi_mod sd_mod,1)
 endef
 
 $(eval $(call KernelPackage,scsi-core))
@@ -601,3 +551,31 @@ define KernelPackage/scsi-cdrom
 endef
 
 $(eval $(call KernelPackage,scsi-cdrom))
+
+
+define KernelPackage/scsi-tape
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Kernel support for scsi tape drives
+  DEPENDS:=+kmod-scsi-core
+  KCONFIG:= \
+    CONFIG_CHR_DEV_ST
+  FILES:= \
+    $(LINUX_DIR)/drivers/scsi/st.ko
+  AUTOLOAD:=$(call AutoLoad,45,st)
+endef
+
+$(eval $(call KernelPackage,scsi-tape))
+
+define KernelPackage/iosched-bfq
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Kernel support for BFQ I/O scheduler
+  KCONFIG:= \
+    CONFIG_IOSCHED_BFQ \
+    CONFIG_BFQ_GROUP_IOSCHED=y \
+    CONFIG_BFQ_CGROUP_DEBUG=n
+  FILES:= \
+    $(LINUX_DIR)/block/bfq.ko
+  AUTOLOAD:=$(call AutoLoad,10,bfq)
+endef
+
+$(eval $(call KernelPackage,iosched-bfq))

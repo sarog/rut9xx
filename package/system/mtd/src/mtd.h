@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#ifdef target_brcm47xx
+#if defined(target_bcm47xx) || defined(target_bcm53xx)
 #define target_brcm 1
 #endif
 
@@ -25,6 +25,10 @@ extern void mtd_parse_jffs2data(const char *buf, const char *dir);
 /* target specific functions */
 extern int trx_fixup(int fd, const char *name)  __attribute__ ((weak));
 extern int trx_check(int imagefd, const char *mtd, char *buf, int *len) __attribute__ ((weak));
-extern int mtd_fixtrx(const char *mtd, size_t offset) __attribute__ ((weak));
-extern int mtd_fixseama(const char *mtd, size_t offset) __attribute__ ((weak));
+extern int mtd_fixtrx(const char *mtd, size_t offset, size_t data_size) __attribute__ ((weak));
+extern int mtd_fixseama(const char *mtd, size_t offset, size_t data_size) __attribute__ ((weak));
+extern int mtd_fixwrg(const char *mtd, size_t offset, size_t data_size) __attribute__ ((weak));
+extern int mtd_fixwrgg(const char *mtd, size_t offset, size_t data_size) __attribute__ ((weak));
+extern int mtd_resetbc(const char *mtd) __attribute__ ((weak));
+extern int mtd_tpl_recoverflag_write(const char *mtd, const bool recovery_active) __attribute__ ((weak));
 #endif /* __mtd_h */

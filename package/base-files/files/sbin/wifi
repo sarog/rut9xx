@@ -6,8 +6,8 @@
 
 usage() {
 	cat <<EOF
-Usage: $0 [down|detect|reload|status]
-enables (default), disables or detects a wifi configuration.
+Usage: $0 [config|up|down|reconf|reload|status]
+enables (default), disables or configures devices not yet configured.
 EOF
 	exit 1
 }
@@ -79,6 +79,7 @@ wifi_fixup_hwmode() {
 	case "$hwmode" in
 		11bg) hwmode=bg;;
 		11a) hwmode=a;;
+		11ad) hwmode=ad;;
 		11b) hwmode=b;;
 		11g) hwmode=g;;
 		11n*)
@@ -108,7 +109,7 @@ wifi_fixup_hwmode() {
 _wifi_updown() {
 	for device in ${2:-$DEVICES}; do (
 		config_get disabled "$device" disabled
-		[ 1 == "$disabled" ] && {
+		[ "$disabled" = "1" ] && {
 			echo "'$device' is disabled"
 			set disable
 		}
@@ -129,6 +130,12 @@ wifi_updown() {
 		ubus_wifi_cmd "$cmd" "$2"
 		scan_wifi
 		cmd=up
+		ubus call network reload
+	}
+	[ reconf = "$1" ] && {
+		scan_wifi
+		cmd=reconf
+		ubus call network reload
 	}
 	ubus_wifi_cmd "$cmd" "$2"
 	_wifi_updown "$@"
@@ -138,6 +145,10 @@ wifi_reload_legacy() {
 	_wifi_updown "disable" "$1"
 	scan_wifi
 	_wifi_updown "enable" "$1"
+
+	for device in $DEVICES; do (
+		ubus call network.wireless notify '{ "command": 4, "device": '\""$device"\"', "data": { "retry": 3 } }'
+	); done
 }
 
 wifi_reload() {
@@ -145,8 +156,16 @@ wifi_reload() {
 	wifi_reload_legacy
 }
 
-wifi_detect() {
-	for driver in ${2:-$DRIVERS}; do (
+wifi_detect_notice() {
+	>&2 echo "WARNING: Wifi detect is deprecated. Use wifi config instead"
+	>&2 echo "For more information, see commit 5f8f8a366136a07df661e31decce2458357c167a"
+	exit 1
+}
+
+wifi_config() {
+	[ ! -f /etc/config/wireless ] && touch /etc/config/wireless
+
+	for driver in $DRIVERS; do (
 		if eval "type detect_$driver" 2>/dev/null >/dev/null; then
 			eval "detect_$driver" || echo "$driver: Detect failed" >&2
 		else
@@ -220,36 +239,168 @@ scan_wifi() {
 	config_load "${cfgfile:-wireless}"
 }
 
-turn_this_wifi_off() {
-	uci set wireless."$1".disabled="1"
-	uci set wireless."$1".user_enable="0"
-	config_get hotspot_id "$1" "hotspotid"
+kick_all() {
+	kick(){
+		local intf=$3 client=$2
+		[ -n "$client" -a -n "$intf" ] && ubus call "hostapd.$intf" del_client {\"addr\":\"${client//_/:}\",\ \"reason\":5}
+	}
 
-	if [ -n "$hotspot_id" ]; then
-		hotspot_enabled=$(uci get coovachilli."$hotspot_id".enabled)
-		if [ "$hotspot_enabled" == "1" ]; then
-			uci set coovachilli."$hotspot_id".enabled="0"
-		fi
-	fi
+	for a in $(ls /sys/class/net); do
+		case "$a" in
+			wlan[0-9])
+				json_load "$(ubus call hostapd.$a get_clients)"
+				json_for_each_item kick clients "$a"
+			;;
+		esac
+	done
+}
+
+turn_this_wifi_off() {
+	get_wifi_device_name "2g"
+	uci -q set wireless."$wifi_dev".disabled="1"
+
+	get_wifi_device_name "5g"
+	uci -q set wireless."$wifi_dev".disabled="1"
+
+	uci -q set wireless."$1".disabled="1"
+	uci -q set wireless."$1".user_enable="0"
+
+	local wifi_id
+	config_get wifi_id "$1" wifi_id
+	config_load chilli
+	config_foreach turn_off_hotspot "chilli" "$wifi_id"
 }
 
 turn_this_wifi_on() {
+	get_wifi_device_name "2g"
+	uci -q set wireless."$wifi_dev".disabled="0"
+
+	get_wifi_device_name "5g"
+	uci -q set wireless."$wifi_dev".disabled="0"
+
 	uci delete wireless."$1".disabled
-	uci set wireless."$1".user_enable="1"
+	uci -q set wireless."$1".user_enable="1"
+
+	local wifi_id
+	config_get wifi_id "$1" wifi_id
+	config_load chilli
+	config_foreach turn_on_hotspot "chilli" "$wifi_id"
 }
 
 turn_off_all_wifi() {
 	config_load wireless
 	config_foreach turn_this_wifi_off "wifi-iface"
 	uci commit wireless
-	luci-reload wireless > /dev/null &
+	ubus call network.wireless down
 }
 
 turn_on_all_wifi() {
 	config_load wireless
 	config_foreach turn_this_wifi_on "wifi-iface"
 	uci commit wireless
-	luci-reload wireless > /dev/null &
+	ubus call network.wireless up
+}
+
+wifi_dev=""
+
+check_device_name() {
+	local section_name=$1
+	local device_name=$2
+	config_get channel "$section_name" channel
+
+	if [ "$device_name" = "2g" ] && [ "$channel" -gt 0 ] && [ "$channel" -lt 15 ]; then
+		wifi_dev=$section_name
+	elif [ "$device_name" = "5g" ] && [ "$channel" -gt 35 ] && [ "$channel" -lt 166 ]; then
+		wifi_dev=$section_name
+	fi
+}
+
+get_wifi_device_name() {
+	local wifi_device=$1
+	config_load wireless
+	config_foreach check_device_name wifi-device "$wifi_device"
+}
+
+turn_off_hotspot() {
+	local section=$1
+	local wifi_id=$2
+
+	config_get hotspot_wifi_id "$section" network ""
+
+	if [ "$hotspot_wifi_id" = "$wifi_id" ]; then
+		uci -q set chilli."$section".enabled="0"
+		uci commit chilli
+	fi
+}
+
+turn_on_hotspot() {
+        local section=$1
+        local wifi_id=$2
+
+	config_get hotspot_wifi_id "$section" network ""
+
+	if [ "$hotspot_wifi_id" = "$wifi_id" ]; then
+		uci -q set chilli."$section".enabled="1"
+		uci commit chilli
+	fi
+}
+
+turn_this_xg_wifi_off() {
+	local device
+	config_get device "$1" device ""
+
+	if [ "$device" = "$wifi_dev" ]; then
+		uci -q set wireless."$1".disabled="1"
+		uci -q set wireless."$1".user_enable="0"
+		local wifi_id
+		config_get wifi_id "$1" wifi_id
+		config_load chilli
+		config_foreach turn_off_hotspot "chilli" "$wifi_id"
+	fi
+}
+
+turn_off_all_xg_wifi() {
+        local dev=$1
+
+	get_wifi_device_name "$dev"
+	uci -q set wireless."$wifi_dev".disabled="1"
+
+	config_load wireless
+	config_foreach turn_this_xg_wifi_off "wifi-iface"
+	uci commit wireless
+
+	json_init
+	[ -n "$wifi_dev" ] && json_add_string device "$wifi_dev"
+	ubus call network.wireless down "$(json_dump)"
+}
+
+turn_this_xg_wifi_on() {
+	local device
+	config_get device "$1" device ""
+
+	if [ "$device" = "$wifi_dev" ]; then
+		uci -q set wireless."$1".user_enable="1"
+		uci -q delete wireless."$1".disabled
+		local wifi_id
+		config_get wifi_id "$1" wifi_id
+		config_load chilli
+		config_foreach turn_on_hotspot "chilli" "$wifi_id"
+	fi
+}
+
+turn_on_all_xg_wifi() {
+	local dev=$1
+
+	get_wifi_device_name "$dev"
+	uci -q set wireless."$wifi_dev".disabled="0"
+
+	config_load wireless
+	config_foreach turn_this_xg_wifi_on "wifi-iface"
+	uci commit wireless
+
+	json_init
+	[ -n "$wifi_dev" ] && json_add_string device "$wifi_dev"
+	ubus call network.wireless up "$(json_dump)"
 }
 
 
@@ -260,12 +411,18 @@ scan_wifi
 
 case "$1" in
 	down) wifi_updown "disable" "$2";;
+	detect) wifi_detect_notice ;;
+	config) wifi_config ;;
 	turn_off_all_wifi) turn_off_all_wifi;;
 	turn_on_all_wifi) turn_on_all_wifi;;
-	detect) wifi_detect "$2";;
+	turn_on_all_xg_wifi) turn_on_all_xg_wifi "$2";;
+	turn_off_all_xg_wifi) turn_off_all_xg_wifi "$2";;
 	status) ubus_wifi_cmd "status" "$2";;
 	reload) wifi_reload "$2";;
 	reload_legacy) wifi_reload_legacy "$2";;
+	kick_clients) kick_all ;;
 	--help|help) usage;;
-	*) ubus call network reload; wifi_updown "enable" "$2";;
+	reconf) wifi_updown "reconf" "$2";;
+	''|up) wifi_updown "enable" "$2";;
+	*) usage; exit 1;;
 esac

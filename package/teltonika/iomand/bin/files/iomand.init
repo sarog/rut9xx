@@ -1,0 +1,27 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2020 Teltonika
+
+START=69
+STOP=99
+USE_PROCD=1
+
+BIN="/usr/bin/iomand"
+CONF="/etc/config/ioman"
+
+start_service() {
+	[ -e $CONF ] || return 0 # for disabling IO functionality on certain regions
+
+	procd_open_instance
+	procd_set_param respawn
+	procd_set_param reload_signal "HUP"
+	procd_set_param command "$BIN" -S
+	procd_close_instance
+}
+
+reload_service() {
+	procd_send_signal ioman
+}
+
+service_triggers() {           
+	procd_add_reload_trigger ioman
+}

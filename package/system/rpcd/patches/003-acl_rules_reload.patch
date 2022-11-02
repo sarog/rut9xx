@@ -1,0 +1,132 @@
+--- a/include/rpcd/session.h
++++ b/include/rpcd/session.h
+@@ -45,6 +45,7 @@
+ 	struct uloop_timeout t;
+ 	struct avl_tree data;
+ 	struct avl_tree acls;
++	char *username;
+ 
+ 	int timeout;
+ };
+
+--- a/session.c
++++ b/session.c
+@@ -27,6 +27,7 @@
+ #include <glob.h>
+ #include <uci.h>
+ #include <limits.h>
++#include <string.h>
+ 
+ #ifdef HAVE_SHADOW
+ #include <shadow.h>
+@@ -280,6 +281,7 @@
+ 		free(data);
+ 
+ 	avl_delete(&sessions, &ses->avl);
++	free(ses->username);
+ 	free(ses);
+ }
+ 
+@@ -829,17 +831,16 @@
+ rpc_login_test_login(struct uci_context *uci,
+                      const char *username, const char *password)
+ {
+-	struct uci_package *p = NULL;
+-	struct uci_section *s;
+-	struct uci_element *e;
+-	struct uci_ptr ptr = { .package = "rpcd" };
+-
+-	uci_load(uci, ptr.package, &p);
+-
+-	if (!p)
++	struct uci_section *s = NULL;
++	struct uci_element *e = NULL;
++	struct uci_ptr ptr;
++
++	
++	if (uci_lookup_ptr(uci, &ptr, "rpcd", true) != UCI_OK) {
+ 		return false;
+-
+-	uci_foreach_element(&p->sections, e)
++	}
++
++	uci_foreach_element(&ptr.p->sections, e) 
+ 	{
+ 		s = uci_to_section(e);
+ 
+@@ -1161,6 +1162,11 @@
+ 		rv = UBUS_STATUS_UNKNOWN_ERROR;
+ 		goto out;
+ 	}
++	ses->username = strdup(blobmsg_get_string(tb[RPC_L_USERNAME]));
++	if (!ses->username) {
++		rv = UBUS_STATUS_UNKNOWN_ERROR;
++		goto out;
++	}
+ 
+ 	rpc_login_setup_acls(ses, login);
+ 
+@@ -1174,6 +1180,39 @@
+ 	return rv;
+ }
+ 
++static int
++rpc_handle_reload_acls(struct ubus_context *ctx, struct ubus_object *obj,
++                 struct ubus_request_data *req, const char *method,
++                 struct blob_attr *msg)
++{
++	int rv = 0;
++	struct rpc_session *ses;
++	struct uci_section *login;
++	struct uci_context *uci = NULL;
++	uci = uci_alloc_context();
++	if (!uci) {
++		rv = UBUS_STATUS_UNKNOWN_ERROR;
++		goto out;
++	}
++
++	avl_for_each_element(&sessions, ses, avl) {
++		if (!strcmp(ses->id, RPC_DEFAULT_SESSION_ID)) {
++			continue;
++		}
++		
++		login = rpc_login_test_login(uci, ses->username, NULL);
++
++		if (login != NULL) {
++			avl_init(&ses->acls, avl_strcmp, true, NULL);
++			rpc_login_setup_acls(ses, login);
++		}
++	}
++out:
++	if (uci) {
++		uci_free_context(uci);
++	}
++	return rv;
++}
+ 
+ static bool
+ rpc_validate_sid(const char *id)
+@@ -1297,8 +1336,13 @@
+ 
+ 	if (uci && user) {
+ 		login = rpc_login_test_login(uci, user, NULL);
+-		if (login)
+-			rpc_login_setup_acls(ses, login);
++		if (login) {
++			if (!(ses->username = strdup(user))) {
++				fprintf(stderr, "Cannot save username!\n");
++				return false;
++			}
++		}
++		rpc_login_setup_acls(ses, login);
+ 	}
+ 
+ 	avl_insert(&sessions, &ses->avl);
+@@ -1323,6 +1367,7 @@
+ 		UBUS_METHOD("unset",   rpc_handle_unset,   get_policy),
+ 		UBUS_METHOD("destroy", rpc_handle_destroy, sid_policy),
+ 		UBUS_METHOD("login",   rpc_handle_login,   login_policy),
++		UBUS_METHOD_NOARG("reload_acls", rpc_handle_reload_acls),
+ 	};
+ 
+ 	static struct ubus_object_type session_type =

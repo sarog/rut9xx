@@ -1,0 +1,218 @@
+#!/bin/sh
+
+#Script must be executed after wireless migration (RUT9)
+
+. /usr/share/libubox/jshn.sh
+. /lib/functions.sh
+
+WIFI_CONFIG="/etc/config/wireless"
+HOTSPOT_CONFIG="/etc/config/chilli"
+
+position=1
+radio0_network_count=1
+radio1_network_count=1
+
+[ -f "/etc/config/overview" ] || touch /etc/config/overview
+
+setup_overview_section() {
+	local id="$1"
+	local enabled="$2"
+	local section_name="$3"
+
+	uci_add overview overview
+	new_section=$CONFIG_SECTION
+
+	uci_set overview "$new_section" id "$id"
+	uci_set overview "$new_section" enabled "$enabled"
+	uci_set overview "$new_section" section_name "$section_name"
+	uci_set overview "$new_section" position "$position"
+
+	uci_commit overview
+	position=$((position + 1))
+}
+
+setup_wifi_sections() {
+	local iface_section="$1"
+	local enabled="$2"
+	local device section_name
+	config_get device "$iface_section" device
+
+	if [ "$device" = "radio0" ]; then
+		section_name="${device}.network${radio0_network_count}"
+		radio0_network_count=$((radio0_network_count + 1))
+	elif [ "$device" = "radio1" ]; then
+		section_name="${device}.network${radio1_network_count}"
+		radio1_network_count=$((radio1_network_count + 1))
+	fi
+
+	setup_overview_section "wireless" "$enabled" "$section_name"
+}
+
+setup_interface_sections() {
+	local iface_section="$1"
+	local enabled="$2"
+	local proto
+	local invisible
+
+	config_get proto "$iface_section" proto
+	config_get invisible "$iface_section" invisible
+
+	if [ "$iface_section" = "wan6" ]; then
+		enabled=0
+	fi
+	
+	[ "$iface_section" != "loopback" ] && [ "$proto" != "relay" ] && [ "$invisible" != "1" ] &&
+		setup_overview_section "interface" "$enabled" "$iface_section"
+}
+
+setup_mobile_data_limit_sections() {
+	local interface="$1"
+	local enabled="$2"
+	setup_overview_section "mobile_data_limit" "$enabled" "$interface"
+}
+
+setup_sms_limit_sections() {
+	local section="$1"
+	local sim="$2"
+	local sim_position enabled enable_sms_limit
+
+	config_get sim_position "$section" position
+	config_get enable_sms_limit "$section" enable_sms_limit
+	[ "$sim_position" != "$sim" ] && return
+
+	enabled=$(uci -q get overview.status.sms_limit_sim"${sim}")
+	[ "$enabled" -eq 1 ] && [ "$enable_sms_limit" -eq 1 ] &&
+		enabled="1" || enabled="0"
+
+	setup_overview_section "sms_limit_sim${sim}" "$enabled" "$section"
+}
+
+setup_openvpn_sections() {
+	local openvpn="$1"
+	local enabled=""
+
+	[ "$openvpn" = "teltonika_auth_service" ] && return
+
+	enabled=$(uci -q get overview.status.open_vpn_"${openvpn}")
+	[ -z "$enabled" ] && enabled="0"
+
+	setup_overview_section "open_vpn" $enabled "$openvpn"
+}
+
+setup_vrrp_sections() {
+	local vrrp="$1"
+	local enabled=""
+
+	enabled=$(uci -q get overview.status.vrrp_"${vrrp}")
+	[ -z "$enabled" ] && enabled="0"
+
+	setup_overview_section "vrrp" $enabled "$vrrp"
+}
+
+remove_section() {
+	local config="$1"
+	local sect="$2"
+
+	uci_get "$config" "$sect" && {
+		uci_remove "$config" "$sect"
+		uci_commit "$config"
+	}
+}
+
+config_load overview
+[ -f "/etc/config/teltonika" ] && section="show" || section="status"
+
+uci_get overview "@overview[1]" && {
+	remove_section "overview" "$section"
+	exit 0
+}
+
+# ---------- System --------------------------------------------
+config_get system "$section" system 1
+setup_overview_section "system" "$system"
+
+# ---------- Mobile --------------------------------------------
+config_get mobile "$section" mobile 1
+
+json_init
+json_load_file '/etc/board.json'
+json_get_keys modems modems
+json_select modems
+
+for modem in $modems; do
+	json_select "$modem"
+	json_get_vars id
+	setup_overview_section "mobile" "$mobile" "$id"
+	json_select ..
+done
+
+# ---------- Wireless ------------------------------------------
+config_get wireless "$section" wireless 1
+
+[ -f "$WIFI_CONFIG" ] && {
+	config_load wireless
+	config_foreach setup_wifi_sections wifi-iface "$wireless"
+}
+
+# ---------- Interfaces ----------------------------------------
+config_get interfaces "$section" interfaces
+config_get wan "$section" wan 1
+config_get lan "$section" local_network 1
+
+if [ -z "$interfaces" ] && [ -z "$wan" ] && [ -z "$lan" ]; then
+	enabled="1"
+elif [ -n "$interfaces" ]; then
+	enabled="$interfaces"
+elif [ "$wan" -eq 1 ] || [ "$lan" -eq 1 ]; then
+	enabled="1"
+else
+	enabled="0"
+fi
+
+config_load network
+config_foreach setup_interface_sections interface "$enabled"
+
+# ---------- Mobile data limit ---------------------------------
+config_get data_limit "$section" data_limit 0
+config_load quota_limit
+config_foreach setup_mobile_data_limit_sections interface "$data_limit"
+
+# ---------- SMS limit -----------------------------------------
+config_load simcard
+config_foreach setup_sms_limit_sections sim "1"
+config_foreach setup_sms_limit_sections sim "2"
+
+# ---------- Access control ------------------------------------
+config_get access_control "$section" access_control 0
+setup_overview_section "access_control" "$access_control"
+
+# ---------- Recent system events ------------------------------
+config_get system_events "$section" system_events 1
+setup_overview_section "system_events" "$system_events"
+
+# ---------- Recent network events -----------------------------
+config_get network_events "$section" network_events 1
+setup_overview_section "network_events" "$network_events"
+
+# ---------- VPN -----------------------------------------------
+config_load openvpn
+config_foreach setup_openvpn_sections openvpn
+
+# ---------- VRRP ----------------------------------------------
+config_load vrrpd
+config_foreach setup_vrrp_sections vrrpd
+
+# ---------- RMS -----------------------------------------------
+config_get monitoring "$section" monitoring 1
+setup_overview_section "monitoring" "$monitoring"
+
+# ---------- Hotspot -------------------------------------------
+config_get hotspot "$section" hotspot 0
+[ -f "$HOTSPOT_CONFIG" ] && {
+	setup_overview_section "hotspot" "$hotspot"
+}
+
+uci commit overview
+remove_section "overview" "$section"
+
+exit 0

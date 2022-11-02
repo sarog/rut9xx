@@ -1,0 +1,143 @@
+#!/bin/sh /etc/rc.common
+
+. /lib/functions.sh
+
+START=99
+STOP=99
+USE_PROCD=1
+
+TMP_DIR=/var/run
+UNDO_FILE=${TMP_DIR}/privoxy_firewall.sh
+CONFIG_FILE=${TMP_DIR}/privoxy.config
+PID_FILE=${TMP_DIR}/privoxy.pid
+DAEMON=/usr/sbin/privoxy
+USER_ACTION_FILE=${TMP_DIR}/user.action
+PORT=
+
+ipt() {
+	opt=$1
+	shift
+	echo "iptables -D $*" >>$UNDO_FILE
+	iptables "$opt" "$@"
+}
+
+set_fw_rules_hotspot() {
+	local enabled net
+	config_get enabled "$1" "enabled" 0
+	[ "$enabled" -ne 1 ] && return
+
+	config_get net "$1" "net"
+	[ -z "$net" ] && return 0
+
+	eval "$(ipcalc.sh "$net")"
+	echo "permit-access $net" >>$CONFIG_FILE
+	ipt -I INPUT -i tun+ -p tcp -m tcp --dport "$PORT" -j ACCEPT
+	ipt -A PREROUTING -t nat -i tun+ -p tcp ! -d "${NETWORK}/${PREFIX}" --dport 80 -j REDIRECT \
+		--to-port "$PORT"
+}
+
+set_fw_rules() {
+	local port
+
+	network_get_subnet subnet "$2"
+	[ -z "$subnet" ] && return
+
+	config_get port "$CONFIG_SECTION" listen_address
+	echo "permit-access $subnet" >>$CONFIG_FILE
+	ipt -A PREROUTING -t nat -i br-lan -p tcp ! -d "$subnet" --dport 80 -j REDIRECT \
+		--to-port "${port/:/}"
+}
+
+del_fw_rules() {
+	[ -e "$UNDO_FILE" ] && sh $UNDO_FILE 2>/dev/null
+	rm -f $UNDO_FILE 2>/dev/null
+}
+
+service_triggers() {
+	procd_add_reload_trigger "privoxy"
+}
+
+config_cb() {
+	local subnet
+
+	case "$1" in
+	privoxy)
+		option_cb() {
+			privoxy_option_cb "$@"
+		}
+		list_cb() {
+			privoxy_option_cb "$@"
+		}
+		;;
+	*)
+		option_cb() { return 0; }
+		list_cb() { return 0; }
+		return 0
+		;;
+	esac
+}
+
+privoxy_option_cb() {
+	case "$1" in
+		# UCI settings
+		enabled)
+			[ "$2" = "1" ] && START_PRIVOXY=1
+			;;
+		listen_address)
+			PORT=${2/:/}
+			[ "$1" = "url" ] || echo "${1//_/-} $2 " >> "$CONFIG_FILE"
+			;;
+		permit_access)
+			set_fw_rules $*
+			;;
+		_mode)
+			if [ "$2" == "blacklist" ]; then
+				echo -e "{+block{Blacklist}}" > $USER_ACTION_FILE
+			else
+				echo -e "{+block{Blacklist}}\n/\n{-block{Whitelist}}" > $USER_ACTION_FILE
+			fi
+
+			urls=$(uci_get privoxy privoxy url)
+			[ -n "$urls" ] && echo $urls | tr " " "\n" >> $USER_ACTION_FILE
+			;;
+		_*)
+			;;
+		*)
+			[ "$1" = "url" ] || echo "${1//_/-} $2 " >> "$CONFIG_FILE"
+			;;
+	esac
+}
+
+start_service() {
+	. /lib/functions/network.sh
+	#We need to check if service is enabled before doing config_load.
+	#All config_cb, option_cb and other callbacks will be executed other way.
+	local enabled=$(uci -q get privoxy.privoxy.enabled || echo 0)
+	[ "$enabled" -eq 1 ] || return
+
+	# Clear URL list file
+	echo "" >$USER_ACTION_FILE
+	config_load privoxy
+	[ -n "$PORT" ] && {
+		config_load chilli
+		config_foreach set_fw_rules_hotspot chilli
+	}
+
+	procd_open_instance
+	procd_set_param command $DAEMON --no-daemon --pidfile $PID_FILE $CONFIG_FILE
+	#procd_set_param respawn
+	procd_set_param file $CONFIG_FILE
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_close_instance
+}
+
+stop_service() {
+	del_fw_rules
+	rm -f $CONFIG_FILE
+}
+
+reload_service() {
+	stop
+	start
+}

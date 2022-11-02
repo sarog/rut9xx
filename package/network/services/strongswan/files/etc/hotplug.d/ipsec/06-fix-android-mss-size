@@ -1,0 +1,14 @@
+#!/bin/sh
+
+[ -n "$PLUTO_PEER_CLIENT" ] || exit 0
+
+case "$PLUTO_VERB" in
+	up-client)
+		iptables -t mangle -A FORWARD -m policy --pol ipsec --dir in -p tcp -m tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1361:1536 -j TCPMSS --set-mss 1360
+		;;
+	down-client)
+		iptables -t mangle -D FORWARD -m policy --pol ipsec --dir in -p tcp -m tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1361:1536 -j TCPMSS --set-mss 1360
+		;;
+esac
+
+exit 0

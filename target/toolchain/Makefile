@@ -9,16 +9,14 @@
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
-include $(INCLUDE_DIR)/host.mk
+include $(INCLUDE_DIR)/version.mk
 
 override MAKEFLAGS=
 
-PKG_OS:=$(word 2,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
-PKG_CPU:=$(word 1,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
-
-TOOLCHAIN_NAME:=OpenWrt-Toolchain-$(BOARD)-for-$(ARCH)$(ARCH_SUFFIX)-gcc-$(GCCV)$(DIR_SUFFIX)
+TOOLCHAIN_NAME:=$(VERSION_DIST_SANITIZED)-toolchain-$(if $(CONFIG_VERSION_FILENAMES),$(VERSION_NUMBER)-)$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))_gcc-$(GCCV)$(DIR_SUFFIX).$(HOST_OS)-$(HOST_ARCH)
 TOOLCHAIN_BUILD_DIR:=$(BUILD_DIR)/$(TOOLCHAIN_NAME)
-EXCLUDE_DIRS:=*/ccache \
+EXCLUDE_DIRS:= \
+	*/initial \
 	*/stamp \
 	*/stampfiles \
 	*/man \
@@ -35,7 +33,10 @@ $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.bz2: clean
 	       toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)$(DIR_SUFFIX) | \
 	       $(TAR) -xf - -C $(TOOLCHAIN_BUILD_DIR)
 
-	$(CP)  $(TOPDIR)/LICENSE ./files/README.TOOLCHAIN \
+	$(CP) \
+		$(TOPDIR)/LICENSES \
+		$(TOPDIR)/COPYING \
+		./files/README.TOOLCHAIN \
 		$(TOOLCHAIN_BUILD_DIR)/
 
 	$(CP) ./files/wrapper.sh $(TOOLCHAIN_PREFIX)/bin/$(REAL_GNU_TARGET_NAME)-wrapper.sh
@@ -46,10 +47,20 @@ $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.bz2: clean
 			ln -sf $(REAL_GNU_TARGET_NAME)-wrapper.sh $(REAL_GNU_TARGET_NAME)-$${app} ; \
 		done; \
 	)
+
+	@-( \
+		find \
+			$(TOOLCHAIN_BUILD_DIR)/*/bin \
+			$(TOOLCHAIN_BUILD_DIR)/*/*/bin \
+			$(TOOLCHAIN_BUILD_DIR)/*/libexec \
+			-type f; \
+	) | xargs strip 2>/dev/null >/dev/null
+
 	echo REVISION:="$(REVISION)" > $(TOOLCHAIN_BUILD_DIR)/version.mk
 	find $(TOOLCHAIN_BUILD_DIR) -name .git | $(XARGS) rm -rf
 	find $(TOOLCHAIN_BUILD_DIR) -name .svn | $(XARGS) rm -rf
 	find $(TOOLCHAIN_BUILD_DIR) -name CVS | $(XARGS) rm -rf
+	mkdir -p $(BIN_DIR)
 	(cd $(BUILD_DIR); \
 		tar cfj $@ $(TOOLCHAIN_NAME); \
 	)

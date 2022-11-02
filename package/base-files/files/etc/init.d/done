@@ -2,51 +2,41 @@
 # Copyright (C) 2006 OpenWrt.org
 
 START=95
-
-check_modem() {
-	. /lib/teltonika-functions.sh
-	vidpid=`get_ext_vidpid_tlt`
-	if [ -z "$vidpid" ]; then
-		err1=`dmesg | grep -c "device descriptor read"`
-	        err2=`dmesg | grep -c "device not accepting address"`
-	        if [ "$err1" -ne 0 ] || [ "$err2" -ne 0 ]; then
-			echo "Modem error. Restarting modem"
-			/etc/init.d/modem restart
-		fi
-	fi
-}
-
 boot() {
 	mount_root done
+	rm -f /sysupgrade.tgz && sync
 
 	# process user commands
 	[ -f /etc/rc.local ] && {
 		sh /etc/rc.local
 	}
 
-	# set leds to normal state
-	. /etc/diag.sh
+	#some times soc usb does not start
+	#workaround is reboot if usb not started
+	platform=$(cat /proc/device-tree/platform)
+	if [ $platform == "RUT9M" ] || [ $platform == "RUT2M" ]; then
+		
+		if [ -z $(uci -q get system.usbcheck.counter) ]; then
+			uci -q set system.usbcheck=usbcheck
+			uci -q set system.usbcheck.counter='0'
+			uci -q set system.usbcheck.max='3'
+			uci commit system
+		fi
 
-	# check for modem startup error
-	check_modem
-
-        # reloading configs for uci (moved from wifid.init)
-        /sbin/reload_config
-
-        /usr/bin/logger "Warning: this sim get method (gpio.sh get SIM) is deprecated. Consider usin    g ubus interface instead."
-
-	set_state done
-
-	if [ -f /tmp/memoryexpansion ]
-	then
-		block detect > /etc/config/fstab
-		sed -i s@/mnt/sda1@/overlay@ /etc/config/fstab
-		sed -i "s/option\\tenabled\\t'0'/option\\tenabled\\t'1'/" /etc/config/fstab
-		mount -t ext2 /dev/sda1 /mnt/sda1
-		rm -rf /mnt/sda1/*
-		rm -rf /overlay/upper/mnt/sda1/*
-		tar -C /overlay -cvf - . | tar -C /mnt/sda1 -xf -
-		sync
-		reboot
+		if [ ! -d "/sys/bus/usb/drivers/usb/1-1" ]; then
+			echo "USB system start up: FAILED... rebooting!"
+			cnt=$(uci -q get system.usbcheck.counter)
+			max=$(uci -q get system.usbcheck.max)
+			if [ "$max" -gt "$cnt" ]; then
+				cnt=$((cnt+1))
+				uci -q set system.usbcheck.counter=$cnt
+				uci commit system
+				sync && reboot -f
+			fi
+		else
+			echo "USB system start up: OK"
+			uci -q set system.usbcheck.counter='0'
+			uci commit system
+		fi
 	fi
 }

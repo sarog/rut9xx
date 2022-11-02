@@ -1,0 +1,25 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=70
+STOP=40
+
+start_service() {
+	procd_open_instance
+	procd_set_param command lua /usr/bin/email_to_sms start
+	procd_close_instance
+}
+
+stop_service() {
+	/usr/bin/email_to_sms stop
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger "email_to_sms"
+}
+
+
+restart () {
+	/usr/bin/email_to_sms start
+}

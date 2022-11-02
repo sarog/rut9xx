@@ -1,2 +1,2 @@
 #!/bin/sh
-[ "$ACTION" = ifup ] && /etc/init.d/qos enabled && qos-stop && qos-start
+[ "$ACTION" = ifup ] && /etc/init.d/qos enabled && /usr/lib/qos/generate.sh interface "$INTERFACE" | sh

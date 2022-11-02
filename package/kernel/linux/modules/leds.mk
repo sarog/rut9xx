@@ -22,27 +22,27 @@ endef
 
 $(eval $(call KernelPackage,leds-gpio))
 
+LED_TRIGGER_DIR=$(LINUX_DIR)/drivers/leds/trigger
 
-define KernelPackage/ledtrig-heartbeat
+define KernelPackage/ledtrig-activity
   SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED Heartbeat Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_HEARTBEAT
-  FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-heartbeat.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-heartbeat)
+  TITLE:=LED Activity Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_ACTIVITY
+  FILES:=$(LED_TRIGGER_DIR)/ledtrig-activity.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-activity)
 endef
 
-define KernelPackage/ledtrig-gpio/description
- Kernel module that allows LEDs to blink like heart beat
+define KernelPackage/ledtrig-activity/description
+ Kernel module that allows LEDs to blink based on system load
 endef
 
-$(eval $(call KernelPackage,ledtrig-heartbeat))
-
+$(eval $(call KernelPackage,ledtrig-activity))
 
 define KernelPackage/ledtrig-gpio
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED GPIO Trigger
   KCONFIG:=CONFIG_LEDS_TRIGGER_GPIO
-  FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-gpio.ko
+  FILES:=$(LED_TRIGGER_DIR)/ledtrig-gpio.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-gpio)
 endef
 
@@ -53,110 +53,26 @@ endef
 $(eval $(call KernelPackage,ledtrig-gpio))
 
 
-define KernelPackage/ledtrig-morse
+define KernelPackage/ledtrig-transient
   SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED Morse Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_MORSE
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-morse.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-morse)
+  TITLE:=LED Transient Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_TRANSIENT
+  FILES:=$(LED_TRIGGER_DIR)/ledtrig-transient.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-transient,1)
 endef
 
-define KernelPackage/ledtrig-morse/description
- Kernel module to show morse coded messages on LEDs
+define KernelPackage/ledtrig-transient/description
+ Kernel module that allows LEDs one time activation of a transient state.
 endef
 
-$(eval $(call KernelPackage,ledtrig-morse))
-
-
-define KernelPackage/ledtrig-netdev
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED NETDEV Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_NETDEV
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-netdev.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-netdev)
-endef
-
-define KernelPackage/ledtrig-netdev/description
- Kernel module to drive LEDs based on network activity
-endef
-
-$(eval $(call KernelPackage,ledtrig-netdev))
-
-
-define KernelPackage/ledtrig-netfilter
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED NetFilter Trigger
-  DEPENDS:=kmod-ipt-core
-  KCONFIG:=CONFIG_NETFILTER_XT_TARGET_LED
-  FILES:=$(LINUX_DIR)/net/netfilter/xt_LED.ko
-  AUTOLOAD:=$(call AutoLoad,50,xt_LED)
-endef
-
-define KernelPackage/ledtrig-netfilter/description
- Kernel module to flash LED when a particular packets passing through your machine.
-
- For example to create an LED trigger for incoming SSH traffic:
-    iptables -A INPUT -p tcp --dport 22 -j LED --led-trigger-id ssh --led-delay 1000
- Then attach the new trigger to an LED on your system:
-    echo netfilter-ssh > /sys/class/leds/<ledname>/trigger
-endef
-
-$(eval $(call KernelPackage,ledtrig-netfilter))
-
-
-define KernelPackage/ledtrig-usbdev
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED USB device Trigger
-  DEPENDS:=@USB_SUPPORT kmod-usb-core
-  KCONFIG:=CONFIG_LEDS_TRIGGER_USBDEV
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-usbdev.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-usbdev)
-endef
-
-define KernelPackage/ledtrig-usbdev/description
- Kernel module to drive LEDs based on USB device presence/activity
-endef
-
-$(eval $(call KernelPackage,ledtrig-usbdev))
-
-
-define KernelPackage/ledtrig-default-on
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED Default ON Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_DEFAULT_ON
-  FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-default-on.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-default-on,1)
-endef
-
-define KernelPackage/ledtrig-default-on/description
- Kernel module that allows LEDs to be initialised in the ON state
-endef
-
-$(eval $(call KernelPackage,ledtrig-default-on))
-
-
-define KernelPackage/ledtrig-timer
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED Timer Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_TIMER
-  FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-timer.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-timer,1)
-endef
-
-define KernelPackage/ledtrig-timer/description
- Kernel module that allows LEDs to be controlled by a programmable timer
- via sysfs
-endef
-
-$(eval $(call KernelPackage,ledtrig-timer))
+$(eval $(call KernelPackage,ledtrig-transient))
 
 
 define KernelPackage/ledtrig-oneshot
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED One-Shot Trigger
-  DEPENDS:=@!LINUX_3_3
   KCONFIG:=CONFIG_LEDS_TRIGGER_ONESHOT
-  FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-oneshot.ko
+  FILES:=$(LED_TRIGGER_DIR)/ledtrig-oneshot.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-oneshot)
 endef
 
@@ -166,3 +82,35 @@ define KernelPackage/ledtrig-oneshot/description
 endef
 
 $(eval $(call KernelPackage,ledtrig-oneshot))
+
+
+define KernelPackage/leds-pca963x
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=PCA963x LED support
+  DEPENDS:=+kmod-i2c-core
+  KCONFIG:=CONFIG_LEDS_PCA963X
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-pca963x.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-pca963x,1)
+endef
+
+define KernelPackage/leds-pca963x/description
+ Driver for the NXP PCA963x I2C LED controllers.
+endef
+
+$(eval $(call KernelPackage,leds-pca963x))
+
+
+define KernelPackage/leds-pwm
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=PWM driven LED Support
+  KCONFIG:=CONFIG_LEDS_PWM
+  DEPENDS:= @PWM_SUPPORT
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-pwm.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-pwm,1)
+endef
+
+define KernelPackage/leds-pwm/description
+ This option enables support for pwm driven LEDs
+endef
+
+$(eval $(call KernelPackage,leds-pwm))

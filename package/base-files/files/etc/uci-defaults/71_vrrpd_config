@@ -1,9 +1,0 @@
-#!/bin/sh
-delay=`uci get -q vrrpd.vid1.delay`
-
-
-if [ -z "$delay" ]; then
-	uci set -q vrrpd.vid1.delay="1"
-	uci commit vrrpd
-fi
-exit 0

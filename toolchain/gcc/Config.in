@@ -2,30 +2,27 @@
 
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
-	default GCC_USE_VERSION_4_6_LINARO if TARGET_octeon
-	default GCC_USE_VERSION_4_8_LINARO
+	default GCC_USE_VERSION_8
 	help
 	  Select the version of gcc you wish to use.
 
-	config GCC_USE_VERSION_4_6_LINARO
-		select GCC_VERSION_4_6_LINARO
-		bool "gcc 4.6.x with Linaro enhancements"
+	config GCC_USE_VERSION_7
+		bool "gcc 7.x"
+		depends on !arc
 
-	config GCC_USE_VERSION_4_8_LINARO
-		select GCC_VERSION_4_8_LINARO
-		bool "gcc 4.8.x with Linaro enhancements"
+	config GCC_USE_VERSION_8
+		bool "gcc 8.x"
 
+	config GCC_USE_VERSION_9
+		bool "gcc 9.x"
+
+	config GCC_USE_VERSION_10
+		bool "gcc 10.x"
 endchoice
 
 config GCC_USE_GRAPHITE
 	bool
 	prompt "Compile in support for the new Graphite framework in GCC 4.4+" if TOOLCHAINOPTS
-
-config GCC_USE_SYSTEM_PPL_CLOOG
-	bool
-	prompt "Use the system versions of PPL and CLooG"
-	depends on GCC_USE_GRAPHITE
-	default n
 
 config EXTRA_GCC_CONFIG_OPTIONS
 	string
@@ -34,12 +31,19 @@ config EXTRA_GCC_CONFIG_OPTIONS
 	help
 	    Any additional gcc options you may want to include....
 
-config SSP_SUPPORT
+config GCC_DEFAULT_PIE
 	bool
-	prompt "Enable Stack-Smashing Protection support" if TOOLCHAINOPTS
+	prompt "Build executable with PIE enabled by default" if TOOLCHAINOPTS
 	default n
 	help
-	    Enable Stack-Smashing Protection support
+	    Use gcc configure option --enable-default-pie to turn on -fPIE and -pie by default.
+
+config GCC_DEFAULT_SSP
+	bool
+	prompt "Build executable with Stack-Smashing Protection enabled by default" if TOOLCHAINOPTS
+	default n
+	help
+	    Use gcc configure option --enable-default-ssp to turn on -fstack-protector-strong by default.
 
 config SJLJ_EXCEPTIONS
 	bool
@@ -50,17 +54,17 @@ config SJLJ_EXCEPTIONS
 	    frame unwinding exceptions handling routines.  Warning: increases
 	    code size and runtime memory usage.
 
-config INSTALL_LIBGCJ
-	bool
-	prompt "Build/install java compiler and GNU classpath ?" if TOOLCHAINOPTS
-	default n
-	help
-	    Build/install java compiler and GNU classpath ?
-
-
 config INSTALL_GFORTRAN
 	bool
 	prompt "Build/install fortran compiler?" if TOOLCHAINOPTS
 	default n
 	help
 	    Build/install GNU fortran compiler ?
+
+config INSTALL_GCCGO
+	bool
+	prompt "Build/install Go compiler?" if TOOLCHAINOPTS
+	depends on USE_GLIBC || BROKEN
+	default n
+	help
+	    Build/install GNU gccgo compiler ?

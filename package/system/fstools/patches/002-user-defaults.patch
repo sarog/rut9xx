@@ -1,0 +1,44 @@
+--- a/libfstools/mount.c
++++ b/libfstools/mount.c
+@@ -95,7 +95,8 @@ pivot(char *new, char *old)
+ int
+ fopivot(char *rw_root, char *ro_root)
+ {
+-	char overlay[64], mount_options[64], upperdir[64], workdir[64], upgrade[64], upgrade_dest[64];
++	char overlay[64], mount_options[64], upperdir[64], workdir[64], upgrade[64], upgrade_dest[64],
++		user_upgrade[64], user_upgrade_dest[64];
+ 	struct stat st;
+ 
+ 	if (find_filesystem("overlay")) {
+@@ -107,7 +108,9 @@ fopivot(char *rw_root, char *ro_root)
+ 	snprintf(upperdir, sizeof(upperdir), "%s/upper", rw_root);
+ 	snprintf(workdir, sizeof(workdir), "%s/work", rw_root);
+ 	snprintf(upgrade, sizeof(upgrade), "%s/sysupgrade.tgz", rw_root);
++	snprintf(user_upgrade, sizeof(user_upgrade), "%s/user_defaults.tgz", rw_root);
+ 	snprintf(upgrade_dest, sizeof(upgrade_dest), "%s/sysupgrade.tgz", upperdir);
++	snprintf(user_upgrade_dest, sizeof(user_upgrade_dest), "%s/user_defaults.tgz", upperdir);
+ 	snprintf(mount_options, sizeof(mount_options), "lowerdir=/,upperdir=%s,workdir=%s",
+ 		 upperdir, workdir);
+ 
+@@ -127,6 +130,9 @@ fopivot(char *rw_root, char *ro_root)
+ 	if (stat(upgrade, &st) == 0)
+ 		rename(upgrade, upgrade_dest);
+ 
++	if (stat(user_upgrade, &st) == 0)
++		rename(user_upgrade, user_upgrade_dest);
++
+ 	if (mount(overlay, "/mnt", "overlay", MS_NOATIME, mount_options)) {
+ 		ULOG_ERR("mount failed: %m, options %s\n", mount_options);
+ 		return -1;
+--- a/libfstools/overlay.c
++++ b/libfstools/overlay.c
+@@ -57,7 +57,8 @@ handle_rmdir(const char *dir)
+ 		if (fstatat(fd, dt->d_name, &st, AT_SYMLINK_NOFOLLOW) || S_ISDIR(st.st_mode))
+ 			continue;
+ 
+-		if (keep_sysupgrade && !strcmp(dt->d_name, "sysupgrade.tgz"))
++		if (keep_sysupgrade && (!strcmp(dt->d_name, "sysupgrade.tgz") ||
++			!strcmp(dt->d_name, "user_defaults.tgz")))
+ 			continue;
+ 
+ 		unlinkat(fd, dt->d_name, 0);

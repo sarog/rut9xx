@@ -1,0 +1,792 @@
+#
+# Copyright (C) 2021 Teltonika
+#
+
+menu "Teltonika device options"
+
+config BOARD_BRINGUP_UTILS
+	bool "Board bring-up utilities"
+	select KERNEL_DEVMEM
+	select BUSYBOX_CONFIG_DEVMEM
+
+config CORE_PACKAGES
+	bool "Teltonika's core packages"
+	default y
+	select PACKAGE_libbrand-versioning
+	select PACKAGE_mnfinfo
+	select PACKAGE_troubleshoot
+	select PACKAGE_rpcd-mod-file
+	select PACKAGE_rpcd-mod-mnfinfo
+	select PACKAGE_ucert-full
+	select PACKAGE_kmod_man
+	select PACKAGE_terminfo
+	select PACKAGE_kmod-gpio-button-hotplug
+	select PACKAGE_vuci-ui-core
+	select PACKAGE_luci-bwc
+	select PACKAGE_cgi-io
+	select PACKAGE_vuci-app-backup
+	select PACKAGE_generic-container
+	select PACKAGE_vuci-app-multiusers
+
+config CORE_NETWORK_PACKAGES
+	bool "Teltonika's core networking packages"
+	default y
+	select PACKAGE_dnsmasq
+	select PACKAGE_curl
+	select PACKAGE_ethtool
+	select PACKAGE_port_eventsd
+	select PACKAGE_ip-full
+	select PACKAGE_iptables-mod-nat-extra
+	select PACKAGE_iptables-mod-nflog
+	select PACKAGE_ip_blockd
+	select PACKAGE_odhcpd-ipv6only
+	select PACKAGE_kmod-nf-nathelper-extra
+	select PACKAGE_kmod-nf-nathelper
+	select PACKAGE_6rd
+	select PACKAGE_vuci-app-firewall
+	select PACKAGE_vuci-app-routes
+	select PACKAGE_vuci-app-dns
+	select PACKAGE_libustream-openssl
+	select PACKAGE_vuci-app-vlan
+
+config PORT_MIRRORING_SUPPORT
+	bool "Enable Port Mirroring support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut30x
+	select PACKAGE_vuci-app-port-mirroring
+
+config RELAYD_SUPPORT
+	tristate "Enable Relayd support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default m if TARGET_ath79_generic_DEVICE_teltonika_rut36x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut2xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut2m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_tcr1xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_otd1xx
+	select PACKAGE_relayd
+
+config WEB_CLI_SUPPORT
+	bool "Web CLI support"
+	default y
+	select PACKAGE_shellinabox
+	select PACKAGE_vuci-app-cli
+
+config NTP_SUPPORT
+	bool "NTP Synchronization support"
+	default y
+	select PACKAGE_ntpclient
+	select PACKAGE_vuci-app-ntp
+
+config PKG_SUPPORT
+	bool "Package Manager support"
+	default y
+	select PACKAGE_vuci-app-package-manager
+	select PACKAGE_package_restore
+
+config WOL_SUPPORT
+	tristate "Wake-on-LAN support"
+	default y if TARGET_mdm9x07 ||\
+		     TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_sdxprairie_DEVICE_teltonika_trb5xx
+	default m
+	select PACKAGE_etherwake
+	select PACKAGE_vuci-app-wol
+
+config NF_LOGGING_SUPPORT
+	tristate "NetFilter Logging support"
+	depends on !BYPASS_OFFLOAD_FEATURE
+	default y if TARGET_mdm9x07 ||\
+		     TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_sdxprairie_DEVICE_teltonika_trb5xx
+	default m
+	select PACKAGE_tlt-ulogd
+
+config ADVANCED_NETWORK
+	bool "Advanced networking packages"
+	default y
+
+config DDNS_SUPPORT
+	tristate "Enable Dynamic DNS support"
+	default y if TARGET_mdm9x07 ||\
+		     TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_sdxprairie_DEVICE_teltonika_trb5xx
+	default m
+	depends on ADVANCED_NETWORK
+	select PACKAGE_tlt-ddns
+
+config STUNNEL_SUPPORT
+	tristate "Enable STunnel support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default m
+	depends on ADVANCED_NETWORK
+	select PACKAGE_stunnel
+	select PACKAGE_vuci-app-stunnel
+
+config STRONGSWAN_SUPPORT
+	bool "Enable Strongswan support"
+	default y
+	depends on ADVANCED_NETWORK
+	select PACKAGE_strongswan
+	select PACKAGE_strongswan-minimal
+	select PACKAGE_strongswan-mod-xauth-generic
+	select PACKAGE_strongswan-mod-vici
+	select PACKAGE_strongswan-mod-sha2
+	select PACKAGE_strongswan-mod-revocation
+	select PACKAGE_strongswan-mod-pkcs8
+	select PACKAGE_strongswan-mod-pkcs1
+	select PACKAGE_strongswan-mod-pgp
+	select PACKAGE_strongswan-mod-pem
+	select PACKAGE_strongswan-mod-md5
+	select PACKAGE_strongswan-mod-des
+	select PACKAGE_strongswan-mod-constraints
+	select PACKAGE_strongswan-mod-openssl
+	select PACKAGE_strongswan-mod-eap-identity
+	select PACKAGE_strongswan-mod-eap-mschapv2
+	select PACKAGE_vuci-app-strong-swan
+
+config GRE_SUPPORT
+	bool "Enable GRE support"
+	default y
+	depends on ADVANCED_NETWORK
+	select PACKAGE_gre
+	select PACKAGE_gkeepalive
+	select PACKAGE_vuci-app-gre
+
+config OPENVPN_SUPPORT
+	bool "Enable OpenVPN support"
+	default y
+	depends on ADVANCED_NETWORK
+	select PACKAGE_openvpn-easy-rsa
+	select PACKAGE_openvpn-openssl
+	select PACKAGE_vuci-app-openvpn
+
+config SSTP_SUPPORT
+	tristate "Enable SSTP support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default m
+	depends on ADVANCED_NETWORK
+	select PACKAGE_sstp-client
+	select PACKAGE_vuci-app-sstp
+
+config DMVPN_SUPPORT
+	tristate "Enable DMVPN support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default m
+	depends on ADVANCED_NETWORK
+	depends on GRE_SUPPORT
+	depends on STRONGSWAN_SUPPORT
+	depends on FRR_SUPPORT
+	select PACKAGE_dmvpn
+
+config PPTP_SUPPORT
+	bool "Enable PPTP support"
+	default y
+	depends on ADVANCED_NETWORK
+	select PACKAGE_pptpd
+	select PACKAGE_ppp-mod-pptp
+	select PACKAGE_vuci-app-pptp
+
+config L2TP_SUPPORT
+	bool "Enable L2TP support"
+	default y
+	depends on ADVANCED_NETWORK
+	depends on PPTP_SUPPORT
+	select PACKAGE_xl2tpd
+	select PACKAGE_ppp-mod-ppol2tp
+	select PACKAGE_kmod-l2tp-eth
+	select PACKAGE_kmod-l2tp-ip
+	select PACKAGE_vuci-app-l2tp
+
+config FRR_SUPPORT
+	tristate "Enable FRR support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default m
+	depends on ADVANCED_NETWORK
+	select PACKAGE_frr-ripd
+	select PACKAGE_frr-ospfd
+	select PACKAGE_frr-nhrp
+	select PACKAGE_frr-eigrpd
+	select PACKAGE_frr-bgpd
+
+config VRR_SUPPORT
+	tristate "Enable VRR support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default m
+	depends on ADVANCED_NETWORK
+	select PACKAGE_vrrpd
+	select PACKAGE_vuci-app-vrrp
+
+config WEB_FILTER_SUPPORT
+	tristate "Enable Web Filter support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_tcr1xx
+	default m
+	depends on ADVANCED_NETWORK
+	select PACKAGE_web_filter
+
+config SNMP_SUPPORT
+	tristate "Enable SNMP support"
+	default y if TARGET_mdm9x07 ||\
+		     TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_sdxprairie_DEVICE_teltonika_trb5xx
+	default m
+	depends on ADVANCED_NETWORK
+	select PACKAGE_snmp
+	select PACKAGE_snmptrap
+	select SNMPTRAP_GSM if MOBILE_SUPPORT
+	select SNMPTRAP_IO if IO_SUPPORT
+
+config IGMPPROXY_SUPPORT
+	tristate "Enable Igmpproxy support"
+	default m
+	select PACKAGE_igmpproxy
+	select PACKAGE_vuci-app-igmp-proxy
+
+config BRIDGE_SUPPORT
+	bool "Enable Bridge support"
+	default n if TARGET_ath79_generic_DEVICE_teltonika_rut30x
+	default y
+	depends on ADVANCED_NETWORK
+	select PACKAGE_bridge
+	select PACKAGE_ebtables
+	select PACKAGE_kmod-ebtables-ipv4
+	select PACKAGE_kmod-ebtables-watchers
+
+config MQTT_SUPPORT
+	tristate "Enable MQTT support"
+	default y if TARGET_mdm9x07 ||\
+		     TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_sdxprairie_DEVICE_teltonika_trb5xx
+	default m
+	depends on ADVANCED_NETWORK
+	select PACKAGE_mosquitto-ssl
+	select PACKAGE_mqtt_pub
+	select PACKAGE_vuci-app-mqtt
+
+config UPNP_SUPPORT
+	tristate "Enable UPNP support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default m
+	depends on ADVANCED_NETWORK
+	select PACKAGE_miniupnpd
+	select PACKAGE_vuci-app-upnp
+
+config RMS_SUPPORT
+	bool "Enable RMS support"
+	default y
+	select PACKAGE_rms_connect
+	select PACKAGE_rms_json
+	select PACKAGE_rms_mqtt
+	select PACKAGE_luasocket
+	select PACKAGE_vuci-app-cloud-solutions
+
+config FOTA_SUPPORT
+	bool "Enable FOTA support"
+	default y
+	select PACKAGE_rut_fota
+	select PACKAGE_librut_fota
+
+config RNDIS_SUPPORT
+	bool "Enable RNDIS support"
+	default y if TARGET_ramips_mt76x8_DEVICE_teltonika_rut2m
+	default n
+	select PACKAGE_kmod-usb-net-rndis
+
+config MOBILE_SUPPORT
+	bool "Enable Mobile support"
+	default y
+	select PACKAGE_kmod-usb-serial-option
+	select PACKAGE_gsmctl
+	select PACKAGE_gsmd
+	select PACKAGE_wwan
+	select PACKAGE_operctl
+	select PACKAGE_apn_db
+	select PACKAGE_mdcollectd if !BYPASS_OFFLOAD_FEATURE
+	select PACKAGE_quota_limit if !BYPASS_OFFLOAD_FEATURE
+	select PACKAGE_rpcd-mod-smslimit
+	select PACKAGE_call_utilities
+	select PACKAGE_sms_utilities
+	select PACKAGE_sms-post-get
+	select PACKAGE_email_to_sms
+	select PACKAGE_modem-sync
+	select PACKAGE_uqmi if !TARGET_sdxprairie
+	select PACKAGE_qmi-utils if TARGET_sdxprairie
+	select PACKAGE_vuci-app-mobile
+	select PACKAGE_ledman if !TARGET_ath79_generic_DEVICE_teltonika_rut30x
+	select PACKAGE_vuci-app-mobile-utilities
+	select PACKAGE_dfota if !BASEBAND_SUPPORT
+	select PACKAGE_apn_db
+
+config MODEM_UPDATER_SUPPORT
+	tristate "Enable modem flasher support"
+	default m if !TARGET_ath79_generic_DEVICE_teltonika_trb2xx ||\
+		     !BASEBAND_SUPPORT
+	select PACKAGE_modem_updater
+
+config DUAL_SIM_SUPPORT
+	bool "Enable dual simcard support"
+	depends on MOBILE_SUPPORT
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_trb2xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut952 ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_otd1xx
+	select PACKAGE_sim_switch
+	select PACKAGE_rpcd-mod-simd
+
+config GPS_SUPPORT
+	bool "Enable GPS support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_trb2xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m
+	select PACKAGE_gpsctl
+	select PACKAGE_gpsd
+	select PACKAGE_ntp_gps
+	select PACKAGE_vuci-app-gps
+	select PACKAGE_avl
+
+config BLUETOOTH_SUPPORT
+	bool "Enable Bluetooth support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	select PACKAGE_blesemd
+	select PACKAGE_vuci-app-bluetooth
+
+config WIFI_SUPPORT
+	bool "Enable Wi-Fi support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut2xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut2m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut36x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_tcr1xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut952 ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_otd1xx
+	select PACKAGE_rpcd-mod-iwinfo
+	select PACKAGE_iwinfo
+	select PACKAGE_libiwinfo-lua
+	select PACKAGE_wireless-tools
+	select PACKAGE_wpad-openssl
+	select PACKAGE_wpa-cli
+	select PACKAGE_vuci-app-wireless
+	select PACKAGE_multiple_ap
+
+config GUEST_NETWORK_SUPPORT
+	bool "Enable Wireless Guest Network support"
+	default y if TARGET_ath79_generic_DEVICE_teltonika_tcr1xx
+	select PACKAGE_vuci-app-guest-network
+
+config WIFI_SCANNER_SUPPORT
+	tristate "Enable Wi-Fi Scanner support"
+	depends on WIFI_SUPPORT
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default m if TARGET_ath79_generic_DEVICE_teltonika_rut36x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut2xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut2m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut952 ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_tcr1xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_otd1xx
+	select PACKAGE_wifi_scanner
+
+config WIFI_HOTSPOT_SUPPORT
+	tristate "Enable Wi-Fi Hotspot support"
+	depends on WIFI_SUPPORT
+	default m if TARGET_ath79_generic_DEVICE_teltonika_rut36x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut2xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut2m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut952 ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_tcr1xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_otd1xx
+	default y
+	select PACKAGE_coova-chilli
+	select COOVACHILLI_CHILLIQUERY
+
+config USB_STORAGE_SUPPORT
+	bool "Enable USB storage support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut30x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m
+	select PACKAGE_kmod-usb-storage
+	select PACKAGE_kmod-fuse
+	select PACKAGE_ntfs-3g-utils
+	select PACKAGE_kmod-fs-msdos
+	select PACKAGE_kmod-fs-autofs4
+	select PACKAGE_kmod-fs-ext4
+	select PACKAGE_block-mount
+	select PACKAGE_storage-memory-expansion
+	select PACKAGE_vuci-app-memory-expansion
+	select PACKAGE_vuci-app-usb-tools
+	select BUSYBOX_CONFIG_MKFS_EXT2
+	select BUSYBOX_CONFIG_FDISK
+	select BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
+	select BUSYBOX_CONFIG_FEATURE_FDISK_ADVANCED
+	select BUSYBOX_CONFIG_FDISK_SUPPORT_LARGE_DISKS
+	select BUSYBOX_CONFIG_PARTPROBE
+
+config APP_SAMBA
+	tristate "Samba application"
+	depends on USB_STORAGE_SUPPORT
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default m if TARGET_ath79_generic_DEVICE_teltonika_rut30x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut952
+	select PACKAGE_samba36-server
+	select PACKAGE_vuci-app-samba
+
+config MULTIWAN_SUPPORT
+	tristate "Enable Multiwan support"
+	default m if TARGET_ath79_generic_DEVICE_teltonika_trb2xx
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut2xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut2m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut30x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut36x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_tcr1xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut952 ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_otd1xx
+	select PACKAGE_mwan3
+	select PACKAGE_vuci-app-mwan3
+
+config DEV_SINGLE_ETH_PORT
+	bool
+	default y if TARGET_mdm9x07 || \
+		     TARGET_ath79_generic_DEVICE_teltonika_trb2xx ||\
+		     TARGET_sdxprairie_DEVICE_teltonika_trb5xx
+
+config IO_SUPPORT
+	bool "Enable I/O support"
+	default n if TARGET_ath79_generic_DEVICE_teltonika_tcr1xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_otd1xx
+	default y
+	select PACKAGE_input_output
+	select PACKAGE_iomand
+	select PACKAGE_iojuggler
+	select PACKAGE_vuci-app-io
+
+config IO_MODBUS_SUPPORT
+	tristate "Enable I/O Modbus support"
+	default m if TARGET_ath79_generic_DEVICE_teltonika_rut30x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut36x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut2xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut2m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_tcr1xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_otd1xx
+	default y
+	select PACKAGE_modbusd
+	select PACKAGE_modbus_tcp_master
+	select PACKAGE_modbus_tcp_test
+	select PACKAGE_modbus_data_sender
+	select PACKAGE_mqtt-modbus-gateway
+
+config DNP3_SUPPORT
+	tristate "Enable DNP3 support"
+	default m
+	select PACKAGE_dnp3
+	select PACKAGE_vuci-app-dnp3
+	select PACKAGE_opendnp3
+
+config PROFILES_SUPPORT
+	bool "Enable profiles support"
+	default y
+	select PACKAGE_profiler
+	select PACKAGE_vuci-app-profiles
+
+config EVENTS_SUBSYSTEM
+	bool "Enable Events subsystem"
+	default y
+	select PACKAGE_events_reporting
+	select PACKAGE_vuci-app-events-reporting
+
+config REBOOT_UTILS
+	bool "Enable Reboot utilities"
+	default y
+	select PACKAGE_periodic_reboot
+	select PACKAGE_ping_reboot
+	select PACKAGE_vuci-app-auto-reboot
+
+config SERIAL
+	bool "Enable serial utilities"
+	default n if TARGET_ath79_generic_DEVICE_teltonika_rut2xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut2m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut36x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_tcr1xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_otd1xx ||\
+		     TARGET_sdxprairie_DEVICE_teltonika_trb5xx
+	default y
+	select PACKAGE_sodog-tlt
+	select PACKAGE_socat
+	select PACKAGE_modbusgwd
+	select PACKAGE_vuci-app-sodog
+
+config CRYPTO
+	bool "Enable additional crypto plugins"
+	default y
+	select PACKAGE_kmod-crypto-sha512
+	select PACKAGE_kmod-crypto-crc32c
+	select PACKAGE_kmod-crypto-gcm
+
+config SPEEDTEST_SUPPORT
+	tristate "Enable speed test support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default m if TARGET_mdm9x07 ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut36x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut2xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut2m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut952 ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_tcr1xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_otd1xx ||\
+		     TARGET_sdxprairie_DEVICE_teltonika_trb5xx
+	select PACKAGE_speedtest
+	select PACKAGE_vuci-app-speed-test
+
+config SQM_SUPPORT
+	tristate "Enable SQM support"
+	depends on !BYPASS_OFFLOAD_FEATURE
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default m
+	select PACKAGE_sqm-scripts
+
+config QOS_SUPPORT
+	tristate "Enable QOS support"
+	depends on !BYPASS_OFFLOAD_FEATURE
+	default m
+	select PACKAGE_vuci-app-qos
+	select PACKAGE_qos-scripts
+
+config NAND_SUPPORT
+	bool "Enable NAND support"
+	default y if TARGET_ath79_generic_DEVICE_teltonika_rut36x
+	select PACKAGE_ubi-utils
+
+# Busybox config options
+config BUSYBOX_CONFIG_OPT
+	bool
+	default y if !SMALL_FLASH
+	select BUSYBOX_DEFAULT_FEATURE_EDITING_SAVEHISTORY
+	select BUSYBOX_DEFAULT_FEATURE_REVERSE_SEARCH
+	select BUSYBOX_DEFAULT_FEATURE_VI_UNDO
+	select BUSYBOX_DEFAULT_FEATURE_VI_UNDO_QUEUE
+
+config PAM_SUPPORT
+	tristate "Enable PAM support"
+	default m
+	select PACKAGE_pamd
+	select PACKAGE_libpam
+	select PACKAGE_libpam-mod-deny
+	select PACKAGE_libpam-mod-permit
+	select PACKAGE_libpam-mod-umask
+	select PACKAGE_libpam-mod-unix
+	select PACKAGE_pam_radius
+	select PACKAGE_pam_tacacs
+	select DROPBEAR_UBUS_PAM
+	select PACKAGE_vuci-app-pamd
+	select RPCD_PAM
+
+config AZURE_SUPPORT
+	tristate "Enable Azure IoT Hub support"
+	default m
+	select PACKAGE_azure_iothub
+
+config CUMULOCITY_SUPPORT
+	tristate "Enable Cumulocity support"
+	default m
+	select PACKAGE_cmStreamApp
+
+config COT_SUPPORT
+	tristate "Enable Cloud of Things support"
+	default m
+	select PACKAGE_coStreamApp
+
+config GREENGRASS_SUPPORT
+	tristate "Enable AWS Greengrass Core support"
+	default m if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	select PACKAGE_greengrass
+	select BUSYBOX_CONFIG_ADDGROUP
+	select BUSYBOX_CONFIG_FEATURE_ADDUSER_TO_GROUP
+	select BUSYBOX_CONFIG_CHPASSWD
+	select BUSYBOX_CONFIG_REALPATH
+	select KERNEL_CGROUP_DEVICE
+
+config THINGWORX_SUPPORT
+	tristate "Enable Thingworx support"
+	default m
+	select PACKAGE_twStreamApp
+
+config EASYCWMP_SUPPORT
+	tristate "Enable TR-069 support"
+	default m
+	select PACKAGE_easycwmp
+
+config DLNA_SUPPORT
+	tristate "Enable DLNA support"
+	default m if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut30x
+	select PACKAGE_tlt-minidlna
+
+config ZEROTIER_SUPPORT
+	tristate "Enable Zerotier support"
+	default m
+	select PACKAGE_zerotier
+
+config TINC_SUPPORT
+	tristate "Enable Tinc support"
+	default m
+	select PACKAGE_tinc
+
+config WIREGUARD_SUPPORT
+	tristate "Enable Wireguard support"
+	default y
+	select PACKAGE_wireguard if !TARGET_mdm9x07 &&\
+	                            !TARGET_sdxprairie_DEVICE_teltonika_trb5xx
+	select PACKAGE_wireguard-trb1 if TARGET_mdm9x07 ||\
+	                                 TARGET_sdxprairie_DEVICE_teltonika_trb5xx
+
+config SSHFS_SUPPORT
+	tristate "Enable SSHFS support"
+	default m
+	select PACKAGE_sshfs
+
+config NTPD_SUPPORT
+	tristate "Enable NTPD support"
+	default m
+	select PACKAGE_ntpd
+
+config TCP_DUMP_SUPPORT
+	tristate "Enable TCP dump support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default m
+	select PACKAGE_tcpdump
+
+config UDPRELAY_SUPPORT
+	tristate "Enable UDP Relay support"
+	default m
+	select PACKAGE_udprelay
+
+config TELNET_SUPPORT
+	tristate "Enable telnet and telnetd support"
+	default y
+	select BUSYBOX_CONFIG_TELNET
+	select BUSYBOX_CONFIG_FEATURE_TELNET_TTYPE
+	select BUSYBOX_CONFIG_FEATURE_TELNET_AUTOLOGIN
+	select BUSYBOX_CONFIG_FEATURE_TELNET_WIDTH
+
+	select BUSYBOX_CONFIG_TELNETD
+	select BUSYBOX_CONFIG_FEATURE_TELNETD_STANDALONE
+
+config HOTSPOT_THEMES_SUPPORT
+	tristate "Enable Hotspot themes support"
+	depends on WIFI_HOTSPOT_SUPPORT
+	default m if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut952 ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut2xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut2m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut36x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_tcr1xx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_otd1xx
+	select PACKAGE_hs_theme_airport
+	select PACKAGE_hs_theme_airport2
+	select PACKAGE_hs_theme_bus
+	select PACKAGE_hs_theme_coffee_shop
+	select PACKAGE_hs_theme_grocery_store
+	select PACKAGE_hs_theme_office
+	select PACKAGE_hs_theme_park
+	select PACKAGE_hs_theme_ship
+	select PACKAGE_hs_theme_station
+
+config MODBUS_SERIAL_SUPPORT
+	tristate "Enable Modbus serial support"
+	default m if TARGET_mdm9x07 ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_trb2xx ||\
+		     TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	select PACKAGE_modbus_serial_master
+
+config PRINTER_SUPPORT
+	bool "Enable Printer support"
+	default y if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut30x ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m
+	select PACKAGE_p910nd
+	select PACKAGE_vuci-app-p910nd
+	select PACKAGE_kmod-usb-printer
+
+
+config SMPP_SUPPORT
+	tristate "Enable smpp 3.4 support"
+	depends on MOBILE_SUPPORT
+	default m
+	select PACKAGE_smpp
+	select PACKAGE_vuci-app-smpp
+
+config MULTI_LANGUAGE_SUPPORT
+	tristate "Vuci language support"
+	default m
+	select PACKAGE_vuci-i18n-german
+
+config PYTHON_SUPPORT
+	tristate "Enable Python 3 support"
+	default m if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut9xx ||\
+		     TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m ||\
+		     TARGET_mdm9x07 ||\
+		     TARGET_ath79_generic_DEVICE_teltonika_rut30x ||\
+		     TARGET_sdxprairie_DEVICE_teltonika_trb5xx
+	select PACKAGE_python3
+
+config IPTABLES_FILTER_EXTENSION
+	tristate "Filter extension for iptables"
+	default m
+	select PACKAGE_iptables-mod-filter
+
+config LUCI_SCRIPTS_MINIFICATION
+	bool "Minify Luci scripts"
+	default y
+	select LUCI_SRCDIET
+	select LUCI_JSMIN
+
+config MBUS
+	bool "M-Bus support"
+	default y if TARGET_mdm9x07
+	select PACKAGE_libmbus
+	select PACKAGE_libmbus-util
+	select PACKAGE_mbus_master
+	select PACKAGE_vuci-app-mbus
+
+config MBUS
+	bool "M-Bus support"
+	default y if TARGET_mdm9x07
+	select PACKAGE_libmbus
+	select PACKAGE_libmbus-util
+	select PACKAGE_mbus_master
+	select PACKAGE_vuci-app-mbus
+
+config MBUS
+	bool "M-Bus support"
+	default y if TARGET_mdm9x07
+	select PACKAGE_libmbus
+	select PACKAGE_libmbus-util
+	select PACKAGE_mbus_master
+	select PACKAGE_vuci-app-mbus
+
+endmenu

@@ -1,0 +1,41 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+USE_PROCD=1
+ENABLED=0
+
+check_if_enabled()
+{
+	config_get_bool enabled "$1" 'enabled' 0
+	[ $enabled -eq 1 ] && ENABLED=1
+}
+
+start_service() {
+	. /lib/functions.sh
+	config_load 'quota_limit'
+	config_foreach check_if_enabled 'interface'
+
+	if [ "$ENABLED" -gt 0 ]; then
+		command_line="/usr/bin/quota_limit"
+
+		procd_open_instance
+		procd_set_param command $command_line
+		procd_set_param file /etc/config/quota_limit
+		procd_close_instance
+	fi
+}
+
+
+stop_service() {
+	killall quota_limit 2>/dev/null >/dev/null
+}
+
+reload_service() {
+	restart
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger "quota_limit"
+}

@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qos-scripts
-PKG_VERSION:=1.3.0
-PKG_RELEASE:=1
+PKG_VERSION:=1.3.1
+PKG_RELEASE:=$(AUTORELEASE)
 PKG_LICENSE:=GPL-2.0
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
@@ -21,9 +21,14 @@ include $(INCLUDE_DIR)/package.mk
 define Package/qos-scripts
   SECTION:=utils
   CATEGORY:=Base system
-  DEPENDS:=+tc +kmod-sched-core +kmod-sched-connmark +kmod-ifb +iptables +iptables-mod-ipopt +iptables-mod-conntrack-extra
+  DEPENDS:=+tc +kmod-sched-core +kmod-sched-connmark +kmod-ifb +iptables \
+	  +iptables-mod-ipopt +iptables-mod-conntrack-extra +vuci-app-qos
   TITLE:=QoS scripts
   PKGARCH:=all
+  ifeq (m, $(CONFIG_PACKAGE_qos-scripts))
+    PKG_TLT_NAME:=QoS
+    PKG_ROUTER:=$(TLT_PLATFORM_NAME)
+  endif
 endef
 
 define Package/qos-scripts/description

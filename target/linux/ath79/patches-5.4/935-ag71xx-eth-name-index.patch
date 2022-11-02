@@ -1,0 +1,25 @@
+Index: linux-5.4.147/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c
+===================================================================
+--- linux-5.4.147.orig/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c
++++ linux-5.4.147/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c
+@@ -1516,7 +1516,7 @@ static int ag71xx_probe(struct platform_
+ 	struct resource *res;
+ 	struct ag71xx *ag;
+ 	const void *mac_addr;
+-	u32 max_frame_len;
++	u32 max_frame_len, idx;
+ 	int tx_size, err;
+ 
+ 	if (!np)
+@@ -1730,6 +1730,11 @@ static int ag71xx_probe(struct platform_
+ 
+ 	platform_set_drvdata(pdev, dev);
+ 
++	if (!of_property_read_u32(np, "eth-name-idx", &idx)) {
++		sprintf(dev->name, dev->name, idx);  // dev->name is eth%d at this point
++		pr_info("ag71xx: Interface name changed to: [%s]\n", dev->name);
++	}
++
+ 	err = register_netdev(dev);
+ 	if (err) {
+ 		dev_err(&pdev->dev, "unable to register net device\n");

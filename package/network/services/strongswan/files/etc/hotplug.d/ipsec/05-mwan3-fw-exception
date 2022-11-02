@@ -1,0 +1,20 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+iptables -D PREROUTING -tmangle -d $PLUTO_PEER_CLIENT -j ACCEPT 2>/dev/null
+iptables -D OUTPUT -tmangle -d $PLUTO_PEER_CLIENT -j ACCEPT 2>/dev/null
+
+check_mwan3_enabled() {
+	local config="$1"
+
+	config_get enabled $config enabled 0
+	[ "$enabled" -eq 1 ] && {
+		iptables -I PREROUTING -tmangle -d $PLUTO_PEER_CLIENT -j ACCEPT 2>/dev/null
+		iptables -I OUTPUT -tmangle -d $PLUTO_PEER_CLIENT -j ACCEPT 2>/dev/null
+		exit 0
+	}
+}
+
+config_load mwan3
+config_foreach check_mwan3_enabled interface

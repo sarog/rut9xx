@@ -1,0 +1,17 @@
+stages:
+  - build
+
+make_build:
+  stage: build
+  image: ${CI_REGISTRY}/docker/toolchain-mips:latest
+  except:
+    - tags
+  artifacts:
+    name: "${CI_COMMIT_REF_SLUG}-u-boot_mod-${CI_RUNNER_ID}-${CI_JOB_ID}"
+    when: always
+    paths:
+      - bin/u-boot*
+  script:
+    - make tlt-trb24x
+  tags:
+    - compile

@@ -1,0 +1,36 @@
+Index: mwan3-2.10.12/files/etc/init.d/mwan3
+===================================================================
+--- mwan3-2.10.12.orig/files/etc/init.d/mwan3
++++ mwan3-2.10.12/files/etc/init.d/mwan3
+@@ -64,6 +64,21 @@ start_service() {
+ 	fi
+ }
+ 
++check_tables() {
++	tid="$1"
++	ret=0
++
++	compare() {
++		config_get if_table "$1" ip4table
++		[ "$2" = "$if_table" ] && ret=1
++	}
++
++	config_load network
++	config_foreach compare interface "$tid"
++
++	return "$ret"
++}
++
+ stop_service() {
+ 	local ipset rule IP IPTR IPT family table tid
+ 
+@@ -83,7 +98,8 @@ stop_service() {
+ 		fi
+ 
+ 		for tid in $($IP route list table all | sed -ne 's/.*table \([0-9]\+\).*/\1/p' | sort -u); do
+-			[ $tid -gt $MWAN3_INTERFACE_MAX ] && continue
++			[ $tid -gt $MWAN3_INTERFACE_MAX ] && continue
++			check_tables "$tid" || continue
+ 			$IP route flush table $tid &> /dev/null
+ 		done
+ 

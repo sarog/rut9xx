@@ -1,9 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2007-2008 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2016 LEDE Project
 
 ifneq ($(__target_inc),1)
 __target_inc=1
@@ -12,10 +10,46 @@ __target_inc=1
 DEVICE_TYPE?=router
 
 # Default packages - the really basic set
-DEFAULT_PACKAGES:=base-files libc libgcc busybox dropbear mtd uci opkg netifd fstools
+DEFAULT_PACKAGES:=\
+	base-files \
+	ca-bundle \
+	dropbear \
+	fstools \
+	libc \
+	libgcc \
+	libustream-openssl \
+	logd \
+	mtd \
+	netifd \
+	opkg \
+	uci \
+	uclient-fetch \
+	urandom-seed \
+	urngd
+
+ifneq ($(CONFIG_SELINUX),)
+DEFAULT_PACKAGES+=busybox-selinux procd-selinux
+else
+DEFAULT_PACKAGES+=busybox procd
+endif
+
+# For the basic set
+DEFAULT_PACKAGES.basic:=
+# For nas targets
+DEFAULT_PACKAGES.nas:=\
+	block-mount \
+	fdisk \
+	lsblk \
+	mdadm
 # For router targets
-DEFAULT_PACKAGES.router:=dnsmasq iptables ip6tables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall odhcpd odhcp6c
-DEFAULT_PACKAGES.bootloader:=
+DEFAULT_PACKAGES.router:=\
+	firewall \
+	ip6tables \
+	iptables \
+	kmod-ipt-offload \
+	odhcp6c \
+	ppp \
+	ppp-mod-pppoe
 
 ifneq ($(DUMP),)
   all: dumpinfo
@@ -52,36 +86,29 @@ endif
 DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
 
 filter_packages = $(filter-out -% $(patsubst -%,%,$(filter -%,$(1))),$(1))
-extra_packages = $(if $(filter wpad-mini wpad nas,$(1)),iwinfo)
+extra_packages = $(if $(filter wpad wpad-% nas,$(1)),iwinfo)
 
-define Profile/Default
+define ProfileDefault
   NAME:=
+  PRIORITY:=
   PACKAGES:=
 endef
 
 ifndef Profile
 define Profile
-  $(eval $(call Profile/Default))
+  $(eval $(call ProfileDefault))
   $(eval $(call Profile/$(1)))
-  $(eval $(call shexport,Profile/$(1)/Config))
-  $(eval $(call shexport,Profile/$(1)/Description))
+  dumpinfo : $(call shexport,Profile/$(1)/Description)
+  PACKAGES := $(filter-out -%,$(PACKAGES))
   DUMPINFO += \
 	echo "Target-Profile: $(1)"; \
+	$(if $(PRIORITY), echo "Target-Profile-Priority: $(PRIORITY)"; ) \
 	echo "Target-Profile-Name: $(NAME)"; \
 	echo "Target-Profile-Packages: $(PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES) $(PACKAGES))"; \
-	if [ -f ./config/profile-$(1) ]; then \
-		echo "Target-Profile-Kconfig: yes"; \
-	fi; \
-	echo "Target-Profile-Config: "; \
-	$(SH_FUNC) getvar "$(call shvar,Profile/$(1)/Config)"; \
-	echo "@@"; \
 	echo "Target-Profile-Description:"; \
-	$(SH_FUNC) getvar "$(call shvar,Profile/$(1)/Description)"; \
+	echo "$$$$$$$$$(call shvar,Profile/$(1)/Description)"; \
 	echo "@@"; \
 	echo;
-  ifeq ($(CONFIG_TARGET_$(call target_conf,$(BOARD)_$(if $(SUBTARGET),$(SUBTARGET)_))$(1)),y)
-    PROFILE=$(1)
-  endif
 endef
 endif
 
@@ -96,22 +123,22 @@ else
   endef
 endif
 
+PROFILE?=$(call qstrip,$(CONFIG_TARGET_PROFILE))
+
 ifeq ($(TARGET_BUILD),1)
-  $(eval $(call IncludeProfiles))
-else
-  ifeq ($(DUMP),)
+  ifneq ($(DUMP),)
     $(eval $(call IncludeProfiles))
   endif
 endif
-
-$(eval $(call shexport,Target/Description))
 
 ifneq ($(TARGET_BUILD)$(if $(DUMP),,1),)
   include $(INCLUDE_DIR)/kernel-version.mk
 endif
 
 GENERIC_PLATFORM_DIR := $(TOPDIR)/target/linux/generic
-GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/patches$(if $(wildcard $(GENERIC_PLATFORM_DIR)/patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
+GENERIC_BACKPORT_DIR := $(GENERIC_PLATFORM_DIR)/backport$(if $(wildcard $(GENERIC_PLATFORM_DIR)/backport-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
+GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/pending$(if $(wildcard $(GENERIC_PLATFORM_DIR)/pending-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
+GENERIC_HACK_DIR := $(GENERIC_PLATFORM_DIR)/hack$(if $(wildcard $(GENERIC_PLATFORM_DIR)/hack-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
 GENERIC_FILES_DIR := $(foreach dir,$(wildcard $(GENERIC_PLATFORM_DIR)/files $(GENERIC_PLATFORM_DIR)/files-$(KERNEL_PATCHVER)),"$(dir)")
 
 __config_name_list = $(1)/config-$(KERNEL_PATCHVER) $(1)/config-default
@@ -153,14 +180,71 @@ ifeq ($(CONFIG_TARGET),env)
   LINUX_RECONFIG_TARGET = $(TOPDIR)/env/kernel-config
 endif
 
-__linux_confcmd = $(SCRIPT_DIR)/kconfig.pl $(2) $(patsubst %,+,$(wordlist 2,9999,$(1))) $(1)
+__linux_confcmd = $(2) $(patsubst %,+,$(wordlist 2,9999,$(1))) $(1)
 
-LINUX_CONF_CMD = $(call __linux_confcmd,$(LINUX_KCONFIG_LIST),)
-LINUX_RECONF_CMD = $(call __linux_confcmd,$(LINUX_RECONFIG_LIST),)
-LINUX_RECONF_DIFF = $(call __linux_confcmd,$(filter-out $(LINUX_RECONFIG_TARGET),$(LINUX_RECONFIG_LIST)),'>')
+LINUX_CONF_CMD = $(SCRIPT_DIR)/kconfig.pl $(call __linux_confcmd,$(LINUX_KCONFIG_LIST))
+LINUX_RECONF_CMD = $(SCRIPT_DIR)/kconfig.pl $(call __linux_confcmd,$(LINUX_RECONFIG_LIST))
+LINUX_RECONF_DIFF = $(SCRIPT_DIR)/kconfig.pl - '>' $(call __linux_confcmd,$(filter-out $(LINUX_RECONFIG_TARGET),$(LINUX_RECONFIG_LIST))) $(1) $(GENERIC_PLATFORM_DIR)/config-filter
 
 ifeq ($(DUMP),1)
   BuildTarget=$(BuildTargets/DumpCurrent)
+
+  CPU_CFLAGS = -Os -pipe
+  ifneq ($(findstring mips,$(ARCH)),)
+    ifneq ($(findstring mips64,$(ARCH)),)
+      CPU_TYPE ?= mips64
+    else
+      CPU_TYPE ?= mips32
+    endif
+    CPU_CFLAGS += -mno-branch-likely
+    CPU_CFLAGS_mips32 = -mips32 -mtune=mips32
+    CPU_CFLAGS_mips64 = -mips64 -mtune=mips64 -mabi=64
+    CPU_CFLAGS_mips64r2 = -mips64r2 -mtune=mips64r2 -mabi=64
+    CPU_CFLAGS_4kec = -mips32r2 -mtune=4kec
+    CPU_CFLAGS_24kc = -mips32r2 -mtune=24kc
+    CPU_CFLAGS_74kc = -mips32r2 -mtune=74kc
+    CPU_CFLAGS_octeonplus = -march=octeon+ -mabi=64
+  endif
+  ifeq ($(ARCH),i386)
+    CPU_TYPE ?= pentium-mmx
+    CPU_CFLAGS_pentium-mmx = -march=pentium-mmx
+    CPU_CFLAGS_pentium4 = -march=pentium4
+  endif
+  ifneq ($(findstring arm,$(ARCH)),)
+    CPU_TYPE ?= xscale
+  endif
+  ifeq ($(ARCH),powerpc)
+    CPU_CFLAGS_603e:=-mcpu=603e
+    CPU_CFLAGS_8540:=-mcpu=8540
+    CPU_CFLAGS_405:=-mcpu=405
+    CPU_CFLAGS_440:=-mcpu=440
+    CPU_CFLAGS_464fp:=-mcpu=464fp
+  endif
+  ifeq ($(ARCH),powerpc64)
+    CPU_TYPE ?= powerpc64
+    CPU_CFLAGS_powerpc64:=-mcpu=powerpc64
+  endif
+  ifeq ($(ARCH),sparc)
+    CPU_TYPE = sparc
+    CPU_CFLAGS_ultrasparc = -mcpu=ultrasparc
+  endif
+  ifeq ($(ARCH),aarch64)
+    CPU_TYPE ?= generic
+    CPU_CFLAGS_generic = -mcpu=generic
+    CPU_CFLAGS_cortex-a53 = -mcpu=cortex-a53
+  endif
+  ifeq ($(ARCH),arc)
+    CPU_TYPE ?= arc700
+    CPU_CFLAGS += -matomic
+    CPU_CFLAGS_arc700 = -mcpu=arc700
+    CPU_CFLAGS_archs = -mcpu=archs
+  endif
+  ifneq ($(CPU_TYPE),)
+    ifndef CPU_CFLAGS_$(CPU_TYPE)
+      $(warning CPU_TYPE "$(CPU_TYPE)" doesn't correspond to a known type)
+    endif
+  endif
+  DEFAULT_CFLAGS=$(strip $(CPU_CFLAGS) $(CPU_CFLAGS_$(CPU_TYPE)) $(CPU_CFLAGS_$(CPU_SUBTYPE)))
 
   ifneq ($(BOARD),)
     TMP_CONFIG:=$(TMP_DIR)/.kconfig-$(call target_conf,$(TARGETID))
@@ -170,6 +254,11 @@ ifeq ($(DUMP),1)
     .SILENT: $(TMP_CONFIG)
     .PRECIOUS: $(TMP_CONFIG)
 
+    ifdef KERNEL_TESTING_PATCHVER
+      ifneq ($(KERNEL_TESTING_PATCHVER),$(KERNEL_PATCHVER))
+        FEATURES += testing-kernel
+      endif
+    endif
     ifneq ($(CONFIG_OF),)
       FEATURES += dt
     endif
@@ -196,86 +285,48 @@ ifeq ($(DUMP),1)
     ifneq ($(CONFIG_RTC_CLASS),)
       FEATURES += rtc
     endif
-    FEATURES += $(foreach v,v4 v5 v6 v7,$(if $(findstring -march=arm$(v),$(CFLAGS)),arm_$(v)))
+    ifneq ($(CONFIG_VIRTIO),)
+      FEATURES += virtio
+    endif
+    ifneq ($(CONFIG_CPU_MIPS32_R2),)
+      FEATURES += mips16
+    endif
+    FEATURES += $(foreach v,6 7,$(if $(CONFIG_CPU_V$(v)),arm_v$(v)))
 
     # remove duplicates
     FEATURES:=$(sort $(FEATURES))
   endif
-  CPU_CFLAGS = -Os -pipe
-  ifneq ($(findstring mips,$(ARCH)),)
-    ifneq ($(findstring mips64,$(ARCH)),)
-      CPU_TYPE ?= mips64
-    else
-      CPU_TYPE ?= mips32
-    endif
-    CPU_CFLAGS += -mno-branch-likely
-    CPU_CFLAGS_mips32 = -mips32 -mtune=mips32
-    CPU_CFLAGS_mips32r2 = -mips32r2 -mtune=mips32r2
-    CPU_CFLAGS_mips64 = -mips64 -mtune=mips64 -mabi=64
-    CPU_CFLAGS_24kec = -mips32r2 -mtune=24kec
-    CPU_CFLAGS_34kc = -mips32r2 -mtune=34kc
-    CPU_CFLAGS_dsp = -mdsp
-    CPU_CFLAGS_dsp2 = -mdspr2
-  endif
-  ifeq ($(ARCH),i386)
-    CPU_TYPE ?= i486
-    CPU_CFLAGS_i486 = -march=i486
-    CPU_CFLAGS_geode = -march=geode -mmmx -m3dnow
-  endif
-  ifneq ($(findstring arm,$(ARCH)),)
-    CPU_TYPE ?= xscale
-    CPU_CFLAGS_arm920t = -march=armv4t -mtune=arm920t
-    CPU_CFLAGS_arm926ej-s = -march=armv5te -mtune=arm926ej-s
-    CPU_CFLAGS_arm1136j-s = -march=armv6 -mtune=arm1136j-s
-    CPU_CFLAGS_arm1176jzf-s = -march=armv6 -mtune=arm1176jzf-s
-    CPU_CFLAGS_cortex-a7 = -march=armv7-a -mtune=cortex-a7
-    CPU_CFLAGS_cortex-a8 = -march=armv7-a -mtune=cortex-a8
-    CPU_CFLAGS_cortex-a9 = -march=armv7-a -mtune=cortex-a9
-    CPU_CFLAGS_cortex-a15 = -march=armv7-a -mtune=cortex-a15
-    CPU_CFLAGS_fa526 = -march=armv4 -mtune=fa526
-    CPU_CFLAGS_mpcore = -march=armv6k -mtune=mpcore
-    CPU_CFLAGS_xscale = -march=armv5te -mtune=xscale
-    ifeq ($(CONFIG_SOFT_FLOAT),)
-      CPU_CFLAGS_neon = -mfpu=neon
-      CPU_CFLAGS_vfp = -mfpu=vfp
-      CPU_CFLAGS_vfpv3 = -mfpu=vfpv3-d16
-    endif
-  endif
-  ifeq ($(ARCH),powerpc)
-    CPU_CFLAGS_603e:=-mcpu=603e
-    CPU_CFLAGS_8540:=-mcpu=8540
-    CPU_CFLAGS_405:=-mcpu=405
-    CPU_CFLAGS_440:=-mcpu=440
-  endif
-  ifeq ($(ARCH),sparc)
-    CPU_TYPE = sparc
-    CPU_CFLAGS_ultrasparc = -mcpu=ultrasparc
-  endif
-  DEFAULT_CFLAGS=$(strip $(CPU_CFLAGS) $(CPU_CFLAGS_$(CPU_TYPE)) $(CPU_CFLAGS_$(CPU_SUBTYPE)))
+endif
+
+CUR_SUBTARGET:=$(SUBTARGET)
+ifeq ($(SUBTARGETS),)
+  CUR_SUBTARGET := default
 endif
 
 define BuildTargets/DumpCurrent
   .PHONY: dumpinfo
+  dumpinfo : export DESCRIPTION=$$(Target/Description)
   dumpinfo:
 	@echo 'Target: $(TARGETID)'; \
 	 echo 'Target-Board: $(BOARD)'; \
 	 echo 'Target-Name: $(BOARDNAME)$(if $(SUBTARGETS),$(if $(SUBTARGET),))'; \
-	 echo 'Target-Path: $(subst $(TOPDIR)/,,$(PWD))'; \
 	 echo 'Target-Arch: $(ARCH)'; \
-	 echo 'Target-Arch-Packages: $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD))'; \
+	 echo 'Target-Arch-Packages: $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(ARCH)$(if $(CPU_TYPE),_$(CPU_TYPE))$(if $(CPU_SUBTYPE),_$(CPU_SUBTYPE)))'; \
 	 echo 'Target-Features: $(FEATURES)'; \
 	 echo 'Target-Depends: $(DEPENDS)'; \
 	 echo 'Target-Optimization: $(if $(CFLAGS),$(CFLAGS),$(DEFAULT_CFLAGS))'; \
 	 echo 'CPU-Type: $(CPU_TYPE)$(if $(CPU_SUBTYPE),+$(CPU_SUBTYPE))'; \
 	 echo 'Linux-Version: $(LINUX_VERSION)'; \
+	$(if $(LINUX_TESTING_VERSION),echo 'Linux-Testing-Version: $(LINUX_TESTING_VERSION)';) \
 	 echo 'Linux-Release: $(LINUX_RELEASE)'; \
 	 echo 'Linux-Kernel-Arch: $(LINUX_KARCH)'; \
-	$(if $(SUBTARGET),,$(if $(DEFAULT_SUBTARGET), echo 'Default-Subtarget: $(DEFAULT_SUBTARGET)'; ))
+	$(if $(SUBTARGET),,$(if $(DEFAULT_SUBTARGET), echo 'Default-Subtarget: $(DEFAULT_SUBTARGET)'; )) \
 	 echo 'Target-Description:'; \
-	 $(SH_FUNC) getvar $(call shvar,Target/Description); \
+	 echo "$$$$DESCRIPTION"; \
 	 echo '@@'; \
 	 echo 'Default-Packages: $(DEFAULT_PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES))'; \
 	 $(DUMPINFO)
+	$(if $(CUR_SUBTARGET),$(SUBMAKE) -r --no-print-directory -C image -s DUMP=1 SUBTARGET=$(CUR_SUBTARGET))
 	$(if $(SUBTARGET),,@$(foreach SUBTARGET,$(SUBTARGETS),$(SUBMAKE) -s DUMP=1 SUBTARGET=$(SUBTARGET); ))
 endef
 

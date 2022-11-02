@@ -1,0 +1,11 @@
+--- a/libfstools/mtd.c
++++ b/libfstools/mtd.c
+@@ -221,7 +221,7 @@ static int mtd_volume_identify(struct vo
+ 	    __be16_to_cpu(deadc0de >> 16) == 0x1985)
+ 		return FS_JFFS2;
+ 
+-	if (v->type == UBIVOLUME && deadc0de == 0xffffffff) {
++	if (deadc0de == 0xffffffff) {
+ 		return FS_JFFS2;
+ 	}
+ 

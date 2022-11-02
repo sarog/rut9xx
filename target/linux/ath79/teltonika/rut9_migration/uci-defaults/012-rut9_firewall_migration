@@ -1,0 +1,38 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+[ -f "/etc/config/teltonika" ] || return 0
+
+add_forwarding() {
+	local name
+	config_get name "$1" name
+	[ "$name" = "lan" ] && return
+	[ "$name" = "wan" ] && {
+		uci_set firewall "$1" helper "pptp";
+	}
+
+	uci_add firewall forwarding
+	uci_set firewall "$CONFIG_SECTION" src lan
+	uci_set firewall "$CONFIG_SECTION" dest "$name"
+	uci_commit firewall
+}
+
+add_missing_zone_options() {
+	local network
+	config_get network "$1" network
+
+	list_contains network ppp && {
+		network="${network/ppp/mob1s1a1 mob1s2a1}"
+		uci_set firewall "$1" network "$network"
+	}
+
+	list_contains network wan2 && {
+		network="${network/wan2/wwan}"
+		uci_set firewall "$1" network "$network"
+	}
+}
+
+config_load firewall
+config_foreach add_forwarding zone
+config_foreach add_missing_zone_options zone

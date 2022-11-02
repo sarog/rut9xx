@@ -1,0 +1,36 @@
+Index: shellinabox-18f06c5312fb5046c8b1390900738b2de408c87a-2020-05-07/configure.ac
+===================================================================
+--- shellinabox-18f06c5312fb5046c8b1390900738b2de408c87a-2020-05-07.orig/configure.ac
++++ shellinabox-18f06c5312fb5046c8b1390900738b2de408c87a-2020-05-07/configure.ac
+@@ -182,21 +182,17 @@ if test "x$enable_runtime_loading" != xn
+                                [enable_runtime_loading=no])])
+ fi
+ 
+-dnl If runtime loading has been disabled, add OpenSSL and PAM as hard
+-dnl dependencies.
+-if test "x$enable_runtime_loading" == xno; then
+-  dnl Link against OpenSSL libraries, unless SSL support has been disabled
+-  if test "x$enable_ssl" != xno; then
+-    AC_CHECK_HEADER(openssl/bio.h,
+-      [AC_CHECK_HEADER(openssl/err.h,
+-        [AC_CHECK_HEADER(openssl/ssl.h, [LIBS="-lssl -lcrypto $LIBS"])])])
+-  fi
++dnl Link against OpenSSL libraries, unless SSL support has been disabled
++if test "x$enable_ssl" != xno; then
++  AC_CHECK_HEADER(openssl/bio.h,
++    [AC_CHECK_HEADER(openssl/err.h,
++      [AC_CHECK_HEADER(openssl/ssl.h, [LIBS="-lssl -lcrypto $LIBS"])])])
++fi
+ 
+-  dnl Link against PAM libraries, unless PAM support has been disabled
+-  if test "x$enable_pam" != xno; then
+-    AC_CHECK_HEADER(security/pam_appl.h, [LIBS="-lpam $LIBS"])
+-    AC_CHECK_HEADER(security/pam_misc.h, [LIBS="-lpam_misc $LIBS"])
+-  fi
++dnl Link against PAM libraries, unless PAM support has been disabled
++if test "x$enable_pam" != xno; then
++  AC_CHECK_HEADER(security/pam_appl.h, [LIBS="-lpam $LIBS"])
++  AC_CHECK_HEADER(security/pam_misc.h, [LIBS="-lpam_misc $LIBS"])
+ fi
+ 
+ AC_CHECK_LIB(z, deflate, [

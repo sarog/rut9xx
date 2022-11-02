@@ -1,0 +1,11 @@
+stages:
+  - check
+
+code-security-check:
+  stage: check
+  image: ${CI_REGISTRY}/docker/security-checker:latest
+  allow_failure: false
+  script:
+    - bash /app/security-checker/run_codechecker.sh
+  tags:
+    - check

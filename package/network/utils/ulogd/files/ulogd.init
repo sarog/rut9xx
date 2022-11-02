@@ -1,0 +1,203 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2014 OpenWrt.org
+
+START=20
+
+USE_PROCD=1
+CONF_FILE=/var/run/ulogd.conf
+PLUGIN_DIR=/usr/lib/ulogd/
+UNDO_FILE=/var/run/ulogd_firewall.sh
+RANDOM_ID=YqIsVsyLyk
+
+ipt() {
+	local opt=$1; shift
+	echo "iptables -D $*" >> $UNDO_FILE
+	iptables $opt $*
+}
+
+ipt6() {
+	local opt=$1; shift
+	echo "ip6tables -D $*" >> $UNDO_FILE
+	ip6tables $opt $*
+}
+
+undo_firewall() {
+	iptables -F LOGGING
+	ip6tables -F LOGGING
+	[ -e "$UNDO_FILE" ] && sh ${UNDO_FILE} 2>/dev/null
+	rm -f ${UNDO_FILE} 2>/dev/null
+}
+
+add_logging_rule() {
+	local ifname
+
+	[[ "$1" == "hotspot" ]] && {
+		ipt -N LOGGING
+		ipt -I FORWARD -i tun0 -p tcp -m multiport --dports 80,443 -j LOGGING
+
+		return
+	}
+
+	network_get_device ifname "$1"
+	[[ -n "$ifname" ]] && \
+		ipt -I forwarding_rule -i $ifname -p tcp -m multiport --dports 80,443 -j LOGGING
+		ipt6 -I forwarding_rule -i $ifname -p tcp -m multiport --dports 80,443 -j LOGGING
+}
+
+set_firewall() {
+	. /lib/functions/network.sh
+
+	undo_firewall
+	ipt -N LOGGING
+	ipt -A LOGGING -m conntrack --ctstate NEW -j NFLOG --nflog-group 1
+	ipt6 -N LOGGING
+	ipt6 -A LOGGING -m conntrack --ctstate NEW -j NFLOG --nflog-group 1
+	config_list_foreach global network add_logging_rule
+}
+
+set_ftp() {
+	local enabled
+
+	config_get enabled ftp enabled 1
+	[ $enabled -ne 1 ] && return 1
+
+	rm_corn_job
+	set_interval ftp
+}
+
+set_interval() {
+	local fixed minutes hours weekday intervar
+	local sid="$1"
+
+	config_get fixed "$sid" fixed 0
+	config_get minutes "$sid" minutes 0
+	config_get hours "$sid" hours 0
+	config_get weekday "$sid" weekdays "*"
+	config_get interval "$sid" interval_time 1
+
+	weekday=${weekday// /,}
+
+	if [ "$fixed" -eq "0" ]; then
+		minutes=0
+		[[ "$interval" -ge "24" ]] && hours="1" || hours="*/$interval"
+	else
+		#Fixed times once a day
+		minutes=$minutes
+		[ $hours -gt "23" ] && hours="0"
+
+		hours=$hours
+	fi
+
+	echo "${minutes:-0} ${hours:-0} * * ${weekday:-*} sh /sbin/ftp_upload.sh #${RANDOM_ID}" \
+		>> /etc/crontabs/root
+	/etc/init.d/cron reload
+}
+
+rm_corn_job() {
+	sed -i "/$RANDOM_ID/d" /etc/crontabs/root
+}
+
+set_conf_sec() {
+	echo "[$1]" >> $CONF_FILE
+}
+
+set_conf() {
+	echo "$1=$2" >> "$CONF_FILE"
+}
+
+set_conf_str() {
+	set_conf "$1" "\"$2\""
+}
+
+rm_config() {
+	rm -f $CONF_FILE
+}
+
+service_triggers() {
+	procd_add_reload_trigger "ulogd"
+}
+
+config_cb() {
+	local ulog_inst="$2"
+
+	case "$1" in
+		ulogd|log|emu)
+			option_cb() {
+				set_ulogd $*
+			}
+			list_cb() {
+				set_ulogd_list $1 $2
+			}
+			set_conf_sec $2
+			;;
+		*)
+			option_cb() {
+				return;
+			}
+			list_cb() {
+				return
+			}
+			return 0
+			;;
+	esac
+}
+
+set_ulogd() {
+	local option=$1 value=$2
+	case "$1" in
+		enabled)
+			[ "$2" = "1" ] && eval "start_chilli_$CONFIG_SECTION=1"
+			;;
+		_*)
+			;;
+		*)
+			set_conf_str $@
+			;;
+	esac
+}
+
+set_ulogd_list() {
+	local option=$1 value=$2
+
+	case "$1" in
+		plugin)
+			set_conf_str "$option" "$PLUGIN_DIR$value"
+			;;
+		_*)
+			;;
+		*)
+			set_conf_str $@
+			;;
+	esac
+}
+
+start_service() {
+	local enabled
+
+	enabled=$(uci -q get ulogd.global.enabled)
+	[ "$enabled" == "1" ] || return 0
+
+	rm_config
+	config_load ulogd
+	set_firewall
+	set_ftp
+
+	procd_open_instance
+	procd_set_param command /usr/sbin/ulogd
+	procd_append_param command --configfile "$CONF_FILE"
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_close_instance
+}
+
+
+reload_service() {
+	stop
+	start
+}
+
+stop_service() {
+	rm_config
+	rm_corn_job
+	undo_firewall
+}

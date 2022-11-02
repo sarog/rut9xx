@@ -1,0 +1,19 @@
+{
+  "config": {
+	"old_name": "sms_utils",
+	"new_name": "sms_gateway"
+  },
+  "sections": [
+	{
+	  "old_name": "sim",
+	  "new_type": "simman",
+	  "remove": true,
+	  "options": {
+		"free": {},
+		"info_modem_id": {
+		  "cb": "modem_cb"
+		}
+	  }
+	}
+  ]
+}

@@ -1,0 +1,11 @@
+--- a/vrrpd.h	2019-05-06 07:48:35.025009931 +0300
++++ b/vrrpd.h	2019-05-06 09:41:17.855137771 +0300
+@@ -93,6 +93,8 @@
+ 	
+ 	int	no_vmac;	/* dont handle the virtual MAC --rfc2338.7.3 */
+ 
++	char *instance_name;
++
+ 	/* rfc2336.6.2 */
+ 	uint32_t	ms_down_timer;
+ 	uint32_t	adver_timer;

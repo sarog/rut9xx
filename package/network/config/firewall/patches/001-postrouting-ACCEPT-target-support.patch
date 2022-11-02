@@ -1,0 +1,36 @@
+Index: firewall-2018-08-13-1c4d5bcd/redirects.c
+===================================================================
+--- firewall-2018-08-13-1c4d5bcd.orig/redirects.c
++++ firewall-2018-08-13-1c4d5bcd/redirects.c
+@@ -281,7 +281,7 @@ check_redirect(struct fw3_state *state,
+ 		warn_section("redirect", redir, e, "has no target specified, defaulting to DNAT");
+ 		redir->target = FW3_FLAG_DNAT;
+ 	}
+-	else if (redir->target < FW3_FLAG_DNAT || redir->target > FW3_FLAG_SNAT)
++	else if ((redir->target != FW3_FLAG_ACCEPT && redir->target < FW3_FLAG_DNAT) || redir->target > FW3_FLAG_SNAT)
+ 	{
+ 		warn_section("redirect", redir, e, "has invalid target specified, defaulting to DNAT");
+ 		redir->target = FW3_FLAG_DNAT;
+@@ -321,6 +321,11 @@ check_redirect(struct fw3_state *state,
+ 				set(redir->_src->flags, FW3_FAMILY_V4, FW3_FLAG_HELPER);
+ 		}
+ 	}
++	else if (redir->target == FW3_FLAG_ACCEPT)
++	{
++		set(redir->_dest->flags, FW3_FAMILY_V4, FW3_FLAG_ACCEPT);
++		valid = true;
++	}
+ 	else
+ 	{
+ 		if (redir->dest.any)
+@@ -499,6 +504,10 @@ set_snat_dnat(struct fw3_ipt_rule *r, en
+ 		fw3_ipt_rule_target(r, "DNAT");
+ 		fw3_ipt_rule_addarg(r, false, "--to-destination", buf);
+ 	}
++	else if (target == FW3_FLAG_ACCEPT)
++	{
++		fw3_ipt_rule_target(r, "ACCEPT");
++	}
+ 	else
+ 	{
+ 		fw3_ipt_rule_target(r, "SNAT");

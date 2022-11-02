@@ -1,0 +1,11 @@
+--- a/include/iwinfo.h
++++ b/include/iwinfo.h
+@@ -20,7 +20,7 @@
+ #include <errno.h>
+ 
+ 
+-#define IWINFO_BUFSIZE	24 * 1024
++#define IWINFO_BUFSIZE	48 * 1024
+ #define IWINFO_ESSID_MAX_SIZE	32
+ 
+ #define IWINFO_80211_A       (1 << 0)

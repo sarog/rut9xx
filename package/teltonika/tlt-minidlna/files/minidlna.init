@@ -1,0 +1,130 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2010 OpenWrt.org
+
+PROG=/usr/bin/minidlna
+USE_PROCD=1
+START=99
+STOP=99
+
+MINIDLNA_CONFIG_FILE="/var/etc/minidlna.conf"
+
+minidlna_cfg_append() {
+	echo "$1" >> "$MINIDLNA_CONFIG_FILE"
+}
+
+minidlna_cfg_addbool() {
+	local cfg="$1"
+	local key="$2"
+	local def="$3"
+	local val
+
+	config_get_bool val "$cfg" "$key" "$def"
+	[ "$val" -gt 0 ] && val="yes" || val="no"
+	minidlna_cfg_append "$key=$val"
+}
+
+minidlna_cfg_addstr() {
+	local cfg="$1"
+	local key="$2"
+	local def="$3"
+	local val
+
+	config_get val "$cfg" "$key" "$def"
+	[ -n "$val" ] && minidlna_cfg_append "$key=$val"
+}
+
+minidlna_cfg_add_media_dir() {
+	local val=$1
+	minidlna_cfg_append "media_dir=$val"
+}
+
+minidlna_create_config() {
+	local cfg=$1
+	local port
+	local interface
+
+	config_get port "$cfg" port
+	config_get interface "$cfg" interface
+
+	[ -z "$interface" -o -t "$port" ] && return 1
+
+	mkdir -p /var/etc
+	echo "# this file is generated automatically, don't edit" > "$MINIDLNA_CONFIG_FILE"
+
+	minidlna_cfg_append "port=$port"
+	minidlna_cfg_append "network_interface=$interface"
+
+	minidlna_cfg_addstr "$cfg" friendly_name
+	minidlna_cfg_addstr "$cfg" user
+	minidlna_cfg_addstr "$cfg" db_dir
+	minidlna_cfg_addstr "$cfg" log_dir
+	minidlna_cfg_addstr "$cfg" log_level 'error'
+	minidlna_cfg_addbool "$cfg" inotify '1'
+	minidlna_cfg_addbool "$cfg" enable_tivo '0'
+	minidlna_cfg_addbool "$cfg" wide_links '0'
+	minidlna_cfg_addbool "$cfg" strict_dlna '0'
+	minidlna_cfg_addstr "$cfg" album_art_names
+	minidlna_cfg_addstr "$cfg" presentation_url
+	minidlna_cfg_addstr "$cfg" notify_interval '900'
+	minidlna_cfg_addstr "$cfg" serial '12345678'
+	minidlna_cfg_addstr "$cfg" model_number '1'
+	minidlna_cfg_addstr "$cfg" minissdpsocket
+	minidlna_cfg_addstr "$cfg" root_container '.'
+	config_list_foreach "$cfg" "media_dir" minidlna_cfg_add_media_dir
+
+	return 0
+}
+
+start_service() {
+	local enabled
+	local db_dir
+	local log_dir
+	local user
+	local serial
+	local model
+	local cfg='0'
+
+	config_load 'minidlna'
+	config_get_bool enabled config 'enabled' '0'
+
+	serial=$(mnf_info -s)
+	[ -z "$serial" ] || {
+		uci -q set minidlna.config.serial="$serial"
+		uci commit minidlna
+	}
+
+	model=$(mnf_info -n)
+	[ -z "$model" ] || {
+		uci -q set minidlna.config.model_number="$model"
+		uci commit minidlna
+	}
+
+	#[ "$enabled" -gt 0 ] || return 1
+
+	minidlna_create_config config || cfg='1'
+	
+	config_get db_dir config 'db_dir' '/var/run/minidlna'
+	config_get log_dir config 'log_dir' '/var/log/minidlna'
+	config_get user config 'user' 'root'
+
+	mkdir -m 0755 -p "$db_dir" "$log_dir"
+	chown -R "$user" "$db_dir" "$log_dir"
+
+	if [ "$enabled" -gt 0 ] && [ "$cfg" = '0' ]
+	then
+		procd_open_instance
+		procd_set_param command "$PROG"
+		procd_append_param command -r -S -f "$MINIDLNA_CONFIG_FILE"
+		procd_set_param file /etc/config/minidlna
+		procd_set_param stdout 1
+		procd_set_param stderr 1
+		procd_set_param respawn
+		procd_close_instance
+	fi
+}
+
+
+service_triggers() {
+	procd_add_reload_trigger "minidlna"
+}
+

@@ -1,0 +1,119 @@
+Index: linux-5.4.147/drivers/mmc/host/mmc_spi.c
+===================================================================
+--- linux-5.4.147.orig/drivers/mmc/host/mmc_spi.c
++++ linux-5.4.147/drivers/mmc/host/mmc_spi.c
+@@ -1344,7 +1344,8 @@ static int mmc_spi_probe(struct spi_devi
+ 	 * that's the only reason not to use a few MHz for f_min (until
+ 	 * the upper layer reads the target frequency from the CSD).
+ 	 */
+-	mmc->f_min = 400000;
++	mmc->f_min = 2000000;
++	/* was 400000: AR9344 slowest spi hw clk ahb_clk/128 */
+ 	mmc->f_max = spi->max_speed_hz;
+ 
+ 	host = mmc_priv(mmc);
+Index: linux-5.4.147/drivers/spi/spi-ar934x.c
+===================================================================
+--- linux-5.4.147.orig/drivers/spi/spi-ar934x.c
++++ linux-5.4.147/drivers/spi/spi-ar934x.c
+@@ -16,6 +16,7 @@
+ #include <linux/module.h>
+ #include <linux/of_device.h>
+ #include <linux/spi/spi.h>
++#include <linux/gpio.h>
+ 
+ #define DRIVER_NAME "spi-ar934x"
+ 
+@@ -45,6 +46,7 @@ struct ar934x_spi {
+ 	void __iomem *base;
+ 	struct clk *clk;
+ 	unsigned int clk_freq;
++	bool cs_gpio_allocated;
+ };
+ 
+ static inline int ar934x_spi_clk_div(struct ar934x_spi *sp, unsigned int freq)
+@@ -63,6 +65,7 @@ static int ar934x_spi_setup(struct spi_d
+ {
+ 	struct ar934x_spi *sp = spi_controller_get_devdata(spi->master);
+ 
++	int status = 0;
+ 	if ((spi->max_speed_hz == 0) ||
+ 	    (spi->max_speed_hz > (sp->clk_freq / 2))) {
+ 		spi->max_speed_hz = sp->clk_freq / 2;
+@@ -70,8 +73,42 @@ static int ar934x_spi_setup(struct spi_d
+ 		dev_err(&spi->dev, "spi clock is too low\n");
+ 		return -EINVAL;
+ 	}
++	if (gpio_is_valid(spi->cs_gpio) && !sp->cs_gpio_allocated) {
+ 
+-	return 0;
++		status = gpio_request(spi->cs_gpio, dev_name(&spi->dev));
++		if (status == 0) {
++			sp->cs_gpio_allocated = true;
++		}
++
++		if (sp->cs_gpio_allocated)
++			gpio_direction_output(spi->cs_gpio, (spi->mode & SPI_CS_HIGH));
++
++		dev_err(&spi->dev, "INFO: gpio[%d] set up status(%d)\n",
++			spi->cs_gpio, status);
++	}
++
++	return status;
++}
++
++static void ar934x_spi_cleanup(struct spi_device *spi)
++{
++	struct ar934x_spi *sp = spi_controller_get_devdata(spi->master);
++
++	if (gpio_is_valid(spi->cs_gpio) && sp->cs_gpio_allocated)
++	{
++		gpio_free(spi->cs_gpio);
++		sp->cs_gpio_allocated = false;
++	}
++}
++
++static void ar934x_spi_gpio_sc(struct spi_device *spi, bool enable)
++{
++	if (spi->mode & SPI_CS_HIGH) enable = !enable;
++
++	if (gpio_is_valid(spi->cs_gpio))
++	{
++		gpio_set_value_cansleep(spi->cs_gpio, enable);
++	}
+ }
+ 
+ static int ar934x_spi_transfer_one_message(struct spi_controller *master,
+@@ -88,6 +125,8 @@ static int ar934x_spi_transfer_one_messa
+ 	const u8 *tx_buf;
+ 	u8 *buf;
+ 
++	ar934x_spi_gpio_sc(m->spi, false);
++
+ 	m->actual_length = 0;
+ 	list_for_each_entry(t, &m->transfers, transfer_list) {
+ 		if (t->speed_hz)
+@@ -103,6 +142,7 @@ static int ar934x_spi_transfer_one_messa
+ 		reg &= ~AR934X_SPI_CLK_MASK;
+ 		reg |= div;
+ 		iowrite32(reg, sp->base + AR934X_SPI_REG_CTRL);
++
+ 		iowrite32(0, sp->base + AR934X_SPI_DATAOUT);
+ 
+ 		for (trx_done = 0; trx_done < t->len; trx_done += 4) {
+@@ -189,6 +229,7 @@ static int ar934x_spi_probe(struct platf
+ 
+ 	ctlr->mode_bits = SPI_LSB_FIRST;
+ 	ctlr->setup = ar934x_spi_setup;
++	ctlr->cleanup = ar934x_spi_cleanup;
+ 	ctlr->transfer_one_message = ar934x_spi_transfer_one_message;
+ 	ctlr->bits_per_word_mask = SPI_BPW_MASK(8);
+ 	ctlr->dev.of_node = pdev->dev.of_node;
+@@ -201,6 +242,7 @@ static int ar934x_spi_probe(struct platf
+ 	sp->clk = clk;
+ 	sp->clk_freq = clk_get_rate(clk);
+ 	sp->ctlr = ctlr;
++	sp->cs_gpio_allocated = false;
+ 
+ 	return devm_spi_register_controller(&pdev->dev, ctlr);
+ }

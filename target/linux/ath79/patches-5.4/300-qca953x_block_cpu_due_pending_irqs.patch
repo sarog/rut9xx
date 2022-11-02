@@ -1,0 +1,13 @@
+Index: linux-5.4.124/arch/mips/ath79/common.c
+===================================================================
+--- linux-5.4.124.orig/arch/mips/ath79/common.c
++++ linux-5.4.124/arch/mips/ath79/common.c
+@@ -114,6 +114,8 @@ void ath79_device_reset_set(u32 mask)
+ 	spin_lock_irqsave(&ath79_device_reset_lock, flags);
+ 	t = ath79_reset_rr(reg);
+ 	ath79_reset_wr(reg, t | mask);
++	if (mask == AR71XX_RESET_FULL_CHIP)
++		for (;;);
+ 	spin_unlock_irqrestore(&ath79_device_reset_lock, flags);
+ }
+ EXPORT_SYMBOL_GPL(ath79_device_reset_set);

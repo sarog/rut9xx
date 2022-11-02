@@ -1,6 +1,6 @@
 /*
  * Marvell 88E6060 switch driver
- * Copyright (c) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (c) 2008 Felix Fietkau <nbd@nbd.name>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of the GNU General Public License v2 as published by the
@@ -24,6 +24,7 @@
 #include <linux/ethtool.h>
 #include <linux/phy.h>
 #include <linux/if_vlan.h>
+#include <linux/version.h>
 
 #include <asm/io.h>
 #include <asm/irq.h>
@@ -50,13 +51,17 @@ struct mvswitch_priv {
 static inline u16
 r16(struct phy_device *phydev, int addr, int reg)
 {
-	return phydev->bus->read(phydev->bus, addr, reg);
+	struct mii_bus *bus = phydev->mdio.bus;
+
+	return bus->read(bus, addr, reg);
 }
 
 static inline void
 w16(struct phy_device *phydev, int addr, int reg, u16 val)
 {
-	phydev->bus->write(phydev->bus, addr, reg, val);
+	struct mii_bus *bus = phydev->mdio.bus;
+
+	bus->write(bus, addr, reg, val);
 }
 
 
@@ -173,7 +178,7 @@ mvswitch_mangle_rx(struct net_device *dev, struct sk_buff *skb)
 	if (vlan == -1)
 		return;
 
-	__vlan_hwaccel_put_tag(skb, vlan);
+	__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan);
 }
 
 
@@ -203,8 +208,9 @@ mvswitch_config_init(struct phy_device *pdev)
 		return -EINVAL;
 
 	printk("%s: Marvell 88E6060 PHY driver attached.\n", dev->name);
-	pdev->supported = ADVERTISED_100baseT_Full;
-	pdev->advertising = ADVERTISED_100baseT_Full;
+	linkmode_zero(pdev->supported);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, pdev->supported);
+	linkmode_copy(pdev->advertising, pdev->supported);
 	dev->phy_ptr = priv;
 	pdev->irq = PHY_POLL;
 #ifdef HEADER_MODE
@@ -307,9 +313,9 @@ mvswitch_config_init(struct phy_device *pdev)
 
 #ifdef HEADER_MODE
 	dev->priv_flags |= IFF_NO_IP_ALIGN;
-	dev->features |= NETIF_F_HW_VLAN_RX | NETIF_F_HW_VLAN_TX;
+	dev->features |= NETIF_F_HW_VLAN_CTAG_RX | NETIF_F_HW_VLAN_CTAG_TX;
 #else
-	dev->features |= NETIF_F_HW_VLAN_RX;
+	dev->features |= NETIF_F_HW_VLAN_CTAG_RX;
 #endif
 
 	return 0;
@@ -339,6 +345,12 @@ mvswitch_read_status(struct phy_device *pdev)
 	mvswitch_wait_mask(pdev, MV_SWITCHREG(ATU_OP), MV_ATUOP_INPROGRESS, 0);
 
 	return 0;
+}
+
+static int
+mvswitch_aneg_done(struct phy_device *phydev)
+{
+	return 1;	/* Return any positive value */
 }
 
 static int
@@ -388,12 +400,13 @@ mvswitch_probe(struct phy_device *pdev)
 static int
 mvswitch_fixup(struct phy_device *dev)
 {
+	struct mii_bus *bus = dev->mdio.bus;
 	u16 reg;
 
-	if (dev->addr != 0x10)
+	if (dev->mdio.addr != 0x10)
 		return 0;
 
-	reg = dev->bus->read(dev->bus, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
+	reg = bus->read(bus, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
 	if (reg != MV_IDENT_VALUE)
 		return 0;
 
@@ -412,15 +425,15 @@ static struct phy_driver mvswitch_driver = {
 	.detach		= &mvswitch_detach,
 	.config_init	= &mvswitch_config_init,
 	.config_aneg	= &mvswitch_config_aneg,
+	.aneg_done	= &mvswitch_aneg_done,
 	.read_status	= &mvswitch_read_status,
-	.driver		= { .owner = THIS_MODULE,},
 };
 
 static int __init
 mvswitch_init(void)
 {
 	phy_register_fixup_for_id(PHY_ANY_ID, mvswitch_fixup);
-	return phy_driver_register(&mvswitch_driver);
+	return phy_driver_register(&mvswitch_driver, THIS_MODULE);
 }
 
 static void __exit

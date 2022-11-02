@@ -1,130 +1,38 @@
-#!/bin/sh
-
 RAM_ROOT=/tmp/root
 
-ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
-libs() { ldd $* | awk '{print $3}'; }
+export BACKUP_FILE=sysupgrade.tgz	# file extracted by preinit
+
+[ -x /usr/bin/ldd ] || ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
+libs() { ldd $* 2>/dev/null | sed -E 's/(.* => )?(.*) .*/\2/'; }
 
 install_file() { # <file> [ <file> ... ]
+	local target dest dir
 	for file in "$@"; do
+		if [ -L "$file" ]; then
+			target="$(readlink -f "$file")"
+			dest="$RAM_ROOT/$file"
+			[ ! -f "$dest" ] && {
+				dir="$(dirname "$dest")"
+				mkdir -p "$dir"
+				ln -s "$target" "$dest"
+			}
+			file="$target"
+		fi
 		dest="$RAM_ROOT/$file"
-		[ -f $file -a ! -f $dest ] && {
-			dir="$(dirname $dest)"
+		[ -f "$file" -a ! -f "$dest" ] && {
+			dir="$(dirname "$dest")"
 			mkdir -p "$dir"
-			cp $file $dest
+			cp "$file" "$dest"
 		}
 	done
 }
 
-install_bin() { # <file> [ <symlink> ... ]
+install_bin() {
+	local src files
 	src=$1
 	files=$1
 	[ -x "$src" ] && files="$src $(libs $src)"
 	install_file $files
-	[ -e /lib/ld.so.1 ] && {
-		install_file /lib/ld.so.1
-	}
-	shift
-	for link in "$@"; do {
-		dest="$RAM_ROOT/$link"
-		dir="$(dirname $dest)"
-		mkdir -p "$dir"
-		[ -f "$dest" ] || ln -s $src $dest
-	}; done
-}
-
-supivot() { # <new_root> <old_root>
-	/bin/mount | grep "on $1 type" 2>&- 1>&- || /bin/mount -o bind $1 $1
-	mkdir -p $1$2 $1/proc $1/sys $1/dev $1/tmp $1/overlay && \
-	/bin/mount -o noatime,move /proc $1/proc && \
-	pivot_root $1 $1$2 || {
-		/bin/umount -l $1 $1
-		return 1
-	}
-
-	/bin/mount -o noatime,move $2/sys /sys
-	/bin/mount -o noatime,move $2/dev /dev
-	/bin/mount -o noatime,move $2/tmp /tmp
-	/bin/mount -o noatime,move $2/overlay /overlay 2>&-
-	return 0
-}
-
-run_ramfs() { # <command> [...]
-	install_bin /bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount	\
-		/sbin/pivot_root /sbin/reboot /usr/bin/wget /bin/sync /bin/dd	\
-		/bin/grep /bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/["	\
-		/bin/dd /bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump	\
-		/bin/sleep /bin/zcat /usr/bin/bzcat /usr/bin/printf /usr/bin/wc \
-		/bin/cut /usr/bin/printf /bin/sync /usr/bin/tail /usr/bin/head /usr/bin/tr /bin/usleep
-
-	install_bin /sbin/mtd
-	install_bin /sbin/ubi
-	install_bin /sbin/mount_root
-	install_bin /sbin/snapshot
-	install_bin /sbin/snapshot_tool
-	install_bin /usr/sbin/ubiupdatevol
-	install_bin /usr/sbin/ubiattach
-	install_bin /usr/sbin/ubidetach
-	install_bin /usr/sbin/ubirsvol
-	install_bin /usr/sbin/ubirmvol
-	install_bin /usr/sbin/ubimkvol
-	install_bin /sbin/sysupgrade
-	install_bin /lib/ledblink.sh
-	
-	for file in $RAMFS_COPY_BIN; do
-		install_bin $file
-	done
-	install_file /etc/resolv.conf /lib/functions.sh /lib/functions/*.sh /lib/upgrade/*.sh $RAMFS_COPY_DATA
-
-	supivot $RAM_ROOT /mnt || {
-		echo "Failed to switch over to ramfs. Please reboot."
-		exit 1
-	}
-
-	/bin/mount -o remount,ro /mnt
-	/bin/umount -l /mnt
-
-	grep /overlay /proc/mounts > /dev/null && {
-		/bin/mount -o noatime,remount,ro /overlay
-		/bin/umount -l /overlay
-	}
-
-	# spawn a new shell from ramdisk to reduce the probability of cache issues
-	exec /bin/busybox ash -c "$*"
-}
-
-kill_remaining() { # [ <signal> ]
-	local sig="${1:-TERM}"
-	echo -n "Sending $sig to remaining processes ... "
-
-	local stat
-	for stat in /proc/[0-9]*/stat; do
-		[ -f "$stat" ] || continue
-
-		local pid name state ppid rest
-		read pid name state ppid rest < $stat
-		name="${name#(}"; name="${name%)}"
-
-		local cmdline
-		read cmdline < /proc/$pid/cmdline
-
-		# Skip kernel threads
-		[ -n "$cmdline" ] || continue
-
-		case "$name" in
-			# Skip essential services
-			*procd*|*ash*|*init*|*watchdog*|*ssh*|*dropbear*|*telnet*|*login*|*hostapd*|*wpa_supplicant*|*nas*) : ;;
-
-			# Killable process
-			*)
-				if [ $pid -ne $$ ] && [ $ppid -ne $$ ]; then
-					echo -n "$name "
-					kill -$sig $pid 2>/dev/null
-				fi
-			;;
-		esac
-	done
-	echo ""
 }
 
 run_hooks() {
@@ -153,8 +61,27 @@ ask_bool() {
 	[ "$answer" -gt 0 ]
 }
 
+_v() {
+	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo "$*" >&2
+}
+
+_vn() {
+	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo -n "$*" >&2
+}
+
 v() {
-	[ "$VERBOSE" -ge 1 ] && echo "$@"
+	_v "$(date) upgrade: $@"
+}
+
+vn() {
+	_vn "$(date) upgrade: $@"
+}
+
+json_string() {
+	local v="$1"
+	v="${v//\\/\\\\}"
+	v="${v//\"/\\\"}"
+	echo "\"$v\""
 }
 
 rootfs_type() {
@@ -163,73 +90,216 @@ rootfs_type() {
 
 get_image() { # <source> [ <command> ]
 	local from="$1"
-	local conc="$2"
-	local cmd
+	local cmd="$2"
 
-	case "$from" in
-		http://*|ftp://*) cmd="wget -O- -q";;
-		*) cmd="cat";;
-	esac
-	if [ -z "$conc" ]; then
-		local magic="$(eval $cmd $from 2>/dev/null | dd bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"')"
+	if [ -z "$cmd" ]; then
+		local magic="$(dd if="$from" bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"')"
 		case "$magic" in
-			1f8b) conc="zcat";;
-			425a) conc="bzcat";;
+			1f8b) cmd="zcat";;
+			425a) cmd="bzcat";;
+			*) cmd="cat";;
 		esac
 	fi
 
-	eval "$cmd $from 2>/dev/null ${conc:+| $conc}"
+	$cmd <"$from"
+}
+
+get_image_dd() {
+	local from="$1"; shift
+
+	(
+		exec 3>&2
+		( exec 3>&2; get_image "$from" 2>&1 1>&3 | grep -v -F ' Broken pipe'     ) 2>&1 1>&3 \
+			| ( exec 3>&2; dd "$@" 2>&1 1>&3 | grep -v -E ' records (in|out)') 2>&1 1>&3
+		exec 3>&-
+	)
 }
 
 get_magic_word() {
-	get_image "$@" | dd bs=2 count=1 2>/dev/null | hexdump -v -n 2 -e '1/1 "%02x"'
+	(get_image "$@" | dd bs=2 count=1 | hexdump -v -n 2 -e '1/1 "%02x"') 2>/dev/null
 }
 
 get_magic_long() {
-	get_image "$@" | dd bs=4 count=1 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
+	(get_image "$@" | dd bs=4 count=1 | hexdump -v -n 4 -e '1/1 "%02x"') 2>/dev/null
 }
 
-jffs2_copy_config() {
-	if grep rootfs_data /proc/mtd >/dev/null; then
-		# squashfs+jffs2
-		mtd -e rootfs_data jffs2write "$CONF_TAR" rootfs_data
-	else
-		# jffs2
-		mtd jffs2write "$CONF_TAR" rootfs
+get_magic_gpt() {
+	(get_image "$@" | dd bs=8 count=1 skip=64) 2>/dev/null
+}
+
+get_magic_vfat() {
+	(get_image "$@" | dd bs=3 count=1 skip=18) 2>/dev/null
+}
+
+get_magic_fat32() {
+	(get_image "$@" | dd bs=1 count=5 skip=82) 2>/dev/null
+}
+
+part_magic_efi() {
+	local magic=$(get_magic_gpt "$@")
+	[ "$magic" = "EFI PART" ]
+}
+
+part_magic_fat() {
+	local magic=$(get_magic_vfat "$@")
+	local magic_fat32=$(get_magic_fat32 "$@")
+	[ "$magic" = "FAT" ] || [ "$magic_fat32" = "FAT32" ]
+}
+
+export_bootdevice() {
+	local cmdline bootdisk rootpart uuid blockdev uevent line class
+	local MAJOR MINOR DEVNAME DEVTYPE
+
+	if read cmdline < /proc/cmdline; then
+		case "$cmdline" in
+			*root=*)
+				rootpart="${cmdline##*root=}"
+				rootpart="${rootpart%% *}"
+			;;
+		esac
+
+		case "$bootdisk" in
+			/dev/*)
+				uevent="/sys/class/block/${bootdisk##*/}/uevent"
+			;;
+		esac
+
+		case "$rootpart" in
+			PARTUUID=[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9])
+				uuid="${rootpart#PARTUUID=}"
+				uuid="${uuid%-[a-f0-9][a-f0-9]}"
+				for blockdev in $(find /dev -type b); do
+					set -- $(dd if=$blockdev bs=1 skip=440 count=4 2>/dev/null | hexdump -v -e '4/1 "%02x "')
+					if [ "$4$3$2$1" = "$uuid" ]; then
+						uevent="/sys/class/block/${blockdev##*/}/uevent"
+						break
+					fi
+				done
+			;;
+			PARTUUID=????????-????-????-????-??????????02)
+				uuid="${rootpart#PARTUUID=}"
+				uuid="${uuid%02}00"
+				for disk in $(find /dev -type b); do
+					set -- $(dd if=$disk bs=1 skip=568 count=16 2>/dev/null | hexdump -v -e '8/1 "%02x "" "2/1 "%02x""-"6/1 "%02x"')
+					if [ "$4$3$2$1-$6$5-$8$7-$9" = "$uuid" ]; then
+						uevent="/sys/class/block/${disk##*/}/uevent"
+						break
+					fi
+				done
+			;;
+			/dev/*)
+				uevent="/sys/class/block/${rootpart##*/}/../uevent"
+			;;
+			0x[a-f0-9][a-f0-9][a-f0-9] | 0x[a-f0-9][a-f0-9][a-f0-9][a-f0-9] | \
+			[a-f0-9][a-f0-9][a-f0-9] | [a-f0-9][a-f0-9][a-f0-9][a-f0-9])
+				rootpart=0x${rootpart#0x}
+				for class in /sys/class/block/*; do
+					while read line; do
+						export -n "$line"
+					done < "$class/uevent"
+					if [ $((rootpart/256)) = $MAJOR -a $((rootpart%256)) = $MINOR ]; then
+						uevent="$class/../uevent"
+					fi
+				done
+			;;
+		esac
+
+		if [ -e "$uevent" ]; then
+			while read line; do
+				export -n "$line"
+			done < "$uevent"
+			export BOOTDEV_MAJOR=$MAJOR
+			export BOOTDEV_MINOR=$MINOR
+			return 0
+		fi
+	fi
+
+	return 1
+}
+
+export_partdevice() {
+	local var="$1" offset="$2"
+	local uevent line MAJOR MINOR DEVNAME DEVTYPE
+
+	for uevent in /sys/class/block/*/uevent; do
+		while read line; do
+			export -n "$line"
+		done < "$uevent"
+		if [ $BOOTDEV_MAJOR = $MAJOR -a $(($BOOTDEV_MINOR + $offset)) = $MINOR -a -b "/dev/$DEVNAME" ]; then
+			export "$var=$DEVNAME"
+			return 0
+		fi
+	done
+
+	return 1
+}
+
+hex_le32_to_cpu() {
+	[ "$(echo 01 | hexdump -v -n 2 -e '/2 "%x"')" = "3031" ] && {
+		echo "${1:0:2}${1:8:2}${1:6:2}${1:4:2}${1:2:2}"
+		return
+	}
+	echo "$@"
+}
+
+get_partitions() { # <device> <filename>
+	local disk="$1"
+	local filename="$2"
+
+	if [ -b "$disk" -o -f "$disk" ]; then
+		v "Reading partition table from $filename..."
+
+		local magic=$(dd if="$disk" bs=2 count=1 skip=255 2>/dev/null)
+		if [ "$magic" != $'\x55\xAA' ]; then
+			v "Invalid partition table on $disk"
+			exit
+		fi
+
+		rm -f "/tmp/partmap.$filename"
+
+		local part
+		part_magic_efi "$disk" && {
+			#export_partdevice will fail when partition number is greater than 15, as
+			#the partition major device number is not equal to the disk major device number
+			for part in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+				set -- $(hexdump -v -n 48 -s "$((0x380 + $part * 0x80))" -e '4/4 "%08x"" "4/4 "%08x"" "4/4 "0x%08X "' "$disk")
+
+				local type="$1"
+				local lba="$(( $(hex_le32_to_cpu $4) * 0x100000000 + $(hex_le32_to_cpu $3) ))"
+				local end="$(( $(hex_le32_to_cpu $6) * 0x100000000 + $(hex_le32_to_cpu $5) ))"
+				local num="$(( $end - $lba ))"
+
+				[ "$type" = "00000000000000000000000000000000" ] && continue
+
+				printf "%2d %5d %7d\n" $part $lba $num >> "/tmp/partmap.$filename"
+			done
+		} || {
+			for part in 1 2 3 4; do
+				set -- $(hexdump -v -n 12 -s "$((0x1B2 + $part * 16))" -e '3/4 "0x%08X "' "$disk")
+
+				local type="$(( $(hex_le32_to_cpu $1) % 256))"
+				local lba="$(( $(hex_le32_to_cpu $2) ))"
+				local num="$(( $(hex_le32_to_cpu $3) ))"
+
+				[ $type -gt 0 ] || continue
+
+				printf "%2d %5d %7d\n" $part $lba $num >> "/tmp/partmap.$filename"
+			done
+		}
 	fi
 }
 
+# Flash firmware to MTD partition
+#
+# $(1): path to image
+# $(2): (optional) pipe command to extract firmware, e.g. dd bs=n skip=m
 default_do_upgrade() {
 	sync
-	if [ "$SAVE_CONFIG" -eq 1 ]; then
-		get_image "$1" | mtd $MTD_CONFIG_ARGS -j "$CONF_TAR" write - "${PART_NAME:-image}"
+	echo 3 > /proc/sys/vm/drop_caches
+	if [ -n "$UPGRADE_BACKUP" ]; then
+		get_image "$1" "$2" | mtd $MTD_ARGS $MTD_CONFIG_ARGS -j "$UPGRADE_BACKUP" write - "${PART_NAME:-image}"
 	else
-		get_image "$1" | mtd write - "${PART_NAME:-image}"
+		get_image "$1" "$2" | mtd $MTD_ARGS write - "${PART_NAME:-image}"
 	fi
-}
-
-do_upgrade() {
-	/lib/ledblink.sh &
-	v "Performing system upgrade..."
-	if type 'platform_do_upgrade' >/dev/null 2>/dev/null; then
-		platform_do_upgrade "$ARGV"
-	else
-		default_do_upgrade "$ARGV"
-	fi
-
-	if [ "$SAVE_CONFIG" -eq 1 ] && type 'platform_copy_config' >/dev/null 2>/dev/null; then
-		platform_copy_config
-	fi
-
-	v "Upgrade completed"
-	if [ "$1" == "-p" ]; then
-		eval "/tmp/post_update_script.sh" 2>/dev/null
-	fi
-	[ -n "$DELAY" ] && sleep "$DELAY"
-	ask_bool 1 "Reboot" && {
-		v "Rebooting system..."
-		reboot -f
-		sleep 5
-		echo b 2>/dev/null >/proc/sysrq-trigger
-	}
+	[ $? -ne 0 ] && exit 1
 }

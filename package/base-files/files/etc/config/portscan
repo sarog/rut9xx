@@ -1,6 +1,0 @@
-config port_scan
-        option enable '0'
-        option seconds '30'
-        option hitcount '10'
-
-config defending

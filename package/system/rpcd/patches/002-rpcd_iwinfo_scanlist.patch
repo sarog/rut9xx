@@ -1,0 +1,90 @@
+--- a/iwinfo.c
++++ b/iwinfo.c
+@@ -29,7 +29,12 @@
+ 
+ #include <rpcd/plugin.h>
+ 
++struct scan_buffers {
++	struct blob_buf buf_2g;
++	struct blob_buf buf_5g;
++};
+ 
++static struct scan_buffers scan_buf;
+ static struct blob_buf buf;
+ static const struct iwinfo_ops *iw;
+ static const char *ifname;
+@@ -411,6 +416,29 @@ rpc_iwinfo_info(struct ubus_context *ctx
+ 	return UBUS_STATUS_OK;
+ }
+ 
++static void
++prepare_scanned_list(struct blob_buf buf, const char *l3_dev)
++{
++	int rv;
++
++	iw->frequency(l3_dev, &rv);
++	if (rv >= 2400 && rv <= 2550) {
++		if (scan_buf.buf_2g.head) {
++			free(scan_buf.buf_2g.head);
++			scan_buf.buf_2g.head = NULL;
++		}
++
++		scan_buf.buf_2g.head = blob_memdup(buf.head);
++	} else if (rv >= 4800 && rv <= 6000) {
++		if (scan_buf.buf_5g.head) {
++			free(scan_buf.buf_5g.head);
++			scan_buf.buf_5g.head = NULL;
++		}
++
++		scan_buf.buf_5g.head = blob_memdup(buf.head);
++	}
++}
++
+ static int
+ rpc_iwinfo_scan(struct ubus_context *ctx, struct ubus_object *obj,
+                 struct ubus_request_data *req, const char *method,
+@@ -479,6 +507,8 @@ rpc_iwinfo_scan(struct ubus_context *ctx
+ 
+ 	blobmsg_close_array(&buf, c);
+ 
++	prepare_scanned_list(buf, ifname);
++
+ 	ubus_send_reply(ctx, req, buf.head);
+ 
+ 	rpc_iwinfo_close();
+@@ -913,12 +943,35 @@ rpc_iwinfo_devices(struct ubus_context *
+ 	return UBUS_STATUS_OK;
+ }
+ 
++static int
++rpc_iwinfo_scanlist(struct ubus_context *ctx, struct ubus_object *obj,
++		    struct ubus_request_data *req, const char *method,
++		    struct blob_attr *msg)
++{
++	int rv;
++
++	rv = rpc_iwinfo_open(msg);
++	if (rv)
++		return rv;
++
++	iw->frequency(ifname, &rv);
++	if (rv >= 2400 && rv <= 2550) {
++		ubus_send_reply(ctx, req, scan_buf.buf_2g.head);
++	} else if (rv >= 4800 && rv <= 6000) {
++		ubus_send_reply(ctx, req, scan_buf.buf_5g.head);
++	}
++
++	rpc_iwinfo_close();
++	return UBUS_STATUS_OK;
++}
++
+ 
+ static int
+ rpc_iwinfo_api_init(const struct rpc_daemon_ops *o, struct ubus_context *ctx)
+ {
+ 	static const struct ubus_method iwinfo_methods[] = {
+ 		UBUS_METHOD_NOARG("devices", rpc_iwinfo_devices),
++		UBUS_METHOD("scanlist",    rpc_iwinfo_scanlist,	   rpc_device_policy),
+ 		UBUS_METHOD("info",        rpc_iwinfo_info,        rpc_device_policy),
+ 		UBUS_METHOD("scan",        rpc_iwinfo_scan,        rpc_device_policy),
+ 		UBUS_METHOD("assoclist",   rpc_iwinfo_assoclist,   rpc_assoclist_policy),

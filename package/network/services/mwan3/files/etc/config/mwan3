@@ -1,0 +1,37 @@
+config globals 'globals'
+	option mmx_mask '0x3F00'
+	option rtmon_interval '5'
+
+config interface 'wan'
+	option enabled '0'
+	option interval '3'
+	option family 'ipv4'
+
+config condition
+	option interface 'wan'
+	option track_method 'ping'
+	list track_ip '1.1.1.1'
+	list track_ip '8.8.8.8'
+	option reliability '1'
+	option count '1'
+	option timeout '2'
+	option down '3'
+	option up '3'
+
+config member 'wan_member_mwan'
+	option interface 'wan'
+	option metric '1'
+
+config member 'wan_member_balance'
+	option interface 'wan'
+	option weight '1'
+
+config policy 'mwan_default'
+	list use_member 'wan_member_mwan'
+
+config policy 'balance_default'
+	list use_member 'wan_member_balance'
+
+config rule 'default_rule'
+	option dest_ip '0.0.0.0/0'
+	option use_policy 'mwan_default'

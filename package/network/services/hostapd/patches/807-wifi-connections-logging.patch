@@ -1,0 +1,91 @@
+--- a/src/ap/ubus.h
++++ b/src/ap/ubus.h
+@@ -32,6 +32,8 @@
+ 
+ #include <libubox/avl.h>
+ #include <libubus.h>
++#include <liblog.h>
++#include <ctype.h>
+ 
+ struct hostapd_ubus_bss {
+ 	struct ubus_object obj;
+@@ -50,6 +52,7 @@
+ 				       const u8 *addr, u8 token, u8 rep_mode,
+ 				       struct rrm_measurement_beacon_report *rep,
+ 				       size_t len);
++void hostapd_ubus_insert_wifi_log(char *mac, int ident);
+ 
+ void hostapd_ubus_add(struct hapd_interfaces *interfaces);
+ void hostapd_ubus_free(struct hapd_interfaces *interfaces);
+
+--- a/src/ap/ubus.c
++++ b/src/ap/ubus.c
+@@ -1549,3 +1549,29 @@
+ 
+ 	ubus_notify(ctx, &hapd->ubus.obj, "beacon-report", b.head, -1);
+ }
++
++void hostapd_ubus_insert_wifi_log(char *mac, int ident)
++{
++	struct events_log new_task = {0};
++	char cmd[45] = {0};
++	int i = 0;
++
++	while (mac[i]) { 
++		mac[i] = toupper(mac[i]);
++		i++; 
++	}
++	
++	if (ident) {
++		sprintf(cmd, "WiFi client connected: %s", mac);
++	} else {
++		sprintf(cmd, "WiFi client disconnected: %s", mac);		
++	}
++
++	new_task.table = LLOG_CONNECTIONS;
++	new_task.sender = "WiFi";
++	new_task.priority = EVENTLOG_NOTICE;
++	new_task.db_flag = 1;
++	new_task.text = cmd;
++
++	llog_add_task(ctx, &new_task);
++}
+
+
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -1232,6 +1232,7 @@
+ {
+ 	const u8 *dev_addr = NULL;
+ 	char buf[100];
++	char mac[18];
+ #ifdef CONFIG_P2P
+ 	u8 addr[ETH_ALEN];
+ 	u8 ip_addr_buf[4];
+@@ -1263,6 +1264,8 @@
+ 	if (hapd->sta_authorized_cb)
+ 		hapd->sta_authorized_cb(hapd->sta_authorized_cb_ctx,
+ 					sta->addr, authorized, dev_addr);
++	
++	sprintf(mac, MACSTR, MAC2STR(sta->addr));
+ 
+ 	if (authorized) {
+ 		const char *keyid;
+@@ -1294,6 +1297,8 @@
+ 			wpa_msg_no_global(hapd->msg_ctx_parent, MSG_INFO,
+ 					  AP_STA_CONNECTED "%s%s%s",
+ 					  buf, ip_addr, keyid_buf);
++		
++		hostapd_ubus_insert_wifi_log(mac, 1);
+ 	} else {
+ 		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_DISCONNECTED "%s", buf);
+ 		hostapd_ubus_notify(hapd, "disassoc", sta->addr);
+@@ -1302,6 +1307,8 @@
+ 		    hapd->msg_ctx_parent != hapd->msg_ctx)
+ 			wpa_msg_no_global(hapd->msg_ctx_parent, MSG_INFO,
+ 					  AP_STA_DISCONNECTED "%s", buf);
++
++		hostapd_ubus_insert_wifi_log(mac, 0);
+ 	}
+ 
+ #ifdef CONFIG_FST

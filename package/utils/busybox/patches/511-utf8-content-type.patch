@@ -1,0 +1,32 @@
+--- a/mailutils/sendmail.c
++++ b/mailutils/sendmail.c
+@@ -456,7 +456,11 @@ int sendmail_main(int argc UNUSED_PARAM,
+ 			}
+ 		}
+ 		check_hdr = (list && isspace(s[0]));
+-		if (strchr(s, ':') || check_hdr) {
++		if(!check_hdr){
++			if (0 == strncasecmp("subject:", s, 8) || 0 == strncasecmp("from:", s, 5))
++				check_hdr = 1;
++		}
++		if (check_hdr) {
+ 			// other headers go verbatim
+ 			// N.B. RFC2822 2.2.3 "Long Header Fields" allows for headers to occupy several lines.
+ 			// Continuation is denoted by prefixing additional lines with whitespace(s).
+@@ -508,6 +512,8 @@ int sendmail_main(int argc UNUSED_PARAM,
+ 			if (354 != smtp_check("DATA", -1))
+ 				goto bail;
+ 			// dump the headers
++			send_r_n("Content-Type: text/plain; charset=\"utf-8\"");
++			send_r_n("Content-Transfer-Encoding: 8bit");
+ 			while (list) {
+ 				send_r_n((char *) llist_pop(&list));
+ 			}
+@@ -521,6 +527,7 @@ int sendmail_main(int argc UNUSED_PARAM,
+ 			}
+ 			// go dump message body
+ 			// N.B. "s" already contains the first non-header line, so pretend we read it from input
++			send_r_n("");
+ 			goto dump;
+ 		}
+ 	}

@@ -1,0 +1,11 @@
+--- a/libopkg/opkg_remove.c
++++ b/libopkg/opkg_remove.c
+@@ -194,7 +194,7 @@ static int remove_autoinstalled(pkg_t *
+ 			 * already been removed.
+ 			 */
+ 			if (!p)
+-				return -1;
++				return 0;
+ 
+ 			if (!p->auto_installed)
+ 				continue;

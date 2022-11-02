@@ -1,0 +1,71 @@
+--- a/block.c
++++ b/block.c
+@@ -86,7 +86,7 @@ struct mount {
+ static struct vlist_tree mounts;
+ static struct blob_buf b;
+ static LIST_HEAD(devices);
+-static int anon_mount, anon_swap, auto_mount, auto_swap, check_fs;
++static int anon_mount, anon_swap, auto_mount, auto_sync, auto_swap, check_fs;
+ static unsigned int delay_root;
+ 
+ enum {
+@@ -94,6 +94,7 @@ enum {
+ 	CFG_ANON_SWAP,
+ 	CFG_AUTO_MOUNT,
+ 	CFG_AUTO_SWAP,
++	CFG_AUTO_SYNC,
+ 	CFG_DELAY_ROOT,
+ 	CFG_CHECK_FS,
+ 	__CFG_MAX
+@@ -103,6 +104,7 @@ static const struct blobmsg_policy confi
+ 	[CFG_ANON_SWAP] = { .name = "anon_swap", .type = BLOBMSG_TYPE_INT32 },
+ 	[CFG_ANON_MOUNT] = { .name = "anon_mount", .type = BLOBMSG_TYPE_INT32 },
+ 	[CFG_AUTO_SWAP] = { .name = "auto_swap", .type = BLOBMSG_TYPE_INT32 },
++	[CFG_AUTO_SYNC] = { .name = "auto_sync", .type = BLOBMSG_TYPE_INT32 },
+ 	[CFG_AUTO_MOUNT] = { .name = "auto_mount", .type = BLOBMSG_TYPE_INT32 },
+ 	[CFG_DELAY_ROOT] = { .name = "delay_root", .type = BLOBMSG_TYPE_INT32 },
+ 	[CFG_CHECK_FS] = { .name = "check_fs", .type = BLOBMSG_TYPE_INT32 },
+@@ -361,6 +363,8 @@ static int global_add(struct uci_section
+ 		auto_mount = 1;
+ 	if ((tb[CFG_AUTO_SWAP]) && blobmsg_get_u32(tb[CFG_AUTO_SWAP]))
+ 		auto_swap = 1;
++	if ((tb[CFG_AUTO_SYNC]) && blobmsg_get_u32(tb[CFG_AUTO_SYNC]))
++		auto_sync = 1;
+ 
+ 	if (tb[CFG_DELAY_ROOT])
+ 		delay_root = blobmsg_get_u32(tb[CFG_DELAY_ROOT]);
+@@ -940,11 +944,17 @@ static int handle_mount(const char *sour
+                         const char *fstype, struct mount *m)
+ {
+ 	int i, err;
++	uint32_t flags = m ? m->flags : 0;
+ 	size_t mount_opts_len;
+ 	char *mount_opts = NULL, *ptr;
+ 
+-	err = mount(source, target, fstype, m ? m->flags : 0,
+-	            (m && m->options) ? m->options : "");
++	if (auto_sync &&
++	    (!m || !m->options ||
++	     (m && m->options && !strstr(m->options, mount_flags[0].name))))
++		flags |= (uint32_t) mount_flags[0].flag;
++
++	err = mount(source, target, fstype, flags,
++		    (m && m->options) ? m->options : "");
+ 
+ 	/* Requested file system type is not available in kernel,
+ 	   attempt to call mount helper. */
+@@ -980,6 +990,14 @@ static int handle_mount(const char *sour
+ 			mount_opts[mount_opts_len - 1] = 0;
+ 		}
+ 
++		if (!mount_opts && auto_sync) {
++			mount_opts = strdup(mount_flags[0].name);
++		} else if (auto_sync && !strstr(mount_flags[0].name, mount_opts)) {
++			mount_opts = realloc(mount_opts, sizeof(mount_opts) +
++					     strlen(mount_flags[0].name));
++			sprintf(mount_opts + strlen(mount_opts), ",%s", mount_flags[0].name);
++		}
++
+ 		/* ... and now finally invoke the external mount program */
+ 		err = exec_mount(source, target, fstype, mount_opts);
+ 	}

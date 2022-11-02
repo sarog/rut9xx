@@ -1,0 +1,157 @@
+Index: mwan3-2.10.12/files/etc/hotplug.d/iface/15-mwan3
+===================================================================
+--- mwan3-2.10.12.orig/files/etc/hotplug.d/iface/15-mwan3
++++ mwan3-2.10.12/files/etc/hotplug.d/iface/15-mwan3
+@@ -61,6 +61,11 @@ case "$ACTION" in
+ 	connected)
++		wan_status=$(cat "/var/run/mwan3track/${INTERFACE}/STATE")
++		[ "$wan_status" = "connected" ] && return
++
++		echo "connected" > /var/run/mwan3track/${INTERFACE}/STATE
+ 		mwan3_set_iface_hotplug_state $INTERFACE "online"
+ 		mwan3_set_policies_iptables
++		mwan3_set_event $INTERFACE
+ 		;;
+ 	ifup)
+ 		mwan3_create_iface_iptables $INTERFACE $DEVICE
+@@ -76,8 +77,13 @@ case "$ACTION" in
+ 	disconnected)
++		wan_status=$(cat "/var/run/mwan3track/${INTERFACE}/STATE")
++		[ "$wan_status" = "disconnected" ] && return
++
++		echo "disconnected" > /var/run/mwan3track/${INTERFACE}/STATE
+ 		mwan3_set_iface_hotplug_state $INTERFACE "offline"
+ 		mwan3_set_policies_iptables
++		mwan3_set_fail_event $INTERFACE
+ 		;;
+ 	ifdown)
+ 		mwan3_set_iface_hotplug_state $INTERFACE "offline"
+ 		mwan3_delete_iface_ipset_entries $INTERFACE
+ 		mwan3_delete_iface_rules $INTERFACE
+Index: mwan3-2.10.12/files/lib/mwan3/mwan3.sh
+===================================================================
+--- mwan3-2.10.12.orig/files/lib/mwan3/mwan3.sh
++++ mwan3-2.10.12/files/lib/mwan3/mwan3.sh
+@@ -23,6 +23,11 @@ IPv6_REGEX="${IPv6_REGEX}([0-9a-fA-F]{1,
+ IPv4_REGEX="((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+ 
+ DEFAULT_LOWEST_METRIC=256
++MWAN_HIGHEST_EVENT_METRIC=256
++MAIN_WAN_METRIC=256
++BACKUPS=0
++
++ACTIVE_WAN=/var/run/mwan3/active_wan
+ 
+ mwan3_push_update()
+ {
+@@ -589,6 +594,7 @@ mwan3_set_policy()
+ 		fi
+ 	fi
+ 	if [ $is_lowest -eq 1 ]; then
++		[ "$2" = "mwan_default" ] && echo "$iface" > "$ACTIVE_WAN"
+ 		mwan3_push_update -F "mwan3_policy_$policy"
+ 		mwan3_push_update -A "mwan3_policy_$policy" \
+ 				  -m mark --mark 0x0/$MMX_MASK \
+@@ -684,7 +690,7 @@ mwan3_create_policies_iptables()
+ 	lowest_metric_v6=$DEFAULT_LOWEST_METRIC
+ 	total_weight_v6=0
+ 
+-	config_list_foreach "$1" use_member mwan3_set_policy
++	config_list_foreach "$1" use_member mwan3_set_policy "$1"
+ }
+ 
+ mwan3_set_policies_iptables()
+@@ -1168,3 +1174,93 @@ mwan3_track_clean()
+ 	rm -rf "${MWAN3_STATUS_DIR:?}/${1}" &> /dev/null
+ 	rmdir --ignore-fail-on-non-empty "$MWAN3_STATUS_DIR"
+ }
++
++mwan3_find_lowest()
++{
++        local metric interface enabled
++        config_get interface $1 interface
++        config_get enabled $interface enabled
++        [ "$enabled" -eq 1 ] || return 0
++        config_get metric $1 metric 256
++        if [ "$metric" -lt "$MWAN_HIGHEST_EVENT_METRIC" ]; then
++                MWAN_HIGHEST_EVENT_METRIC=$metric
++        fi
++}
++mwan3_find_main()
++{
++        local interface metric enabled
++        config_get interface "$1" interface
++        config_get enabled "$interface" enabled
++        [ "$enabled" = "1" ] || return 0
++        config_get metric $1 metric
++        if [ "$metric" -lt "$MAIN_WAN_METRIC" ]; then
++                MAIN_WAN_METRIC=$metric
++                MAIN_WAN=`cat /var/run/mwan3track/"$interface"/STATUS`
++        fi
++}
++
++mwan3_count_backups()
++{
++	for f in /var/run/mwan3/iface_state/* ; do
++		status=$(cat "$f")
++		[ "$status" = "online" ] && BACKUPS=$((BACKUPS+1))
++	done
++}
++
++mwan3_set_event()
++{
++        local metric text wan_name wan_metric
++        local iface=$1
++        config_get metric $iface"_member_mwan" metric 256
++        config_foreach mwan3_find_lowest member
++        if [ "$metric" -eq "$MWAN_HIGHEST_EVENT_METRIC" ]; then
++		echo "$iface" > "$ACTIVE_WAN"
++                ubus call log write_ext "{
++                        \"event\": \"Switched to main WAN ($iface)\",
++                        \"sender\": \"Failover\",
++                        \"table\": 2,
++                        \"write_db\": 1,
++                }"
++        else
++                config_foreach mwan3_find_main member
++                [ "$MAIN_WAN" == "online" ] && return 0
++		wan_name=$(cat "$ACTIVE_WAN")
++		config_get wan_metric $wan_name"_member_mwan" metric
++		[ "$wan_metric" -lt "$metric" ] && return
++		echo "$iface" > "$ACTIVE_WAN"
++                ubus call log write_ext "{
++                        \"event\": \"Switched to backup WAN ($iface)\",
++                        \"sender\": \"Failover\",
++                        \"table\": 2,
++                        \"write_db\": 1,
++                }"
++        fi
++}
++
++mwan3_set_fail_event()
++{
++        local metric
++        config_get metric $1"_member_mwan" metric 256
++        mwan3_count_backups
++        if [ "$BACKUPS" -ge 1 ]; then
++		backup=$(cat "$ACTIVE_WAN")
++		config_get backup_metric $backup"_member_mwan" metric
++		[ "$backup_metric" -lt "$metric" ] && return
++		echo "$backup" > "$ACTIVE_WAN"
++
++                ubus call log write_ext "{
++                        \"event\": \"WAN ($1) is down, switching to backup WAN ($backup)\",
++                        \"sender\": \"Failover\",
++                        \"table\": 2,
++                        \"write_db\": 1,
++                }"
++	 elif [ "$BACKUPS" -eq 0 ]; then
++                ubus call log write_ext "{
++                        \"event\": \"WAN ($1) is down, no more backups to switch\",
++                        \"sender\": \"Failover\",
++                        \"table\": 2,
++                        \"write_db\": 1,
++                }"
++        fi
++}
++

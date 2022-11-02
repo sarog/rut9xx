@@ -1,0 +1,62 @@
+#!/bin/sh
+
+. /lib/functions.sh
+CONFIG="ioman"
+FOUND=0
+found_dio_sec=0
+
+count_schedulers() {
+	local section="$1"
+
+	config_get pin "$section" pin
+
+	if [ "$pin" = "dio0" ]; then
+		FOUND=$((FOUND+1))
+		[ "$FOUND" -gt 1 ] && found_dio_sec=$section
+	fi
+}
+
+handle_schedulers() {
+	local section="$1"
+	local days=""
+	local counter=0
+
+	config_get pin "$section" pin
+
+	if [ "$section" != "$found_dio_sec" -a "$pin" = "dio0" ]; then
+		local days_orig=$(uci get $CONFIG.$section.days)
+		local days_bad=$(uci get $CONFIG.$found_dio_sec.days)
+
+		for list_sec in $days_orig; do
+			uci del_list $CONFIG.$section.days="$list_sec"
+		done
+
+		SAVEIFS=$IFS
+		IFS=$'\n'
+		for i in $(echo "$days_orig" | grep -o .); do
+			if [ "${days_bad:$counter:1}" = "1" ] || [ "$i" = "1" ]; then
+				days="${days}1"
+			elif [ "${days_bad:$counter:1}" = " " ] || [ "$i" = " " ]; then
+				days="${days} "
+			else
+				days="${days}0"
+			fi
+			counter=$((counter+1))
+		done
+		IFS=$SAVEIFS
+
+		for list_sec in $days; do
+			uci add_list $CONFIG.$section.days="$list_sec"
+		done
+	fi
+}
+
+config_load "$CONFIG"
+
+config_foreach count_schedulers "scheduler" 
+if [ "$FOUND" -gt 1 ]; then
+	config_get enabled "$found_dio_sec" enabled
+	[ "$enabled" = "1" ] && config_foreach handle_schedulers "scheduler"
+	uci delete "$CONFIG"."$found_dio_sec"
+	uci commit "$CONFIG"
+fi

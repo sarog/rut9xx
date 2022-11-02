@@ -1,0 +1,284 @@
+Index: uqmi-2020-11-22-0a19b5b7/commands-wda.c
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/commands-wda.c
++++ uqmi-2020-11-22-0a19b5b7/commands-wda.c
+@@ -35,18 +35,24 @@ static const struct {
+ 	const char *name;
+ 	QmiWdaDataAggregationProtocol aggreg;
+ } aggreg_modes[] = {
++	{ "disabled", QMI_WDA_DATA_AGGREGATION_PROTOCOL_DISABLED },
+ 	{ "tlp", QMI_WDA_DATA_AGGREGATION_PROTOCOL_TLP },
+ 	{ "qc-cm", QMI_WDA_DATA_AGGREGATION_PROTOCOL_QC_NCM },
+ 	{ "mbim", QMI_WDA_DATA_AGGREGATION_PROTOCOL_MBIM },
+ 	{ "rndis", QMI_WDA_DATA_AGGREGATION_PROTOCOL_RNDIS },
+ 	{ "qmap", QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAP },
++	{ "qmapv5", QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV5 },
+ };
+ 
+ static struct {
+-//	uint32_t iface_number;
++	uint32_t iface_number;
+ 	uint32_t dl_max_size;
+ 	uint32_t dl_max_datagrams;
+-//	QmiDataEndpointType endpoint_type;
++	uint32_t ul_max_size;
++	uint32_t ul_max_datagrams;
++	uint32_t dl_min_padding;
++	uint8_t qos_format;
++	QmiDataEndpointType endpoint_type;
+ 	QmiWdaDataAggregationProtocol ul_aggreg;
+ 	QmiWdaDataAggregationProtocol dl_aggreg;
+ 	QmiWdaLinkLayerProtocol val;
+@@ -59,17 +65,25 @@ cmd_wda_set_data_format_prepare(struct q
+ 				struct qmi_msg *msg, char *arg)
+ {
+ 	struct qmi_wda_set_data_format_request wda_sdf_req = {
+-/*		QMI_INIT_SEQUENCE(
+-			endpoint_info,
+-			.endpoint_type	  = wda_endpoint_info.endpoint_type,
+-			.interface_number = wda_endpoint_info.iface_number),*/
+ 		QMI_INIT(link_layer_protocol, wda_endpoint_info.val),
+ 		QMI_INIT(uplink_data_aggregation_protocol, wda_endpoint_info.ul_aggreg),
+ 		QMI_INIT(downlink_data_aggregation_protocol, wda_endpoint_info.dl_aggreg),
+ 		QMI_INIT(downlink_data_aggregation_max_datagrams, wda_endpoint_info.dl_max_datagrams),
+ 		QMI_INIT(downlink_data_aggregation_max_size, wda_endpoint_info.dl_max_size),
++		QMI_INIT(uplink_data_aggregation_max_datagrams, wda_endpoint_info.ul_max_datagrams),
++		QMI_INIT(uplink_data_aggregation_max_size, wda_endpoint_info.ul_max_size),
++		QMI_INIT(downlink_minimum_padding, wda_endpoint_info.dl_min_padding),
++		QMI_INIT(qos_format, wda_endpoint_info.qos_format),
+ 	};
+ 
++	if (wda_endpoint_info.endpoint_type) {
++		wda_sdf_req.data.endpoint_info.endpoint_type = wda_endpoint_info.endpoint_type;
++	}
++
++	if (wda_endpoint_info.iface_number) {
++		wda_sdf_req.data.endpoint_info.interface_number = wda_endpoint_info.iface_number;
++	}
++
+ 	qmi_set_wda_set_data_format_request(msg, &wda_sdf_req);
+ 	return QMI_CMD_REQUEST;
+ }
+@@ -107,7 +121,7 @@ cmd_wda_uplink_data_aggregation_protocol
+ 		return QMI_CMD_DONE;
+ 	}
+ 
+-	uqmi_add_error("Invalid value (valid: tlp, qc-cm, mbim, rndis, qmap");
++	uqmi_add_error("Invalid value (valid: disabled, tlp, qc-cm, mbim, rndis, qmap, qmapv5");
+ 	return QMI_CMD_EXIT;
+ }
+ 
+@@ -125,7 +139,7 @@ static enum qmi_cmd_result cmd_wda_downl
+ 		return QMI_CMD_DONE;
+ 	}
+ 
+-	uqmi_add_error("Invalid value (valid: tlp, qc-cm, mbim, rndis, qmap");
++	uqmi_add_error("Invalid value (valid: disabled, tlp, qc-cm, mbim, rndis, qmap, qmapv5");
+ 	return QMI_CMD_EXIT;
+ }
+ 
+@@ -141,6 +155,18 @@ static enum qmi_cmd_result cmd_wda_downl
+ 	return QMI_CMD_DONE;
+ }
+ 
++#define cmd_wda_uplink_data_aggregation_max_datagrams_cb no_cb
++
++static enum qmi_cmd_result cmd_wda_uplink_data_aggregation_max_datagrams_prepare(
++	struct qmi_dev * qmi, struct qmi_request * req, struct qmi_msg * msg,
++	char *arg)
++{
++	uint32_t max_datagrams = strtoul(arg, NULL, 10);
++
++	wda_endpoint_info.ul_max_datagrams = max_datagrams;
++	return QMI_CMD_DONE;
++}
++
+ #define cmd_wda_downlink_data_aggregation_max_size_cb no_cb
+ 
+ static enum qmi_cmd_result cmd_wda_downlink_data_aggregation_max_size_prepare(
+@@ -152,7 +178,44 @@ static enum qmi_cmd_result cmd_wda_downl
+ 	wda_endpoint_info.dl_max_size = max_size;
+ 	return QMI_CMD_DONE;
+ }
+-/*
++
++#define cmd_wda_uplink_data_aggregation_max_size_cb no_cb
++
++static enum qmi_cmd_result cmd_wda_uplink_data_aggregation_max_size_prepare(
++	struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg,
++	char *arg)
++{
++	uint32_t max_size = strtoul(arg, NULL, 10);
++
++	wda_endpoint_info.ul_max_size = max_size;
++	return QMI_CMD_DONE;
++}
++
++#define cmd_wda_downlink_minimum_padding_cb no_cb
++
++static enum qmi_cmd_result cmd_wda_downlink_minimum_padding_prepare(
++	struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg,
++	char *arg)
++{
++	uint32_t min_pad = strtoul(arg, NULL, 10);
++
++	wda_endpoint_info.dl_min_padding = min_pad;
++	return QMI_CMD_DONE;
++}
++
++#define cmd_wda_qos_format_cb no_cb
++
++static enum qmi_cmd_result cmd_wda_qos_format_prepare(
++	struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg,
++	char *arg)
++{
++	uint8_t format = strtoul(arg, NULL, 10);
++
++	wda_endpoint_info.qos_format = format;
++	return QMI_CMD_DONE;
++}
++
++
+ #define cmd_wda_endpoint_type_cb no_cb
+ 
+ static enum qmi_cmd_result
+@@ -165,7 +228,7 @@ cmd_wda_endpoint_type_prepare(struct qmi
+ 	};
+ 
+ 	for (uint32_t i = 0; i < ARRAY_SIZE(endpoint_type); i++) {
+-		if (!strcmp(endpoint_type[i], arg)) {
++		if (endpoint_type[i] && !strcmp(endpoint_type[i], arg)) {
+ 			wda_endpoint_info.endpoint_type = i;
+ 			return QMI_CMD_DONE;
+ 		}
+@@ -187,11 +250,12 @@ cmd_wda_endpoint_interface_number_prepar
+ 	wda_endpoint_info.iface_number = iface_num;
+ 	return QMI_CMD_DONE;
+ }
+-*/
++
+ static void cmd_wda_get_data_format_cb(struct qmi_dev *qmi,
+ 				       struct qmi_request *req,
+ 				       struct qmi_msg *msg)
+ {
++	void *t;
+ 	struct qmi_wda_get_data_format_response res;
+ 	const char *name = "unknown";
+ 	int i;
+@@ -205,7 +269,13 @@ static void cmd_wda_get_data_format_cb(s
+ 		break;
+ 	}
+ 
+-	blobmsg_add_string(&status, NULL, name);
++	t = blobmsg_open_table(&status, NULL);
++
++	blobmsg_add_u32(&status, "dl data aggregation max size", res.data.downlink_data_aggregation_max_size);
++
++	blobmsg_add_string(&status, "Link Layer Protocol", name);
++
++	blobmsg_close_table(&status, t);
+ }
+ 
+ static enum qmi_cmd_result cmd_wda_get_data_format_prepare(
+Index: uqmi-2020-11-22-0a19b5b7/qmi-enums-wda.h
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/qmi-enums-wda.h
++++ uqmi-2020-11-22-0a19b5b7/qmi-enums-wda.h
+@@ -53,6 +53,10 @@ typedef enum {
+  * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_MBIM: MBIM enabled.
+  * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_RNDIS: RNDIS enabled.
+  * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAP: QMAP enabled.
++ * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV2: QMAPV2 enabled. Since: 1.30.
++ * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV3: QMAPV3 enabled. Since: 1.30.
++ * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV4: QMAPV4 enabled. Since: 1.30.
++ * @QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV5: QMAPV5 enabled. Since: 1.28.
+  *
+  * Data aggregation protocol in uplink or downlink.
+  */
+@@ -63,6 +67,10 @@ typedef enum {
+     QMI_WDA_DATA_AGGREGATION_PROTOCOL_MBIM     = 0x03,
+     QMI_WDA_DATA_AGGREGATION_PROTOCOL_RNDIS    = 0x04,
+     QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAP     = 0x05,
++    QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV2   = 0x06,
++    QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV3   = 0x07,
++    QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV4   = 0x08,
++    QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAPV5   = 0x09,
+ } QmiWdaDataAggregationProtocol;
+ 
+ #endif /* _LIBQMI_GLIB_QMI_ENUMS_WDA_H_ */
+Index: uqmi-2020-11-22-0a19b5b7/data/qmi-service-wda.json
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/data/qmi-service-wda.json
++++ uqmi-2020-11-22-0a19b5b7/data/qmi-service-wda.json
+@@ -65,7 +65,22 @@
+                                      "format"        : "guint32",
+                                      "public-format" : "QmiDataEndpointType"},
+                                      { "name"          : "Interface Number",
+-                                       "format"        : "guint32"}] }],
++                                       "format"        : "guint32"}] },
++                   { "name"          : "Downlink Minimum Padding",
++                     "id"            : "0x19",
++                     "mandatory"     : "no",
++                     "type"          : "TLV",
++                     "format"        : "guint32" },
++                   { "name"          : "Uplink Data Aggregation Max Datagrams",
++                     "id"            : "0x1B",
++                     "mandatory"     : "no",
++                     "type"          : "TLV",
++                     "format"        : "guint32" },
++                   { "name"          : "Uplink Data Aggregation Max Size",
++                     "id"            : "0x1C",
++                     "mandatory"     : "no",
++                     "Type"          : "TLV",
++                     "format"        : "guint32"}],
+      "output"  : [ { "common-ref" : "Operation Result" },
+                    { "name"          : "QoS Format",
+                      "id"            : "0x10",
+Index: uqmi-2020-11-22-0a19b5b7/commands-wda.h
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/commands-wda.h
++++ uqmi-2020-11-22-0a19b5b7/commands-wda.h
+@@ -25,16 +25,28 @@
+ 	__uqmi_command(wda_link_layer_protocol, link-layer-protocol, required, CMD_TYPE_OPTION), \
+ 	__uqmi_command(wda_uplink_data_aggregation_protocol, ul-protocol, required, CMD_TYPE_OPTION), \
+ 	__uqmi_command(wda_downlink_data_aggregation_protocol, dl-protocol, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wda_endpoint_type, endpoint-type, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wda_endpoint_interface_number, endpoint-iface-number, required, CMD_TYPE_OPTION), \
+ 	__uqmi_command(wda_downlink_data_aggregation_max_datagrams, dl-max-datagrams, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wda_uplink_data_aggregation_max_datagrams, ul-max-datagrams, required, CMD_TYPE_OPTION), \
+ 	__uqmi_command(wda_downlink_data_aggregation_max_size, dl-datagram-max-size, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wda_uplink_data_aggregation_max_size, ul-datagram-max-size, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wda_downlink_minimum_padding, dl-min-padding, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wda_qos_format, qos-format, required, CMD_TYPE_OPTION), \
+ 	__uqmi_command(wda_get_data_format, wda-get-data-format, no, QMI_SERVICE_WDA)
+ 
+ #define wda_helptext \
+ 		"  --wda-set-data-format:     	     Set data format (Use with options below)\n" \
++		"    --qos-size <size>:   	     Set qos format (number)\n" \
++		"    --endpoint-type <type>:	     Set EP endpoint type (type: hsusb|pcie)\n" \
++		"    --enpoint-iface-number <number> Set EP endpoint iface number (number)\n" \
+ 		"    --link-layer-protocol <type>:   Set data format (type: 802.3|raw-ip)\n" \
+-		"    --ul-protocol <proto>:	     Set upload protocol (proto: tlp|qc-cm|mbim|rndis|qmap)\n" \
+-		"    --dl-protocol <proto>:	     Set downlink protocol (proto: tlp|qc-cm|mbim|rndis|qmap)\n" \
++		"    --ul-protocol <proto>:	     Set upload protocol (proto: tlp|qc-cm|mbim|rndis|qmap|qmapv5)\n" \
++		"    --dl-protocol <proto>:	     Set downlink protocol (proto: tlp|qc-cm|mbim|rndis|qmap|qmapv5)\n" \
+ 		"    --dl-max-datagrams <size>:      Set downlink max datagrams (number)\n" \
++		"    --ul-max-datagrams <size>:      Set uplink max datagrams (number)\n" \
+ 		"    --dl-datagram-max-size <size>:  Set downlink datagram max size (number)\n" \
++		"    --ul-datagram-max-size <size>:  Set uplink datagram max size (number)\n" \
++		"    --dl-min-padding <size>:  	     Set downlink minimum padding (number)\n" \
+ 		"  --wda-get-data-format:            Get data format\n" \
+ 
+Index: uqmi-2020-11-22-0a19b5b7/main.c
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/main.c
++++ uqmi-2020-11-22-0a19b5b7/main.c
+@@ -171,7 +171,7 @@ int main(int argc, char **argv)
+ 	}
+ 
+ 	if (qmi_device_open(&dev, device)) {
+-		fprintf(stderr, "Failed to open device\n");
++		fprintf(stderr, "Failed to open device, errno: %d\n", errno);
+ 		return 2;
+ 	}
+ 

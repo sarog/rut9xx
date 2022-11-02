@@ -13,6 +13,7 @@
 #include <linux/slab.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/of.h>
 
 #include <asm/unaligned.h>
 
@@ -28,7 +29,7 @@ struct lzma_header {
 };
 
 static int mtdsplit_parse_lzma(struct mtd_info *master,
-			       struct mtd_partition **pparts,
+			       const struct mtd_partition **pparts,
 			       struct mtd_part_parser_data *data)
 {
 	struct lzma_header hdr;
@@ -58,8 +59,8 @@ static int mtdsplit_parse_lzma(struct mtd_info *master,
 	if (t)
 		return -EINVAL;
 
-	err = mtd_find_rootfs_from(master, master->erasesize,
-				   master->size, &rootfs_offset);
+	err = mtd_find_rootfs_from(master, master->erasesize, master->size,
+				   &rootfs_offset, NULL);
 	if (err)
 		return err;
 
@@ -79,9 +80,16 @@ static int mtdsplit_parse_lzma(struct mtd_info *master,
 	return LZMA_NR_PARTS;
 }
 
+static const struct of_device_id mtdsplit_lzma_of_match_table[] = {
+	{ .compatible = "lzma" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, mtdsplit_lzma_of_match_table);
+
 static struct mtd_part_parser mtdsplit_lzma_parser = {
 	.owner = THIS_MODULE,
 	.name = "lzma-fw",
+	.of_match_table = mtdsplit_lzma_of_match_table,
 	.parse_fn = mtdsplit_parse_lzma,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };

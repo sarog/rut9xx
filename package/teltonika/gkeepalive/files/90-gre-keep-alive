@@ -1,0 +1,11 @@
+#!/bin/sh
+
+case $DEVICE in
+    gre4*)
+		logger -t gre-keepalive "Reloading gre-tunnel-keepalive due to $ACTION of $INTERFACE ($DEVICE)"
+		/etc/init.d/gre_tunnel reload
+	;;
+	*)
+	exit 0
+	;;
+esac

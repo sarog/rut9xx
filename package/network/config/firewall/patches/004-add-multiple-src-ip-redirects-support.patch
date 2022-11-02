@@ -1,0 +1,125 @@
+Index: firewall-2021-03-23-61db17ed/options.h
+===================================================================
+--- firewall-2021-03-23-61db17ed.orig/options.h
++++ firewall-2021-03-23-61db17ed/options.h
+@@ -420,7 +420,7 @@ struct fw3_redirect
+ 
+ 	struct list_head proto;
+ 
+-	struct fw3_address ip_src;
++	struct list_head ip_src;
+ 	struct list_head mac_src;
+ 	struct fw3_port port_src;
+ 
+Index: firewall-2021-03-23-61db17ed/redirects.c
+===================================================================
+--- firewall-2021-03-23-61db17ed.orig/redirects.c
++++ firewall-2021-03-23-61db17ed/redirects.c
+@@ -33,7 +33,7 @@ const struct fw3_option fw3_redirect_opt
+ 
+ 	FW3_LIST("proto",              protocol,  redirect,     proto),
+ 
+-	FW3_OPT("src_ip",              network,   redirect,     ip_src),
++	FW3_LIST("src_ip",              network,   redirect,     ip_src),
+ 	FW3_LIST("src_mac",            mac,       redirect,     mac_src),
+ 	FW3_OPT("src_port",            port,      redirect,     port_src),
+ 
+@@ -100,11 +100,14 @@ check_families(struct uci_element *e, st
+ 		warn_elem(e, "refers to CT helper not supporting family");
+ 		return false;
+ 	}
+-
+-	if (r->ip_src.family && r->ip_src.family != r->family)
+-	{
+-		warn_elem(e, "uses source ip with different family");
+-		return false;
++
++	struct fw3_address *src;
++	list_for_each_entry(src, &r->ip_src, list) {
++		if (src->family && src->family != r->family)
++		{
++			warn_elem(e, "uses source ip with different family");
++			return false;
++		}
+ 	}
+ 
+ 	if (r->ip_dest.family && r->ip_dest.family != r->family)
+@@ -372,6 +375,7 @@ fw3_alloc_redirect(struct fw3_state *sta
+ 
+ 	INIT_LIST_HEAD(&redir->proto);
+ 	INIT_LIST_HEAD(&redir->mac_src);
++	INIT_LIST_HEAD(&redir->ip_src);
+ 	INIT_LIST_HEAD(&redir->reflection_zones);
+ 
+ 	redir->enabled = true;
+@@ -557,16 +561,15 @@ set_comment(struct fw3_ipt_rule *r, cons
+ static void
+ print_redirect(struct fw3_ipt_handle *h, struct fw3_state *state,
+                struct fw3_redirect *redir, int num,
+-               struct fw3_protocol *proto, struct fw3_mac *mac)
++               struct fw3_protocol *proto, struct fw3_mac *mac, struct fw3_address *src)
+ {
+ 	struct fw3_ipt_rule *r;
+-	struct fw3_address *src, *dst;
++	struct fw3_address *dst;
+ 	struct fw3_port *spt, *dpt;
+ 
+ 	switch (h->table)
+ 	{
+ 	case FW3_TABLE_NAT:
+-		src = &redir->ip_src;
+ 		dst = &redir->ip_dest;
+ 		spt = &redir->port_src;
+ 		dpt = &redir->port_dest;
+@@ -605,7 +608,7 @@ print_redirect(struct fw3_ipt_handle *h,
+ 				info("     - Auto-selected conntrack helper '%s' based on proto/port",
+ 				     redir->helper.ptr->name);
+ 
+-			r = fw3_ipt_rule_create(h, proto, NULL, NULL, &redir->ip_src, &redir->ip_redir);
++			r = fw3_ipt_rule_create(h, proto, NULL, NULL, src, &redir->ip_redir);
+ 			fw3_ipt_rule_sport_dport(r, &redir->port_src, &redir->port_redir);
+ 			fw3_ipt_rule_mac(r, mac);
+ 			fw3_ipt_rule_ipset(r, &redir->ipset);
+@@ -667,6 +670,7 @@ expand_redirect(struct fw3_ipt_handle *h
+ 	struct fw3_address *ext_addr, *int_addr, ref_addr;
+ 	struct fw3_protocol *proto;
+ 	struct fw3_mac *mac;
++	struct fw3_address *src;
+ 	struct fw3_device *reflection_zone;
+ 	struct fw3_zone *zone;
+ 
+@@ -681,13 +685,20 @@ expand_redirect(struct fw3_ipt_handle *h
+ 		info("     ! Skipping due to different family of zone");
+ 		return;
+ 	}
++
++	list_for_each_entry(src, &redir->ip_src, list) {
++		if(!fw3_is_family(src, handle->family)) {
++			if(!src->resolved) {
++				info("     ! Skipping due to different family of ip address");
++			}
++			return;
++		}
++	}
+ 
+-	if (!fw3_is_family(&redir->ip_src, handle->family) ||
+-	    !fw3_is_family(&redir->ip_dest, handle->family) ||
++	if (!fw3_is_family(&redir->ip_dest, handle->family) ||
+ 		!fw3_is_family(&redir->ip_redir, handle->family))
+ 	{
+-		if (!redir->ip_src.resolved ||
+-		    !redir->ip_dest.resolved ||
++		if (!redir->ip_dest.resolved ||
+ 		    !redir->ip_redir.resolved)
+ 			info("     ! Skipping due to different family of ip address");
+ 
+@@ -715,7 +726,8 @@ expand_redirect(struct fw3_ipt_handle *h
+ 
+ 	fw3_foreach(proto, &redir->proto)
+ 	fw3_foreach(mac, &redir->mac_src)
+-		print_redirect(handle, state, redir, num, proto, mac);
++	fw3_foreach(src, &redir->ip_src)
++		print_redirect(handle, state, redir, num, proto, mac, src);
+ 
+ 	/* reflection rules */
+ 	if (redir->target != FW3_FLAG_DNAT || !redir->reflection || redir->local)

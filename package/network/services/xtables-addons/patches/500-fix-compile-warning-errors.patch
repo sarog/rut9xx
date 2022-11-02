@@ -1,0 +1,22 @@
+--- a/extensions/LUA/Kbuild
++++ b/extensions/LUA/Kbuild
+@@ -3,6 +3,9 @@
+ # Adding debug options
+ EXTRA_CFLAGS += -DDEBUG
+ 
++# Inhibit all warning messages
++EXTRA_CFLAGS += -w
++
+ obj-m += xt_LUA.o
+ 
+ EXTRA_CFLAGS += -I$(src)/prot_buf_new
+--- a/extensions/rtsp/Kbuild
++++ b/extensions/rtsp/Kbuild
+@@ -1,4 +1,7 @@
+ # -*- Makefile -*-
+ 
++# Disable switch warnings 
++EXTRA_CFLAGS += -Wno-switch
++
+ obj-m += nf_nat_rtsp.o
+ obj-m += nf_conntrack_rtsp.o

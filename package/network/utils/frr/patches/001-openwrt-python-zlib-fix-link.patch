@@ -1,0 +1,13 @@
+Index: frr-5.0.2/configure.ac
+===================================================================
+--- frr-5.0.2.orig/configure.ac
++++ frr-5.0.2/configure.ac
+@@ -514,7 +514,7 @@ AS_IF([test "$host" = "$build"], [
+   AC_CHECK_TOOLS([PYTHONCONFIG], [python3-config python-config python2-config])
+   if test -n "$PYTHONCONFIG"; then
+     PYTHON_CFLAGS="`\"${PYTHONCONFIG}\" --includes`"
+-    PYTHON_LIBS="`\"${PYTHONCONFIG}\" --libs`"
++    PYTHON_LIBS="`\"${PYTHONCONFIG}\" --libs` -lz"
+ 
+     AC_MSG_CHECKING([whether we found a working Python version])
+     AC_LINK_IFELSE_FLAGS([$PYTHON_CFLAGS], [$PYTHON_LIBS], [AC_LANG_PROGRAM([

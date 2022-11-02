@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2015 OpenWrt.org
+# Copyright (C) 2013-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,21 +8,22 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rpcd
-PKG_VERSION:=2015-01-10
-PKG_RELEASE=$(PKG_SOURCE_VERSION)
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=git://nbd.name/luci2/rpcd.git
-PKG_SOURCE_SUBDIR:=$(PKG_NAME)
-PKG_SOURCE_VERSION:=f00890cd6eb47ad9bb5da0fb6c50aedc8406e7c5
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
-PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_SOURCE_URL=$(PROJECT_GIT)/project/rpcd.git
+PKG_SOURCE_DATE:=2021-03-11
+PKG_SOURCE_VERSION:=ccb75178cf6a726896729c6904bd623636aa0b29
+PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
+PKG_MIRROR_HASH:=87b1839275c209f9767057d6da5272cae973a064767fa28f380a37fb65e2e643
 
 PKG_LICENSE:=ISC
 PKG_LICENSE_FILES:=
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_BUILD_PARALLEL:=1
+PKG_ASLR_PIE_REGULAR:=1
+
+PKG_CONFIG_DEPENDS:= CONFIG_RPCD_PAM
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -36,12 +37,17 @@ define Package/rpcd/default
   SECTION:=utils
   CATEGORY:=Base system
   TITLE:=OpenWrt ubus RPC backend server
-  DEPENDS:=+libubus +libubox
+  DEPENDS:=+libubus +libubox +liblog
 endef
 
 define Package/rpcd
   $(Package/rpcd/default)
-  DEPENDS+= +libuci +libblobmsg-json
+  DEPENDS+= +libuci +libblobmsg-json +libjson-c
+  MENU:=1
+endef
+
+define Package/rpcd/config
+  source "$(SOURCE)/Config.in"
 endef
 
 define Package/rpcd/description
@@ -53,6 +59,8 @@ define Package/rpcd/conffiles
 /etc/config/rpcd
 endef
 
+TARGET_LDFLAGS += -lcrypt
+
 define Package/rpcd/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/rpcd.init $(1)/etc/init.d/rpcd
@@ -63,6 +71,22 @@ define Package/rpcd/install
 	$(INSTALL_BIN) ./files/superuser.json $(1)/usr/share/rpcd/acl.d/superuser.json
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/rpcd.config $(1)/etc/config/rpcd
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/50-migrate-rpcd-ubus-sock.sh $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/51-migrate-admin-user.sh $(1)/etc/uci-defaults
+	if [ $(TLT_PLATFORM_RUTX) ]; then \
+		$(SED) "s@%%USER_SCRIPTS_HOTSPOT%%@list read 'services/hotspot/general/userscripts'@g" \
+			$(1)/etc/config/rpcd; \
+	else \
+		$(SED) "/%%USER_SCRIPTS_HOTSPOT%%/d" $(1)/etc/config/rpcd; \
+	fi
+
+	if [ ! $(TLT_PLATFORM_RUT30X) ]; then \
+		$(SED) "s@%%MOBILE_UTILS_SMS_SEND%%@list read 'services/mobile_utilities/sms/send'@g" \
+			$(1)/etc/config/rpcd; \
+	else \
+		$(SED) "/%%MOBILE_UTILS_SMS_SEND%%/d" $(1)/etc/config/rpcd; \
+	fi
 endef
 
 
@@ -91,6 +115,8 @@ define BuildPlugin
   $$(eval $$(call BuildPackage,rpcd-mod-$(1)))
 
 endef
+
+CMAKE_OPTIONS += -DPAM_SUPPORT=$(if $(CONFIG_RPCD_PAM),"ON","OFF")
 
 $(eval $(call BuildPackage,rpcd))
 $(eval $(call BuildPlugin,file,,Provides ubus calls for file and directory operations.))

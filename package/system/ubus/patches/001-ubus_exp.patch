@@ -1,0 +1,42 @@
+Index: ubus-2018-10-06-221ce7e7/libubus.c
+===================================================================
+--- ubus-2018-10-06-221ce7e7.orig/libubus.c
++++ ubus-2018-10-06-221ce7e7/libubus.c
+@@ -181,6 +181,24 @@ static void ubus_lookup_id_cb(struct ubu
+ 	*id = blob_get_u32(attr[UBUS_ATTR_OBJID]);
+ }
+ 
++int ubus_lookup_id_exp(struct ubus_context *ctx, const char *path,
++		       uint32_t *id, uint32_t timeout)
++{
++	struct ubus_request req;
++
++	blob_buf_init(&b, 0);
++	if (path)
++		blob_put_string(&b, UBUS_ATTR_OBJPATH, path);
++
++	if (ubus_start_request(ctx, &req, b.head, UBUS_MSG_LOOKUP, 0) < 0)
++		return UBUS_STATUS_INVALID_ARGUMENT;
++
++	req.raw_data_cb = ubus_lookup_id_cb;
++	req.priv = id;
++
++	return ubus_complete_request(ctx, &req, timeout);
++}
++
+ int ubus_lookup_id(struct ubus_context *ctx, const char *path, uint32_t *id)
+ {
+ 	struct ubus_request req;
+Index: ubus-2018-10-06-221ce7e7/libubus.h
+===================================================================
+--- ubus-2018-10-06-221ce7e7.orig/libubus.h
++++ ubus-2018-10-06-221ce7e7/libubus.h
+@@ -285,6 +285,8 @@ int ubus_lookup(struct ubus_context *ctx
+ 		ubus_lookup_handler_t cb, void *priv);
+ 
+ int ubus_lookup_id(struct ubus_context *ctx, const char *path, uint32_t *id);
++int ubus_lookup_id_exp(struct ubus_context *ctx, const char *path,
++		uint32_t *id, uint32_t timeout);
+ 
+ /* make an object visible to remote connections */
+ int ubus_add_object(struct ubus_context *ctx, struct ubus_object *obj);

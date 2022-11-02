@@ -1,0 +1,30 @@
+Teltonika-Networks_RUTX_v1.45
+
+10,100,GET,/identity/externalIds/SerialNumber/%%,,application/json,%%,STRING,
+
+10,101,POST,/inventory/managedObjects,application/json,application/json,%%,STRING,"{""name"":""%%"",""c8y_IsDevice"":{},""com_cumulocity_model_Agent"":{}}"
+
+10,102,POST,/identity/globalIds/%%/externalIds,application/json,,%%,STRING STRING,"{""externalId"":""%%"",""type"":""SerialNumber""}"
+
+10,103,PUT,/inventory/managedObjects/%%,application/json,,%%,UNSIGNED STRING STRING,"{""name"": ""%%"", ""type"": ""%%""}"
+
+10,104,PUT,/inventory/managedObjects/%%,application/json,,%%,UNSIGNED STRING STRING STRING STRING STRING STRING STRING STRING STRING STRING STRING STRING STRING STRING STRING STRING,"{""name"": ""%%"",""type"": ""%%"",""c8y_Hardware"":{""model"":""%%"",""revision"":""%%"",""serialNumber"":""%%""},""c8y_Firmware"":{""name"":""%%"",""version"":""%%"",""url"":""%%""},""c8y_Mobile"":{""imei"":""%%"",""cellId"":""%%"",""iccid"":""%%"",""imsi"":""%%"",""currentOperator"":""%%"",""connType"":""%%"",""mnc"":""%%"",""lac "":""%%""},""c8y_SupportedOperations"":[""c8y_Restart"", ""c8y_Firmware""]}"
+
+10,105,POST,/measurement/measurements,application/json,,%%,NOW UNSIGNED NUMBER,"{""time"":""%%"",""source"":{""id"":""%%""},""type"":""c8y_SignalStrength"",""c8y_SignalStrength"":{""rssi"":{""value"":%%,""unit"":""dBm""}}}"
+
+10,106,PUT,/inventory/managedObjects/%%,application/json,,%%,UNSIGNED STRING STRING,"{""c8y_Network"":{""c8y_WAN"":{""ip"":""%%""}},""wanType"":""%%""}"
+
+10,107,PUT,/inventory/managedObjects/%%,application/json,,%%,UNSIGNED STRING,"{""c8y_SupportedOperations"":[""%%""]}"
+
+10,108,PUT,/devicecontrol/operations/%%,application/json,,%%,UNSIGNED STRING,"{""status"":""%%""}"
+
+10,109,PUT,/inventory/managedObjects/%%,application/json,,%%,UNSIGNED STRING,"{""c8y_Connection"":{""status"": ""%%""}}"
+
+10,110,PUT,/inventory/managedObjects/%%,application/json,,%%,UNSIGNED STRING STRING,"{""c8y_Availability"":{""lastMessage"": ""%%"", ""status"": ""%%""}}"
+
+10,111,PUT,/inventory/managedObjects/%%,application/json,,%%,UNSIGNED NUMBER,"{""c8y_RequiredAvailability"":{""responseInterval"": %%}}"
+
+11,500,$.managedObject,,$.id
+11,501,,$.c8y_IsDevice,$.id
+11,502,,$.c8y_Restart,$.id,$.deviceId
+11,503,,$.c8y_Firmware,$.id,$.c8y_Firmware.url,$.c8y_Firmware.name,$.deviceId

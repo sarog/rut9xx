@@ -1,0 +1,24 @@
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -367,8 +367,7 @@ static struct nl80211_msg_conveyor * nl8
+ 		phyidx = atoi(&ifname[3]);
+ 	else if (!strncmp(ifname, "radio", 5))
+ 		phyidx = nl80211_phy_idx_from_uci(ifname);
+-
+-	if (!strncmp(ifname, "mon.", 4))
++	else if (!strncmp(ifname, "mon.", 4))
+ 		ifidx = if_nametoindex(&ifname[4]);
+ 	else
+ 		ifidx = if_nametoindex(ifname);
+@@ -381,9 +380,9 @@ static struct nl80211_msg_conveyor * nl8
+ 	if (!cv)
+ 		return NULL;
+ 
+-	if (ifidx > 0)
++	if (ifidx > -1)
+ 		NLA_PUT_U32(cv->msg, NL80211_ATTR_IFINDEX, ifidx);
+-	else if (phyidx > -1)
++	if (phyidx > -1)
+ 		NLA_PUT_U32(cv->msg, NL80211_ATTR_WIPHY, phyidx);
+ 
+ 	return cv;

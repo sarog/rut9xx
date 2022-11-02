@@ -1,0 +1,105 @@
+{
+  "config": {
+	"old_name": "data_limit",
+	"new_name": "quota_limit",
+	"remove": true
+  },
+  "sections": [
+	{
+	  "old_name": "limit",
+	  "new_type": "interface",
+	  "new_name": "mob1s1a1",
+	  "options": {
+		"sim": {
+		  "default": "1"
+		},
+		"modem": {
+		  "cb": "modem_cb"
+		},
+		"ifname": {
+		  "default": "mob1s1a1"
+		},
+		"prim_enb_conn": {
+		  "new_name": "enabled"
+		},
+		"prim_conn_limit": {
+		  "new_name": "data_limit"
+		},
+		"prim_conn_period": {
+		  "new_name": "period",
+		  "if": [
+			["month", "3"],
+			["week", "2"],
+			["day", "1"]
+		  ]
+		},
+		"prim_conn_day": {
+		  "new_name": "reset_day"
+		},
+		"prim_conn_weekday": {
+		  "new_name": "reset_weekday"
+		},
+	  	"prim_conn_hour": {
+		  "new_name": "reset_hour"
+		},
+		"prim_enb_wrn": {
+		  "new_name": "enable_warning"
+		},
+		"prim_wrn_limit": {
+		  "new_name": "warning_limit"
+		},
+		"prim_wrn_number": {
+		  "new_name": "warning_num"
+		}
+	  }
+	},
+	{
+	  "old_name": "limit",
+	  "new_type": "interface",
+	  "new_name": "mob1s2a1",
+	  "options": {
+		"sim": {
+		  "default": "2"
+		},
+		"modem": {
+		  "cb": "modem_cb"
+		},
+		"ifname": {
+		  "default": "mob1s2a1"
+		},
+		"sec_enb_conn": {
+		  "new_name": "enabled"
+		},
+		"sec_conn_limit": {
+		  "new_name": "data_limit"
+		},
+		"sec_conn_period": {
+		  "new_name": "period",
+		  "if": [
+			["month", "3"],
+			["week", "2"],
+			["day", "1"]
+		  ]
+		},
+		"sec_conn_day": {
+		  "new_name": "reset_day"
+		},
+		"sec_conn_weekday": {
+		  "new_name": "reset_weekday"
+		},
+		"sec_conn_hour": {
+		  "new_name": "reset_hour"
+		},
+		"sec_enb_wrn": {
+		  "new_name": "enable_warning"
+		},
+		"sec_wrn_limit": {
+		  "new_name": "warning_limit"
+		},
+		"sec_wrn_number": {
+		  "new_name": "warning_num"
+		}
+	  }
+	}
+  ]
+}

@@ -1,0 +1,9 @@
+# 2019-12-19
+	*New
+		* SMS authentication added
+		* MAC based authentication added
+		* Signup method added
+		* Additional user scripts added
+		* New session param added "expirationtime"
+		* TOS requirement added
+		* Configurable url params added

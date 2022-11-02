@@ -1,0 +1,36 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=95
+STOP=40
+
+set_ignore_list() {
+	procd_append_param command ${1:+--ignore $1}
+}
+
+service_triggers() {
+	procd_add_reload_trigger "mdcollectd"
+}
+
+start_service() {
+	local enabled interval llevel ltype up
+
+	config_load mdcollectd
+	config_get enabled config enabled 0
+
+	[ "$enabled" -eq 1 ] || return 0
+	config_get interval config interval 10
+	config_get llevel config llevel
+	config_get ltype config ltype
+	config_get up config up
+	config_get down config down
+	config_get pidfile config pidfile
+
+	procd_open_instance
+	procd_set_param respawn
+	procd_set_param command /usr/bin/mdcollectd -i "$interval"
+	procd_append_param command ${llevel:+"-l "$llevel} ${ltype:+"-t "$ltype}
+	procd_append_param command ${up:+"-I "$up} ${down:+"-D "$down} ${pidfile:+"-p "$pidfile}
+	config_list_foreach config ignore set_ignore_list
+	procd_close_instance
+}

@@ -1,0 +1,21 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+set_new_time_format() {
+	local section=$1
+	local hour minute
+
+	config_get hour "$section" 'hour' ""
+	config_get minute "$section" 'minute' ""
+
+	[ -z "$hour" ] || [ -z "$minute" ] && return
+
+	uci_add_list periodic_reboot "$section" 'time' "$hour:$minute"
+	uci_remove periodic_reboot "$section" 'hour'
+	uci_remove periodic_reboot "$section" 'minute'
+}
+
+config_load periodic_reboot
+config_foreach set_new_time_format "reboot_instance"
+uci_commit

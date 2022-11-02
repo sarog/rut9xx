@@ -1,0 +1,22 @@
+Index: hostapd-2020-06-08-5a8b3662/src/ap/wpa_auth.c
+===================================================================
+--- hostapd-2020-06-08-5a8b3662.orig/src/ap/wpa_auth.c
++++ hostapd-2020-06-08-5a8b3662/src/ap/wpa_auth.c
+@@ -659,7 +659,7 @@ int wpa_auth_sta_associated(struct wpa_a
+ 
+ #ifdef CONFIG_IEEE80211R_AP
+ 	if (sm->ft_completed) {
+-		wpa_auth_logger(wpa_auth, sm->addr, LOGGER_DEBUG,
++		wpa_auth_logger(wpa_auth, sm->addr, LOGGER_INFO,
+ 				"FT authentication already completed - do not start 4-way handshake");
+ 		/* Go to PTKINITDONE state to allow GTK rekeying */
+ 		sm->wpa_ptk_state = WPA_PTK_PTKINITDONE;
+@@ -670,7 +670,7 @@ int wpa_auth_sta_associated(struct wpa_a
+ 
+ #ifdef CONFIG_FILS
+ 	if (sm->fils_completed) {
+-		wpa_auth_logger(wpa_auth, sm->addr, LOGGER_DEBUG,
++		wpa_auth_logger(wpa_auth, sm->addr, LOGGER_INFO,
+ 				"FILS authentication already completed - do not start 4-way handshake");
+ 		/* Go to PTKINITDONE state to allow GTK rekeying */
+ 		sm->wpa_ptk_state = WPA_PTK_PTKINITDONE;

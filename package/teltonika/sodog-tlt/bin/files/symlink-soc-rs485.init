@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+
+START=30
+
+boot() {
+	case "$(mnf_info -n)" in
+		RUT955*)
+			ln -s /dev/ttyATH1 /dev/rs485
+		;;
+		RUT956*)
+			ln -s /dev/ttyS1 /dev/rs485
+		;;
+	esac
+}
+

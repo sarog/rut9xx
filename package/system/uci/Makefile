@@ -7,17 +7,15 @@
 #
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/download.mk
 
 PKG_NAME:=uci
-PKG_VERSION:=2018-08-11
-PKG_RELEASE:=2
+PKG_RELEASE:=5
 
+PKG_SOURCE_URL=$(PROJECT_GIT)/project/uci.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=$(PROJECT_GIT)/project/uci.git
-PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=4c8b4d6efc8302b508d261573351fffb75bd98c2
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
+PKG_SOURCE_DATE=2020-10-06
+PKG_SOURCE_VERSION:=52bbc99f69ea6f67b6fe264f424dac91bde5016c
+PKG_MIRROR_HASH:=39f2225d1b8f62d7133f708fc73f1f841b6113ae4634485fc0dfdf226041c3c4
 
 PKG_LICENSE:=LGPL-2.1
 PKG_LICENSE_FILES:=
@@ -25,7 +23,6 @@ PKG_LICENSE_FILES:=
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 PKG_BUILD_PARALLEL:=0
-
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
@@ -89,4 +86,3 @@ endef
 $(eval $(call BuildPackage,libuci))
 $(eval $(call BuildPackage,libuci-lua))
 $(eval $(call BuildPackage,uci))
-

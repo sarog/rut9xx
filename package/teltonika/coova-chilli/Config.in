@@ -1,0 +1,69 @@
+# CoovaChilli advanced configuration
+
+menu "Configuration"
+	depends on PACKAGE_coova-chilli
+
+config COOVACHILLI_CHILLIQUERY
+        bool "Enable chilli querry support."
+        default n
+
+config COOVACHILLI_PROXY
+        bool "Enable support for chilli proxy. Required for AAA Proxy through http"
+        default n
+
+config COOVACHILLI_REDIR
+	bool "Enable support for redir server. Required for uamregex"
+	default n
+
+config COOVACHILLI_MINIPORTAL
+	bool "Enable support Coova miniportal"
+	default n
+
+config COOVACHILLI_USERAGENT
+	bool "Enable recording user-agent"
+	default n
+
+config COOVACHILLI_DNSLOG
+	bool "Enable support to log DNS name queries"
+	default n
+
+config COOVACHILLI_UAMDOMAINFILE
+	bool "Enable loading of mass uamdomains from file"
+	default y
+
+config COOVACHILLI_LARGELIMITS
+	bool "Enable larger limits for use with non-embedded systems"
+	default n
+
+config COOVACHILLI_MULTILAN
+	bool "Enable support for multiple LANs"
+	default y
+
+config COOVACHILLI_DATABASE
+    bool "Enbaled support for sqlite database"
+    default y
+
+config COOVACHILLI_GSM
+    bool "Enbaled GSM support"
+    default y
+
+config COOVACHILLI_UBUS
+    bool "Enbaled UBUS support"
+    default y
+
+choice
+	prompt "SSL library"
+	default COOVACHILLI_OPENSSL
+
+config COOVACHILLI_NOSSL
+	bool "No SSL support"
+
+config COOVACHILLI_CYASSL
+	bool "CyaSSL"
+
+config COOVACHILLI_OPENSSL
+	bool "OpenSSL"
+
+endchoice
+
+endmenu

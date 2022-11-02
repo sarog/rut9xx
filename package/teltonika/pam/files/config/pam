@@ -1,0 +1,11 @@
+config pam
+    option enabled 0
+    option service sshd
+    option type optional
+    option module unix
+
+config pam
+    option enabled 0
+    option service rpcd
+    option type optional
+    option module unix

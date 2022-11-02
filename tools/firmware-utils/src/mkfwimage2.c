@@ -197,6 +197,10 @@ int str2u32(char *arg, u_int32_t *val)
 	return 0;
 }
 
+#ifndef STRINGIFY
+#define STRINGIFY2(X) #X
+#define STRINGIFY(X) STRINGIFY2(X)
+#endif
 static int image_layout_add_partition(const char *part_desc)
 {
 	part_data_t *d;
@@ -212,7 +216,7 @@ static int image_layout_add_partition(const char *part_desc)
 	}
 
 	d = &im.parts[im.part_count];
-	t = sscanf(part_desc, "%15[0-9a-zA-Z]:%15[0-9a-fA-Fx]:%15[0-9a-fA-Fx]:%15[0-9a-fA-Fx]:%15[0-9a-fA-Fx]:%256s",
+	t = sscanf(part_desc, "%15[-0-9a-zA-Z]:%15[0-9a-fA-Fx]:%15[0-9a-fA-Fx]:%15[0-9a-fA-Fx]:%15[0-9a-fA-Fx]:%"STRINGIFY(PATH_MAX)"s",
 			d->partition_name,
 			offset,
 			length,
@@ -359,12 +363,15 @@ static int build_image(void)
 	/* write in-memory buffer into file */
 	if ((f = fopen(im.outputfile, "w")) == NULL) {
 		ERROR("Can not create output file: '%s'\n", im.outputfile);
+		free(mem);
 		return -10;
 	}
 
 	if (fwrite(mem, mem_size, 1, f) != 1) {
 		ERROR("Could not write %d bytes into file: '%s'\n",
 				mem_size, im.outputfile);
+		free(mem);
+		fclose(f);
 		return -11;
 	}
 

@@ -1,0 +1,27 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2017 Teltonika
+
+START=99
+STOP=99
+SCRIPT_FILE="/usr/sbin/hostblock.sh"
+USE_PROCD=1
+
+
+start_service() {
+	$SCRIPT_FILE enable
+}
+
+stop_service() {
+	$SCRIPT_FILE disable
+}
+
+service_triggers()
+{
+	    procd_add_reload_trigger "hostblock"
+}
+
+reload_service() {
+        stop_service
+        sleep 1
+        start_service
+}

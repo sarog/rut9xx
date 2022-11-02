@@ -1,0 +1,737 @@
+#!/bin/sh /etc/rc.common
+
+START=95
+
+USE_PROCD=1
+
+DEBUG_LEVEL=4
+
+ZEBRA_CONFIG=/etc/frr/zebra.conf
+ZEBRA_USERNAME="admin"
+ZEBRA_PASSWORD="admin01"
+
+BGP_CONFIG=/etc/frr/bgpd.conf
+BGPD_USERNAME="admin"
+BGPD_PASSWORD="admin01"
+FIREWALL_SEC="A_BGP"
+
+RIP_CONFIG=/etc/frr/ripd.conf
+RIPD_USERNAME="admin"
+RIPD_PASSWORD="admin01"
+RIP_FIREWALL_SEC="A_RIP"
+
+OSPF_CONFIG=/etc/frr/ospfd.conf
+OSPF_USERNAME="admin"
+OSPF_PASSWORD="admin01"
+OSPF_FIREWALL_SEC="A_OSPF"
+
+NHRP_CONFIG=/etc/frr/nhrpd.conf
+
+EIGRP_CONFIG=/etc/frr/eigrpd.conf
+
+service_triggers()
+{
+	procd_add_reload_trigger "frr"
+}
+
+write_bgp_config() {
+	echo "$1" >> "$BGP_CONFIG"
+}
+
+write_rip_config() {
+	echo "$1" >> "$RIP_CONFIG"
+}
+
+write_ospf_config() {
+	echo "$1" >> "$OSPF_CONFIG"
+}
+
+write_nhrp_config() {
+	echo "$1" >> "$NHRP_CONFIG"
+}
+
+write_eigrp_config() {
+	echo "$1" >> "$EIGRP_CONFIG"
+}
+
+writeToConfig() {
+	echo "$1" >> $2
+}
+
+write_if_exists() {
+	if [[ -n "$3" ]]; then
+		if [[ -n "$4" ]] && [[ "$3" = "$4"  ]]; then
+			$1 "$2"
+		elif [[ -z "$4" ]]; then
+			$1 "$2"
+		fi
+	fi
+}
+
+prepare_distribute_list() {
+
+	local section=$1; local target_section=$2; local from=$3; local proto=$4
+	local enabled
+	local target
+	config_get target "$section" target
+
+	[[ -z "$target" ]] || [[ "$target" != "$target_section" ]] && return 1
+
+	config_get enabled $section enabled
+	[[ "$enabled" != "1" ]] && return 2
+	config_get direction $section direction
+
+	if [[ -n "$direction" ]]; then
+		if [[ "$proto" == "bgp" ]]; then
+			write_bgp_config "neighbor $from distribute-list ${target}_${direction} $direction"
+		elif [[ "$proto" == "rip" ]]; then
+			write_rip_config "distribute-list ${target}_${direction} $direction $from"
+		fi
+	fi
+}
+
+prepare_peer() {
+	local section="$1"
+	local instance_name="$2"
+	local ipaddr; local as; local instance; local port; local description; local ebgp_multihop;
+	local default_originate; local weight; local maximum_prefix
+	local enabled; local inbound=0; local outbound=0;
+
+	config_get instance $section "instance"
+	[[ "$instance" != "$instance_name" ]] && return 2
+	config_get enabled $section "enabled"
+	[[ "$enabled" != "1" ]] && return 1
+
+	config_get ipaddr $section "ipaddr"
+	config_get as $section "as"
+	config_get port $section "port"
+	config_get description $section "description"
+	config_get default_originate $section "default_originate"
+	config_get weight $section "weight"
+	config_get maximum_prefix $section "maximum_prefix"
+	config_get ebgp_multihop $section "ebgp_multihop"
+	config_get password $section "password"
+	write_bgp_config "  neighbor $ipaddr remote-as $as"
+	write_if_exists write_bgp_config "  neighbor $ipaddr port $port" "$port"
+	write_if_exists write_bgp_config "  neighbor $ipaddr description $description" "$description"
+	write_if_exists write_bgp_config "  neighbor $ipaddr default-originate" "$default_originate" "1"
+	write_if_exists write_bgp_config "  neighbor $ipaddr weight" "$weight"
+	write_if_exists write_bgp_config "  neighbor $ipaddr maximum-prefix" "$maximum_prefix"
+	write_if_exists write_bgp_config "  neighbor $ipaddr ebgp-multihop $ebgp_multihop" "$ebgp_multihop"
+	write_if_exists write_bgp_config "  neighbor $ipaddr password $password" "$password"
+	config_foreach prepare_distribute_list " access_list" "$section" "$ipaddr" "bgp"
+
+	inbound=0
+	outbound=0
+}
+
+prepare_peer_groups() {
+	local enabled
+	local section="$1"
+	local instance_name="$2"
+
+	local neighbor; local as; local adv_int; local cl_config_type; local next_hop_self; local next_hop_self_all;
+	local soft_rec_inbound; local con_check;
+
+	config_get enabled $section "enabled"
+	[[ "$enabled" != "1" ]] && return 1
+
+	config_get neighbor $section "neighbor"
+	config_get as $section "as"
+	config_get adv_int $section "adv_int"
+	config_get cl_config_type $section "cl_config_type"
+	config_get next_hop_self $section "next_hop_self"
+	config_get next_hop_self_all $section "next_hop_self_all"
+	config_get soft_rec_inbound $section "soft_rec_inbound"
+	config_get con_check $section "con_check"
+
+	write_bgp_config "  neighbor $section peer-group"
+	write_bgp_config "  neighbor $section remote-as $as"
+
+	if [[ "$con_check" = "1" ]]; then
+		write_bgp_config "  neighbor $section disable-connected-check"
+	fi
+
+	write_if_exists write_bgp_config "  neighbor $section advertisement-interval $adv_int" "$adv_int"
+	write_if_exists write_bgp_config"  neighbor $section $cl_config_type" "$cl_config_type"
+
+	if [[ "$next_hop_self" = "1" ]] && [[ "$next_hop_self_all" = "1" ]]; then
+		write_bgp_config "  neighbor $section next-hop-self all"
+	elif [[ "$next_hop_self" = "1" ]]; then
+		write_bgp_config "  neighbor $section next-hop-self"
+	fi
+
+	if [[ "$soft_rec_inbound" = "1" ]]; then
+		write_bgp_config "  neighbor $section soft-reconfiguration inbound"
+	fi
+
+	if [[ -n "$neighbor" ]]; then
+		for neigh in $neighbor
+		do
+			write_bgp_config "  neighbor $neigh peer-group $section"
+		done
+	fi
+}
+
+prepare_redistribution() {
+	local redistribute; local section="$1"
+
+	config_get redistribute $section "redistribute"
+
+	if [[ -n "$redistribute" ]]; then
+		for redis in $redistribute; do
+			write_if_exists $2 "  redistribute $redis" "$redis"
+		done
+	fi
+}
+
+prepare_networks() {
+	local network; local section="$1";
+
+	config_get network $section "network" ""
+
+	if [[ -n "$network" ]]; then
+		for net in $network; do
+			write_if_exists $2 "  network $net" "$net"
+		done
+	fi
+}
+
+prepare_neighbor_list() {
+	local neighbor; local section="$1"
+
+	config_get neighbor $section "neighbor" ""
+
+	if [[ -n "$neighbor" ]]; then
+		for net in $neighbor; do
+			write_if_exists $2 "  neighbor $net" "$net"
+		done
+	fi
+}
+
+prepare_bgp_instance() {
+	local section="$1"
+	local as; local id; local network; local enabled
+
+	config_get enabled $section "enabled"
+	[[ "$enabled" != "1" ]] && return 1
+
+	config_get as $section "as"
+	config_get id $section "id"
+	config_get network $section "network"
+
+	write_bgp_config "router bgp $as"
+	write_if_exists write_bgp_config "  bgp router-id $id" "$id"
+	prepare_networks "$section" write_bgp_config
+	prepare_redistribution "$section" write_bgp_config
+	config_foreach prepare_peer "peer" $section
+	config_foreach prepare_peer_groups "peer_group" $section
+
+	write_bgp_config "!"
+	write_bgp_config "address-family ipv4 unicast"
+	config_foreach prepare_bgp_prefix_list "access_list"
+	write_bgp_config "exit-address-family"
+	prepare_prefix_list
+}
+
+apply_maps() {
+	local ip_addr; local nbma;
+	config_get ip_addr $1 "ip_addr" ""
+	config_get nbma $1 "nbma" ""
+	if [[ "$ip_addr" != "" ]] && [[ "$nbma" != "" ]]; then
+		write_nhrp_config "  ip nhrp map $ip_addr $nbma"
+	fi
+}
+
+prepare_nhrp_instance() {
+	local is_enabled; local nhs; local nbma; local t_source; local holdtime; local network_id; local interface; local ipsec_support;
+	local ipsec_instance;
+	local tmp auth
+	config_get is_enabled $1 "enabled" "0"
+	config_get nhs $1 "proto_address" "0"
+	config_get nbma $1 "nbma_address"
+	config_get t_source $1 "tunnel_source"
+	config_get holdtime $1 "holdtime" ""
+	config_get network_id $1 "network_id" "1"
+	config_get interface $1 "interface" ""
+	config_get ipsec_support $1 "ipsec_support" ""
+	config_get ipsec_instance $1 "ipsec_instance" ""
+	config_get auth $1 "auth"
+
+	if [[ "$is_enabled" = "1" ]] && [[ "$interface" != "" ]]; then
+		write_nhrp_config "interface $interface"
+		write_nhrp_config "  ip nhrp network-id $network_id"
+		write_nhrp_config "  ip nhrp cisco-authentification $auth"
+		config_foreach apply_maps "$1_map"
+
+		if [[ -n "$nhs" ]] && [[ -n "$nbma" ]]; then
+			write_nhrp_config "  ip nhrp nhs $nhs nbma $nbma"
+		fi
+		write_nhrp_config "  ip nhrp registration no-unique"
+		write_nhrp_config "  ip nhrp shortcut"
+		if [[ "$ipsec_support" = "1" ]]; then
+			write_nhrp_config "  tunnel protection vici profile $ipsec_instance"
+		fi
+		write_if_exists write_nhrp_config "  tunnel source $t_source" $t_source
+		if [[ "$holdtime" ]] && [[ "$holdtime" != "" ]]; then
+			write_nhrp_config "  ip nhrp holdtime $holdtime"
+		fi
+
+		GLOBAL_ENABLED="1"
+	fi
+	write_nhrp_config "!"
+}
+
+prepare_eigrp_instance() {
+	local is_enabled; local as; local router_id;
+
+	config_get is_enabled $1 "enabled" "0"
+
+	config_get as $1 "as"
+	config_get router_id $1 "id"
+
+	if [[ "$is_enabled" = "1" ]]; then
+		write_eigrp_config "router eigrp $as"
+		write_if_exists write_eigrp_config "  eigrp router-id $router_id" "$router_id"
+
+		prepare_networks "$1" write_eigrp_config
+		prepare_neighbor_list "$1" write_eigrp_config
+		prepare_redistribution "$1" write_eigrp_config
+	fi
+	write_eigrp_config "!"
+}
+
+prepare_ospf_network() {
+	local enabled; local section="$1"; local net; local authentication
+
+	config_get enabled $section "enabled"
+
+	if [[ "$enabled" == "1" ]]; then
+		config_get net $section "net"
+		config_get area $section "area"
+		write_ospf_config "  network $net area $area"
+
+		if [[ "$authentication" == "pass" ]]; then
+			write_ospf_config "area $area authentication"
+		elif [[ "$authentication" == "md5_hmac" ]]; then
+			write_ospf_config "area $area authentication message-digest"
+		fi
+	fi
+}
+
+prepare_ospf_neighbor() {
+		local enabled; local neighbor; local priority; local polling_interval
+
+		config_get enabled $section "enabled"
+
+		if [[ "$enabled" == "1" ]]; then
+				config_get neighbor $section "neighbor"
+				config_get priority $section "priority" 0
+				config_get polling_interval $section "polling_interval" 120
+
+				write_ospf_config "  neighbor $neighbor priority $priority poll-interval $polling_interval"
+		fi
+}
+
+prepare_ospf_interface() {
+	local section="$1"; local enabled; local ifname; local hello_interval
+	local dead_interval; local retransmit_interval; local cost; local priority
+	local typ; local authentication; local password; local id
+
+	config_get enabled $section "enabled" ""
+
+	[[ "$enabled" != "1" ]] && return 0
+
+	config_get ifname $section "ifname"
+	config_get hello_interval $section "hello_interval"
+	config_get dead_interval $section "dead_interval"
+	config_get retransmit_interval $section "retransmit_interval"
+	config_get cost $section "cost"
+	config_get priority $section "priority"
+	config_get typ $section "typ"
+	config_get authentication $section "authentication"
+
+	write_ospf_config "!"
+	write_ospf_config "interface $ifname"
+	write_if_exists write_ospf_config "  ip ospf cost $cost" $cost
+	write_if_exists write_ospf_config "  ip ospf hello-interval $hello_interval" $hello_interval
+	write_if_exists write_ospf_config "  ip ospf dead-interval $dead_interval" $dead_interval
+	write_if_exists write_ospf_config "  ip ospf retransmit-interval $retransmit_interval" $retransmit_interval
+	write_if_exists write_ospf_config "  ip ospf priority $priority" $priority
+	write_if_exists write_ospf_config "  ip ospf network $typ" $typ
+
+	if [[ "$authentication" == "pass" ]]; then
+		config_get password $section "password"
+		write_ospf_config "  ip ospf authentication"
+		write_if_exists write_ospf_config "  ip ospf authentication-key $password" $password
+	elif [[ "$authentication" == "md5_hmac" ]]; then
+		config_get password $section "password"
+		config_get id $section "id" "1"
+		write_ospf_config "  ip ospf authentication message-digest"
+		write_if_exists write_ospf_config "  ip ospf message-digest-key $id md5 $password" $password
+	fi
+}
+
+prepare_rip_interface() {
+	local section="$1"
+	local interface; local enabled; local deterministic_med; local passive_interface
+
+	config_get enabled $section "enabled"
+	[[ "$enabled" != "1" ]] && return 1
+
+	config_get ifname $section "ifname"
+	config_get passive_interface $section "passive_interface"
+	config_get deterministic_med $section "deterministic_med"
+
+	write_rip_config "! Interface $ifname"
+	write_if_exists write_rip_config "network $ifname" "$ifname"
+	write_if_exists write_rip_config "bgp deterministic-med" "$deterministic_med"
+	write_if_exists write_rip_config "passive-interface $ifname" "$passive_interface" "1"
+	config_foreach prepare_distribute_list "rip_access_list" "$section" "$ifname" "rip"
+}
+
+prepare_bgp_prefix_list() {
+	local section=$1
+	local target enabled action net direction neigh target_type
+	config_get enabled $section "enabled"
+
+	[ "$enabled" != "1" ] && return 2
+
+	config_get target "$section" target
+	config_get action "$section" action
+	config_get net "$section" net
+	config_get direction "$section" direction
+
+	if [ -n "$target" ] && [ -n "$action" ] && [ -n "$direction" ]; then
+		target_type="$(uci_get frr "$target")"
+		case "$target_type" in
+			peer_group)
+				write_bgp_config " neighbor $target prefix-list prefl_${target} ${direction}"
+			;;
+			peer)
+				neigh="$(uci_get frr "$target" ipaddr)"
+				write_bgp_config " neighbor ${neigh} prefix-list prefl_${target} ${direction}"
+			;;
+		esac
+	fi
+}
+
+prepare_prefix_list() {
+	local section=$1; local config=$2; local target
+	local enabled;
+
+	config_get enabled $section "enabled"
+
+	[ "$enabled" != "1" ] && return 2
+
+	config_get target $section "target"
+	config_get action $section "action"
+	config_get net $section "net"
+	config_get direction $section "direction"
+
+	if [ -n "$target" ] && [ -n "$action" ] && [ -n "$net" ] && [ -n "$direction" ]; then
+		writeToConfig "ip prefix-list prefl_${target} $action $net" $config
+	fi
+}
+
+prepare_rip_access_list() {
+	local section=$1
+	local target enabled
+
+	config_get enabled $section "enabled"
+
+	[ "$enabled" != "1" ] && return 2
+
+	config_get target $section "target"
+	config_get action $section "action"
+	config_get net $section "net"
+	config_get direction $section "direction"
+
+	if [ -n "$target" ] && [ -n "$action" ] && [ -n "$net" ] && [ -n "$direction" ]; then
+		write_rip_config "access-list ${target}_${direction} ${action} ${net}"
+	fi
+}
+
+prepare_bgpd() {
+	local debug; local enabled_vty; local bgpd_custom_conf
+	local instances=`uci show frr | grep -c =instance`
+
+	config_get bgpd_custom_conf "bgp" "bgpd_custom_conf"
+
+	if [[ -n "$bgpd_custom_conf" ]]; then
+		cp "$bgpd_custom_conf" "$BGP_CONFIG"
+		return 0
+	fi
+
+	config_get debug "general" "debug"
+	config_get enabled_vty "general" "enabled_vty"
+
+	echo "" > $BGP_CONFIG
+	write_bgp_config "hostname $BGPD_USERNAME"
+	write_bgp_config "password $BGPD_PASSWORD"
+	write_bgp_config "enable password $BGPD_PASSWORD"
+	write_bgp_config "!"
+	write_bgp_config "access-list vty permit 127.0.0.0/8"
+
+	if [[ -n "$enabled_vty" ]] && [[ "$enabled_vty" = "1" ]]; then
+		network_get_subnet net "lan"
+		write_if_exists write_bgp_config "access-list vty permit $net" "$net"
+	fi
+
+	write_bgp_config "access-list vty deny any"
+	write_bgp_config "!"
+	[[ $instances -gt 1 ]] && write_bgp_config "bgp multiple-instance"
+	config_foreach prepare_bgp_instance "bgp_instance"
+
+	write_bgp_config "!"
+	config_foreach prepare_prefix_list "access_list" "$BGP_CONFIG"
+
+	write_bgp_config "!"
+	write_bgp_config "line vty"
+	write_bgp_config "access-class vty"
+	write_if_exists write_bgp_config "log syslog" "$debug" "1"
+}
+
+prepare_rip() {
+	local debug; local enabled_vty; local custom_conf; local version
+	local neighbors;
+
+	config_get custom_conf "rip" "custom_conf"
+
+	if [[ -n "$custom_conf" ]]; then
+		cp "$custom_conf" "$RIP_CONFIG"
+		return 0
+	fi
+
+	config_get debug "rip" "debug"
+	config_get enabled_vty "rip" "enabled_vty"
+	config_get neighbors "rip" "neighbors"
+	config_get version "rip" "version"
+
+	echo "" > $RIP_CONFIG
+	write_rip_config "hostname $RIPD_USERNAME"
+	write_rip_config "password $RIPD_PASSWORD"
+	write_rip_config "enable password $RIPD_PASSWORD"
+	write_rip_config "!"
+	write_rip_config "access-list vty permit 127.0.0.0/8"
+
+	if [[ -n "$enabled_vty" ]] && [[ "$enabled_vty" = "1" ]]; then
+		network_get_subnet net "lan"
+		write_if_exists write_rip_config "access-list vty permit $net" "$net"
+	fi
+
+	write_rip_config "access-list vty deny any"
+	write_rip_config "!"
+	write_rip_config "router rip"
+	config_foreach prepare_rip_interface "interface"
+
+	for neighbor in $neighbors; do
+		write_rip_config "neighbor $neighbor"
+	done
+
+	write_if_exists write_rip_config "version $version" "$version"
+
+	config_foreach prepare_rip_access_list "rip_access_list"
+
+	write_rip_config "!"
+	write_rip_config "line vty"
+	write_rip_config "access-class vty"
+	write_if_exists write_rip_config "log syslog" "$debug" "1"
+}
+
+prepare_ospf(){
+	local debug enabled_vty ustom_conf version id
+
+	config_get custom_conf "ospf" "custom_conf"
+
+	if [[ -n "$custom_conf" ]]; then
+		cp "$custom_conf" "$OSPF_CONFIG"
+		return 0
+	fi
+
+	config_get debug "ospf" "debug"
+	config_get enabled_vty "ospf" "enabled_vty"
+	config_get id "ospf" "id"
+
+	echo "" > $OSPF_CONFIG
+	write_ospf_config "hostname $OSPF_USERNAME"
+	write_ospf_config "password $OSPF_PASSWORD"
+	write_ospf_config "enable password $OSPF_PASSWORD"
+	write_ospf_config "!"
+	write_ospf_config "access-list vty permit 127.0.0.0/8"
+
+	if [[ -n "$enabled_vty" ]] && [[ "$enabled_vty" = "1" ]]; then
+		network_get_subnet net "lan"
+		write_if_exists write_ospf_config "access-list vty permit $net" "$net"
+	fi
+
+	write_ospf_config "access-list vty deny any"
+	write_ospf_config "!"
+
+	config_foreach prepare_ospf_interface "ospf_interface"
+	write_ospf_config "router ospf"
+	write_ospf_config "ospf router-id ${id}" "${id}"
+	prepare_redistribution "ospf" write_ospf_config
+
+	config_foreach prepare_ospf_network "ospf_network"
+	config_foreach prepare_ospf_neighbor "ospf_neighbor"
+
+	local originate passive_if
+	config_get originate "ospf" "originate"
+	config_get passive_if "ospf" "passive_ifname"
+
+	if [ -n "$originate" ]; then
+		if [ "$originate" == "default" ]; then
+			write_ospf_config "  default-information originate"
+		else
+			write_ospf_config "  default-information originate $originate"
+		fi
+	fi
+
+	if [ -n "$passive_if" ]; then
+		for ifname in $passive_if; do
+			write_ospf_config "  passive-interface $ifname"
+		done
+	fi
+
+	write_ospf_config "!"
+	write_ospf_config "line vty"
+	write_ospf_config "access-class vty"
+	write_if_exists write_ospf_config "log syslog" "$debug" "1"
+
+	if [[ "$debug" == "1" ]]; then
+		config_get debug_inf "ospf" "debug_inf"
+
+		if [[ "$debug_inf" != "" ]]; then
+			for inf in $debug_inf; do
+				write_ospf_config "debug ospf $inf"
+			done
+		fi
+	fi
+}
+
+prepare_nhrp() {
+	local debug;
+	config_get debug "nhrp" "debug" "0"
+
+	echo "" > $NHRP_CONFIG
+	write_nhrp_config "hostname admin"
+	write_nhrp_config "password admin01"
+	write_nhrp_config "enable password admin01"
+	write_nhrp_config "!"
+
+	config_foreach prepare_nhrp_instance "nhrp_instance"
+
+	write_nhrp_config "line vty"
+	write_nhrp_config "access-class vty"
+
+	if [[ -n "$debug" ]] && [[ "$debug" = "1" ]]; then
+		write_nhrp_config "log syslog"
+		write_nhrp_config "debug nhrp all"
+	fi
+	write_nhrp_config "!"
+}
+
+prepare_eigrp() {
+	local debug;
+	config_get debug "eigrp" "debug" "0"
+
+	echo "" > $EIGRP_CONFIG
+	write_eigrp_config "hostname admin"
+	write_eigrp_config "password admin01"
+	write_eigrp_config "enable password admin01"
+	write_eigrp_config "!"
+
+	config_foreach prepare_eigrp_instance "eigrp_general"
+
+	write_eigrp_config "line vty"
+	write_eigrp_config "access-class vty"
+
+	if [[ -n "$debug" ]] && [[ "$debug" = "1" ]]; then
+		write_eigrp_config "log syslog"
+		write_eigrp_config "debug eigrp packets all"
+		write_eigrp_config "debug eigrp transmit all"
+	fi
+	write_eigrp_config "!"
+}
+
+start_service() {
+	. /lib/functions/network.sh
+	local bgp_enabled
+	config_load frr
+
+	config_get bgp_enabled "bgp" "enabled" "0"
+	config_get rip_enabled "rip" "enabled" "0"
+	config_get ospf_enabled "ospf" "enabled" "0"
+	config_get nhrp_enabled "nhrp" "enabled" "0"
+	config_get eigrp_enabled "eigrp" "enabled" "0"
+
+	if [[ "$bgp_enabled" = "1" ]] || [[ "$rip_enabled" = "1" ]] || [[ "$ospf_enabled" = "1" ]] || [[ "$nhrp_enabled" = "1" ]] || [[ "$eigrp_enabled" = "1" ]]; then
+		local daemons="zebra"
+		procd_open_instance zebra
+		procd_set_param command /usr/sbin/zebra
+		procd_close_instance
+	else
+		return 1
+	fi
+
+	if [[ "$bgp_enabled" == "1" ]]; then
+		prepare_bgpd
+		procd_open_instance bgpd
+		procd_set_param command /usr/sbin/bgpd
+		procd_close_instance
+		daemons="$daemons bgpd"
+	elif [[ -f "$BGP_CONFIG" ]]; then #/usr/sbin/quagga.init: deleted config file means daemon is disabled
+		:>$BGP_CONFIG
+	fi
+
+	if [[ "$rip_enabled" == "1" ]]; then
+		prepare_rip
+		procd_open_instance ripd
+		procd_set_param command /usr/sbin/ripd
+		procd_close_instance
+		daemons="$daemons ripd"
+	elif [[ -f "$RIP_CONFIG" ]]; then #/usr/sbin/quagga.init: deleted config file means daemon is disabled
+		:>$RIP_CONFIG
+	fi
+
+	if [[ "$ospf_enabled" == "1" ]]; then
+		prepare_ospf
+		procd_open_instance ospfd
+		procd_set_param command /usr/sbin/ospfd
+		procd_close_instance
+		daemons="$daemons ospfd"
+	elif [[ -f "$OSPF_CONFIG" ]]; then #/usr/sbin/quagga.init: deleted config file means daemon is disabled
+		:>$OSPF_CONFIG
+	fi
+
+	if [[ "$nhrp_enabled" == "1" ]]; then
+		prepare_nhrp
+		procd_open_instance nhrpd
+		procd_set_param command /usr/sbin/nhrpd
+		procd_close_instance
+		daemons="$daemons nhrpd"
+	elif [[ -f "$NHRP_CONFIG" ]]; then #/usr/sbin/quagga.init: deleted config file means daemon is disabled
+		:>$NHRP_CONFIG
+	fi
+
+	if [[ "$eigrp_enabled" == "1" ]]; then
+		prepare_eigrp
+		daemons="$daemons eigrpd"
+		procd_open_instance eigrpd
+		procd_set_param command /usr/sbin/eigrpd
+		procd_close_instance
+	elif [[ -f "$EIGRP_CONFIG" ]]; then #/usr/sbin/quagga.init: deleted config file means daemon is disabled
+		:>$EIGRP_CONFIG
+	fi
+
+	procd_open_instance watchfrr
+	procd_set_param command /usr/sbin/watchfrr -r /usr/sbin/frr.init_watchrestart_%s -s /usr/sbin/frr.init_start_%s -k /usr/sbin/frr.init_stop_%s -b _ ${daemons}
+	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
+	procd_close_instance
+	return 0
+}
+
+reload_service() {
+	restart
+}

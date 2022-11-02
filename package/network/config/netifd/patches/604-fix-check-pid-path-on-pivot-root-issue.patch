@@ -1,0 +1,48 @@
+--- a/utils.c
++++ b/utils.c
+@@ -13,6 +13,8 @@
+  */
+ #include <string.h>
+ #include <stdlib.h>
++#include <errno.h>
++#include "netifd.h"
+ #include "utils.h"
+ 
+ #include <arpa/inet.h>
+@@ -186,11 +188,34 @@ bool check_pid_path(int pid, const char
+ 
+ 	proc_exe_len = proc_pidpath(pid, proc_exe_buf, sizeof(proc_exe_buf));
+ #else
++	#define ROOT_PATH_PREFIX_LEN	(32)
+ 	char proc_exe[32];
+-	char *proc_exe_buf = alloca(exe_len);
++	char *proc_exe_buf = alloca(exe_len + ROOT_PATH_PREFIX_LEN);
+ 
+ 	sprintf(proc_exe, "/proc/%d/exe", pid);
+-	proc_exe_len = readlink(proc_exe, proc_exe_buf, exe_len);
++	memset(proc_exe_buf, 0, exe_len + ROOT_PATH_PREFIX_LEN);
++	proc_exe_len = readlink(proc_exe, proc_exe_buf, exe_len + ROOT_PATH_PREFIX_LEN - 1);
++	/*
++	** proc-exe(/proc/%d/exe) may not exist or get the exe path with "/tmp/root" prefix,
++	** during mount_root(pivot_root) is running,
++	** But the process is still running.
++	** So:
++	** 1. we kill the PID to make sure it is going down if readlink failed;
++	** 2. return memcmp with sub-string of readlink result(the last exe_len bytes).
++	*/
++	if (proc_exe_len < 0) {
++		netifd_log_message(L_WARNING, "%s(%d): ### Readlink PID(%s) [%s](%d), [%s](%d) errno:%d ###.",
++		  __func__, __LINE__, proc_exe, proc_exe_buf, proc_exe_len, exe, exe_len, errno);
++		kill(pid, SIGTERM);
++		netifd_log_message(L_WARNING, "%s(%d): ### KILL PID[%d] to make sure it is going down ###.", __func__, __LINE__, pid);
++	} else {
++		if (proc_exe_len > exe_len) {
++			char *proc_exe_sub_str = proc_exe_buf + (proc_exe_len - exe_len);
++			netifd_log_message(L_WARNING, "%s(%d): ### Readlink PID(%s) [%s](%d), [%s](%d), Sub:[%s] errno:%d ###.",
++			  __func__, __LINE__, proc_exe, proc_exe_buf, proc_exe_len, exe, exe_len, proc_exe_sub_str, errno);
++			return !memcmp(exe, proc_exe_sub_str, exe_len);
++		}
++	}
+ #endif
+ 
+ 	if (proc_exe_len == exe_len)

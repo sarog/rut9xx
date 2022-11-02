@@ -1,0 +1,11 @@
+#!/bin/sh                                                                                                  
+enable=$(uci -q get firewall.pscan.port_scan)
+[ -z "$enable" ] && enable="0"
+
+uci -q batch <<-EOT                                                                                        
+        set firewall.pscan=include
+        set firewall.pscan.port_scan="$enable"
+        set firewall.pscan.type=script                                                                 
+        set firewall.pscan.path=/etc/port-scan-prevention.sh                                 
+        commit firewall                                                                                    
+EOT

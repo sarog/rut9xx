@@ -1,0 +1,49 @@
+Index: uqmi-2020-11-22-0a19b5b7/main.c
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/main.c
++++ uqmi-2020-11-22-0a19b5b7/main.c
+@@ -28,10 +28,13 @@
+ #include <errno.h>
+ #include <getopt.h>
+ #include <signal.h>
++#include <sys/file.h>
+ 
+ #include "uqmi.h"
+ #include "commands.h"
+ 
++#define UQMI_PID "/var/run/uqmi.pid"
++
+ static const char *device;
+ 
+ #define CMD_OPT(_arg) (-2 - _arg)
+@@ -117,7 +120,8 @@ struct uloop_timeout request_timeout = {
+ int main(int argc, char **argv)
+ {
+ 	static struct qmi_dev dev;
+-	int ch, ret;
++	int ch, ret, pid;
++	char uq_pid[32] = { 0 };
+ 
+ 	uloop_init();
+ 	signal(SIGINT, handle_exit_signal);
+@@ -155,6 +159,12 @@ int main(int argc, char **argv)
+ 		}
+ 	}
+ 
++	snprintf(uq_pid, sizeof(uq_pid), UQMI_PID);
++	pid = open(uq_pid, O_CREAT | O_RDWR, 0666);
++	while (flock(pid, LOCK_EX | LOCK_NB) && (errno == EWOULDBLOCK)) {
++		sleep(1);
++	}
++
+ 	if (!device) {
+ 		fprintf(stderr, "No device given\n");
+ 		return usage(argv[0]);
+@@ -168,6 +178,7 @@ int main(int argc, char **argv)
+ 	ret = uqmi_run_commands(&dev) ? 0 : -1;
+ 
+ 	qmi_device_close(&dev);
++	close(pid);
+ 
+ 	return ret;
+ }

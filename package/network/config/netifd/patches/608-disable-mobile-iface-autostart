@@ -1,0 +1,68 @@
+Index: netifd-2022-01-12-5ca5e0b4/interface.c
+===================================================================
+--- netifd-2022-01-12-5ca5e0b4.orig/interface.c
++++ netifd-2022-01-12-5ca5e0b4/interface.c
+@@ -840,6 +840,11 @@ interface_alloc(const char *name, struct
+ 		force_link = true;
+ 
+ 	iface->autostart = blobmsg_get_bool_default(tb[IFACE_ATTR_AUTO], true);
++	if ((iface->proto_handler->flags & PROTO_FLAG_AUTOUP) && iface->autostart) {
++		DPRINTF("Auto start for this interface is turned off\n");
++		iface->autostart = false;
++	}
++
+ 	iface->force_link = blobmsg_get_bool_default(tb[IFACE_ATTR_FORCE_LINK], force_link);
+ 	iface->dynamic = dynamic;
+ 	iface->proto_ip.no_defaultroute =
+Index: netifd-2022-01-12-5ca5e0b4/proto-shell.c
+===================================================================
+--- netifd-2022-01-12-5ca5e0b4.orig/proto-shell.c
++++ netifd-2022-01-12-5ca5e0b4/proto-shell.c
+@@ -917,8 +917,14 @@ proto_shell_add_handler(const char *scri
+ 		handler->proto.flags |= PROTO_FLAG_NO_TASK;
+ 
+ 	tmp = json_get_field(obj, "available", json_type_boolean);
+-	if (tmp && json_object_get_boolean(tmp))
++	if (tmp && json_object_get_boolean(tmp)) {
+ 		handler->proto.flags |= PROTO_FLAG_INIT_AVAILABLE;
++	}
++
++	tmp = json_get_field(obj, "disable_auto_up", json_type_boolean);
++	if (tmp && json_object_get_boolean(tmp)) {
++		handler->proto.flags |= PROTO_FLAG_AUTOUP;
++	}
+ 
+ 	tmp = json_get_field(obj, "renew-handler", json_type_boolean);
+ 	if (tmp && json_object_get_boolean(tmp))
+Index: netifd-2022-01-12-5ca5e0b4/proto.h
+===================================================================
+--- netifd-2022-01-12-5ca5e0b4.orig/proto.h
++++ netifd-2022-01-12-5ca5e0b4/proto.h
+@@ -40,6 +40,7 @@ enum {
+ 	PROTO_FLAG_LASTERROR = (1 << 5),
+ 	PROTO_FLAG_TEARDOWN_ON_L3_LINK_DOWN = (1 << 6),
+ 	PROTO_FLAG_NO_TASK = (1 << 7),
++	PROTO_FLAG_AUTOUP = (1 << 8),
+ };
+ 
+ struct interface_proto_state {
+Index: netifd-2022-01-12-5ca5e0b4/scripts/netifd-proto.sh
+===================================================================
+--- netifd-2022-01-12-5ca5e0b4.orig/scripts/netifd-proto.sh
++++ netifd-2022-01-12-5ca5e0b4/scripts/netifd-proto.sh
+@@ -438,6 +438,7 @@ init_proto() {
+ 			add_protocol() {
+ 				no_device=0
+ 				no_proto_task=0
++				disable_auto_up=0
+ 				available=0
+ 				renew_handler=0
+ 				teardown_on_l3_link_down=0
+@@ -452,6 +453,7 @@ init_proto() {
+ 				json_add_boolean no-device "$no_device"
+ 				json_add_boolean no-proto-task "$no_proto_task"
+ 				json_add_boolean available "$available"
++				json_add_boolean disable_auto_up "$disable_auto_up"
+ 				json_add_boolean renew-handler "$renew_handler"
+ 				json_add_boolean lasterror "$lasterror"
+ 				json_add_boolean teardown-on-l3-link-down "$teardown_on_l3_link_down"

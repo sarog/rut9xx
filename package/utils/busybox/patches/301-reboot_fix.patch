@@ -1,16 +1,16 @@
 --- a/applets/install.sh
 +++ b/applets/install.sh
-@@ -75,6 +75,7 @@
+@@ -81,6 +81,7 @@ mkdir -p "$prefix/bin" || exit 1
  install -m 755 busybox "$prefix/bin/busybox" || exit 1
  
  for i in $h; do
 +	if [ "$i" != "/sbin/reboot" ]; then
  	appdir=`dirname "$i"`
  	app=`basename "$i"`
- 	mkdir -p "$prefix/$appdir" || exit 1
-@@ -130,6 +131,7 @@
- 			echo "  $prefix/$i already exists"
- 		fi
+ 	if [ x"$noclobber" = x"1" ] && ([ -e "$prefix/$i" ] || [ -h "$prefix/$i" ]); then
+@@ -132,6 +133,7 @@ for i in $h; do
+ 		echo "  $prefix/$i -> $bb_path"
+ 		ln $linkopts "$bb_path" "$prefix/$i" || exit 1
  	fi
 +	fi
  done

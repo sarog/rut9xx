@@ -1,0 +1,69 @@
+--- a/libopkg/opkg_conf.c
++++ b/libopkg/opkg_conf.c
+@@ -75,6 +75,7 @@ opkg_option_t options[] = {
+ 	{"verbosity", OPKG_OPT_TYPE_INT, &_conf.verbosity},
+ 	{"verify_program", OPKG_OPT_TYPE_STRING, &_conf.verify_program},
+ 	{"force_feeds", OPKG_OPT_TYPE_STRING, &_conf.force_feeds},
++	{"remove_conf", OPKG_OPT_TYPE_BOOL, &_conf.remove_conf},
+ 	{NULL, 0, NULL}
+ };
+ 
+--- a/libopkg/opkg_conf.h
++++ b/libopkg/opkg_conf.h
+@@ -93,6 +93,7 @@ struct opkg_conf {
+ 	int strip_abi;
+ 	int download_only;
+ 	char *cache;
++	int remove_conf;
+ 
+ 	/* proxy options */
+ 	char *http_proxy;
+--- a/libopkg/opkg_remove.c
++++ b/libopkg/opkg_remove.c
+@@ -366,7 +366,7 @@ void remove_data_files_and_list(pkg_t *
+ 		}
+ 
+ 		conffile = pkg_get_conffile(pkg, file_name + rootdirlen);
+-		if (conffile) {
++		if (conffile && !conf->remove_conf) {
+ 			if (conffile_has_been_modified(conffile)) {
+ 				opkg_msg(NOTICE,
+ 					 "Not deleting modified conffile %s.\n",
+--- a/src/opkg-cl.c
++++ b/src/opkg-cl.c
+@@ -116,6 +116,7 @@ static struct option long_options[] = {
+ 	{"verify-program", 1, 0, ARGS_OPT_VERIFY_PROGRAM},
+ 	{"verify_program", 1, 0, ARGS_OPT_VERIFY_PROGRAM},
+ 	{"force_feeds", 1, 0, 'e'},
++	{"remove_conf", 0, 0, 'c'},
+ 	{"version", 0, 0, 'v'},
+ 	{0, 0, 0, 0}
+ };
+@@ -128,7 +129,7 @@ static int args_parse(int argc, char *ar
+ 	char *tuple, *targ;
+ 
+ 	while (1) {
+-		c = getopt_long_only(argc, argv, "Ad:f:ino:e:p:l:t:vV::",
++		c = getopt_long_only(argc, argv, "Acd:f:ino:e:p:l:t:vV::",
+ 				     long_options, &option_index);
+ 		if (c == -1)
+ 			break;
+@@ -137,6 +138,9 @@ static int args_parse(int argc, char *ar
+ 		case 'A':
+ 			conf->query_all = 1;
+ 			break;
++		case 'c':
++			conf->remove_conf = 1;
++			break;
+ 		case 'd':
+ 			conf->dest_str = xstrdup(optarg);
+ 			break;
+@@ -380,6 +384,8 @@ static void usage()
+ 	printf("\t--lists-dir		Specify lists-dir.\n");
+ 	printf("\t-e <conf_file>			Specify feeds file.\n");
+ 	printf("\t--force-feeds	<conf_file>	Specify feeds file.\n");
++	printf("\t-c			Remove configuration files when removing.\n");
++	printf("\t--remove_conf		Remove configuration files when removing.\n");
+ 
+ 	printf("\n");
+ 

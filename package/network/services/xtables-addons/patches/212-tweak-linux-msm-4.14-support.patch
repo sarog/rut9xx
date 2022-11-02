@@ -1,0 +1,53 @@
+--- a/extensions/compat_xtables.h
++++ b/extensions/compat_xtables.h
+@@ -20,7 +20,7 @@
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0) || \
+     LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 9) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0) || \
+     LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 78) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 0) || \
+-    LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 158) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
++    LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0)
+ #else
+ #	define ip_route_me_harder(xnet, xskb, xaddrtype) ip_route_me_harder((xskb), (xaddrtype))
+ #	define ip6_route_me_harder(xnet, xskb) ip6_route_me_harder((xskb))
+--- a/extensions/xt_DELUDE.c
++++ b/extensions/xt_DELUDE.c
+@@ -121,7 +121,7 @@ static void delude_send_reset(struct net
+ 
+ 	/* ip_route_me_harder expects skb->dst to be set */
+ 	skb_dst_set(nskb, dst_clone(skb_dst(oldskb)));
+-#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 19, 0)
+ 	if (ip_route_me_harder(net, nskb, addr_type))
+ #else
+ 	if (ip_route_me_harder(net, nskb->sk, nskb, addr_type))
+--- a/extensions/xt_ECHO.c
++++ b/extensions/xt_ECHO.c
+@@ -199,7 +199,7 @@ echo_tg4(struct sk_buff *oldskb, const s
+ 
+ 	/* ip_route_me_harder expects the skb's dst to be set */
+ 	skb_dst_set(newskb, dst_clone(skb_dst(oldskb)));
+-#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 19, 0)
+  	if (ip_route_me_harder(par_net(par), newskb, RTN_UNSPEC) != 0)
+ #else
+ 	if (ip_route_me_harder(par_net(par), newskb->sk, newskb, RTN_UNSPEC) != 0)
+--- a/extensions/xt_TARPIT.c
++++ b/extensions/xt_TARPIT.c
+@@ -265,7 +265,7 @@ static void tarpit_tcp4(struct net *net,
+ #endif
+ 		addr_type = RTN_LOCAL;
+ 
+-#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 19, 0)
+  	if (ip_route_me_harder(net, nskb, addr_type))
+ #else
+ 	if (ip_route_me_harder(net, nskb->sk, nskb, addr_type))
+@@ -407,7 +407,7 @@ static void tarpit_tcp6(struct net *net,
+ 	              &ipv6_hdr(nskb)->daddr, sizeof(struct tcphdr),
+ 	              IPPROTO_TCP,
+ 	              csum_partial(tcph, sizeof(struct tcphdr), 0));
+-#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 19, 0)
+  	if (ip6_route_me_harder(net, nskb))
+ #else
+ 	if (ip6_route_me_harder(net, nskb->sk, nskb))

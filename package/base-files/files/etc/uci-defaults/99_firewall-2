@@ -1,0 +1,18 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+seperate_src_ip() {
+	local src_ip
+	config_get src_ip "$1" "src_ip"
+	
+	uci_remove "firewall" "$1" "src_ip"
+
+	for i in $(echo "$src_ip" | sed "s/,/ /g"); do
+		uci_add_list "firewall" "$1" "src_ip" "$i"
+	done
+}
+
+config_load firewall
+config_foreach seperate_src_ip "redirect"
+uci_commit firewall

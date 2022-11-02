@@ -1,4 +1,0 @@
-
-config 'serviceWiMAX' 'myWconf'
-	option 'Password' 'user'
-

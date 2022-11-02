@@ -1,0 +1,29 @@
+Index: mwan3-2.10.12/files/etc/init.d/mwan3
+===================================================================
+--- mwan3-2.10.12.orig/files/etc/init.d/mwan3
++++ mwan3-2.10.12/files/etc/init.d/mwan3
+@@ -24,12 +24,23 @@ start_tracker() {
+ 	procd_close_instance
+ }
+ 
++enabled_count(){
++	local enabled
++	interface=$1
++	config_get_bool enabled "$interface" 'enabled' '0'
++	[ "$enabled" -eq 1 ] && count=$(( count + 1 ))
++}
++
+ start_service() {
+ 	local enabled hotplug_pids
++	local count=0
+ 
+ 	mwan3_init
+-	config_foreach start_tracker interface
+ 
++	config_foreach enabled_count interface
++	[ "$count" -eq 0 ] && return
++
++	config_foreach start_tracker interface
+ 	mwan3_update_iface_to_table
+ 	mwan3_set_connected_ipset
+ 	mwan3_set_custom_ipset

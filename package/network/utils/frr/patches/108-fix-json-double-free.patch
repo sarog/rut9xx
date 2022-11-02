@@ -1,0 +1,34 @@
+From 01cbfd0484796ef9285639efc5b044b2827f0338 Mon Sep 17 00:00:00 2001
+From: Quentin Young <qlyoung@cumulusnetworks.com>
+Date: Mon, 17 Dec 2018 22:18:13 +0000
+Subject: [PATCH] bgpd: fix json double free when showing neighbors
+
+Signed-off-by: Quentin Young <qlyoung@cumulusnetworks.com>
+---
+ bgpd/bgp_vty.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+Index: frr-5.0.2/bgpd/bgp_vty.c
+===================================================================
+--- frr-5.0.2.orig/bgpd/bgp_vty.c
++++ frr-5.0.2/bgpd/bgp_vty.c
+@@ -10694,7 +10694,6 @@ static int bgp_show_neighbor(struct vty
+ 	if (use_json) {
+ 		vty_out(vty, "%s\n", json_object_to_json_string_ext(
+ 					     json, JSON_C_TO_STRING_PRETTY));
+-		json_object_free(json);
+ 	} else {
+ 		vty_out(vty, "\n");
+ 	}
+@@ -10766,8 +10765,10 @@ static void bgp_show_all_instances_neigh
+ 		}
+ 	}
+ 
+-	if (use_json)
++	if (use_json) {
+ 		vty_out(vty, "}\n");
++		json_object_free(json);
++	}
+ }
+ 
+ static int bgp_show_neighbor_vty(struct vty *vty, const char *name,

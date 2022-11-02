@@ -1,0 +1,224 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/board.sh
+
+[ -f "/etc/config/teltonika" ] || return 0
+
+replace_enabled() {
+	local enabled=$(uci_get network "$1" enabled)
+	local overlimit=$(uci_get network "$1" overlimit)
+
+	[ "$overlimit" = "1" ] && enabled="1"
+	[ -z "$overlimit" ] || uci_remove network "$1" overlimit 
+
+	if [ "$enabled" = "0" ]; then
+		uci_remove network "$1" enabled
+		uci_set network "$1" disabled "1"
+
+	elif [ "$enabled" = "1" ]; then
+		uci_remove network "$1" enabled
+		uci_remove network "$1" disabled
+
+	elif [ -z "$enabled" ]; then
+		break
+	fi
+}
+
+fix_route() {
+	#change route interface with supplied names
+	change_route() {
+		local interface
+		config_get interface "$1" interface
+		list_contains interface "$2" && \
+		uci_set network "$1" interface "${interface/$2/$3}"
+	}
+
+	(
+		config_load network
+		config_foreach change_route route "$1" "$2"
+	)
+}
+
+fix_ddns() {
+	change_ddns() {
+		local section="$1"
+		local old="$2"
+		local new="$3"
+		local interface
+
+		config_get interface "$section" interface ""
+		[ "$old" = "$interface" ] || return
+
+		uci_set ddns "$section" interface "$new"
+		case "$new" in
+		mob1s1a1)
+			uci_set ddns "$section" ip_network "${new}_4"
+			;;
+		*)
+			uci_set ddns "$section" ip_network "$new"
+			;;
+		esac
+	}
+
+	(
+		config_load ddns
+		config_foreach change_ddns service "$1" "$2"
+		uci_commit ddns
+	)
+}
+
+move_sstp() {
+	config_get ca "$1" ca 0
+	local ca_dir="/etc/vuci-uploads/cbid.network.${1}.caca.crt"
+
+	mkdir -p "/etc/vuci-uploads"
+
+	[ "$ca" != 0 ] && mv "$ca" "$ca_dir" && uci_set network "$1" "ca" "$ca_dir"
+}
+
+move_auto() {
+	config_get enabled "$1" enabled
+	[ "$enabled" = "1" ] && uci_set network "$1" "auto" "1" || uci_set network "$1" "auto" "0"
+}
+
+move_gre() {
+	json_init
+	json_load "$(ubus call sim get)"
+	json_get_var sim sim
+	[ -z "$sim" ] && sim=1
+
+	config_get tunlink "$1" tunlink
+	[ "$tunlink" = "ppp_4" ] || [ "$tunlink" = "ppp" ] && uci_set network "$1" "tunlink" "mob1s${sim}a1_4"
+}
+
+move_interface() {
+	local section="$1"
+	local ifname proto enb
+
+	config_get ifname "$section" ifname
+	config_get proto "$section" proto
+
+	[ "$proto" = "sstp" ] && move_sstp "$section"
+	[ "$proto" = "l2tp" ] && move_auto "$section"
+	[ "$proto" = "pptp" ] && move_auto "$section"
+	[ "$proto" = "gre" ] && move_gre "$section"
+
+	case "$section" in
+	wan*)
+		case "$ifname" in
+		wwan0 | \
+		3g-ppp)
+			uci_remove network "$section"
+			uci_rename multiwan "$section" mob1s1a1
+			fix_ddns "$section" mob1s1a1
+			fix_route "$section" mob1s1a1
+			;;
+		wlan0)
+			uci_rename network "$section" wwan
+			uci_rename multiwan "$section" wwan
+			fix_ddns "$section" wwan
+			fix_route "$section" wwan
+			replace_enabled wwan
+			;;
+		eth1)
+			uci_rename network "$section" wan
+			uci_rename multiwan "$section" wan
+			fix_ddns "$section" wan
+			fix_route "$section" wan
+			replace_enabled wan
+			;;
+		esac
+	;;
+	ppp)
+		uci_rename network "$section" mob1s1a1
+		fix_ddns "$section" mob1s1a1
+		fix_route "$section" mob1s1a1
+		replace_enabled mob1s1a1
+	;;
+	stabridge)
+		config_get enb "$section" enabled
+		[ "$enb" = 0 ] && {
+			uci_remove network "$section"
+			return
+		}
+		uci_set network "$section" network 'lan wwan'
+		uci_set network "$section" lan_mark 'lan'
+		uci_rename network "$section" lan_repeater
+	;;
+	*)
+		[ -z "$proto" ] && \
+		uci_remove network "$section"
+	;;
+	esac
+}
+
+find_used_vlan() {
+	#~ find_used_vlan <section> <vid> <variable>
+	#~ Export section name to $3 variable
+
+	[ $(config_get "$1" vid) = "$2" ] && {
+		[ -n "$3" ] && export "$3=$1"
+		return 0
+	}
+	return 1
+}
+
+replace_ifname() {
+	local ifname_list
+	ifname_list=$(uci_get network "$1" ifname)
+	list_contains ifname_list "$2" && \
+	uci_set network "$1" ifname "${ifname_list/$2/$3}"
+}
+
+fix_vlans() {
+	#~ Check if vlan0 exists
+	#~ Check if vlan0 can be changed to vlan1
+	#~ Else Assign available vid from <= vlan256
+	local vlan_zero_section vlan_one_section _temp_vlan_section ports
+
+	config_foreach find_used_vlan switch_vlan 0 vlan_zero_section
+
+	[ -n "$vlan_zero_section" ] && {
+		config_foreach find_used_vlan switch_vlan 1 vlan_one_section
+		[ -n "$vlan_one_section" ] && {
+			for i in $(seq 256 -1 1); do
+				_temp_vlan_section=
+				config_foreach find_used_vlan switch_vlan "$i" _temp_vlan_section
+				[ -n "$_temp_vlan_section" ] || {
+					ports=$(uci_get network "$vlan_zero_section" ports)
+					uci_set network "$vlan_zero_section" ports "${ports/0/0t}"
+					uci_set network "$vlan_zero_section" vid "$i"
+					config_foreach replace_ifname interface eth0 "eth0.$i"
+					return 0
+				}
+			done
+		}
+
+		ports=$(uci_get network "$vlan_zero_section" ports)
+		uci_set network "$vlan_zero_section" ports "${ports/0/0t}"
+		uci_set network "$vlan_zero_section" vid 1
+		config_foreach replace_ifname interface eth0 "eth0.1"
+		return 0
+	}
+
+	return 0
+}
+
+rearange_vlans() {
+	uci_set network "$1" vlan "$vlan_counter"
+	vlan_counter=$((vlan_counter +1))
+}
+vlan_counter=1
+
+#Please check quota_limit migration script before doing any changes here.
+config_load network
+config_foreach move_interface interface
+fix_vlans
+config_foreach rearange_vlans switch_vlan
+uci_commit network
+
+sed -i '1s~^~\toption ula_prefix 'fd2b:5b70:9d07::/48'\n\n~' /etc/config/network
+sed -i '1s/^/config globals 'globals'\n/' /etc/config/network
+
+exit 0

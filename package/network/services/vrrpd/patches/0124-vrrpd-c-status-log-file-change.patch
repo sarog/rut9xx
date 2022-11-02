@@ -1,0 +1,57 @@
+--- ./build_dir/target-arm_cortex-a7_uClibc-1.0.14_eabi/Vrrpd-1.15/vrrpd.c	2019-05-07 07:23:08.504093600 +0300
++++ ./vrrpd.c	2019-05-07 09:47:58.124900484 +0300
+@@ -1368,17 +1368,22 @@
+ static void write_to_file(vrrp_rt *vsrv, char status[10])
+ {
+ 	FILE *f;
+-	if(!strcmp(vsrv->vif.ifname , "br-lan")){
+-		f = fopen("/tmp/vrrpd_lan_log", "wb");
+-	}else{
+-		f = fopen("/tmp/vrrpd_wan_log", "wb");
++	if (vsrv->log_file) {
++	    f = fopen(vsrv->log_file, "wb");
++	} else {
++	    if (!strcmp(vsrv->vif.ifname, "br-lan")) {
++	        f = fopen("/tmp/vrrpd_lan_log", "wb");
++	    } else {
++	        f = fopen("/tmp/vrrpd_wan_log", "wb");
++	    }
+ 	}
+-	if (f == NULL){
++
++	if (f == NULL) {
+ 		printf("Error opening file!\n");
+-	}else{
+-		if(!strcmp(status , "Master")){
++	} else {
++		if (!strcmp(status , "Master")) {
+ 			fprintf(f, "%s\n\n",status);
+-		}else{
++		} else {
+ 			fprintf(f, "%s\n%s\n",status, ipaddr_to_str(master_ipaddr));
+ 		}
+ 		fclose(f);
+@@ -1945,10 +1950,20 @@
+ 	init_virtual_srv(vsrv);
+ 
+ 	// Parse cmdline //
+-        argc = parse_cmdline(vsrv, argc, argv);
+-        if( argc < 0 ) {
+-                exit (0);
++    argc = parse_cmdline(vsrv, argc, argv);
++    if( argc < 0 ) {
++            exit (0);
++    }
++
++    if (vsrv->instance_name) {
++        vsrv->log_file = (char *) malloc((size_t) (16 + strlen(vsrv->instance_name)));
++        if (vsrv->log_file == NULL) {
++            vrrpd_log(LOG_WARNING, "could not allocate memory for log\n");
++            return -1;
+         }
++        
++        snprintf(vsrv->log_file, (size_t) (16 + strlen(vsrv->instance_name)), "/tmp/vrrpd_%s_log", vsrv->instance_name);
++    }
+ 
+ 	if (daemonize == 1) {
+ 		// First we fork and kill our parent

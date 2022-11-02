@@ -9,42 +9,40 @@ PIDCOUNT=0
 USE_PROCD=1
 PROG=/sbin/logread
 
-validate_log_section()
-{
+validate_log_section() {
 	uci_load_validate system system "$1" "$2" \
 		'log_file:string' \
 		'log_size:uinteger' \
-		'log_hostname:string' \
-		'log_ip:ipaddr' \
+		'log_ip:string' \
 		'log_remote:bool:1' \
 		'log_port:port:514' \
 		'log_proto:or("tcp", "udp"):udp' \
 		'log_trailer_null:bool:0' \
-		'log_prefix:string'
+		'log_prefix:string' \
+		'log_hostname:bool:0' \
+		'hostname:string'
 }
 
-validate_log_daemon()
-{
+validate_log_daemon() {
 	uci_load_validate system system "$1" "$2" \
 		'log_size:uinteger:0' \
 		'log_buffer_size:uinteger:0'
 }
 
-start_service_daemon()
-{
-	[ $log_buffer_size -eq 0 -a $log_size -gt 0 ] && log_buffer_size=$log_size
-	[ $log_buffer_size -eq 0 ] && log_buffer_size=64
+start_service_daemon() {
+	[ "$log_buffer_size" -eq 0 ] && [ "$log_size" -gt 0 ] && log_buffer_size=$log_size
+	[ "$log_buffer_size" -eq 0 ] && log_buffer_size=16
 	procd_open_instance
 	procd_set_param command "/sbin/logd"
 	procd_append_param command -S "${log_buffer_size}"
-	procd_set_param respawn 5 1 -1
+	procd_set_param respawn
 	procd_close_instance
 }
 
-start_service_file()
-{
-	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
+start_service_file() {
+	PIDCOUNT="$((PIDCOUNT + 1))"
 	local pid_file="/var/run/logread.${PIDCOUNT}.pid"
+	local log_dir
 
 	[ "$2" = 0 ] || {
 		echo "validation failed"
@@ -52,7 +50,9 @@ start_service_file()
 	}
 	[ -z "${log_file}" ] && return
 
-	mkdir -p "$(dirname "${log_file}")"
+	#Create log directory if does not exist
+	log_dir=$(dirname "${log_file}")
+	[ -d "${log_dir}" ] || mkdir -p "${log_dir}"
 
 	procd_open_instance
 	procd_set_param command "$PROG" -f -F "$log_file" -p "$pid_file"
@@ -60,9 +60,8 @@ start_service_file()
 	procd_close_instance
 }
 
-start_service_remote()
-{
-	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
+start_service_remote() {
+	PIDCOUNT="$((PIDCOUNT + 1))"
 	local pid_file="/var/run/logread.${PIDCOUNT}.pid"
 
 	[ "$2" = 0 ] || {
@@ -71,28 +70,37 @@ start_service_remote()
 	}
 	[ "${log_remote}" -ne 0 ] || return
 	[ -z "${log_ip}" ] && return
-	[ -z "${log_hostname}" ] && log_hostname=$(cat /proc/sys/kernel/hostname)
 
 	procd_open_instance
-	procd_set_param command "$PROG" -f -h "$log_hostname" -r "$log_ip" "${log_port}" -p "$pid_file"
+	procd_set_param command "$PROG" -f -r "$log_ip" "${log_port}" -p "$pid_file"
 	case "${log_proto}" in
-		"udp") procd_append_param command -u;;
-		"tcp") [ "${log_trailer_null}" -eq 1 ] && procd_append_param command -0;;
+	"udp") procd_append_param command -u ;;
+	"tcp") [ "${log_trailer_null}" -eq 1 ] && procd_append_param command -0 ;;
 	esac
+	[ "${log_hostname}" -eq 1 ] && procd_append_param command -h "${hostname}"
 	[ -z "${log_prefix}" ] || procd_append_param command -P "${log_prefix}"
 	procd_close_instance
 }
 
-service_triggers()
-{
+start_service_db() {
+	PIDCOUNT="$((PIDCOUNT + 1))"
+	local pid_file="/var/run/logread.${PIDCOUNT}.pid"
+
+	procd_open_instance
+	procd_set_param command "$PROG" -f -i -p "$pid_file"
+	procd_set_param respawn
+	procd_close_instance
+}
+
+service_triggers() {
 	procd_add_reload_trigger "system"
 	procd_add_validation validate_log_section
 }
 
-start_service()
-{
+start_service() {
 	config_load system
 	config_foreach validate_log_daemon system start_service_daemon
 	config_foreach validate_log_section system start_service_file
 	config_foreach validate_log_section system start_service_remote
+	config_foreach start_service_db system
 }

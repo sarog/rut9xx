@@ -1,0 +1,11 @@
+if PACKAGE_rpcd
+
+comment "Settings"
+
+config RPCD_PAM
+	bool "Enable PAM support"
+	default n
+
+comment "Plugins"
+
+endif

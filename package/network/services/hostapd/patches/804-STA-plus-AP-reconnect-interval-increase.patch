@@ -1,0 +1,26 @@
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -7666,6 +7666,7 @@
+ 	struct wpa_ssid *ssid = wpa_s->current_ssid;
+ 	int dur;
+ 	struct os_reltime now;
++	unsigned int band;
+ 
+ 	if (ssid == NULL) {
+ 		wpa_printf(MSG_DEBUG, "Authentication failure but no known "
+@@ -7703,6 +7704,15 @@
+ 		dur = 20;
+ 	else
+ 		dur = 10;
++
++	band = wpas_get_bands(wpa_s, NULL);
++	if (wpa_s->hostapd && (ssid->auth_failures > 2) &&
++		(os_strcmp(reason, "WRONG_KEY") == 0) && (band != BAND_5_GHZ)) {
++		dur = 600;
++		wpa_msg(wpa_s, MSG_INFO, "WPA: reconnect duration set to %d "
++			"due to incorrect pre-shared key and AP+STA configuration",
++			dur);
++	}
+ 
+ 	if (ssid->auth_failures > 1 &&
+ 	    wpa_key_mgmt_wpa_ieee8021x(ssid->key_mgmt))

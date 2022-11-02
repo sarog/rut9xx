@@ -1,0 +1,46 @@
+Index: hostapd-2020-06-08-5a8b3662/src/ap/hostapd.c
+===================================================================
+--- hostapd-2020-06-08-5a8b3662.orig/src/ap/hostapd.c
++++ hostapd-2020-06-08-5a8b3662/src/ap/hostapd.c
+@@ -1465,7 +1465,8 @@ static int hostapd_setup_bss(struct host
+ 	if (hapd->driver && hapd->driver->set_operstate)
+ 		hapd->driver->set_operstate(hapd->drv_priv, 1);
+ 
+-	hostapd_ubus_add_bss(hapd);
++	if (!hapd->ubus_added)
++		hostapd_ubus_add_bss(hapd);
+ 
+ 	return 0;
+ }
+@@ -2050,6 +2051,7 @@ static int hostapd_setup_interface_compl
+ 		goto fail;
+ 
+ 	hostapd_ubus_add_iface(iface);
++	hostapd_ubus_add_bss(hapd);
+ 	wpa_printf(MSG_DEBUG, "Completing interface initialization");
+ 	if (iface->freq) {
+ #ifdef NEED_AP_MLME
+Index: hostapd-2020-06-08-5a8b3662/src/ap/hostapd.h
+===================================================================
+--- hostapd-2020-06-08-5a8b3662.orig/src/ap/hostapd.h
++++ hostapd-2020-06-08-5a8b3662/src/ap/hostapd.h
+@@ -158,6 +158,7 @@ struct hostapd_data {
+ 	struct hostapd_ubus_bss ubus;
+ 	char *config_id;
+ 	int interface_added; /* virtual interface added for this BSS */
++	int ubus_added;
+ 	unsigned int started:1;
+ 	unsigned int disabled:1;
+ 	unsigned int reenable_beacon:1;
+Index: hostapd-2020-06-08-5a8b3662/src/ap/ubus.c
+===================================================================
+--- hostapd-2020-06-08-5a8b3662.orig/src/ap/ubus.c
++++ hostapd-2020-06-08-5a8b3662/src/ap/ubus.c
+@@ -1344,6 +1344,7 @@ void hostapd_ubus_add_bss(struct hostapd
+ 	hostapd_ubus_ref_inc();
+ 
+ 	hostapd_send_shared_event(&hapd->iface->interfaces->ubus, hapd->conf->iface, "add");
++	hapd->ubus_added = 1;
+ }
+ 
+ void hostapd_ubus_free_bss(struct hostapd_data *hapd)

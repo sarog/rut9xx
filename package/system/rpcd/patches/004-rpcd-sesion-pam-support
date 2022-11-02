@@ -1,0 +1,156 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -9,6 +9,7 @@ INCLUDE_DIRECTORIES(include)
+ OPTION(FILE_SUPPORT "File plugin support" ON)
+ OPTION(IWINFO_SUPPORT "libiwinfo plugin support" ON)
+ OPTION(RPCSYS_SUPPORT "rpc-sys plugin support" ON)
++OPTION(PAM_SUPPORT	"Include PAM support" OFF)
+ 
+ SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
+ 
+@@ -22,6 +23,10 @@ IF(HAVE_SHADOW)
+   ADD_DEFINITIONS(-DHAVE_SHADOW)
+ ENDIF()
+ 
++IF(PAM_SUPPORT)
++    ADD_DEFINITIONS(-DENABLE_PAM_SUPPORT)
++ENDIF()
++
+ FIND_LIBRARY(uci NAMES uci)
+ FIND_LIBRARY(ubus NAMES ubus)
+ FIND_LIBRARY(ubox NAMES ubox)
+--- a/include/rpcd/session.h
++++ b/include/rpcd/session.h
+@@ -36,6 +36,14 @@
+ #define RPC_SESSION_DIRECTORY	"/var/run/rpcd/sessions"
+ #define RPC_SESSION_ACL_DIR		"/usr/share/rpcd/acl.d"
+ 
++#ifdef ENABLE_PAM_SUPPORT
++enum {
++    AUTH_TYPE_NONE,
++    AUTH_TYPE_SHADOW,
++    AUTH_TYPE_PAM
++};
++#endif
++
+ extern char apply_sid[RPC_SID_LEN + 1];
+ 
+ struct rpc_session {
+--- a/session.c
++++ b/session.c
+@@ -35,6 +35,10 @@
+ 
+ #include <rpcd/session.h>
+ 
++#ifdef ENABLE_PAM_SUPPORT
++#define UBUS_TIMEOUT 10000
++#endif //ENABLE_PAM_SUPPORT
++
+ static struct avl_tree sessions;
+ static struct blob_buf buf;
+ 
+@@ -827,6 +831,83 @@ rpc_login_test_password(const char *hash
+ 	return (crypt_hash && !strcmp(crypt_hash, hash));
+ }
+ 
++#ifdef ENABLE_PAM_SUPPORT
++static int
++rpc_login_test_auth_type(struct uci_context *uci, struct uci_section *s)
++{
++	struct uci_ptr ptr = { .package = "rpcd", .section = s->e.name, .option = "auth_type"};
++	int auth_type = AUTH_TYPE_NONE;
++
++	ptr.o = NULL;
++	if (!uci_lookup_ptr(uci, &ptr, NULL, true)) {
++		if (!ptr.o || ptr.o->type != UCI_TYPE_STRING) {
++			return auth_type;
++        }
++
++        if (!strncmp(ptr.o->v.string, "shadow", sizeof("shadow") - 1)) {
++            auth_type = AUTH_TYPE_SHADOW;
++        } else if (!strncmp(ptr.o->v.string, "pam", sizeof("pam") - 1)) {
++            auth_type = AUTH_TYPE_PAM;
++        }
++	}
++
++	return auth_type;
++}
++
++enum {
++	PAM_AUTH_ACCESS,
++	__PAM_AUTH_MAX
++};
++
++static const struct blobmsg_policy pam_auth_policy[__PAM_AUTH_MAX] = {
++	[PAM_AUTH_ACCESS] = { "access", BLOBMSG_TYPE_BOOL },
++};
++
++
++static void auth_cb(struct ubus_request *req, int type, struct blob_attr *msg)
++{
++	(void)type;
++	
++	bool *access = (bool *) req->priv;
++	struct blob_attr *tb[__PAM_AUTH_MAX];
++
++	blobmsg_parse(pam_auth_policy, __PAM_AUTH_MAX, tb, blob_data(msg),
++			blob_len(msg));
++
++	if (tb[PAM_AUTH_ACCESS]) {
++		*access = blobmsg_get_bool(tb[PAM_AUTH_ACCESS]);
++	}
++}
++
++static bool
++rpc_pam_auth(const char *username, const char *password)
++{
++	struct ubus_context *ctx = ubus_connect(NULL);
++	static struct blob_buf b = { 0 };
++	uint32_t id = 0;
++	bool access = false;
++	
++	if (!ctx || ubus_lookup_id(ctx, "pam", &id)) {
++		printf("Failed to lookup UBUS object 'pam'\n");
++		
++		return false;
++	}
++	
++	blob_buf_init(&b, 0);
++ 	blobmsg_add_string(&b, "username", username);
++	blobmsg_add_string(&b, "password", password);
++	blobmsg_add_string(&b, "service", "rpcd");
++	if (ubus_invoke(ctx, id, "auth", b.head, auth_cb, &access, UBUS_TIMEOUT)) {
++		printf("RPCD session PAM auth UBUS error.\n");
++	}
++	
++	blob_buf_free(&b);
++	ubus_free(ctx);
++	
++	return access;
++}
++#endif //ENABLE_PAM_SUPPORT
++
+ static struct uci_section *
+ rpc_login_test_login(struct uci_context *uci,
+                      const char *username, const char *password)
+@@ -878,8 +959,18 @@ rpc_login_test_login(struct uci_context
+ 		if (ptr.o->type != UCI_TYPE_STRING)
+ 			continue;
+ 
+-		if (rpc_login_test_password(ptr.o->v.string, password))
+-			return ptr.s;
++#ifdef ENABLE_PAM_SUPPORT
++        int auth_type = rpc_login_test_auth_type(uci, s);
++		if (auth_type & AUTH_TYPE_PAM) {
++			if (rpc_pam_auth(username, password)) {
++				return ptr.s;
++			}
++		} else if (auth_type == AUTH_TYPE_NONE || auth_type & AUTH_TYPE_SHADOW)
++#endif
++        {
++			if (rpc_login_test_password(ptr.o->v.string, password))
++				return ptr.s;
++		}
+ 	}
+ 
+ 	return NULL;

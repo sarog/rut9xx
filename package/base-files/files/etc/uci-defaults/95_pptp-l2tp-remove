@@ -1,0 +1,52 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+fix_pptp() {
+	config_get type "$1" type
+	config_get enabled "$1" enabled 0
+
+	[ "$type" = "client" ] && uci_remove pptpd "$1"
+	[ "$enabled" -ne 2 ] && uci_set network "$1" auto "$enabled"
+	uci_remove xl2tpd "$1"
+}
+
+fix_xl2tpd() {
+	config_get type "$1" type
+	config_get enabled "$1" enabled 0
+	config_get name "$1" _name
+
+	[ "$type" = "client" ] && {
+		uci_set network "$1" auto "$enabled"
+		uci_set network "$1" type "$type"
+		uci_rename network "$1" "$name"
+		uci_remove xl2tpd "$1"
+	}
+
+	uci_rename xl2tpd "$1" "$name"
+}
+
+fix_bind() {
+	config_get bind_to "$1" bind_to
+	new_bind_to=${bind_to#"server_"}
+	uci_set ipsec "$1" bind_to "$new_bind_to"
+}
+
+rename_l2tp_client() {
+	config_get proto "$1" proto
+	[ "$proto" = "l2tp" ] && {
+		config_get name "$1" _name
+		uci_rename network "$1" "$name"
+	}
+}
+
+config_load pptpd
+config_foreach fix_pptp service
+config_load xl2tpd
+config_foreach fix_xl2tpd service
+config_load ipsec
+config_foreach fix_bind connection
+config_load network
+config_foreach rename_l2tp_client interface
+
+uci_commit

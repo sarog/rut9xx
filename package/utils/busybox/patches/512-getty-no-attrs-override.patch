@@ -1,0 +1,35 @@
+--- a/loginutils/getty.c
++++ b/loginutils/getty.c
+@@ -273,32 +273,6 @@ static void init_tty_attrs(int speed)
+ 	if (speed != B0)
+ 		cfsetspeed(&G.tty_attrs, speed);
+ 
+-	/* Initial settings: 8-bit characters, raw mode, blocking i/o.
+-	 * Special characters are set after we have read the login name; all
+-	 * reads will be done in raw mode anyway.
+-	 */
+-	/* Clear all bits except: */
+-	G.tty_attrs.c_cflag &= (0
+-		/* 2 stop bits (1 otherwise)
+-		 * Enable parity bit (both on input and output)
+-		 * Odd parity (else even)
+-		 */
+-		| CSTOPB | PARENB | PARODD
+-#ifdef CMSPAR
+-		| CMSPAR  /* mark or space parity */
+-#endif
+-#ifdef CBAUD
+-		| CBAUD   /* (output) baud rate */
+-#endif
+-#ifdef CBAUDEX
+-		| CBAUDEX /* (output) baud rate */
+-#endif
+-#ifdef CIBAUD
+-		| CIBAUD   /* input baud rate */
+-#endif
+-	);
+-	/* Set: 8 bits; hang up (drop DTR) on last close; enable receive */
+-	G.tty_attrs.c_cflag |= CS8 | HUPCL | CREAD;
+ 	if (option_mask32 & F_LOCAL) {
+ 		/* ignore Carrier Detect pin:
+ 		 * opens don't block when CD is low,

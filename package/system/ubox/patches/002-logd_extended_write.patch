@@ -1,0 +1,670 @@
+--- a/log/logd.c
++++ b/log/logd.c
+@@ -28,6 +28,9 @@
+ 
+ #include "syslog.h"
+ 
++#define DEFAULT_PRIORITY 6
++#define DEFAULT_TABLE 0
++
+ int debug = 0;
+ static struct blob_buf b;
+ static struct ubus_auto_conn conn;
+@@ -40,12 +43,29 @@ enum {
+ 	__READ_MAX
+ };
+ 
++enum {
++	WRITE_EVENT,
++	WRITE_SENDER,
++	WRITE_TABLE,
++	WRITE_PRIORITY,
++	WRITE_DB,
++	WRITE_MAX
++};
++
+ static const struct blobmsg_policy read_policy[__READ_MAX] = {
+ 	[READ_LINES] = { .name = "lines", .type = BLOBMSG_TYPE_INT32 },
+ 	[READ_STREAM] = { .name = "stream", .type = BLOBMSG_TYPE_BOOL },
+ 	[READ_ONESHOT] = { .name = "oneshot", .type = BLOBMSG_TYPE_BOOL },
+ };
+ 
++static const struct blobmsg_policy write_ext_policy[WRITE_MAX] = {
++	[WRITE_EVENT] = { .name = "event", .type = BLOBMSG_TYPE_STRING },
++	[WRITE_SENDER] = { .name = "sender", .type = BLOBMSG_TYPE_STRING },
++	[WRITE_TABLE] = { .name = "table", .type = BLOBMSG_TYPE_INT32 },
++	[WRITE_PRIORITY] = { .name = "priority", .type = BLOBMSG_TYPE_INT32},
++	[WRITE_DB] = { .name = "write_db", .type = BLOBMSG_TYPE_INT32},
++};
++
+ static const struct blobmsg_policy write_policy =
+ 	{ .name = "event", .type = BLOBMSG_TYPE_STRING };
+ 
+@@ -187,8 +207,47 @@ write_log(struct ubus_context *ctx, stru
+ 	return 0;
+ }
+ 
++static int write_ext_log(struct ubus_context *ctx, struct ubus_object *obj,
++			 struct ubus_request_data *req, const char *method,
++			 struct blob_attr *msg)
++{
++	struct blob_attr *tb[WRITE_MAX];
++	const char *sender;
++	char *event;
++	int table;
++	int priority;
++	int write_db = 0;
++
++	blobmsg_parse(write_ext_policy, ARRAY_SIZE(write_ext_policy), tb, blob_data(msg), blob_len(msg));
++
++	if (!tb[WRITE_EVENT] || !tb[WRITE_SENDER])
++		return UBUS_STATUS_INVALID_ARGUMENT;
++
++	sender = blobmsg_data(tb[WRITE_SENDER]);
++	event = blobmsg_data(tb[WRITE_EVENT]);
++
++	if (tb[WRITE_TABLE])
++		table = blobmsg_get_u32(tb[WRITE_TABLE]);
++	else
++		table = DEFAULT_TABLE;
++
++	if (tb[WRITE_PRIORITY])
++		priority = blobmsg_get_u32(tb[WRITE_PRIORITY]);
++	else
++		priority = DEFAULT_PRIORITY;
++
++	if (tb[WRITE_DB])
++		write_db = blobmsg_get_u32(tb[WRITE_DB]);
++
++	if (log_add_extended(event, strlen(event) + 1, sender, table, priority, write_db) != 0)
++		return UBUS_STATUS_UNKNOWN_ERROR;
++
++	return UBUS_STATUS_OK;
++}
++
+ static const struct ubus_method log_methods[] = {
+ 	UBUS_METHOD("read", read_log, read_policy),
++	UBUS_METHOD("write_ext", write_ext_log, write_ext_policy),
+ 	{ .name = "write", .handler = write_log, .policy = &write_policy, .n_policy = 1 },
+ };
+ 
+@@ -215,6 +274,28 @@ ubus_notify_log(struct log_head *l)
+ 	blobmsg_add_u32(&b, "id", l->id);
+ 	blobmsg_add_u32(&b, "priority", l->priority);
+ 	blobmsg_add_u32(&b, "source", l->source);
++	blobmsg_add_u64(&b, "time", (((__u64) l->ts.tv_sec) * 1000) + (l->ts.tv_nsec / 1000000));
++
++	list_for_each_entry(c, &clients, list)
++		ustream_write(&c->s.stream, (void *) b.head, blob_len(b.head) + sizeof(struct blob_attr), false);
++
++	blob_buf_free(&b);
++}
++
++void ubus_notify_log_extended(struct log_head *l, const char *sender, int db_flag)
++{
++	struct client *c;
++
++	if (list_empty(&clients))
++		return;
++
++	blob_buf_init(&b, 0);
++	blobmsg_add_string(&b, "msg", l->data);
++	blobmsg_add_string(&b, "sender", sender);
++	blobmsg_add_u32(&b, "db", db_flag);
++	blobmsg_add_u32(&b, "id", l->id);
++	blobmsg_add_u32(&b, "priority", l->priority);
++	blobmsg_add_u32(&b, "source", l->source);
+ 	blobmsg_add_u64(&b, "time", (((__u64) l->ts.tv_sec) * 1000) + (l->ts.tv_nsec / 1000000));
+ 
+ 	list_for_each_entry(c, &clients, list)
+--- a/log/logread.c
++++ b/log/logread.c
+@@ -32,6 +32,7 @@
+ #include <libubox/uloop.h>
+ #include "libubus.h"
+ #include "syslog.h"
++#include "logdb.h"
+ 
+ #define LOGD_CONNECT_RETRY	10
+ 
+@@ -47,15 +48,35 @@ enum {
+ 	LOG_PRIO,
+ 	LOG_SOURCE,
+ 	LOG_TIME,
++	LOG_SENDER,
++	LOG_DB,
+ 	__LOG_MAX
+ };
+ 
++enum {
++	LOG_EVENTS,
++	LOG_SYSTEM,
++	LOG_NETWORK,
++	LOG_CONNECTIONS,
++};
++
++CODE log_facility_names[] =
++{
++	{ "EVENTS", LOG_EVENTS },
++	{ "SYSTEM", LOG_SYSTEM },
++	{ "NETWORK", LOG_NETWORK },
++	{ "CONNECTIONS", LOG_CONNECTIONS },
++	{ NULL, -1 }
++};
++
+ static const struct blobmsg_policy log_policy[] = {
+ 	[LOG_MSG] = { .name = "msg", .type = BLOBMSG_TYPE_STRING },
+ 	[LOG_ID] = { .name = "id", .type = BLOBMSG_TYPE_INT32 },
+ 	[LOG_PRIO] = { .name = "priority", .type = BLOBMSG_TYPE_INT32 },
+ 	[LOG_SOURCE] = { .name = "source", .type = BLOBMSG_TYPE_INT32 },
+ 	[LOG_TIME] = { .name = "time", .type = BLOBMSG_TYPE_INT64 },
++	[LOG_SENDER] = { .name = "sender", .type = BLOBMSG_TYPE_STRING },
++	[LOG_DB] = { .name = "db", .type = BLOBMSG_TYPE_INT32},
+ };
+ 
+ static struct uloop_timeout retry;
+@@ -118,10 +139,13 @@ static int log_notify(struct blob_attr *
+ 	char buf[LOG_LINE_SIZE + 128];
+ 	char buf_ts[32];
+ 	uint32_t p;
++	uint32_t src;
++	const char *msg_sender = NULL;
+ 	time_t t;
+ 	uint32_t t_ms = 0;
+ 	char *c, *m;
+ 	int ret = 0;
++	int db_flag = 0;
+ 
+ 	if (sender.fd < 0)
+ 		return 0;
+@@ -130,6 +154,12 @@ static int log_notify(struct blob_attr *
+ 	if (!tb[LOG_ID] || !tb[LOG_PRIO] || !tb[LOG_SOURCE] || !tb[LOG_TIME] || !tb[LOG_MSG])
+ 		return 1;
+ 
++	if (tb[LOG_SENDER])
++		msg_sender = blobmsg_data(tb[LOG_SENDER]);
++
++	if (tb[LOG_DB])
++		db_flag = blobmsg_get_u32(tb[LOG_DB]);
++
+ 	if ((log_type == LOG_FILE) && log_size && (!stat(log_file, &s)) && (s.st_size > log_size)) {
+ 		char *old = malloc(strlen(log_file) + 5);
+ 
+@@ -161,6 +191,7 @@ static int log_notify(struct blob_attr *
+ 				(unsigned long)t, t_ms);
+ 	}
+ 	c = ctime(&t);
++	src = blobmsg_get_u32(tb[LOG_SOURCE]);
+ 	c[strlen(c) - 1] = '\0';
+ 
+ 	if (log_type == LOG_NET) {
+@@ -200,12 +231,34 @@ static int log_notify(struct blob_attr *
+ 			uloop_timeout_set(&retry, 1000);
+ 		}
+ 	} else {
+-		snprintf(buf, sizeof(buf), "%s %s%s.%s%s %s\n",
+-			c, log_timestamp ? buf_ts : "",
+-			getcodetext(LOG_FAC(p) << 3, facilitynames),
+-			getcodetext(LOG_PRI(p), prioritynames),
+-			(blobmsg_get_u32(tb[LOG_SOURCE])) ? ("") : (" kernel:"), m);
+-		ret = write(sender.fd, buf, strlen(buf));
++		if (msg_sender && db_flag == 1 && log_db_init) {
++			snprintf(buf, sizeof(buf), "INSERT INTO %s ('TIME', 'NAME', 'TYPE', 'TEXT') VALUES('%d', '%s', '%s', '%s');",
++				 getcodetext(src, log_facility_names),
++				 (int) t,
++				 msg_sender,
++				 getcodetext(LOG_PRI(p), prioritynames),
++				 m);
++
++			if ((ret = db_action(buf)) != 0)
++				syslog(LOG_ERR, "Failed to insert: \"%s\" into DB", buf);
++		} else if (msg_sender && log_db_init) {
++			snprintf(buf, sizeof(buf), "%s %s%s.%s %s: %s\n",
++				 c, log_timestamp ? buf_ts : "",
++				 getcodetext(src, log_facility_names),
++				 getcodetext(LOG_PRI(p), prioritynames),
++				 msg_sender,
++				 m);
++
++			ret = write(sender.fd, buf, strlen(buf));
++		} else {
++			snprintf(buf, sizeof(buf), "%s %s%s.%s%s %s\n",
++				 c, log_timestamp ? buf_ts : "",
++				 getcodetext(LOG_FAC(p) << 3, facilitynames),
++				 getcodetext(LOG_PRI(p), prioritynames),
++				 (blobmsg_get_u32(tb[LOG_SOURCE])) ? ("") : (" kernel:"), m);
++
++			ret = write(sender.fd, buf, strlen(buf));
++		}
+ 	}
+ 
+ 	if (log_type == LOG_FILE)
+@@ -375,6 +428,11 @@ int main(int argc, char **argv)
+ 	}
+ 	ubus_add_uloop(ctx);
+ 
++	if (init_db() != 0) {
++		fprintf(stderr, "Failed to init db\n");
++		return -1;
++	}
++
+ 	if (log_follow && pid_file) {
+ 		FILE *fp = fopen(pid_file, "w+");
+ 		if (fp) {
+--- a/log/syslog.c
++++ b/log/syslog.c
+@@ -137,6 +137,85 @@ log_add(char *buf, int size, int source)
+ 	newest = next;
+ }
+ 
++int log_add_extended(char *buf, int size, const char *sender, int source, int prio, int db_flag)
++{
++	regmatch_t matches[4];
++	struct log_head *next;
++	int ret;
++	char *c;
++
++	/* bounce out if we don't have init'ed yet (regmatch etc will blow) */
++	if (!log) {
++		fprintf(stderr, "%s", buf);
++		return -1;
++	}
++
++	for (c = buf; *c; c++) {
++		if (*c == '\n')
++			*c = ' ';
++	}
++
++	c = buf + size - 2;
++	while (isspace(*c)) {
++		size--;
++		c--;
++	}
++
++	buf[size - 1] = 0;
++
++	/* strip the priority */
++	ret = regexec(&pat_prio, buf, 3, matches, 0);
++	if (!ret) {
++		size -= matches[2].rm_so;
++		buf += matches[2].rm_so;
++	}
++
++#if 0
++	/* strip kernel timestamp */
++	ret = regexec(&pat_tstamp,buf, 4, matches, 0);
++	if ((source == SOURCE_KLOG) && !ret) {
++		size -= matches[3].rm_so;
++		buf += matches[3].rm_so;
++	}
++#endif
++
++	/* strip syslog timestamp */
++	if ((source == SOURCE_SYSLOG) && (size > SYSLOG_PADDING) && (buf[SYSLOG_PADDING - 1] == ' ')) {
++		size -= SYSLOG_PADDING;
++		buf += SYSLOG_PADDING;
++	}
++
++	//fprintf(stderr, "-> %d - %s\n", priority, buf);
++
++	/* find new oldest entry */
++	next = log_next(newest, size);
++	if (next > newest) {
++		while ((oldest > newest) && (oldest <= next) && (oldest != log))
++			oldest = log_next(oldest, oldest->size);
++	} else {
++		//fprintf(stderr, "Log wrap\n");
++		newest->size = 0;
++		next = log_next(log, size);
++		for (oldest = log; oldest <= next; oldest = log_next(oldest, oldest->size))
++			;
++		newest = log;
++	}
++
++	/* add the log message */
++	newest->size = size;
++	newest->id = current_id++;
++	newest->priority = prio;
++	newest->source = source;
++	clock_gettime(CLOCK_REALTIME, &newest->ts);
++	strcpy(newest->data, buf);
++
++	ubus_notify_log_extended(newest, sender, db_flag);
++
++	newest = next;
++
++	return 0;
++}
++
+ static void
+ syslog_handle_fd(struct uloop_fd *fd, unsigned int events)
+ {
+--- a/log/syslog.h
++++ b/log/syslog.h
+@@ -39,6 +39,8 @@ typedef void (*log_list_cb)(struct log_h
+ struct log_head* log_list(int count, struct log_head *h);
+ int log_buffer_init(int size);
+ void log_add(char *buf, int size, int source);
++int log_add_extended(char *buf, int size, const char *sender, int source, int prio, int db_flag);
+ void ubus_notify_log(struct log_head *l);
++void ubus_notify_log_extended(struct log_head *l, const char *sender, int db_flag);
+ 
+ #endif
+--- /dev/null
++++ b/log/logdb.c
+@@ -0,0 +1,269 @@
++#define _GNU_SOURCE
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include <string.h>
++#include <sqlite3.h>
++#include <syslog.h>
++
++#include "logdb.h"
++
++sqlite3 *conn = NULL;
++static int EVENT_size = 0;
++static int CON_size = 0;
++static int SMS_size = 0;
++static int SYS_size = 0;
++static int NET_size = 0;
++
++enum {
++	ACTION_EVENTS,
++	ACTION_NETWORK,
++	ACTION_CONNECTION,
++	ACTION_SYSTEM,
++	ACTION_SELECT
++};
++
++static void execute_query(char *query)
++{
++	sqlite3_stmt *res;
++	int error = 0;
++	const char *tail;
++	int output;
++
++	error = sqlite3_prepare_v2(conn, query, -1, &res, &tail);
++	if (error != SQLITE_OK) {
++		syslog(LOG_CRIT, "sqlite3 query error: %s\n", sqlite3_errmsg(conn));
++		exit(EXIT_FAILURE);
++	}
++	output = sqlite3_step(res);
++
++	if (output != SQLITE_DONE && output != SQLITE_ROW)
++		syslog(LOG_CRIT, "Eventlog error, code: %d\n", output);
++
++	sqlite3_finalize(res);
++}
++
++static void create_table()
++{
++        execute_query("create table if not exists EVENTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, TIME TIMESTAMP, NAME CHAR(15), TYPE CHAR(15), TEXT CHAR(100))");
++        execute_query("create table if not exists SYSTEM (ID INTEGER PRIMARY KEY AUTOINCREMENT, TIME TIMESTAMP, NAME CHAR(15), TYPE CHAR(15), TEXT CHAR(100))");
++        execute_query("create table if not exists NETWORK (ID INTEGER PRIMARY KEY AUTOINCREMENT, TIME TIMESTAMP, NAME CHAR(15), TYPE CHAR(15), TEXT CHAR(100))");
++        execute_query("create table if not exists CONNECTIONS (ID INTEGER PRIMARY KEY AUTOINCREMENT, TIME TIMESTAMP, NAME CHAR(15), TYPE CHAR(15), TEXT CHAR(100))");
++        execute_query("create table if not exists SMS_COUNT (ID INTEGER PRIMARY KEY AUTOINCREMENT, SLOT char(15), SEND INTEGER, RECIEVED INTEGER);insert into SMS_COUNT (SLOT,SEND,RECIEVED) values ('SLOT1',0,0);insert into SMS_COUNT (SLOT,SEND,RECIEVED) values ('SLOT2',0,0)");
++        execute_query("create table if not exists SMS_TABLE (ID INTEGER PRIMARY KEY AUTOINCREMENT, SIM char(15), SEND INTEGER, TIME INTEGER)");
++}
++
++static int check_db_size(char *db_name)
++{
++        char buffer[256];
++        sqlite3_stmt *res;
++        int error = 0;
++        const char *tail;
++        int size = 0;
++        int output;
++
++        sprintf(buffer, "SELECT Count(*) FROM %s", db_name);
++        error = sqlite3_prepare_v2(conn, buffer, -1, &res, &tail);
++        if (error != SQLITE_OK) {
++                syslog(LOG_ERR, "sqlite3 query error: %s\n", sqlite3_errmsg(conn));
++		return -1;
++        }
++
++        output = sqlite3_step(res);
++        if (output == SQLITE_ROW)
++                size = atoi((const char *) sqlite3_column_text(res, 0));
++
++        else if (output == SQLITE_CORRUPT) {
++                syslog(LOG_CRIT, "Eventlog DB Corrupted\n");
++                system("mv /log/log.db /tmp/log.db_corrupted");
++		return -1;
++        } else {
++                syslog(LOG_ERR, "Eventlog DB error, code: %d\n", output);
++                system("mv /log/log.db /tmp/log.db_corrupted");
++		return -1;
++        }
++
++        sqlite3_finalize(res);
++        return size;
++}
++
++static int delete_from_db(char *db_name, int size)
++{
++	char buffer[256];
++	sqlite3_stmt *res;
++	const char *tail;
++	int error = 0;
++	int max_id = 0;
++	int output;
++
++	sprintf(buffer, "SELECT MAX(ID) FROM %s", db_name);
++	error = sqlite3_prepare_v2(conn, buffer, -1, &res, &tail);
++	if (error != SQLITE_OK) {
++		syslog(LOG_ERR, "sqlite3 query error: %s\n", sqlite3_errmsg(conn));
++		return -1;
++	}
++
++	output = sqlite3_step(res);
++	if (output == SQLITE_ROW) {
++		max_id = atoi((const char *) sqlite3_column_text(res, 0));
++
++		sqlite3_finalize(res);
++		sprintf(buffer, "DELETE FROM %s WHERE ID <= %i", db_name, max_id - size + 50);
++		execute_query(buffer);
++	} else {
++		syslog(LOG_ERR, "Eventlog error, code: %d", output);
++		return -1;
++	}
++
++	return check_db_size(db_name);
++}
++
++static int execute_action(char *buffer, int action)
++{
++	sqlite3_stmt *res;
++	int error = 0;
++	int output = 0;
++	const char *tail;
++
++	if (action < 0) {
++		syslog(LOG_ERR, "Failed to find correct action\n");
++		return -1;
++	}
++
++	error = sqlite3_prepare_v2(conn, buffer, -1, &res, &tail);
++	if (error != SQLITE_OK) {
++		syslog(LOG_ERR, "sqlite3 query error: %s\n", sqlite3_errmsg(conn));
++		return -1;
++	}
++
++	output = sqlite3_step(res);
++	if (output == SQLITE_ROW) {
++		while (output == SQLITE_ROW) {
++			output = sqlite3_step(res);
++		}
++	} else if (output != SQLITE_DONE) {
++		syslog(LOG_ERR, "failed to step through query\n");
++		return -1;
++	}
++
++	sqlite3_finalize(res);
++
++	switch(action) {
++	case ACTION_EVENTS:
++		EVENT_size++;
++
++		if (EVENT_size >= MAX_EVENT) {
++			if ((EVENT_size = delete_from_db(TABLE_E, MAX_EVENT)) < 0) {
++				syslog(LOG_ERR, "Failed to delete MAX ID from EVENTS table\n");
++				return -1;
++			}
++		}
++		break;
++	case ACTION_NETWORK:
++		NET_size++;
++
++		if (NET_size >= MAX_NET) {
++			if ((NET_size = delete_from_db(TABLE_N, MAX_NET)) < 0) {
++				syslog(LOG_ERR, "Failed to delete MAX ID from NETWORK table\n");
++				return -1;
++			}
++		}
++		break;
++	case ACTION_CONNECTION:
++		CON_size++;
++
++		if (CON_size >= MAX_CON) {
++			if ((CON_size = delete_from_db(TABLE_C, MAX_CON)) < 0) {
++				syslog(LOG_ERR, "Failed to delete MAX ID from CONNECTION table\n");
++				return -1;
++			}
++		}
++		break;
++	case ACTION_SYSTEM:
++		SYS_size++;
++
++		if (SYS_size >= MAX_SYS) {
++			if ((SYS_size = delete_from_db(TABLE_SYS, MAX_SYS)) < 0) {
++				syslog(LOG_ERR, "Failed to delete MAX ID from SYSTEM table\n");
++				return -1;
++			}
++		}
++		break;
++	}
++
++	if (SMS_size >= MAX_SMS_TABLE) {
++		if ((SMS_size = delete_from_db(TABLE_S, MAX_SMS_TABLE)) < 0) {
++			syslog(LOG_ERR, "Failed to delete MAX ID from SMS table\n");
++			return -1;
++		}
++	}
++
++	return 0;
++}
++/*
++int read_db()
++{
++
++	return 0;
++}
++*/
++int db_action(char *buffer)
++{
++	int action = -1;
++
++	if (strcasestr(buffer, "INSERT INTO EVENTS")) {
++		action = ACTION_EVENTS;
++	} else if (strcasestr(buffer, "INSERT INTO CONNECTIONS")) {
++		action = ACTION_CONNECTION;
++	} else if (strcasestr(buffer, "INSERT INTO NETWORK")) {
++		action = ACTION_NETWORK;
++	} else if (strcasestr(buffer, "INSERT INTO SYSTEM")) {
++		action = ACTION_SYSTEM;
++	}
++
++	if (execute_action(buffer, action) != 0) {
++		syslog(LOG_ERR, "Failed to execute query: %s\n", buffer);
++		return -1;
++	}
++
++	return 0;
++}
++
++int init_db()
++{
++	if (sqlite3_open(DB, &conn)) {
++		syslog(LOG_CRIT, "Can't open database\n");
++		return -1;
++	}
++
++	sqlite3_db_config(conn, SQLITE_CONFIG_SERIALIZED);
++	create_table();
++
++	if ((EVENT_size = check_db_size(TABLE_E)) < 0) {
++		syslog(LOG_ERR, "failed to check %s table size\n", TABLE_E);
++		return -1;
++	}
++
++	if ((CON_size = check_db_size(TABLE_C)) < 0) {
++		syslog(LOG_ERR, "failed to check %s table size\n", TABLE_C);
++		return -1;
++	}
++
++	if ((SMS_size = check_db_size(TABLE_S)) < 0) {
++		syslog(LOG_ERR, "failed to check %s table size\n", TABLE_S);
++		return -1;
++	}
++
++	if ((SYS_size = check_db_size(TABLE_SYS)) < 0) {
++		syslog(LOG_ERR, "failed to check %s table size\n", TABLE_SYS);
++		return -1;
++	}
++
++	if ((NET_size = check_db_size(TABLE_N)) < 0) {
++		syslog(LOG_ERR, "failed to check %s table size\n", TABLE_N);
++		return -1;
++	}
++
++	return 0;
++}
+--- /dev/null
++++ b/log/logdb.h
+@@ -0,0 +1,21 @@
++#ifndef LOGDB_H
++#define LOGDB_H
++
++#define DB "/log/log.db"
++
++#define TABLE_E "EVENTS"
++#define TABLE_C "CONNECTIONS"
++#define TABLE_S "SMS_TABLE"
++#define TABLE_N "NETWORK"
++#define TABLE_SYS "SYSTEM"
++
++#define MAX_EVENT 4000
++#define MAX_NET 4000
++#define MAX_SYS 4000
++#define MAX_CON 3500
++#define MAX_SMS_TABLE 7000
++
++int init_db();
++int db_action(char *buffer);
++
++#endif
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -10,7 +10,7 @@ IF(APPLE)
+   LINK_DIRECTORIES(/opt/local/lib)
+ ENDIF()
+ 
+-find_library(json NAMES json-c json)
++find_library(json NAMES json-c json sqlite3)
+ 
+ IF(DEBUG)
+   ADD_DEFINITIONS(-DDEBUG -g3)
+@@ -62,8 +62,8 @@ INSTALL(TARGETS logd
+ 	RUNTIME DESTINATION sbin
+ )
+ 
+-ADD_EXECUTABLE(logread log/logread.c)
+-TARGET_LINK_LIBRARIES(logread ubox ubus ${json} blobmsg_json)
++ADD_EXECUTABLE(logread log/logread.c log/logdb.c)
++TARGET_LINK_LIBRARIES(logread ubox ubus ${json} blobmsg_json sqlite3)
+ INSTALL(TARGETS logread
+ 	RUNTIME DESTINATION sbin
+ )

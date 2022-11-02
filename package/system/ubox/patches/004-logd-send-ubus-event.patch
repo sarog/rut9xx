@@ -1,0 +1,40 @@
+--- a/log/logd.c
++++ b/log/logd.c
+@@ -308,6 +308,27 @@ write_log(struct ubus_context *ctx, stru
+ 	return 0;
+ }
+ 
++static int send_ubus_event(struct ubus_context *ubus, int table, char *event, const char *sender)
++{
++    struct blob_buf b;
++
++    memset(&b, 0, sizeof(b));
++    blob_buf_init(&b, 0);
++
++    blobmsg_add_string(&b, "event", event);
++    blobmsg_add_string(&b, "sender", sender);
++    blobmsg_add_u32(&b, "table", table);
++
++    if (ubus_send_event(ubus, "logd.db_write", b.head)) {
++        blob_buf_free(&b);
++        return 1;
++    }
++
++    blob_buf_free(&b);
++
++    return 0;
++}
++
+ static int write_ext_log(struct ubus_context *ctx, struct ubus_object *obj,
+ 			 struct ubus_request_data *req, const char *method,
+ 			 struct blob_attr *msg)
+@@ -340,6 +361,9 @@ static int write_ext_log(struct ubus_con
+ 	if (tb[WRITE_DB])
+ 		write_db = blobmsg_get_u32(tb[WRITE_DB]);
+ 
++	if (write_db == 1)
++	    send_ubus_event(ctx, table, event, sender);
++
+ 	if (log_add_extended(event, strlen(event) + 1, sender, table, priority, write_db) != 0)
+ 		return UBUS_STATUS_UNKNOWN_ERROR;
+ 

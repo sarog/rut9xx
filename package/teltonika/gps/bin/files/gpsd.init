@@ -1,0 +1,267 @@
+#!/bin/sh /etc/rc.common
+
+START=94
+STOP=80
+USE_PROCD=1
+
+GPSD_BIN="/usr/sbin/gpsd"
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+read_vars() {
+	json_select $2
+	json_get_vars gps_out
+	[ -z "$gps_out" -o "$gps_out" = "0" ] && {
+		json_select ..
+		return
+	}
+	json_get_vars id boudrate gps vendor product
+	FOUND=1
+	json_select ..
+}
+
+start_service() {
+	FOUND=0
+	local id boudrate ttys at_device
+
+	config_load gps
+	config_get enabled gpsd enabled "0"
+	[ "$enabled" = "1" ] || {
+		return
+	}
+
+	json_load_file "/etc/board.json"
+	json_for_each_item read_vars modems
+
+	[ "$FOUND" -gt 0 ] || {
+		echo "Failed to find proper modem"
+		return
+	}
+
+	module_vidpid="$vendor:$product"
+	set_constellations $module_vidpid
+
+	ttys=$(ls -d /sys/bus/usb/devices/$id/${id}*/tty?* /sys/bus/usb/devices/$id/${id}/tty/tty?* | sed "s/.*\///g" | tr "\n" " ")
+	at_device=/dev/$(echo $ttys | cut -d" " -f $((gps + 1)))
+
+	[ -z "$at_device" ] && return
+	[ -z "$boudrate" ] && boudrate=115200
+
+	start_nmea
+	[ $? -eq "1" ] && return
+
+	procd_open_instance gpsd
+	procd_set_param command "$GPSD_BIN" -a "$at_device" -b "$boudrate"
+	procd_set_param respawn
+	procd_close_instance
+}
+
+stop_service() {
+	json_load_file "/etc/board.json"
+	json_for_each_item read_vars modems
+
+	module_vidpid="$vendor:$product"
+	case "$module_vidpid" in
+	12d1:1573)
+		gsmctl -A AT^WPEND 2>/dev/null >/dev/null
+	;;
+	12d1:15c1)
+		gsmctl -A AT^WPEND 2>/dev/null >/dev/null
+	;;
+	# EC20 EC25 EG06 BG96 EG12 RG5XX RG52X
+	05c6:9215 | \
+	2c7c:0125 | \
+	2c7c:0296 | \
+	2c7c:0512 | \
+	2c7c:0800 | \
+	2c7c:0801 | \
+	2c7c:0306)
+		gsmctl -A AT+QGPSEND 2>/dev/null >/dev/null
+	;;
+	1199:68c0)
+		stty raw -F /dev/gps; echo \$GPS_STOP >/dev/gps
+	;;
+	05c6:f601)
+		gsmctl -A AT+GPSSTOP 2>/dev/null >/dev/null
+	;;
+	*)
+		echo "$0: unknown or no GPS device, aborting"
+	;;
+	esac
+}
+
+set_constellations() {
+	local vid_pid=$1
+
+	config_get glonass_sup gpsd glonass_sup "0"
+	config_get galileo_sup gpsd galileo_sup "0"
+	config_get beidou_sup gpsd beidou_sup "0"
+
+	case "$vid_pid" in
+	# Quectel modems only
+	05c6:9215 | \
+	2c7c:0125 | \
+	2c7c:0296 | \
+	2c7c:0512 | \
+	2c7c:0800 | \
+	2c7c:0801 | \
+	2c7c:0306)
+		# GLONASS: 7; GALILEO: 1; BEIDOU: 3
+		glonass_enabled=`gsmctl -A 'AT+QGPSCFG="glonassnmeatype"' | cut -d ',' -f2`
+		galileo_enabled=`gsmctl -A 'AT+QGPSCFG="galileonmeatype"' | cut -d ',' -f2`
+		beidou_enabled=`gsmctl -A 'AT+QGPSCFG="beidounmeatype"' | cut -d ',' -f2`
+
+		[ "$glonass_sup" -eq "$glonass_enabled" ] && [ "$galileo_sup" -eq "$galileo_enabled" ] && [ "$beidou_sup" -eq "$beidou_enabled" ] && return
+
+		gsmctl -A 'AT+QGPSCFG="glonassnmeatype",'$glonass_sup
+		gsmctl -A 'AT+QGPSCFG="galileonmeatype",'$galileo_sup
+		gsmctl -A 'AT+QGPSCFG="beidounmeatype",'$beidou_sup
+
+		gsmctl -A 'AT+CFUN=1,1'
+	;;
+	# SLM750
+	05c6:f601)
+		# GLONASS: 1; GALILEO: 31; BEIDOU: 3
+		handle_meig_init "gsmctl -A AT+GPSINIT" || return 1
+
+		glonass_enabled=`gsmctl -A 'AT+GPSCFG="glonassnmeatype"' | cut -d ',' -f2`
+		galileo_enabled=`gsmctl -A 'AT+GPSCFG="galileonmeatype"' | cut -d ',' -f2`
+		beidou_enabled=`gsmctl -A 'AT+GPSCFG="beidounmeatype"' | cut -d ',' -f2`
+
+		[ "$glonass_sup" -eq 0 ] && [ "$glonass_enabled" -ne 0 ] && gsmctl -A 'AT+GPSCFG="glonassnmeatype",0'
+		[ "$glonass_sup" -ne 0 ] && [ "$glonass_enabled" -ne 1 ] && gsmctl -A 'AT+GPSCFG="glonassnmeatype",1'
+		[ "$galileo_sup" -eq 0 ] && [ "$galileo_enabled" -ne 0 ] && gsmctl -A 'AT+GPSCFG="galileonmeatype",0'
+		[ "$galileo_sup" -ne 0 ] && [ "$galileo_enabled" -ne 31 ] && {
+			gsmctl -A 'AT+GPSCFG="galileonmeatype",1'
+			gsmctl -A 'AT+GPSCFG="galileonmeatype",2'
+			gsmctl -A 'AT+GPSCFG="galileonmeatype",4'
+			gsmctl -A 'AT+GPSCFG="galileonmeatype",8'
+			gsmctl -A 'AT+GPSCFG="galileonmeatype",16'
+		}
+		[ "$beidou_sup" -eq 0 ] && [ "$beidou_enabled" -ne 0 ] && gsmctl -A 'AT+GPSCFG="beidounmeatype",0'
+		[ "$beidou_sup" -ne 0 ] && [ "$beidou_enabled" -ne 3 ] && {
+			gsmctl -A 'AT+GPSCFG="beidounmeatype",1'
+			gsmctl -A 'AT+GPSCFG="beidounmeatype",2'
+		}
+	;;
+	*)
+		echo "Constellation is not supported"
+		return
+	;;
+	esac
+}
+
+check_gsmd() {
+	resp=""
+	count=0
+	count_max=30
+
+        # Wait for maximum of 30 seconds for gsmd to show up
+	while [ -n "$resp" ] && [ "$count" -lt "$count_max" ]; do
+		resp=$(pidof gsmd)
+		count=$((count+1))
+		sleep 1
+	done
+
+	if [ "$count" -eq "$count_max" ]; then
+		echo "gsmd not running"
+		return 1
+	fi
+
+	return 0
+}
+
+handle_meig_init() {
+	local resp="" count=0 count_max=30
+
+	ok_output="$(printf "OK\r\n")"
+	cme_output="$(printf "+CMEE ERROR: Session is ongoing\r\n")"
+	cmc_output="$(printf "+CMEE ERROR: 2004\r\n")"
+
+	while [ "$resp" != "$ok_output" -a "$resp" != "$cme_output" -a "$resp" != "$cmc_output" -a "$count" -lt "$count_max" ]; do
+		resp=$($1)
+		count=$((count+1))
+		sleep 1
+	done
+
+	if [ "$count" -eq "$count_max" ]; then
+		echo "failed to start NMEA logging"
+		return 1
+	fi
+
+	return 0
+}
+
+start_nmea() {
+	case "$module_vidpid" in
+	12d1:1573)
+		gsmctl -A AT^WPDOM=0 2>/dev/null >/dev/null
+		gsmctl -A AT^WPDST=1 2>/dev/null >/dev/null
+		gsmctl -A AT^WPDFR=0,1 2>/dev/null >/dev/null
+		gsmctl -A AT^WPQOS=255,500 2>/dev/null >/dev/null
+		gsmctl -A AT^WPDGP 2>/dev/null >/dev/null
+	;;
+	12d1:15c1)
+		gsmctl -A AT^WPDOM=0 2>dev/null >/dev/null
+		gsmctl -A AT^WPDGL=0 2>/dev/null >/dev/null
+		gsmctl -A AT^WPDGP 2>/dev/null >/dev/null
+	;;
+	# EC20 EC25 EG06 BG96 EG12 RG5XX RG52X
+	05c6:9215 | \
+	2c7c:0125 | \
+	2c7c:0296 | \
+	2c7c:0512 | \
+	2c7c:0800 | \
+	2c7c:0801 | \
+	2c7c:0306)
+		check_gsmd || return 1
+
+		local resp="" count=0 count_max=30
+
+		ok_output="$(printf "OK\r\n")"
+		cme_output="$(printf "+CME ERROR: Session is ongoing\r\n")"
+		cmc_output="$(printf "+CME ERROR: 504\r\n")"
+		# Try for maximum of 30 times to send an AT command which starts GPS nmea logging
+		while [ "$resp" != "$ok_output" -a "$resp" != "$cme_output" -a "$resp" != "$cmc_output" -a "$count" -lt "$count_max" ]; do
+			resp=$(gsmctl -A AT+QGPS=1)
+			count=$((count+1))
+			sleep 1
+		done
+
+		if [ "$count" -eq "$count_max" ]; then
+			echo "failed to start NMEA logging"
+			return 1
+		fi
+	;;
+	1199:68c0)
+		stty raw -F /dev/gps; echo \$GPS_START >/dev/gps
+	;;
+	# SLM750
+	05c6:f601)
+		check_gsmd || return 1
+
+		sleep 5
+		# Try for maximum of 30 times to send an AT command which starts GPS nmea logging
+		handle_meig_init 'gsmctl -A AT+GPSCFG="outport",1' || return 1
+		handle_meig_init "gsmctl -A AT+GPSRUN=0,30,100,0,1" || return 1
+	;;
+	*)
+		echo "$0: unknown or no GPS device, aborting"
+		return 1
+	;;
+	esac
+
+	return 0
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger "gps"
+}
+
+reload_service()
+{
+	stop
+	start
+}

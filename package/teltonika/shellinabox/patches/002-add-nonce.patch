@@ -1,0 +1,11 @@
+--- a/shellinabox/cgi_root.html
++++ b/shellinabox/cgi_root.html
+@@ -49,7 +49,7 @@
+     http://shellinabox.com
+     -->
+     <title>Shell In A Box</title>
+-    <script type="text/javascript"><!--
++    <script nonce="pbfMmwrsnzqz1rg86SUDb6A+NvckQ8U3s4almwle63M" type="text/javascript"><!--
+     (function() {
+       var url   = document.location.protocol + '//' +
+                   document.location.hostname + ':%d/';

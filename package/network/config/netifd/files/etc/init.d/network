@@ -4,42 +4,16 @@ START=20
 STOP=90
 
 USE_PROCD=1
+
 init_switch() {
 	setup_switch() { return 0; }
+
 	include /lib/network
 	setup_switch
-	(sleep 10; /sbin/chroutes) &
-}
-
-disable_sta() {
-	config_get mode "$1" mode ""
-	[[ "$mode" != "sta" ]] && return
-	logger -t "network" "Disabling STA because there's two or more Access Points"
-	uci -q set wireless.$1.user_enable=0
-}
-
-check_sta_mode() {
-	if [ "`grep -o "mode 'ap'" /etc/config/wireless | wc -l`" -gt 1 ]; then
-		if [ ! -z "`grep sta /etc/config/wireless`" ]; then
-			config_load "wireless"
-			config_foreach disable_sta "wifi-iface"
-		fi
-	fi
 }
 
 start_service() {
-	# Start ioman in parallel because swconfig is mainly I/O bound
-	# to save boot time by fully using CPU time
-	(sleep 1 && /etc/init.d/ioman start) &
 	init_switch
-
-	/sbin/wifi detect > /tmp/wireless.tmp
-	[ -s /tmp/wireless.tmp ] && {
-		cat /tmp/wireless.tmp >> /etc/config/wireless
-	}
-	rm -f /tmp/wireless.tmp
-
-	check_sta_mode
 
 	procd_open_instance
 	procd_set_param command /sbin/netifd
@@ -47,30 +21,32 @@ start_service() {
 	procd_set_param watch network.interface
 	[ -e /proc/sys/kernel/core_pattern ] && {
 		procd_set_param limits core="unlimited"
-		echo '/tmp/%e.%p.%s.%t.core' > /proc/sys/kernel/core_pattern
 	}
 	procd_close_instance
 }
 
 reload_service() {
-        local rv=0
-	killall -s USR1 port_event_checker
+	local rv=0
+
 	init_switch
+	[ -x /sbin/wifi ] && /sbin/wifi reload_legacy
 	ubus call network reload || rv=1
-	/sbin/wifi reload_legacy
+	[ -x /sbin/wifi ] && /sbin/wifi kick_clients
 	return $rv
 }
 
 stop_service() {
-	killall -s USR1 port_event_checker
-	/sbin/wifi down
+	[ -x /sbin/wifi ] && /sbin/wifi down
 	ifdown -a
-	sleep 1
+	sleep 5
 }
 
-service_running() {
-	ubus -t 30 wait_for network.interface
-	/sbin/wifi reload_legacy
+restart() {
+	stop
+	start
+	# need to sleep before init mobile (start not up all interfaces)
+	sleep 5
+	ubus call gsmd reinit_modems
 }
 
 validate_atm_bridge_section()
@@ -143,7 +119,9 @@ validate_switch_section()
 		'name:string' \
 		'enable:bool' \
 		'enable_vlan:bool' \
-		'reset:bool'
+		'reset:bool' \
+		'ar8xxx_mib_poll_interval:uinteger' \
+		'ar8xxx_mib_type:range(0,1)'
 }
 
 validate_switch_vlan()
@@ -161,9 +139,9 @@ service_triggers()
 	procd_open_validate
 	validate_atm_bridge_section
 	validate_route_section
-	validate_route6_section
+	[ -e /proc/sys/net/ipv6 ] && validate_route6_section
 	validate_rule_section
-	validate_rule6_section
+	[ -e /proc/sys/net/ipv6 ] && validate_rule6_section
 	validate_switch_section
 	validate_switch_vlan
 	procd_close_validate
@@ -171,5 +149,5 @@ service_triggers()
 
 shutdown() {
 	ifdown -a
-	sleep 1
+	sleep 5
 }

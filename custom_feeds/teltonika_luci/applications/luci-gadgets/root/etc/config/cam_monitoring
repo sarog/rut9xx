@@ -1,5 +1,0 @@
-config cam_monitoring 'cam_monitoring'
-	option cam1 'OFF'
-	option cam2 'OFF'
-	option cam3 'OFF'
-	option cam4 'OFF'

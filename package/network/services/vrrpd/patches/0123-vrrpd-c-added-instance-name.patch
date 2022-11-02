@@ -1,0 +1,91 @@
+--- ./build_dir/target-arm_cortex-a7_uClibc-1.0.14_eabi/Vrrpd-1.15/vrrpd.c	2019-05-06 12:12:04.900221883 +0300
++++ ./vrrpd.c	2019-05-06 12:10:09.461339645 +0300
+@@ -963,7 +963,7 @@
+ 	int	c;
+ 	vsrv->no_vmac = 1;
+ 	while( 1 ){
+-		c = getopt( argc, argv, "f:M:Vhnrsi:v:a:p:z:x:d:D:U:I:O:" );
++		c = getopt( argc, argv, "f:M:Vhnrsi:v:a:p:z:y:x:d:D:U:I:O:" );
+ 		/* if the parsing is completed, exit */
+ 		if( c == EOF )	break;
+ 		switch( c ){
+@@ -1026,7 +1026,18 @@
+ 				goto err;
+ 			}
+ 			break;
+-				
++
++		case 'y':
++			vsrv->instance_name = (char *)malloc((strlen(optarg) * sizeof(char)) + (1 * sizeof(char)));
++
++			if (vsrv->instance_name == NULL) {
++				fprintf( stderr, "instance memory allocation request failed !\n" );
++				goto err;
++			} else {
++				strcpy(vsrv->instance_name, optarg);
++			}
++
++			break;
+ 		case 'x':
+ 			vsrv->ttou_priority = atoi( optarg );
+ 			if( VRRP_IS_BAD_PRIORITY(vsrv->ttou_priority) ){
+@@ -1483,8 +1494,18 @@
+ 		/* init the struct */
+ 	VRRP_TIMER_SET( vsrv->adver_timer, vsrv->adver_int );
+ 	vsrv->state = VRRP_STATE_MAST;
+-	new_task.text = "Router is in master mode";
++	if (vsrv->instance_name) {
++        new_task.text = (char *) malloc(sizeof(char) * (28 + strlen(vsrv->instance_name)));
++        if (new_task.text != NULL)
++            snprintf(new_task.text, (size_t) (28 + strlen(vsrv->instance_name)), "Instance %s is in master mode",
++                 vsrv->instance_name);
++    } else {
++        new_task.text = "Router is in master mode";
++    }
+ 	add_task(&new_task);
++
++	free(new_task.text);
++
+ 	vsrv->wantstate = VRRP_STATE_MAST;
+ 	strcpy(status, "Master");
+ 	write_to_file(vsrv, status);
+@@ -1564,8 +1585,17 @@
+ 		VRRP_TIMER_SET( vsrv->ms_down_timer, delay );
+ 		vsrv->state = VRRP_STATE_BACK;
+ 		vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%s - INIT State (backup) -", vsrv->vrid, vsrv->vif.ifname, master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is up, " : "");
+-		new_task.text = "Router is in backup mode";
+-		add_task(&new_task);
++        if (vsrv->instance_name) {
++            new_task.text = (char *) malloc(sizeof(char) * (28 + strlen(vsrv->instance_name)));
++            if (new_task.text != NULL)
++                snprintf(new_task.text, (size_t) (28 + strlen(vsrv->instance_name)), "Instance %s is in backup mode",
++                         vsrv->instance_name);
++        } else {
++            new_task.text = "Router is in backup mode";
++        }
++        add_task(&new_task);
++
++        free(new_task.text);
+ 		strcpy(status, "Backup");
+ 		write_to_file(vsrv, status);
+ 		if ((master_ipaddr) && (vsrv->wantstate == VRRP_STATE_BACK)){
+@@ -1666,8 +1696,17 @@
+ 			vsrv->state	= VRRP_STATE_BACK;
+ 			vrrpd_log(LOG_WARNING, "VRRP ID %d on %s: %s%swe are now a backup router.", vsrv->vrid, vsrv->vif.ifname,
+ 				master_ipaddr ? ipaddr_to_str(master_ipaddr) : "", master_ipaddr ? " is up, " : "");
+-			new_task.text = "Router is in backup mode";
+-			add_task(&new_task);
++            if (vsrv->instance_name) {
++                new_task.text = (char *) malloc(sizeof(char) * (28 + strlen(vsrv->instance_name)));
++                if (new_task.text != NULL)
++                    snprintf(new_task.text, (size_t) (28 + strlen(vsrv->instance_name)), "Instance %s is in backup mode",
++                             vsrv->instance_name);
++            } else {
++                new_task.text = "Router is in backup mode";
++            }
++            add_task(&new_task);
++
++            free(new_task.text);
+ 			strcpy(status, "Backup");
+ 			write_to_file(vsrv, status);
+ 			

@@ -1,0 +1,13 @@
+Index: eigrpd/eigrp_packet.c
+===================================================================
+--- frr-5.0.2.orig/eigrpd/eigrp_packet.c.orig
++++ frr-5.0.2/eigrpd/eigrp_packet.c
+@@ -975,7 +975,7 @@ static int eigrp_check_network_mask(stru
+ {
+ 	struct in_addr mask, me, him;
+
+-	if (ei->type == EIGRP_IFTYPE_POINTOPOINT)
++	if (ei->type == EIGRP_IFTYPE_POINTOPOINT || ei->type == EIGRP_IFTYPE_BROADCAST)
+ 		return 1;
+
+ 	masklen2ip(ei->address->prefixlen, &mask);

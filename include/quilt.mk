@@ -1,23 +1,43 @@
-# 
-# Copyright (C) 2007-2009 OpenWrt.org
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-
-ifneq ($(if $(DUMP),1,$(__quilt_inc)),1)
-__quilt_inc:=1
+# Copyright (C) 2007-2020 OpenWrt.org
 
 ifeq ($(TARGET_BUILD),1)
   PKG_BUILD_DIR:=$(LINUX_DIR)
 endif
+
+ifneq ($(filter host-refresh refresh,$(MAKECMDGOALS)),)
+  override QUILT=1
+  override HOST_QUILT=1
+endif
+
+ifneq ($(PKG_BUILD_DIR),)
+  QUILT?=$(if $(wildcard $(PKG_BUILD_DIR)/.quilt_used),y)
+  ifneq ($(QUILT),)
+    STAMP_CHECKED:=$(PKG_BUILD_DIR)/.quilt_checked
+    override CONFIG_AUTOREBUILD=
+    override CONFIG_AUTOREMOVE=
+    quilt-check: $(STAMP_CHECKED)
+  endif
+endif
+
+ifneq ($(HOST_BUILD_DIR),)
+  HOST_QUILT?=$(if $(findstring command,$(origin QUILT)),$(QUILT),$(if $(wildcard $(HOST_BUILD_DIR)/.quilt_used),y))
+  ifneq ($(HOST_QUILT),)
+    HOST_STAMP_CHECKED:=$(HOST_BUILD_DIR)/.quilt_checked
+    override CONFIG_AUTOREBUILD=
+    override CONFIG_AUTOREMOVE=
+    host-quilt-check: $(HOST_STAMP_CHECKED)
+  endif
+endif
+
+ifneq ($(if $(DUMP),1,$(__quilt_inc)),1)
+__quilt_inc:=1
+
 PATCH_DIR?=./patches
 FILES_DIR?=./files
 HOST_PATCH_DIR?=$(PATCH_DIR)
 HOST_FILES_DIR?=$(FILES_DIR)
-
-ifeq ($(MAKECMDGOALS),refresh)
-  override QUILT=1
-endif
 
 QUILT_CMD:=quilt --quiltrc=-
 
@@ -58,24 +78,6 @@ define HostPatchDir
 $(call PatchDir/$(if $(strip $(HOST_QUILT)),Quilt,Default),$(strip $(1)),$(strip $(2)),$(strip $(3)))
 endef
 
-ifneq ($(PKG_BUILD_DIR),)
-  QUILT?=$(if $(wildcard $(PKG_BUILD_DIR)/.quilt_used),y)
-  ifneq ($(QUILT),)
-    STAMP_CHECKED:=$(PKG_BUILD_DIR)/.quilt_checked
-    override CONFIG_AUTOREBUILD=
-    quilt-check: $(STAMP_CHECKED)
-  endif
-endif
-
-ifneq ($(HOST_BUILD_DIR),)
-  HOST_QUILT?=$(if $(findstring command,$(origin QUILT)),$(QUILT),$(if $(wildcard $(HOST_BUILD_DIR)/.quilt_used),y))
-  ifneq ($(HOST_QUILT),)
-    HOST_STAMP_CHECKED:=$(HOST_BUILD_DIR)/.quilt_checked
-    override CONFIG_AUTOREBUILD=
-    host-quilt-check: $(HOST_STAMP_CHECKED)
-  endif
-endif
-
 define Host/Patch/Default
 	$(if $(HOST_QUILT),rm -rf $(HOST_BUILD_DIR)/patches; mkdir -p $(HOST_BUILD_DIR)/patches)
 	$(call HostPatchDir,$(HOST_BUILD_DIR),$(HOST_PATCH_DIR),)
@@ -90,11 +92,17 @@ endef
 
 kernel_files=$(foreach fdir,$(GENERIC_FILES_DIR) $(FILES_DIR),$(fdir)/.)
 define Kernel/Patch/Default
-	rm -rf $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches
+	$(if $(QUILT),rm -rf $(LINUX_DIR)/patches; mkdir -p $(LINUX_DIR)/patches)
 	$(if $(kernel_files),$(CP) $(kernel_files) $(LINUX_DIR)/)
 	find $(LINUX_DIR)/ -name \*.rej -or -name \*.orig | $(XARGS) rm -f
-	$(call PatchDir,$(PKG_BUILD_DIR),$(GENERIC_PATCH_DIR),generic/)
-	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR),platform/)
+	if [ -d $(GENERIC_PLATFORM_DIR)/patches$(if $(wildcard $(GENERIC_PLATFORM_DIR)/patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER)) ]; then \
+		echo "generic patches directory is present. please move your patches to the pending directory" ; \
+		exit 1; \
+	fi
+	$(call PatchDir,$(LINUX_DIR),$(GENERIC_BACKPORT_DIR),generic-backport/)
+	$(call PatchDir,$(LINUX_DIR),$(GENERIC_PATCH_DIR),generic/)
+	$(call PatchDir,$(LINUX_DIR),$(GENERIC_HACK_DIR),generic-hack/)
+	$(call PatchDir,$(LINUX_DIR),$(PATCH_DIR),platform/)
 endef
 
 define Quilt/RefreshDir
@@ -120,7 +128,9 @@ define Quilt/Refresh/Kernel
 		echo "All kernel patches must start with either generic/ or platform/"; \
 		false; \
 	}
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(GENERIC_BACKPORT_DIR),generic-backport/)
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(GENERIC_PATCH_DIR),generic/)
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(GENERIC_HACK_DIR),generic-hack/)
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR),platform/)
 endef
 
@@ -148,7 +158,8 @@ define Quilt/Template
 		echo "The source directory contains no quilt patches."; \
 		false; \
 	}
-	@[ -n "$$$$(ls $(1)/patches/series)" -o "$$$$(cat $(1)/patches/series | md5sum)" = "$$(sort $(1)/patches/series | md5sum)" ] || { \
+	@[ -n "$$$$(ls $(1)/patches/series)" -o \
+	   "$$$$(cat $(1)/patches/series | mkhash md5)" = "$$(sort $(1)/patches/series | mkhash md5)" ] || { \
 		echo "The patches are not sorted in the right order. Please fix."; \
 		false; \
 	}

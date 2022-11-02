@@ -1,0 +1,22 @@
+#!/bin/sh
+
+section="${PLUTO_CONNECTION##*-}"
+
+ifname="$(uci -q get ipsec.$section.bind_to)"
+[ -z "$ifname" ] || [ "$ifname" = "-" ] && exit 0
+
+check_cl="$(uci -q get network.$ifname.proto)"
+type="$(uci -q get xl2tpd.$ifname.type)"
+[ "$check_cl" = "l2tp" ] || [ "$type" = "server" ] || exit 0
+
+echo "Setting up L2TP $ifname over IPsec"
+
+if [ "$type" = "server" ]; then
+	/etc/init.d/xl2tpd restart
+else
+	if [ "$PLUTO_VERB" = "up-host" ]; then
+        	ifup "$ifname"
+	elif [ "$PLUTO_VERB" = "down-host" ]; then
+        	ifdown "$ifname"
+	fi
+fi

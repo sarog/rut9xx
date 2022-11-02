@@ -1,0 +1,70 @@
+#!/bin/sh
+. /lib/functions/network.sh
+
+tempinterf=$(uci -q get mwan3.globals.mode)
+
+if [ "$tempinterf" == "balance" ]; then
+	interface="balance_default:"
+elif [ "$tempinterf" == "mwan" ]; then
+	interface="mwan_default:"
+fi
+
+mwanpolicies="$(/usr/sbin/mwan3 policies 2>&1)"
+found="0"
+
+for value in $mwanpolicies; do
+	if [ "$found" == "1" ]; then
+		wanintr="$value"
+		break
+	fi
+
+	if [ "$value" == "$interface" ]; then
+		found="1"
+	fi
+done
+
+if { [ -z "$wanintr" ] || [ "$wanintr" == "unreachable" ] ;}; then
+	if [ -z "$wanif" ] && ! network_find_wan wanif "" 10; then
+	echo "$cfg" "NO_WAN_LINK"
+	exit
+	fi
+else
+	wanif="$wanintr"
+fi
+
+min_wanif=$(echo "$wanif" | awk '{print $1;}')
+network_get_metric min_metric "$min_wanif"
+for i in $wanif
+do
+        network_get_metric metric "$i"
+        if [ $metric -lt $min_metric ]; then
+                min_metric=$metric
+                min_wanif=$i
+        fi
+done
+wanif=$min_wanif
+
+case "$1" in
+	"ip")
+		network_get_ipaddrs wanadr "$wanif"
+		echo "$wanadr"
+		;;
+	"state")
+		network_get_device wandev "$wanif"
+		case "$wandev" in
+			"wwan"* | "rmnet"* | "qmimux"*)
+				echo "Mobile"
+				;;
+			"eth"*)
+				echo "Wired"
+				;;
+			"wlan0")
+				echo "WiFi"
+				;;
+		esac
+		;;
+	"interface")
+		network_get_device wandev "$wanif"
+		echo "$wandev"
+		;;
+esac

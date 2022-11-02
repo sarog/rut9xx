@@ -2,7 +2,7 @@
  * mtd - simple memory technology device manipulation tool
  *
  * Copyright (C) 2005      Waldemar Brodkorb <wbx@dass-it.de>,
- * Copyright (C) 2005-2009 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2005-2009 Felix Fietkau <nbd@nbd.name>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License v2
@@ -21,6 +21,9 @@
  * The code is based on the linux-mtd examples.
  */
 
+#define _GNU_SOURCE
+#include <byteswap.h>
+#include <endian.h>
 #include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -41,6 +44,7 @@
 #include <sys/reboot.h>
 #include <linux/reboot.h>
 #include <mtd/mtd-user.h>
+#include "crc32.h"
 #include "fis.h"
 #include "mtd.h"
 
@@ -49,9 +53,40 @@
 #define MAX_ARGS 8
 #define JFFS2_DEFAULT_DIR	"" /* directory name without /, empty means root dir */
 
+#define TRX_MAGIC		0x48445230	/* "HDR0" */
+#define SEAMA_MAGIC		0x5ea3a417
+#define WRG_MAGIC		0x20040220
+#define WRGG03_MAGIC		0x20080321
+
+#if !defined(__BYTE_ORDER)
+#error "Unknown byte order"
+#endif
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define cpu_to_be32(x)	(x)
+#define be32_to_cpu(x)	(x)
+#define le32_to_cpu(x)	bswap_32(x)
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#define cpu_to_be32(x)	bswap_32(x)
+#define be32_to_cpu(x)	bswap_32(x)
+#define le32_to_cpu(x)  (x)
+#else
+#error "Unsupported endianness"
+#endif
+
+enum mtd_image_format {
+	MTD_IMAGE_FORMAT_UNKNOWN,
+	MTD_IMAGE_FORMAT_TRX,
+	MTD_IMAGE_FORMAT_SEAMA,
+	MTD_IMAGE_FORMAT_WRG,
+	MTD_IMAGE_FORMAT_WRGG03,
+};
+
 static char *buf = NULL;
 static char *imagefile = NULL;
+static enum mtd_image_format imageformat = MTD_IMAGE_FORMAT_UNKNOWN;
 static char *jffs2file = NULL, *jffs2dir = JFFS2_DEFAULT_DIR;
+static char *tpl_uboot_args_part;
 static int buflen = 0;
 int quiet;
 int no_erase;
@@ -148,13 +183,52 @@ int mtd_write_buffer(int fd, const char *buf, int offset, int length)
 	return 0;
 }
 
-
 static int
 image_check(int imagefd, const char *mtd)
 {
+	uint32_t magic;
 	int ret = 1;
-	if (trx_check) {
-	  ret = trx_check(imagefd, mtd, buf, &buflen);
+	int bufread;
+
+	while (buflen < sizeof(magic)) {
+		bufread = read(imagefd, buf + buflen, sizeof(magic) - buflen);
+		if (bufread < 1)
+			break;
+
+		buflen += bufread;
+	}
+
+	if (buflen < sizeof(magic)) {
+		fprintf(stdout, "Could not get image magic\n");
+		return 0;
+	}
+
+	magic = ((uint32_t *)buf)[0];
+
+	if (be32_to_cpu(magic) == TRX_MAGIC)
+		imageformat = MTD_IMAGE_FORMAT_TRX;
+	else if (be32_to_cpu(magic) == SEAMA_MAGIC)
+		imageformat = MTD_IMAGE_FORMAT_SEAMA;
+	else if (le32_to_cpu(magic) == WRG_MAGIC)
+		imageformat = MTD_IMAGE_FORMAT_WRG;
+	else if (le32_to_cpu(magic) == WRGG03_MAGIC)
+		imageformat = MTD_IMAGE_FORMAT_WRGG03;
+
+	switch (imageformat) {
+	case MTD_IMAGE_FORMAT_TRX:
+		if (trx_check)
+			ret = trx_check(imagefd, mtd, buf, &buflen);
+		break;
+	case MTD_IMAGE_FORMAT_SEAMA:
+	case MTD_IMAGE_FORMAT_WRG:
+	case MTD_IMAGE_FORMAT_WRGG03:
+		break;
+	default:
+#ifdef target_brcm
+		if (!strcmp(mtd, "firmware"))
+			ret = 0;
+#endif
+		break;
 	}
 
 	return ret;
@@ -273,6 +347,58 @@ mtd_erase(const char *mtd)
 }
 
 static int
+mtd_dump(const char *mtd, int part_offset, int size)
+{
+	int ret = 0, offset = 0;
+	int fd;
+	char *buf;
+
+	if (quiet < 2)
+		fprintf(stderr, "Dumping %s ...\n", mtd);
+
+	fd = mtd_check_open(mtd);
+	if(fd < 0) {
+		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
+		return -1;
+	}
+
+	if (!size)
+		size = mtdsize;
+
+	if (part_offset)
+		lseek(fd, part_offset, SEEK_SET);
+
+	buf = malloc(erasesize);
+	if (!buf)
+		return -1;
+
+	do {
+		int len = (size > erasesize) ? (erasesize) : (size);
+		int rlen = read(fd, buf, len);
+
+		if (rlen < 0) {
+			if (errno == EINTR)
+				continue;
+			ret = -1;
+			goto out;
+		}
+		if (!rlen || rlen != len)
+			break;
+		if (mtd_block_is_bad(fd, offset)) {
+			fprintf(stderr, "skipping bad block at 0x%08x\n", offset);
+		} else {
+			size -= rlen;
+			write(1, buf, rlen);
+		}
+		offset += rlen;
+	} while (size > 0);
+
+out:
+	close(fd);
+	return ret;
+}
+
+static int
 mtd_verify(const char *mtd, char *file)
 {
 	uint32_t f_md5[4], m_md5[4];
@@ -284,7 +410,7 @@ mtd_verify(const char *mtd, char *file)
 	if (quiet < 2)
 		fprintf(stderr, "Verifying %s against %s ...\n", mtd, file);
 
-	if (stat(file, &s) || md5sum(file, f_md5)) {
+	if (stat(file, &s) || md5sum(file, f_md5) < 0) {
 		fprintf(stderr, "Failed to hash %s\n", file);
 		return -1;
 	}
@@ -348,12 +474,14 @@ mtd_write(int imagefd, const char *mtd, char *fis_layout, size_t part_offset)
 	ssize_t r, w, e;
 	ssize_t skip = 0;
 	uint32_t offset = 0;
+	int buflen_raw = 0;
 	int jffs2_replaced = 0;
 	int skip_bad_blocks = 0;
 
 #ifdef FIS_SUPPORT
 	static struct fis_part new_parts[MAX_ARGS];
 	static struct fis_part old_parts[MAX_ARGS];
+	struct fis_part *cur_part = NULL;
 	int n_new = 0, n_old = 0;
 
 	if (fis_layout) {
@@ -363,6 +491,8 @@ mtd_write(int imagefd, const char *mtd, char *fis_layout, size_t part_offset)
 
 		memset(&old_parts, 0, sizeof(old_parts));
 		memset(&new_parts, 0, sizeof(new_parts));
+		if (!part_offset)
+			cur_part = new_parts;
 
 		do {
 			next = strchr(tmp, ':');
@@ -430,6 +560,17 @@ resume:
 		lseek(fd, part_offset, SEEK_SET);
 	}
 
+	/* Write TP-Link recovery flag */
+	if (tpl_uboot_args_part && mtd_tpl_recoverflag_write) {
+		if (quiet < 2)
+			fprintf(stderr, "Writing recovery flag to %s\n", tpl_uboot_args_part);
+		result = mtd_tpl_recoverflag_write(tpl_uboot_args_part, true);
+		if (result < 0) {
+			fprintf(stderr, "Could not write TP-Link recovery flag to %s: %i", mtd, result);
+			exit(1);
+		}
+	}
+
 	indicate_writing(mtd);
 
 	w = e = 0;
@@ -452,6 +593,9 @@ resume:
 			buflen += r;
 		}
 
+		if (buflen_raw == 0)
+			buflen_raw = buflen;
+
 		if (buflen == 0)
 			break;
 
@@ -463,6 +607,7 @@ resume:
 
 		if (skip > 0) {
 			skip -= buflen;
+			buflen_raw = 0;
 			buflen = 0;
 			if (skip <= 0)
 				indicate_writing(mtd);
@@ -475,7 +620,7 @@ resume:
 				if (!quiet)
 					fprintf(stderr, "\b\b\b   ");
 				if (quiet < 2)
-					fprintf(stderr, "\nAppending jffs2 data from %s to %s...", jffs2file, mtd);
+					fprintf(stderr, "\nAppending jffs2 data from %s to %s..\n.", jffs2file, mtd);
 				/* got an EOF marker - this is the place to add some jffs2 data */
 				skip = mtd_replace_jffs2(mtd, fd, e, jffs2file);
 				jffs2_replaced = 1;
@@ -486,6 +631,7 @@ resume:
 				w += skip;
 				e += skip;
 				skip -= buflen;
+				buflen_raw = 0;
 				buflen = 0;
 				offset = 0;
 				continue;
@@ -504,7 +650,7 @@ resume:
 
 				if (mtd_block_is_bad(fd, e)) {
 					if (!quiet)
-						fprintf(stderr, "\nSkipping bad block at 0x%08x   ", e);
+						fprintf(stderr, "\nSkipping bad block at 0x%08zx   ", e);
 
 					skip_bad_blocks += erasesize;
 					e += erasesize;
@@ -514,7 +660,7 @@ resume:
 					continue;
 				}
 
-				if (mtd_erase_block(fd, e) < 0) {
+				if (mtd_erase_block(fd, e + part_offset) < 0) {
 					if (next) {
 						if (w < e) {
 							write(fd, buf + offset, e - w);
@@ -551,18 +697,47 @@ resume:
 		}
 		w += buflen;
 
+#ifdef FIS_SUPPORT
+		if (cur_part && cur_part->size
+		&& cur_part < &new_parts[MAX_ARGS - 1]
+		&& cur_part->length + buflen_raw > cur_part->size)
+			cur_part++;
+		if (cur_part) {
+			cur_part->length += buflen_raw;
+			cur_part->crc = crc32(cur_part->crc, buf, buflen_raw);
+		}
+#endif
+		buflen_raw = 0;
 		buflen = 0;
 		offset = 0;
 	}
 
-	if (jffs2_replaced && trx_fixup) {
-		trx_fixup(fd, mtd);
+	if (jffs2_replaced) {
+		switch (imageformat) {
+		case MTD_IMAGE_FORMAT_TRX:
+			if (trx_fixup)
+				trx_fixup(fd, mtd);
+			break;
+		case MTD_IMAGE_FORMAT_SEAMA:
+			if (mtd_fixseama)
+				mtd_fixseama(mtd, 0, 0);
+			break;
+		case MTD_IMAGE_FORMAT_WRG:
+			if (mtd_fixwrg)
+				mtd_fixwrg(mtd, 0, 0);
+			break;
+		case MTD_IMAGE_FORMAT_WRGG03:
+			if (mtd_fixwrgg)
+				mtd_fixwrgg(mtd, 0, 0);
+			break;
+		default:
+			break;
+		}
 	}
 
 	if (!quiet)
 		fprintf(stderr, "\b\b\b\b    ");
 
-done:
 	if (quiet < 2)
 		fprintf(stderr, "\n");
 
@@ -574,6 +749,18 @@ done:
 #endif
 
 	close(fd);
+
+	/* Clear TP-Link recovery flag */
+	if (tpl_uboot_args_part && mtd_tpl_recoverflag_write) {
+		if (quiet < 2)
+			fprintf(stderr, "Removing recovery flag from %s\n", tpl_uboot_args_part);
+		result = mtd_tpl_recoverflag_write(tpl_uboot_args_part, false);
+		if (result < 0) {
+			fprintf(stderr, "Could not clear TP-Link recovery flag to %s: %i", mtd, result);
+			exit(1);
+		}
+	}
+
 	return 0;
 }
 
@@ -588,6 +775,10 @@ static void usage(void)
 	"        verify <imagefile>|-    verify <imagefile> (use - for stdin) to device\n"
 	"        write <imagefile>|-     write <imagefile> (use - for stdin) to device\n"
 	"        jffs2write <file>       append <file> to the jffs2 partition on the device\n");
+	if (mtd_resetbc) {
+	    fprintf(stderr,
+	"        resetbc <device>        reset the uboot boot counter\n");
+	}
 	if (mtd_fixtrx) {
 	    fprintf(stderr,
 	"        fixtrx                  fix the checksum in a trx header on first boot\n");
@@ -596,7 +787,15 @@ static void usage(void)
 	    fprintf(stderr,
 	"        fixseama                fix the checksum in a seama header on first boot\n");
 	}
-    fprintf(stderr,
+	if (mtd_fixwrg) {
+	    fprintf(stderr,
+	"        fixwrg                  fix the checksum in a wrg header on first boot\n");
+	}
+	if (mtd_fixwrgg) {
+	    fprintf(stderr,
+	"        fixwrgg                 fix the checksum in a wrgg header on first boot\n");
+	}
+	fprintf(stderr,
 	"Following options are available:\n"
 	"        -q                      quiet mode (once: no [w] on writing,\n"
 	"                                           twice: no status messages)\n"
@@ -607,11 +806,20 @@ static void usage(void)
 	"        -d <name>               directory for jffs2write, defaults to \"tmp\"\n"
 	"        -j <name>               integrate <file> into jffs2 data when writing an image\n"
 	"        -s <number>             skip the first n bytes when appending data to the jffs2 partiton, defaults to \"0\"\n"
-	"        -p                      write beginning at partition offset\n");
+	"        -p <number>             write beginning at partition offset\n"
+	"        -l <length>             the length of data that we want to dump\n");
 	if (mtd_fixtrx) {
 	    fprintf(stderr,
 	"        -o offset               offset of the image header in the partition(for fixtrx)\n");
-    }
+	}
+	if (mtd_fixtrx || mtd_fixseama || mtd_fixwrg || mtd_fixwrgg) {
+		fprintf(stderr,
+	"        -c datasize             amount of data to be used for checksum calculation (for fixtrx / fixseama / fixwrg / fixwrgg)\n");
+	}
+	if (mtd_tpl_recoverflag_write) {
+		fprintf(stderr,
+	"        -t <partition>          write TP-Link recovery-flag to <partition> (for write)\n");
+	}
 	fprintf(stderr,
 #ifdef FIS_SUPPORT
 	"        -F <part>[:<size>[:<entrypoint>]][,<part>...]\n"
@@ -631,7 +839,7 @@ static void do_reboot(void)
 	fflush(stderr);
 
 	/* try regular reboot method first */
-	system("/sbin/reboot -u");
+	system("/sbin/reboot");
 	sleep(2);
 
 	/* if we're still alive at this point, force the kernel to reboot */
@@ -643,7 +851,7 @@ int main (int argc, char **argv)
 	int ch, i, boot, imagefd = 0, force, unlocked;
 	char *erase[MAX_ARGS], *device = NULL;
 	char *fis_layout = NULL;
-	size_t offset = 0, part_offset = 0;
+	size_t offset = 0, data_size = 0, part_offset = 0, dump_len = 0;
 	enum {
 		CMD_ERASE,
 		CMD_WRITE,
@@ -651,7 +859,11 @@ int main (int argc, char **argv)
 		CMD_JFFS2WRITE,
 		CMD_FIXTRX,
 		CMD_FIXSEAMA,
+		CMD_FIXWRG,
+		CMD_FIXWRGG,
 		CMD_VERIFY,
+		CMD_DUMP,
+		CMD_RESETBC,
 	} cmd = -1;
 
 	erase[0] = NULL;
@@ -665,7 +877,7 @@ int main (int argc, char **argv)
 #ifdef FIS_SUPPORT
 			"F:"
 #endif
-			"frnqe:d:s:j:p:o:")) != -1)
+			"frnqe:d:s:j:p:o:c:t:l:")) != -1)
 		switch (ch) {
 			case 'f':
 				force = 1;
@@ -709,17 +921,32 @@ int main (int argc, char **argv)
 					usage();
 				}
 				break;
-			case 'o':
-				if (!mtd_fixtrx) {
-					fprintf(stderr, "-o: is not available on this platform\n");
+			case 'l':
+				errno = 0;
+				dump_len = strtoul(optarg, 0, 0);
+				if (errno) {
+					fprintf(stderr, "-l: illegal numeric string\n");
 					usage();
 				}
+				break;
+			case 'o':
 				errno = 0;
 				offset = strtoul(optarg, 0, 0);
 				if (errno) {
 					fprintf(stderr, "-o: illegal numeric string\n");
 					usage();
 				}
+				break;
+			case 'c':
+				errno = 0;
+				data_size = strtoul(optarg, 0, 0);
+				if (errno) {
+					fprintf(stderr, "-c: illegal numeric string\n");
+					usage();
+				}
+				break;
+			case 't':
+				tpl_uboot_args_part = optarg;
 				break;
 #ifdef FIS_SUPPORT
 			case 'F':
@@ -742,16 +969,28 @@ int main (int argc, char **argv)
 	} else if ((strcmp(argv[0], "erase") == 0) && (argc == 2)) {
 		cmd = CMD_ERASE;
 		device = argv[1];
+	} else if (((strcmp(argv[0], "resetbc") == 0) && (argc == 2)) && mtd_resetbc) {
+		cmd = CMD_RESETBC;
+		device = argv[1];
 	} else if (((strcmp(argv[0], "fixtrx") == 0) && (argc == 2)) && mtd_fixtrx) {
 		cmd = CMD_FIXTRX;
 		device = argv[1];
 	} else if (((strcmp(argv[0], "fixseama") == 0) && (argc == 2)) && mtd_fixseama) {
 		cmd = CMD_FIXSEAMA;
 		device = argv[1];
+	} else if (((strcmp(argv[0], "fixwrg") == 0) && (argc == 2)) && mtd_fixwrg) {
+		cmd = CMD_FIXWRG;
+		device = argv[1];
+	} else if (((strcmp(argv[0], "fixwrgg") == 0) && (argc == 2)) && mtd_fixwrgg) {
+		cmd = CMD_FIXWRGG;
+		device = argv[1];
 	} else if ((strcmp(argv[0], "verify") == 0) && (argc == 3)) {
 		cmd = CMD_VERIFY;
 		imagefile = argv[1];
 		device = argv[2];
+	} else if ((strcmp(argv[0], "dump") == 0) && (argc == 2)) {
+		cmd = CMD_DUMP;
+		device = argv[1];
 	} else if ((strcmp(argv[0], "write") == 0) && (argc == 3)) {
 		cmd = CMD_WRITE;
 		device = argv[2];
@@ -809,6 +1048,9 @@ int main (int argc, char **argv)
 		case CMD_VERIFY:
 			mtd_verify(device, imagefile);
 			break;
+		case CMD_DUMP:
+			mtd_dump(device, offset, dump_len);
+			break;
 		case CMD_ERASE:
 			if (!unlocked)
 				mtd_unlock(device);
@@ -825,12 +1067,26 @@ int main (int argc, char **argv)
 			mtd_write_jffs2(device, imagefile, jffs2dir);
 			break;
 		case CMD_FIXTRX:
-		    if (mtd_fixtrx) {
-			    mtd_fixtrx(device, offset);
-            }
+			if (mtd_fixtrx) {
+				mtd_fixtrx(device, offset, data_size);
+			}
+			break;
+		case CMD_RESETBC:
+			if (mtd_resetbc) {
+				mtd_resetbc(device);
+			}
+			break;
 		case CMD_FIXSEAMA:
 			if (mtd_fixseama)
-			    mtd_fixseama(device, 0);
+				mtd_fixseama(device, 0, data_size);
+			break;
+		case CMD_FIXWRG:
+			if (mtd_fixwrg)
+				mtd_fixwrg(device, 0, data_size);
+			break;
+		case CMD_FIXWRGG:
+			if (mtd_fixwrgg)
+				mtd_fixwrgg(device, 0, data_size);
 			break;
 	}
 

@@ -1,0 +1,98 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+
+START=65
+STOP=65
+
+USE_PROCD=1
+PROG=/sbin/ntp
+HOTPLUG_HELPER=/usr/sbin/ntpd.hotplug-helper
+
+config=/var/run/ntpd.conf
+
+trunc() {
+	echo -n "" > $config
+}
+
+emit() {
+	echo -e "$@" >> $config
+}
+
+validate_ntp_section() {
+	uci_validate_section ntpd timeserver "${1}" \
+		'server:list(host)' 'enabled:bool:1' 'enable_server:bool:0' \
+		'file_flag:bool:0' 'config_file:string'
+}
+
+start_service() {
+	local server enabled enable_server file_flag config_file intf
+
+	validate_ntp_section ntp || {
+		echo "validation failed"
+		return 1
+	}
+
+	[ "$enabled" = 0 ] && return
+
+	if [ "$file_flag" != 1 ]; then
+		trunc
+		emit "driftfile /var/lib/ntp/ntp.drift\n"
+
+		if [ "$enable_server" != 0 ]; then
+		    emit "restrict default limited kod nomodify notrap nopeer"
+		    emit "restrict -6 default limited kod nomodify notrap nopeer"
+		else
+		    emit "restrict -4 default noserve"
+		    emit "restrict -6 default noserve"
+		fi
+		emit "restrict source noquery"
+
+		emit "\n# No limits for local monitoring"
+		emit "restrict 127.0.0.1"
+		emit "restrict -6 ::1\n"
+
+		for i in $server
+		do
+		    emit "server $i iburst"
+		done
+	fi
+
+	if [ -d "/etc/ntpd.d" ]; then
+		local entry
+		for entry in "/etc/ntpd.d"/*.conf; do
+			emit "includefile ${entry}\n"
+		done
+	fi
+
+	if [ -d "/tmp/ntpd.d" ]; then
+		local entry
+		for entry in "/tmp/ntpd.d"/*.conf; do
+			emit "includefile ${entry}\n"
+		done
+	fi
+
+	mkdir -p /var/lib/ntp
+	chown -R ntp:ntp /var/lib/ntp
+
+	procd_open_instance
+	if [ "$file_flag" != 1 ]; then
+		procd_set_param command $PROG -g -u ntp:ntp -p /var/run/ntpd.pid -n -c $config
+	else
+		procd_set_param command $PROG -g -u ntp:ntp -p /var/run/ntpd.pid -n -c $config_file
+	fi
+	procd_set_param respawn
+	procd_close_instance
+
+	procd_open_instance
+	procd_set_param command $HOTPLUG_HELPER
+	procd_close_instance
+}
+
+service_triggers() {
+	procd_add_reload_trigger "ntpd"
+}
+
+reload_service() {
+	stop
+	start
+}

@@ -1,0 +1,10 @@
+#!/bin/sh
+# Copyright (C) 2006-2014 OpenWrt.org
+
+#ntpclient won't start without active interface, so doing reload here.
+
+case "${ACTION:-ifup}" in
+	ifup)
+		/etc/init.d/ntpclient restart
+	;;
+esac

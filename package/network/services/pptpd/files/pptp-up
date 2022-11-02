@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# Script which handles the routing issues as necessary for pptpd
+#
+# When the ppp link comes up, this script is called with the following
+# parameters
+#       $1      the interface name used by pppd (e.g. ppp3)
+#       $2      the tty device name
+#       $3      the tty device speed
+#       $4      the local IP address for the interface
+#       $5      the remote IP address
+#       $6      the parameter specified by the 'ipparam' option to pppd
+#
+
+cl_to_cl=$(uci -q get "network.${IFNAME#*-}.client_to_client")
+
+[ "$cl_to_cl" = "1" ] && {
+	ip route add "${IPLOCAL%.*}.0/24" dev "$IFNAME"
+}
+
+exit 0

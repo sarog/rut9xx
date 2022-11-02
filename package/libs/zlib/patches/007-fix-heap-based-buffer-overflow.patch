@@ -1,0 +1,28 @@
+Date: Mon, 8 Aug 2022 18:31:59 -0700
+From: Alan Coopersmith <alan.coopersmith@...cle.com>
+To: oss-security@...ts.openwall.com
+Subject: Re: zlib buffer overflow
+
+zlib through 1.2.12 has a heap-based buffer over-read or buffer overflow
+in inflate in inflate.c via a large gzip header extra field.
+
+NOTE: only applications that call inflateGetHeader are affected. Some
+common applications bundle the affected zlib source code but may be unable
+to call inflateGetHeader (e.g., see the nodejs/node reference).
+
+Index: zlib-1.2.11/inflate.c
+===================================================================
+--- zlib-1.2.11.orig/inflate.c
++++ zlib-1.2.11/inflate.c
+@@ -759,8 +759,9 @@ int flush;
+                 if (copy > have) copy = have;
+                 if (copy) {
+                     if (state->head != Z_NULL &&
+-                        state->head->extra != Z_NULL) {
+-                        len = state->head->extra_len - state->length;
++                        state->head->extra != Z_NULL &&
++                        (len = state->head->extra_len - state->length) <
++                        state->head->extra_max) {
+                         zmemcpy(state->head->extra + len, next,
+                                 len + copy > state->head->extra_max ?
+                                 state->head->extra_max - len : copy);

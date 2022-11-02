@@ -1,0 +1,129 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2012 OpenWrt.org
+
+START=99
+STOP=99
+USE_PROCD=1
+PROG="/usr/sbin/vrrpd"
+ENABLED="0"
+
+append_list_item() {
+	local val="$1"
+	local var="$2"
+	append "$var" "$val"
+}
+
+append_arg() {
+	local cfg="$1"
+	local var="$2"
+	local opt="$3"
+	local def="$4"
+	local val
+
+	config_get val "$cfg" "$var"
+	[ -n "$val" -o -n "$def" ] && procd_append_param command "$opt" "${val:-$def}"
+}
+
+append_value() {
+	procd_append_param command $1
+}
+
+section_enabled() {
+	local enabled
+	[ "$1" == "ping" ] && return 1
+	config_get_bool enabled "$1" 'enabled' 0
+	[ $enabled -gt 0 ]
+}
+
+test_section() {
+	section_enabled "$1" && ENABLED="1"
+}
+
+start_instance() {
+	local section="$1"
+	local id
+	local iface
+	local dev
+	local args
+	local virtual_mac
+
+	section_enabled "$section" || return 1
+
+	[ -e "/tmp/vrrp_${section}.status" ] && return 1
+
+	config_get iface "$section" 'interface' ''
+	[ -n "$iface" ] || return 1
+	config_get virtual_mac "$section" 'virtual_mac' 0
+	network_flush_cache
+	network_get_device dev "$iface"
+	if [ -n "$dev" ] ; then
+		procd_open_instance "$1"
+
+		procd_set_param command $PROG -i $dev
+		append_arg "$section" 'virtual_id' '-v' '1'
+		append_arg "$section" 'delay' '-d'
+		append_arg "$section" 'priority' '-p'
+		[ "$virtual_mac" = 0 ] && procd_append_param command -n
+		procd_append_param command "-y" "$section"
+
+		config_list_foreach "$section" 'virtual_ip' append_value
+
+		procd_close_instance "$1"
+	else
+		logger -t "vrrpd.init" "No '$iface' interface found"
+	fi
+
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger "vrrpd"
+}
+
+start_service() {
+	. /lib/functions/network.sh
+	config_load 'vrrpd'
+
+	if [ -z "$1" ]; then
+		config_foreach start_instance 'vrrpd'
+	else
+		start_instance "$1"                                     
+	fi
+}
+
+stop_start() {
+	local vrrp_enabled=`uci get -q vrrpd.vid1.enabled`
+	
+	[ $vrrp_enabled -eq 1 ] && {
+		#At least one section is enabled. Sleep before starting
+		sleep 5
+		start
+	}
+}
+
+stop_service() {
+	. /lib/functions/network.sh
+	config_load 'vrrpd'
+
+	if [ -z "$1" ]; then
+		config_foreach stop_instance 'vrrpd'
+	else
+		stop_instance "$1"
+	fi
+}
+
+
+stop_instance() {
+	local section="$1"
+	local id
+	local iface
+	local dev
+
+	section_enabled "$section" || return 1
+
+	config_get id "$section" 'virtual_id' '1'
+	config_get iface "$section" 'interface' ''
+	network_get_device dev "$iface"
+
+	procd_send_signal vrrpd "$1" SIGTERM
+}

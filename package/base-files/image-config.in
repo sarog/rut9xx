@@ -7,7 +7,7 @@
 
 menuconfig PREINITOPT
 	bool "Preinit configuration options" if IMAGEOPT
-	default n
+	default y
 	help
 		These options are used to control the environment used to initialize
 		the system before running init (which typically mean /sbin/init which
@@ -18,19 +18,30 @@ config TARGET_PREINIT_SUPPRESS_STDERR
 	default y
 	help
 		Sends stderr to null during preinit.  This is the default behaviour
-		in previous versions of OpenWRT.  This also prevents init process
+		in previous versions of OpenWrt.  This also prevents init process
 		itself from displaying stderr, however processes launched by init
 		in multiuser through inittab will use the current terminal (e.g.
 		the ash shell launched by inittab will display stderr).  That's
-		the same behaviour as seen in previous version of OpenWRT.
+		the same behaviour as seen in previous version of OpenWrt.
+
+config TARGET_PREINIT_DISABLE_FAILSAFE
+	bool
+	prompt "Disable failsafe" if PREINITOPT
+	default y
+	help
+		Disable failsafe mode.  While it is very handy while
+		experimenting or developing it really ought to be
+		disabled in production environments as it is a major
+		security loophole.
 
 config TARGET_PREINIT_TIMEOUT
 	int
-	prompt "Failsafe wait timeout" if PREINITOPT
+	prompt "Failsafe/Debug wait timeout" if PREINITOPT
 	default 2
 	help
-		How long to wait for failsafe mode to be entered before
-		continuing with a regular boot if failsafe not selected.
+		How long to wait for failsafe mode to be entered or for
+		a debug option to be pressed before continuing with a
+		regular boot.
 
 config TARGET_PREINIT_SHOW_NETMSG
 	bool
@@ -45,8 +56,8 @@ config TARGET_PREINIT_SHOW_NETMSG
 
 config TARGET_PREINIT_SUPPRESS_FAILSAFE_NETMSG
 	bool
-	prompt "Suppress network message indicating failsafe" if PREINITOPT
-	default n
+	prompt "Suppress network message indicating failsafe" if ( PREINITOPT && !TARGET_PREINIT_SHOW_NETMSG && !TARGET_PREINIT_DISABLE_FAILSAFE )
+	default y
 	help
 		If "Show all preinit network messages" above is not set, then
 		setting this option suppresses the only message that would be
@@ -99,7 +110,7 @@ menuconfig INITOPT
 	config TARGET_INIT_PATH
 		string
 		prompt "PATH for regular boot" if INITOPT
-		default "/bin:/sbin:/usr/bin:/usr/sbin"
+		default "/usr/sbin:/usr/bin:/sbin:/bin"
 		help
 			Default PATH used during normal operation
 
@@ -128,7 +139,7 @@ menuconfig INITOPT
 		help
 			Prevents showing stderr messages for init command if not already
 			suppressed during preinit.  This is the default behaviour in
-			previous versions of OpenWRT.  Removing this does nothing if
+			previous versions of OpenWrt.  Removing this does nothing if
 			stderr is suppressed during preinit (which is the default).
 
 
@@ -137,86 +148,130 @@ menuconfig VERSIONOPT
 	default n
 	help
 		These options allow to override the version information embedded in
-		the /etc/openwrt_version, /etc/openwrt_release, /etc/banner and
-		/etc/opkg.conf files. Usually there is no need to set these, but
-		they're useful for release builds or custom OpenWrt redistributions
-		that should carry custom version tags.
+		the /etc/openwrt_version, /etc/openwrt_release, /etc/banner,
+		/etc/opkg.conf, and /etc/os-release files. Usually there is no need
+		to set these, but they're useful for release builds or custom OpenWrt
+		redistributions that should carry custom version tags.
+
+if VERSIONOPT
 
 	config VERSION_DIST
 		string
-		prompt "Release distribution" if VERSIONOPT
-		default "OpenWrt" if VERSIONOPT
+		prompt "Release distribution"
+		default "OpenWrt"
 		help
 			This is the name of the release distribution.
 			If unspecified, it defaults to OpenWrt.
 
-	config VERSION_NICK
-		string
-		prompt "Release version nickname" if VERSIONOPT
-		help
-			This is the release codename embedded in the image.
-			If unspecified, it defaults to the name of source branch.
-
 	config VERSION_NUMBER
 		string
-		prompt "Release version number" if VERSIONOPT
+		prompt "Release version number"
 		help
 			This is the release version number embedded in the image.
-			If unspecified, it defaults to the svn or git-svn revision
-			of the build tree.
+			If unspecified, it defaults to SNAPSHOT for the master branch
+			or to ##.##-SNAPSHOT on release branches.
+
+	config VERSION_CODE
+		string
+		prompt "Release version code"
+		help
+			This is the release version code embedded in the image.
+			If unspecified, it defaults to a revision number describing the
+			repository version of the source, e.g. the number of commits
+			since a branch point or a short Git commit ID.
 
 	config VERSION_REPO
 		string
-		prompt "Release repository" if VERSIONOPT
+		prompt "Release repository"
+		default "https://downloads.openwrt.org/releases/21.02.0"
 		help
 			This is the repository address embedded in the image, it defaults
 			to the trunk snapshot repo; the url may contain the following placeholders:
-			 %R .. Revision number
-			 %V .. Release version or revision number, uppercase
-			 %v .. Release version or revision number, lowercase
-			 %C .. Release version or "Bleeding Edge", uppercase
-			 %c .. Release version or "bleeding_edge", lowercase
-			 %N .. Release name, uppercase
-			 %n .. Release name, lowercase
+			 %R .. Repository revision ID
+			 %V .. Configured release version number or "SNAPSHOT", uppercase
+			 %v .. Configured release version number or "snapshot", lowercase
+			 %C .. Configured release revision code or value of %R, uppercase
+			 %c .. Configured release revision code or value of %R, lowercase
 			 %D .. Distribution name or "OpenWrt", uppercase
 			 %d .. Distribution name or "openwrt", lowercase
 			 %T .. Target name
 			 %S .. Target/Subtarget name
+			 %A .. Package architecture
+			 %t .. Build taint flags, e.g. "no-all busybox"
+			 %M .. Manufacturer name or "OpenWrt"
+			 %P .. Product name or "Generic"
+			 %h .. Hardware revision or "v0"
 
-menuconfig SMIMEOPT
-	bool "Package signing options" if IMAGEOPT
-        default n
-	help
-		These options configure the signing key and certificate to
-		be used for signing and verifying packages.
-
-	config OPKGSMIME_CERT
+	config VERSION_HOME_URL
 		string
-		prompt "Path to certificate (PEM certificate format)" if SMIMEOPT
+		prompt "Release Homepage"
 		help
-		  Path to the certificate to use for signature verification
+			This is the release version homepage
 
-	config OPKGSMIME_KEY
+	config VERSION_MANUFACTURER
 		string
-		prompt "Path to signing key (PEM private key format)" if SMIMEOPT
+		prompt "Manufacturer name"
 		help
-		  Path to the key to use for signing packages
+			This is the manufacturer name embedded in /etc/device_info
+			Useful for OEMs building OpenWrt based firmware
 
-	config OPKGSMIME_PASSPHRASE
+	config VERSION_MANUFACTURER_URL
+		string
+		prompt "Manufacturer URL"
+		help
+			This is an URL to the manufacturer's website embedded in /etc/device_info
+			Useful for OEMs building OpenWrt based firmware
+
+	config VERSION_BUG_URL
+		string
+		prompt "Bug reporting URL"
+		help
+			This is an URL to provide users for providing bug reports
+
+	config VERSION_SUPPORT_URL
+		string
+		prompt "Support URL"
+		help
+			This an URL to provide users seeking support
+
+	config VERSION_PRODUCT
+		string
+		prompt "Product name"
+		help
+			This is the product name embedded in /etc/device_info
+			Useful for OEMs building OpenWrt based firmware
+
+	config VERSION_HWREV
+		string
+		prompt "Hardware revision"
+		help
+			This is the hardware revision string embedded in /etc/device_info
+			Useful for OEMs building OpenWrt based firmware
+
+	config VERSION_FILENAMES
 		bool
+		prompt "Version number in filenames"
 		default y
-		prompt "Wait for a passphrase when signing packages?" if SMIMEOPT
 		help
-		  If this value is set, then the build will pause and request a passphrase
-                  from the command line when signing packages. This SHOULD NOT be used with
-                  automatic builds. If this value is not set, a file can be specified from
-                  which the passphrase will be read.
+			Enable this to include the version number in firmware image, SDK-
+			and Image Builder archive file names
 
-	config OPKGSMIME_PASSFILE
-		string
-		prompt "Path to a file containing the passphrase" if SMIMEOPT
-                depends on !OPKGSMIME_PASSPHRASE
+	config VERSION_CODE_FILENAMES
+		bool
+		prompt "Revision code in filenames"
+		default n
 		help
-		  Path to a file containing the passphrase for the signing key.
-                  If the signing key is not encrypted and does not require a passphrase,
-                  this option may be left blank.
+			Enable this to include the revision identifier or the configured
+			version code into the firmware image, SDK- and Image Builder archive
+			file names
+endif
+
+
+menuconfig PER_FEED_REPO
+	bool "Separate feed repositories" if IMAGEOPT
+	default y
+	help
+		If set, a separate repository is generated within bin/*/packages/
+		for the core packages and each enabled feed.
+
+source "tmp/.config-feeds.in"

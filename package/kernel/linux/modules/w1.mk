@@ -14,6 +14,7 @@ define KernelPackage/w1
   TITLE:=Dallas's 1-wire support
   KCONFIG:=CONFIG_W1
   FILES:=$(LINUX_DIR)/drivers/w1/wire.ko
+  DEPENDS:=+kmod-hwmon-core
 endef
 
 define KernelPackage/w1/description
@@ -82,7 +83,7 @@ $(eval $(call KernelPackage,w1-master-ds2490))
 
 define KernelPackage/w1-master-mxc
   TITLE:=Freescale MXC 1-wire busmaster
-  DEPENDS:=@(TARGET_mxs||TARGET_imx6)
+  DEPENDS:=@TARGET_imx6
   KCONFIG:=CONFIG_W1_MASTER_MXC
   FILES:=$(W1_MASTERS_DIR)/mxc_w1.ko
   AUTOLOAD:=$(call AutoProbe,mxc_w1)
@@ -174,3 +175,19 @@ define KernelPackage/w1-slave-ds2760/description
 endef
 
 $(eval $(call KernelPackage,w1-slave-ds2760))
+
+
+define KernelPackage/w1-slave-ds2413
+  TITLE:=DS2413 2 Ch. Addressable Switch
+  KCONFIG:= \
+	CONFIG_W1_SLAVE_DS2413
+  FILES:=$(W1_SLAVES_DIR)/w1_ds2413.ko
+  AUTOLOAD:=$(call AutoProbe,w1_ds2413)
+  $(call AddDepends/w1)
+endef
+
+define KernelPackage/w1-slave-ds2413/description
+ Kernel module for 1-wire DS2413 Dual Channel Addressable Switch support
+endef
+
+$(eval $(call KernelPackage,w1-slave-ds2413))

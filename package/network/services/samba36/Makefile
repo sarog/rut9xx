@@ -9,16 +9,12 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=samba
 PKG_VERSION:=3.6.25
-#PKG_RELEASE:=9
+PKG_RELEASE:=14
 
 PKG_SOURCE_URL:=https://download.samba.org/pub/samba \
 		https://download.samba.org/pub/samba/stable
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=76da2fa64edd94a0188531e7ecb27c4e
-PKG_ROUTER:=RUT955
-PKG_FIRMWARE:=06.05.0
-PKG_TLT_NAME:=USB Tools
-PKG_VERSION_PM:=3.6.27
+PKG_HASH:=8f2c8a7f2bd89b0dfd228ed917815852f7c625b2bc0936304ac3ed63aaf83751
 
 PKG_LICENSE:=GPL-3.0
 PKG_LICENSE_FILES:=COPYING
@@ -41,10 +37,27 @@ define Package/samba/Default
   MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 endef
 
-define Package/tlt_custom_pkg_samba36-server
+define Package/samba36-server
   $(call Package/samba/Default)
   TITLE+= server
-  DEPENDS:=+USE_GLIBC:librt $(ICONV_DEPENDS)
+  DEPENDS:=+USE_GLIBC:librt $(ICONV_DEPENDS) +vuci-app-samba
+
+  ifeq (m, $(CONFIG_PACKAGE_samba36-server))
+    PKG_TLT_NAME:=Network shares
+    ifeq (y, $(TLT_PLATFORM_RUT9))
+      PKG_ROUTER:=RUT955
+    else ifeq (y, $(TLT_PLATFORM_RUT9M))
+      PKG_ROUTER:=RUT956
+    else
+      PKG_ROUTER:=$(TLT_PLATFORM_NAME)
+    endif
+  endif
+endef
+
+define Package/samba36-hotplug
+  $(call Package/samba/Default)
+  TITLE+= hotplug script for auto sharing
+  DEPENDS:=+blockd
 endef
 
 define Package/samba36-client
@@ -59,14 +72,14 @@ define Package/samba36-net
   DEPENDS:=+libreadline +libncurses
 endef
 
-define Package/tlt_custom_pkg_samba36-server/config
+define Package/samba36-server/config
 	config PACKAGE_SAMBA_MAX_DEBUG_LEVEL
 		int "Maximum level of compiled-in debug messages"
-		depends on PACKAGE_tlt_custom_pkg_samba36-server || PACKAGE_samba36-client
+		depends on PACKAGE_samba36-server || PACKAGE_samba36-client
 		default -1
 endef
 
-define Package/tlt_custom_pkg_samba36-server/description
+define Package/samba36-server/description
  The Samba software suite is a collection of programs that implements the
  SMB protocol for UNIX systems, allowing you to serve files and printers to
  Windows, NT, OS/2 and DOS clients. This protocol is sometimes also referred
@@ -83,6 +96,7 @@ CONFIGURE_VARS += \
 	libreplace_cv_HAVE_C99_VSNPRINTF=yes \
 	libreplace_cv_HAVE_GETADDRINFO=yes \
 	libreplace_cv_HAVE_IFACE_IFCONF=yes \
+	$(if $(CONFIG_IPV6),,libreplace_cv_HAVE_IPV6=no libreplace_cv_HAVE_IPV6_V6ONLY=no) \
 	LINUX_LFS_SUPPORT=yes \
 	samba_cv_CC_NEGATIVE_ENUM_VALUES=yes \
 	samba_cv_HAVE_GETTIMEOFDAY_TZ=yes \
@@ -106,6 +120,8 @@ CONFIGURE_ARGS += \
 	--disable-avahi \
 	--disable-cups \
 	--disable-external-libtalloc \
+	--disable-external-libtdb \
+	--disable-external-libtevent \
 	--disable-pie \
 	--disable-relro \
 	--disable-static \
@@ -140,34 +156,18 @@ CONFIGURE_ARGS += \
 
 MAKE_FLAGS += DYNEXP= PICFLAG= MODULES=
 
-define Package/tlt_custom_pkg_samba36-server/conffiles
+define Package/samba36-server/conffiles
 /etc/config/samba
 /etc/samba/smb.conf.template
 /etc/samba/smbpasswd
 endef
 
-define Package/tlt_custom_pkg_samba36-server/postinst
-#!/bin/sh
-uci -q batch <<-EOF >/dev/null
-delete ucitrack.@samba[-1]
-add ucitrack samba
-set ucitrack.@samba[-1].init='samba'
-commit ucitrack
-endef
-
-define Package/tlt_custom_pkg_samba36-server/postrm
-#!/bin/sh
-uci -q batch <<-EOF >/dev/null
-delete ucitrack.@samba[-1]
-commit ucitrack
-endef
-
-define Package/tlt_custom_pkg_samba36-server/install
+define Package/samba36-server/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/samba.config $(1)/etc/config/samba
 	$(INSTALL_DIR) $(1)/etc/samba
-	$(INSTALL_DATA) ./files/smbpasswd $(1)/etc/samba
-	$(INSTALL_DATA) ./files/smb.conf.template $(1)/etc/samba
+	$(INSTALL_CONF) ./files/smb.conf.template $(1)/etc/samba
+	$(INSTALL_CONF) ./files/smbpasswd $(1)/etc/samba
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/codepages/lowcase.dat $(1)/etc/samba
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/codepages/upcase.dat $(1)/etc/samba
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/codepages/valid.dat $(1)/etc/samba
@@ -178,21 +178,11 @@ define Package/tlt_custom_pkg_samba36-server/install
 	$(LN) samba_multicall $(1)/usr/sbin/smbd
 	$(LN) samba_multicall $(1)/usr/sbin/nmbd
 	$(LN) samba_multicall $(1)/usr/sbin/smbpasswd
+endef
 
-
-	#for package manager
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/cbi
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/samba
-	$(INSTALL_BIN) $(TOPDIR)/custom_feeds/teltonika_luci/applications/luci-usb-tools/luasrc/controller/usb-tools.lua $(1)/usr/lib/lua/luci/controller/usb-tools.lua
-	$(INSTALL_BIN) $(TOPDIR)/custom_feeds/teltonika_luci/applications/luci-samba/luasrc/controller/samba.lua $(1)/usr/lib/lua/luci/controller/samba.lua
-	$(INSTALL_BIN) $(TOPDIR)/custom_feeds/teltonika_luci/applications/luci-samba/luasrc/model/cbi/samba.lua $(1)/usr/lib/lua/luci/model/cbi/samba.lua
-	$(INSTALL_BIN) $(TOPDIR)/custom_feeds/teltonika_luci/applications/luci-samba/luasrc/model/cbi/filesystem.lua $(1)/usr/lib/lua/luci/model/cbi/filesystem.lua
-	$(INSTALL_BIN) $(TOPDIR)/custom_feeds/teltonika_luci/applications/luci-samba/luasrc/model/cbi/samba_user.lua $(1)/usr/lib/lua/luci/model/cbi/samba_user.lua
-	$(INSTALL_BIN) $(TOPDIR)/custom_feeds/teltonika_luci/applications/luci-samba/luasrc/model/cbi/usb_serial.lua $(1)/usr/lib/lua/luci/model/cbi/usb_serial.lua
-	$(INSTALL_BIN) $(TOPDIR)/custom_feeds/teltonika_luci/applications/luci-samba/luasrc/view/samba/add_interface_rule.htm $(1)/usr/lib/lua/luci/view/samba/add_interface_rule.htm
-	$(INSTALL_BIN) $(TOPDIR)/custom_feeds/teltonika_luci/applications/luci-samba/luasrc/view/samba/cbi_addusers.htm $(1)/usr/lib/lua/luci/view/samba/cbi_addusers.htm
-	$(INSTALL_BIN) $(TOPDIR)/custom_feeds/teltonika_luci/applications/luci-samba/luasrc/view/samba/tblsection.htm $(1)/usr/lib/lua/luci/view/samba/tblsection.htm
+define Package/samba36-hotplug/install
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/mount
+	$(INSTALL_CONF) ./files/samba.hotplug $(1)/etc/hotplug.d/mount/60-samba
 endef
 
 define Package/samba36-client/install
@@ -206,7 +196,21 @@ define Package/samba36-net/install
 	$(INSTALL_BIN) $(PKG_BUILD_BIN)/net $(1)/usr/sbin
 endef
 
-$(eval $(call BuildPackage,samba36-client))
-$(eval $(call BuildPackage,tlt_custom_pkg_samba36-server))
-$(eval $(call BuildPackage,samba36-net))
+define Package/samba36-server/prerm
+	#!/bin/sh
+	. /lib/functions.sh
 
+	clean_users() {
+		config_get user "$$1" username
+		/usr/sbin/deluser "$$user"
+		/usr/sbin/smbpasswd -x "$$user"
+	}
+
+	config_load 'samba'
+	config_foreach clean_users "user"
+endef
+
+$(eval $(call BuildPackage,samba36-client))
+$(eval $(call BuildPackage,samba36-server))
+$(eval $(call BuildPackage,samba36-hotplug))
+$(eval $(call BuildPackage,samba36-net))

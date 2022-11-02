@@ -1,0 +1,24 @@
+--- a/src/chilli.c
++++ b/src/chilli.c
+@@ -18,6 +18,7 @@
+  *
+  */
+ 
++#include <sys/sysinfo.h>
+ #include "chilli.h"
+ #include "bstrlib.h"
+ #ifdef ENABLE_MODULES
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -25,8 +25,9 @@ chilli.c tun.c ippool.c radius.c md5.c r
+ iphash.c lookup.c system.h util.c options.c statusfile.c conn.c sig.c \
+ garden.c dns.c session.c pkt.c chksum.c net.c safe.c sqlite.c users.c
+ 
+-AM_CFLAGS = -D_GNU_SOURCE -Wall -Werror -fno-builtin -fno-strict-aliasing \
+-  -fomit-frame-pointer -funroll-loops -pipe -I$(top_builddir)/bstring \
++AM_CFLAGS = -D_GNU_SOURCE -Wall -Werror -Wno-format-truncation \
++ -fno-builtin -fno-strict-aliasing -fomit-frame-pointer \
++ -funroll-loops -pipe -I$(top_builddir)/bstring \
+  -DDEFCHILLICONF='"$(sysconfdir)/chilli.conf"'\
+  -DDEFPIDFILE='"$(localstatedir)/run/chilli.pid"'\
+  -DDEFSTATEDIR='"$(localstatedir)/run"'\

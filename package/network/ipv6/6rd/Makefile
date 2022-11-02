@@ -8,17 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=6rd
-PKG_VERSION:=7
-PKG_RELEASE:=1
+PKG_RELEASE:=10
+PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/6rd
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-ipv6 +kmod-sit
+  DEPENDS:=@IPV6 +kmod-sit
   TITLE:=6rd configuration support
-  MAINTAINER:=Stéphan Kochen <stephan@kochen.nl>
+  MAINTAINER:=Steven Barth <cyrus@openwrt.org>
   PKGARCH:=all
 endef
 
@@ -26,11 +26,6 @@ define Package/6rd/description
 Provides support for 6rd tunnels in /etc/config/network.
 Refer to http://wiki.openwrt.org/doc/uci/network for
 configuration details.
-endef
-
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
 define Build/Configure

@@ -1,0 +1,27 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2016 Teltonika
+
+START=99
+STOP=99
+
+FUNC_NAME="/usr/bin/coStreamApp"
+USE_PROCD=1
+
+start_service() {
+	ena=`uci -q get cot.cumulocity.enabled`
+	if [ "$ena" -eq "1" ]; then
+		procd_open_instance $FUNC_NAME
+		procd_set_param command "$FUNC_NAME"
+		procd_close_instance
+	fi
+}
+
+service_triggers() {
+	procd_add_reload_trigger "cot"
+}
+
+reload_service() {
+	stop
+	start
+}
+

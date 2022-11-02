@@ -1,0 +1,16 @@
+Index: libsera-1.2.2/include/sragent.h
+===================================================================
+--- libsera-1.2.2.orig/include/sragent.h
++++ libsera-1.2.2/include/sragent.h
+@@ -145,6 +145,10 @@
+     {
+         return id;
+     }
++    const string &ID1() const
++    {
++        return id;
++    }
+     /**
+      *  \brief Perform the registration process.
+      *  \param path the path to store received credentials.
+

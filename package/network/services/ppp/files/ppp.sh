@@ -4,101 +4,183 @@
 
 [ -n "$INCLUDE_ONLY" ] || {
 	. /lib/functions.sh
+	. /lib/functions/network.sh
 	. ../netifd-proto.sh
 	init_proto "$@"
 }
 
+ppp_select_ipaddr()
+{
+	local subnets=$1
+	local res
+	local res_mask
+
+	for subnet in $subnets; do
+		local addr="${subnet%%/*}"
+		local mask="${subnet#*/}"
+
+		if [ -n "$res_mask" -a "$mask" != 32 ]; then
+			[ "$mask" -gt "$res_mask" ] || [ "$res_mask" = 32 ] && {
+				res="$addr"
+				res_mask="$mask"
+			}
+		elif [ -z "$res_mask" ]; then
+			res="$addr"
+			res_mask="$mask"
+		fi
+	done
+
+	echo "$res"
+}
+
+ppp_exitcode_tostring()
+{
+	local errorcode=$1
+	[ -n "$errorcode" ] || errorcode=5
+
+	case "$errorcode" in
+		0) echo "OK" ;;
+		1) echo "FATAL_ERROR" ;;
+		2) echo "OPTION_ERROR" ;;
+		3) echo "NOT_ROOT" ;;
+		4) echo "NO_KERNEL_SUPPORT" ;;
+		5) echo "USER_REQUEST" ;;
+		6) echo "LOCK_FAILED" ;;
+		7) echo "OPEN_FAILED" ;;
+		8) echo "CONNECT_FAILED" ;;
+		9) echo "PTYCMD_FAILED" ;;
+		10) echo "NEGOTIATION_FAILED" ;;
+		11) echo "PEER_AUTH_FAILED" ;;
+		12) echo "IDLE_TIMEOUT" ;;
+		13) echo "CONNECT_TIME" ;;
+		14) echo "CALLBACK" ;;
+		15) echo "PEER_DEAD" ;;
+		16) echo "HANGUP" ;;
+		17) echo "LOOPBACK" ;;
+		18) echo "INIT_FAILED" ;;
+		19) echo "AUTH_TOPEER_FAILED" ;;
+		20) echo "TRAFFIC_LIMIT" ;;
+		21) echo "CNID_AUTH_FAILED";;
+		*) echo "UNKNOWN_ERROR" ;;
+	esac
+}
+
 ppp_generic_init_config() {
-	proto_config_add_string "username"
-	proto_config_add_string "password"
-	proto_config_add_string "keepalive"
-	proto_config_add_int "demand"
-	proto_config_add_string "pppd_options"
-	proto_config_add_string "connect"
-	proto_config_add_string "disconnect"
-	proto_config_add_boolean "ipv6"
-	proto_config_add_boolean "authfail"
-	proto_config_add_int "mtu"
-	proto_config_add_string "auth_mode"
-	proto_config_add_string "backup"
+	proto_config_add_string username
+	proto_config_add_string password
+	proto_config_add_string keepalive
+	proto_config_add_boolean keepalive_adaptive
+	proto_config_add_int demand
+	proto_config_add_string pppd_options
+	proto_config_add_string 'connect:file'
+	proto_config_add_string 'disconnect:file'
+	[ -e /proc/sys/net/ipv6 ] && proto_config_add_string ipv6
+	proto_config_add_boolean authfail
+	proto_config_add_int mtu
+	proto_config_add_string pppname
+	proto_config_add_string unnumbered
+	proto_config_add_boolean persist
+	proto_config_add_int maxfail
+	proto_config_add_int holdoff
 }
 
 ppp_generic_setup() {
 	local config="$1"; shift
-	local dns=8.8.8.8
+	local localip
 
-	json_get_vars ipv6 demand keepalive username password pppd_options auth_mode
-	[ "$ipv6" = 1 ] || ipv6=""
-	if [ "${demand:-0}" -gt 0 ]; then
-		demand="precompiled-active-filter /etc/ppp/filter demand idle $demand nopersist maxfail 3 defaultroute"
-		local backupwan=`uci get multiwan.config.enabled`
-		if [ -z "$backupwan" -o "$backupwan" -eq 0 ]; then
-			cat /tmp/resolv.conf | grep $dns > /dev/null
-			if [ "$?" -ne 0 ]; then
-				echo "nameserver $dns" >> /tmp/resolv.conf
-			fi
-		fi
-	else
-		demand="persist maxfail 1 nodefaultroute"
-		cat /tmp/resolv.conf | grep -v $dns > /tmp/resolv.conf.tmp
-		mv /tmp/resolv.conf.tmp /tmp/resolv.conf
+	json_get_vars ip6table demand keepalive keepalive_adaptive username password pppd_options pppname unnumbered persist maxfail holdoff peerdns
+
+	[ ! -e /proc/sys/net/ipv6 ] && ipv6=0 || json_get_var ipv6 ipv6
+
+	if [ "$ipv6" = 0 ]; then
+		ipv6=""
+	elif [ -z "$ipv6" -o "$ipv6" = auto ]; then
+		ipv6=1
+		autoipv6=1
 	fi
 
+	if [ "${demand:-0}" -gt 0 ]; then
+		demand="precompiled-active-filter /etc/ppp/filter demand idle $demand"
+	else
+		demand=""
+	fi
+	if [ -n "$persist" ]; then
+		[ "${persist}" -lt 1 ] && persist="nopersist" || persist="persist"
+	fi
+	if [ -z "$maxfail" ]; then
+		[ "$persist" = "persist" ] && maxfail=0 || maxfail=1
+	fi
 	[ -n "$mtu" ] || json_get_var mtu mtu
+	[ -n "$pppname" ] || pppname="${proto:-ppp}-$config"
+	[ -n "$unnumbered" ] && {
+		local subnets
+		( proto_add_host_dependency "$config" "" "$unnumbered" )
+		network_get_subnets subnets "$unnumbered"
+		localip=$(ppp_select_ipaddr "$subnets")
+		[ -n "$localip" ] || {
+			proto_block_restart "$config"
+			return
+		}
+	}
 
-	local interval="${keepalive##*[, ]}"
-	[ "$interval" != "$keepalive" ] || interval=5
+	[ -n "$keepalive" ] || keepalive="5 1"
+
+	local lcp_failure="${keepalive%%[, ]*}"
+	local lcp_interval="${keepalive##*[, ]}"
+	local lcp_adaptive="lcp-echo-adaptive"
+	[ "${lcp_failure:-0}" -lt 1 ] && lcp_failure=""
+	[ "$lcp_interval" != "$keepalive" ] || lcp_interval=5
+	[ "${keepalive_adaptive:-1}" -lt 1 ] && lcp_adaptive=""
 	[ -n "$connect" ] || json_get_var connect connect
 	[ -n "$disconnect" ] || json_get_var disconnect disconnect
 
-	local auth_option
-	case "$auth_mode" in
-		"chap")
-			auth_option="refuse-mschap refuse-mschap-v2 refuse-eap"
-			;;
-		"pap")
-			auth_option="refuse-chap refuse-mschap refuse-mschap-v2 refuse-eap"
-			;;
-		*)
-			auth_option=""
-			;;
-	esac
-
 	proto_run_command "$config" /usr/sbin/pppd \
 		nodetach ipparam "$config" \
-		ifname "${proto:-ppp}-$config" \
-		${keepalive:+lcp-echo-interval $interval lcp-echo-failure ${keepalive%%[, ]*}} \
+		ifname "$pppname" \
+		${localip:+$localip:} \
+		${lcp_failure:+lcp-echo-interval $lcp_interval lcp-echo-failure $lcp_failure $lcp_adaptive} \
 		${ipv6:++ipv6} \
+		${autoipv6:+set AUTOIPV6=1} \
+		${ip6table:+set IP6TABLE=$ip6table} \
+		${peerdns:+set PEERDNS=$peerdns} \
+		nodefaultroute \
 		usepeerdns \
-		$demand \
-		$auth_option \
+		$demand $persist maxfail $maxfail \
+		${holdoff:+holdoff "$holdoff"} \
 		${username:+user "$username" password "$password"} \
 		${connect:+connect "$connect"} \
 		${disconnect:+disconnect "$disconnect"} \
 		ip-up-script /lib/netifd/ppp-up \
-		ipv6-up-script /lib/netifd/ppp-up \
+		${ipv6:+ipv6-up-script /lib/netifd/ppp6-up} \
 		ip-down-script /lib/netifd/ppp-down \
-		ipv6-down-script /lib/netifd/ppp-down \
+		${ipv6:+ipv6-down-script /lib/netifd/ppp-down} \
 		${mtu:+mtu $mtu mru $mtu} \
-		$pppd_options "$@"
+		"$@" $pppd_options
 }
 
 ppp_generic_teardown() {
 	local interface="$1"
+	local errorstring=$(ppp_exitcode_tostring $ERROR)
 
 	case "$ERROR" in
+		0)
+		;;
+		2)
+			proto_notify_error "$interface" "$errorstring"
+			proto_block_restart "$interface"
+		;;
 		11|19)
-			proto_notify_error "$interface" AUTH_FAILED
 			json_get_var authfail authfail
+			proto_notify_error "$interface" "$errorstring"
 			if [ "${authfail:-0}" -gt 0 ]; then
 				proto_block_restart "$interface"
 			fi
 		;;
-		2)
-			proto_notify_error "$interface" INVALID_OPTIONS
-			proto_block_restart "$interface"
+		*)
+			proto_notify_error "$interface" "$errorstring"
 		;;
 	esac
+
 	proto_kill_command "$interface"
 }
 
@@ -109,6 +191,7 @@ proto_ppp_init_config() {
 	ppp_generic_init_config
 	no_device=1
 	available=1
+	lasterror=1
 }
 
 proto_ppp_setup() {
@@ -126,6 +209,11 @@ proto_pppoe_init_config() {
 	ppp_generic_init_config
 	proto_config_add_string "ac"
 	proto_config_add_string "service"
+	proto_config_add_string "host_uniq"
+	proto_config_add_int "padi_attempts"
+	proto_config_add_int "padi_timeout"
+
+	lasterror=1
 }
 
 proto_pppoe_setup() {
@@ -141,12 +229,23 @@ proto_pppoe_setup() {
 
 	json_get_var ac ac
 	json_get_var service service
+	json_get_var host_uniq host_uniq
+	json_get_var padi_attempts padi_attempts
+	json_get_var padi_timeout padi_timeout
 
 	ppp_generic_setup "$config" \
 		plugin rp-pppoe.so \
 		${ac:+rp_pppoe_ac "$ac"} \
 		${service:+rp_pppoe_service "$service"} \
+		${host_uniq:+host-uniq "$host_uniq"} \
+		${padi_attempts:+pppoe-padi-attempts $padi_attempts} \
+		${padi_timeout:+pppoe-padi-timeout $padi_timeout} \
 		"nic-$iface"
+
+	config_load network
+        config_get tag "$config" tag
+        config_get priority "$config" priority
+        [ -n "$tag" ] && [ -n "$priority" ] && ip link set $iface type vlan egress $tag:$priority
 }
 
 proto_pppoe_teardown() {
@@ -161,6 +260,7 @@ proto_pppoa_init_config() {
 	proto_config_add_string "encaps"
 	no_device=1
 	available=1
+	lasterror=1
 }
 
 proto_pppoa_setup() {
@@ -190,27 +290,22 @@ proto_pppoa_teardown() {
 
 proto_pptp_init_config() {
 	ppp_generic_init_config
-	proto_config_add_string "enabled"
 	proto_config_add_string "server"
+	proto_config_add_string "interface"
 	available=1
 	no_device=1
+	lasterror=1
 }
 
 proto_pptp_setup() {
 	local config="$1"
-	local enabled server ip serv_addr
+	local iface="$2"
 
-	json_get_vars enabled server
-
-	# if not enabled - exit
-	if [ "$enabled" != "1" ]; then
-		ifdown "$config"
-		return 0
-	fi
-
+	local ip serv_addr server interface
+	json_get_vars interface server
 	[ -n "$server" ] && {
 		for ip in $(resolveip -t 5 "$server"); do
-			( proto_add_host_dependency "$config" "$ip" )
+			( proto_add_host_dependency "$config" "$ip" $interface )
 			serv_addr=1
 		done
 	}
@@ -223,7 +318,7 @@ proto_pptp_setup() {
 
 	local load
 	for module in slhc ppp_generic ppp_async ppp_mppe ip_gre gre pptp; do
-		grep -q "$module" /proc/modules && continue
+		grep -q "^$module " /proc/modules && continue
 		/sbin/insmod $module 2>&- >&-
 		load=1
 	done
@@ -241,24 +336,23 @@ proto_pptp_teardown() {
 
 proto_sstp_init_config() {
 	ppp_generic_init_config
-	proto_config_add_string "enabled"
 	proto_config_add_string "server"
 	proto_config_add_string "ca"
+	proto_config_add_string "username"
+	proto_config_add_string "password"
+	proto_config_add_boolean "defaultroute"
 	available=1
 	no_device=1
 }
 
 proto_sstp_setup() {
 	local config="$1"
-	local enabled server ip serv_addr ca
+	local server ip serv_addr ca username password defaultroute
 
-	json_get_vars enabled server ca
+	json_get_vars server ca username password defaultroute
 
-	# if not enabled - exit
-	if [ "$enabled" != "1" ]; then
-		ifdown "$config"
-		return 0
-	fi
+	server_and_port=$server
+	server="${server%%:*}" # split server and port
 
 	[ -n "$server" ] && {
 		for ip in $(resolveip -t 5 "$server"); do
@@ -273,6 +367,8 @@ proto_sstp_setup() {
 		proto_setup_failed "$config"
 		exit 1
 	}
+	
+	[ "$defaultroute" -eq 1 ] || defaultroute=
 
 	local load
 	for module in slhc ppp_generic ppp_async ppp_mppe ip_gre gre pptp; do
@@ -282,16 +378,14 @@ proto_sstp_setup() {
 	done
 	[ "$load" = "1" ] && sleep 1
 
-	ppp_generic_setup "$config" \
-		pty "sstpc ${ca:+--ca-cert $ca} --cert-warn --log-level 3 --nolaunchpppd $server" \
-		plugin /usr/lib/sstp-pppd-plugin.so \
-		sstp-sock /var/run/sstpc/sstpc-uds-sock \
-		file /etc/ppp/options.sstp
+	proto_run_command "$config" sstpc ${ca:+--ca-cert $ca} --cert-warn --log-level 3 \
+	--tls-ext ${username:+--user $username} ${password:+--password $password} $server_and_port ${defaultroute:+replacedefaultroute defaultroute}
 }
 
 proto_sstp_teardown() {
 	local server
     json_get_vars server
+	server="${server%%:*}" # split server and port
 
     for ip in $(resolveip -t 5 "$server"); do
 		#DELETES STATIC ROUTE TO SERVER VIA ONE GATEWAY

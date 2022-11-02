@@ -1,0 +1,11 @@
+--- a/conf/plugins/updown.conf
++++ b/conf/plugins/updown.conf
+@@ -2,7 +2,7 @@ updown {
+ 
+     # Whether the updown script should handle assigned DNS servers (if enabled
+     # they can't be handled by other plugins, like resolve).
+-    # dns_handler = no
++    dns_handler = yes
+ 
+     # Whether to load the plugin. Can also be an integer to increase the
+     # priority of this plugin.

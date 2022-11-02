@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2014 Teltonika
+
+START=97
+#STOP=19
+#count=0
+
+process_start()
+{
+	/usr/sbin/sms_utils startup &
+}
+
+boot()
+{
+	process_start
+}
+
+start()
+{
+	process_start
+}

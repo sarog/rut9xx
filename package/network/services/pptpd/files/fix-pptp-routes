@@ -1,0 +1,23 @@
+#!/bin/sh
+. /lib/functions.sh
+
+DO_COMMIT=0
+
+check_pptp_routes() {
+	local section="$1"
+	local interface intf
+
+	config_get interface "$section" "interface"
+
+	uci_get network "client_$interface" >/dev/null && {
+		uci_set network "$section" interface "client_$interface"
+		DO_COMMIT=1
+	}
+}
+
+
+config_load network
+config_foreach check_pptp_routes route
+[ "$DO_COMMIT" = "1" ] && uci_commit network
+
+exit 0

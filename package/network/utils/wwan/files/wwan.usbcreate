@@ -1,0 +1,41 @@
+#!/bin/sh
+
+[ "$ACTION" = add -a "$DEVTYPE" = usb_device -a -f /etc/config/network -a "${DEVICENAME%%:*}" = "$DEVICENAME" ] || exit 0
+
+[ -e /etc/config/network ] || exit 0
+
+. /lib/functions.sh
+. /lib/netifd/netifd-proto.sh
+. /lib/functions/modem.sh
+
+vid="$(cat "/sys$DEVPATH/idVendor")"
+pid="$(cat "/sys$DEVPATH/idProduct")"
+[ -f "/lib/network/wwan/$vid:$pid" ] || exit 0
+
+find_wwan_iface() {
+	local cfg="$1"
+	local proto modem
+
+	config_get proto "$cfg" proto
+	config_get modem "$cfg" modem
+
+	#~ Exit if logical interface exists
+	[ "$proto" = wwan -a "$modem" = "$DEVICENAME" ] && exit 0
+	[ "$proto" = wwan ] && append config_modems "$modem" "\n"
+}
+
+
+modem_number=1
+config_modems=""
+config_load network
+
+#~ Find modems in network config
+config_foreach find_wwan_iface "interface"
+
+found_modems="$(printf "$config_modems" | awk '!seen[$0]++'| wc -l)"
+modem_number=$((modem_number + found_modems))
+
+interface_name="mob${modem_number}s1a1"
+
+#~ Add new interface if not found
+configure_modem "$interface_name" "$DEVICENAME" "$modem_number"

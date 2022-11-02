@@ -1,4 +1,0 @@
-config multi_wifi 'general'
-	option enabled '0'
-	option scan_time '60'
-	option block_time '600'

@@ -1,0 +1,24 @@
+Index: vrrpd-1.15/vrrpd.c
+===================================================================
+--- vrrpd-1.15.orig/vrrpd.c
++++ vrrpd-1.15/vrrpd.c
+@@ -1398,12 +1398,14 @@ static void write_to_file(vrrp_rt *vsrv,
+ char *ipaddr_to_str(uint32_t ipaddr)
+ {
+ 	static char temp_ipaddr[32];
+-	snprintf(temp_ipaddr, 32, "%d.%d.%d.%d", 
+-			(unsigned char)(ipaddr & 0xff),
+-			(unsigned char)((ipaddr >> 8) & 0xff),
+-			(unsigned char)((ipaddr >> 16) & 0xff),
+-			(unsigned char)((ipaddr >> 24) & 0xff));
++	
++	struct sockaddr_in sa = {
++		.sin_addr={ipaddr},
++	};
++	inet_ntop(AF_INET, &(sa.sin_addr), temp_ipaddr, INET_ADDRSTRLEN);
++	
+ 	return temp_ipaddr;
++
+ }
+ 
+ /****************************************************************

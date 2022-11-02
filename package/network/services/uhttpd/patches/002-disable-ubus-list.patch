@@ -1,0 +1,61 @@
+--- a/ubus.c
++++ b/ubus.c
+@@ -634,44 +634,6 @@ static void uh_ubus_list_cb(struct ubus_
+ 		blobmsg_close_table(data->buf, o);
+ }
+ 
+-static void uh_ubus_send_list(struct client *cl, struct blob_attr *params)
+-{
+-	struct blob_attr *cur, *dup;
+-	struct list_data data = { .buf = &cl->dispatch.ubus.buf, .verbose = false, .add_object = true };
+-	void *r;
+-	int rem;
+-
+-	blob_buf_init(data.buf, 0);
+-
+-	uh_client_ref(cl);
+-
+-	if (!params || blob_id(params) != BLOBMSG_TYPE_ARRAY) {
+-		r = blobmsg_open_array(data.buf, "result");
+-		ubus_lookup(ctx, NULL, uh_ubus_list_cb, &data);
+-		blobmsg_close_array(data.buf, r);
+-	}
+-	else {
+-		r = blobmsg_open_table(data.buf, "result");
+-		dup = blob_memdup(params);
+-		if (dup)
+-		{
+-			rem = blobmsg_data_len(dup);
+-			data.verbose = true;
+-			__blob_for_each_attr(cur, blobmsg_data(dup), rem)
+-				ubus_lookup(ctx, blobmsg_data(cur), uh_ubus_list_cb, &data);
+-			free(dup);
+-		}
+-		blobmsg_close_table(data.buf, r);
+-	}
+-
+-	uh_client_unref(cl);
+-
+-	blob_buf_init(&buf, 0);
+-	uh_ubus_init_json_rpc_response(cl, &buf);
+-	blobmsg_add_blob(&buf, blob_data(data.buf->head));
+-	uh_ubus_send_response(cl, &buf);
+-}
+-
+ static bool parse_json_rpc(struct rpc_data *d, struct blob_attr *data)
+ {
+ 	struct blob_attr *tb[__RPC_MAX];
+@@ -786,12 +748,7 @@ static void uh_ubus_handle_request_objec
+ 
+ 		uh_ubus_send_request(cl, data.sid, data.data);
+ 		goto out;
+-	}
+-	else if (!strcmp(data.method, "list")) {
+-		uh_ubus_send_list(cl, data.params);
+-		goto out;
+-	}
+-	else {
++	} else {
+ 		err = ERROR_METHOD;
+ 		goto error;
+ 	}

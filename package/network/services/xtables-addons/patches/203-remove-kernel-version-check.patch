@@ -1,0 +1,13 @@
+--- a/extensions/compat_xtables.h
++++ b/extensions/compat_xtables.h
+@@ -8,10 +8,6 @@
+ 
+ #define DEBUGP Use__pr_debug__instead
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
+-#	warning Kernels below 4.15 not supported.
+-#endif
+-
+ #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
+ #	if !defined(CONFIG_NF_CONNTRACK_MARK)
+ #		warning You have CONFIG_NF_CONNTRACK enabled, but CONFIG_NF_CONNTRACK_MARK is not (please enable).

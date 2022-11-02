@@ -2,10 +2,13 @@
 
 . /lib/functions.sh
 
+min=5
+max=100
+rst_file=/tmp/rst_btn
+
 handler_reboot(){
 	echo "REBOOT" > /dev/console
-	ps | grep led_reset_count.sh | awk '{print $1}' | xargs kill
-	/usr/sbin/ledbar.sh blink green
+	/usr/bin/ledman --clean
 	sync
 	reboot -b
 	exit
@@ -13,9 +16,8 @@ handler_reboot(){
 
 handler_firstboot(){
 	echo "FACTORY RESET" > /dev/console
-	ps | grep led_reset_count.sh | awk '{print $1}' | xargs kill
-	/usr/sbin/ledbar.sh blink red
-	/sbin/jffs2mark -y && reboot -b &
+	/usr/bin/ledman --clean
+	firstboot -y && reboot -b &
 	exit
 }
 
@@ -24,43 +26,55 @@ handler_default(){
 
 	[ ! -f "$tar_file" ] && handler_firstboot
 
-	/sbin/user_defaults && echo "RESTORE TO DEFAULT CONFIG" > /dev/console
-	reboot -b
+	echo "RESTORE TO DEFAULT CONFIG" > /dev/console
+	/sbin/user_defaults
+	reboot -c
 	exit
 }
 
 handle () {
-    local action
-    local handler
-    local min
-    local max
+    local action handler min max enabled
+
+	config_get enabled "${1}" enabled 1
+	[ "$enabled" -ne 1 ] && return
 
     config_get action "${1}" action
     config_get handler "${1}" handler
     config_get min "${1}" min
     config_get max "${1}" max
 
+    logger "Action ${ACTION}, handler ${handler}, min ${min}, max ${max}, SEEN ${SEEN}"
+
     [ "${ACTION}" = "${action}" -a -n "${handler}" ] && {
         [ -z "${min}" -o -z "${max}" ] && eval handler_${handler}
         [ -n "${min}" -a -n "${max}" ] && {
-            [ "${min}" -le "${SEEN}" -a "${max}" -ge "${SEEN}" ] && \
+            [ "${min}" -le "${SEEN}" -a "${max}" -ge "${SEEN}" ] && {
+            	logger "eval handler_${handler}"
             	eval handler_${handler}
+			}
         }
     }
 }
 
-[ "${ACTION}" = "pressed" ] && logger "$BUTTON was $ACTION after $SEEN seconds" \
-	|| logger "$BUTTON was $ACTION for $SEEN seconds"
+if [ "${ACTION}" = "pressed" ]; then
+	logger "$BUTTON was $ACTION after $SEEN seconds"
+else
+	logger "$BUTTON was $ACTION for $SEEN seconds"
+fi
 
 [ "${ACTION}" = "pressed" ] && {
-	/etc/init.d/ledsman stop
-	/usr/sbin/led_reset_count.sh 1000000 -f &
+	/usr/bin/ledman --bar
+	touch $rst_file
 }
 
-config_load system
+if [ "${ACTION}" = "released" ] && [ ! -f $rst_file ]; then
+	exit
+fi
+
+config_load buttons
 config_foreach handle button
 
 [ "${ACTION}" = "released" ] && {
-	ps | grep led_reset_count.sh | awk '{print $1}' | xargs kill
-	/etc/init.d/ledsman start
+	/usr/bin/ledman --auto
+	rm $rst_file
 }

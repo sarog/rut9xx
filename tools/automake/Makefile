@@ -7,13 +7,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=automake
+PKG_CPE_ID:=cpe:/a:gnu:automake
 PKG_VERSION:=1.15.1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/automake
-PKG_MD5SUM:=24cd3501b6ad8cd4d7e2546f07e8b4d4
+PKG_HASH:=af6ba39142220687c500f79b4aa2f181d9b24e4f8d8ec497cea4ba26c64bedaf
 
 include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/gpl.mk
 
 HOST_CONFIGURE_ARGS += \
 	--datarootdir=$(STAGING_DIR_HOST)/share \

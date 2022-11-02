@@ -1,0 +1,271 @@
+Index: usign-2019-08-06-5a52b379/main.c
+===================================================================
+--- usign-2019-08-06-5a52b379.orig/main.c
++++ usign-2019-08-06-5a52b379/main.c
+@@ -59,6 +59,7 @@ static const char *sigfile;
+ static const char *seckeyfile;
+ static const char *comment;
+ static bool quiet;
++static bool bsha512;
+ static enum {
+ 	CMD_NONE,
+ 	CMD_VERIFY,
+@@ -194,7 +195,7 @@ static int verify(const char *msgfile)
+ 	}
+ 	fclose(f);
+ 
+-	if (!edsign_verify(&vst, sig.sig, pkey.pubkey)) {
++	if (!edsign_verify(&vst, sig.sig, pkey.pubkey, bsha512)) {
+ 		if (!quiet)
+ 			fprintf(stderr, "verification failed\n");
+ 		return 1;
+@@ -240,8 +241,8 @@ static int sign(const char *msgfile)
+ 	mlen = st.st_size;
+ 
+ 	memcpy(sig.fingerprint, skey.fingerprint, sizeof(sig.fingerprint));
+-	edsign_sec_to_pub(pubkey, skey.seckey);
+-	edsign_sign(sig.sig, pubkey, skey.seckey, m, mlen);
++	edsign_sec_to_pub(pubkey, skey.seckey, bsha512);
++	edsign_sign(sig.sig, pubkey, skey.seckey, m, mlen, bsha512);
+ 	munmap(m, mlen);
+ 	close(mfd);
+ 
+@@ -303,11 +304,11 @@ static int generate(void)
+ 		fclose(f);
+ 
+ 	ed25519_prepare(skey.seckey);
+-	edsign_sec_to_pub(skey.seckey + 32, skey.seckey);
++	edsign_sec_to_pub(skey.seckey + 32, skey.seckey, bsha512);
+ 
+ 	sha512_init(&s);
+ 	sha512_add(&s, skey.seckey, sizeof(skey.seckey));
+-	memcpy(skey.checksum, sha512_final_get(&s), sizeof(skey.checksum));
++	memcpy(skey.checksum, sha512_final_get(&s, bsha512), sizeof(skey.checksum));
+ 
+ 	if (b64_encode(&skey, sizeof(skey), buf, sizeof(buf)) < 0)
+ 		return 1;
+@@ -342,6 +343,7 @@ static int usage(const char *cmd)
+ 		"  -q:			quiet (do not print verification result, use return code only)\n"
+ 		"  -s <file>:		secret key file (sign/fingerprint only)\n"
+ 		"  -x <file>:		signature file (defaults to <message file>.sig)\n"
++		"  -b:			use broken sha512 constant\n"
+ 		"\n",
+ 		cmd);
+ 	return 1;
+@@ -360,7 +362,7 @@ int main(int argc, char **argv)
+ 	const char *msgfile = NULL;
+ 	int ch;
+ 
+-	while ((ch = getopt(argc, argv, "FGSVc:m:P:p:qs:x:")) != -1) {
++	while ((ch = getopt(argc, argv, "FGSVc:m:P:p:qs:x:b")) != -1) {
+ 		switch (ch) {
+ 		case 'V':
+ 			set_cmd(argv[0], CMD_VERIFY);
+@@ -395,6 +397,9 @@ int main(int argc, char **argv)
+ 		case 'q':
+ 			quiet = true;
+ 			break;
++		case 'b':
++			bsha512 = true;
++			break;
+ 		default:
+ 			return usage(argv[0]);
+ 		}
+Index: usign-2019-08-06-5a52b379/sha512.h
+===================================================================
+--- usign-2019-08-06-5a52b379.orig/sha512.h
++++ usign-2019-08-06-5a52b379/sha512.h
+@@ -25,6 +25,7 @@
+ 
+ #include <sys/types.h>
+ #include <stdint.h>
++#include <stdbool.h>
+ #include <stddef.h>
+ #include <string.h>
+ 
+@@ -51,12 +52,12 @@ void sha512_add(struct sha512_state *s,
+ /* Fetch a slice of the hash result. */
+ #define SHA512_HASH_SIZE	64
+ 
+-void sha512_final(struct sha512_state *s, uint8_t *hash);
++void sha512_final(struct sha512_state *s, uint8_t *hash, bool bsha512);
+ 
+ static inline void *
+-sha512_final_get(struct sha512_state *s)
++sha512_final_get(struct sha512_state *s, bool bsha512)
+ {
+-	sha512_final(s, s->partial);
++	sha512_final(s, s->partial, bsha512);
+ 	return s->partial;
+ }
+ 
+Index: usign-2019-08-06-5a52b379/sha512.c
+===================================================================
+--- usign-2019-08-06-5a52b379.orig/sha512.c
++++ usign-2019-08-06-5a52b379/sha512.c
+@@ -221,9 +221,10 @@ void sha512_add(struct sha512_state *s,
+ 	s->len += len;
+ }
+ 
+-void sha512_final(struct sha512_state *s, uint8_t *hash)
++void sha512_final(struct sha512_state *s, uint8_t *hash, bool bsha512)
+ {
+ 	size_t last_size = s->len & (SHA512_BLOCK_SIZE - 1);
++	size_t block_size = (bsha512) ? 110 : (SHA512_BLOCK_SIZE - 16);
+ 	unsigned int len = SHA512_HASH_SIZE;
+ 	int i = 0;
+ 
+@@ -232,7 +233,7 @@ void sha512_final(struct sha512_state *s
+ 		memset(&s->partial[last_size], 0,
+ 		       SHA512_BLOCK_SIZE - last_size);
+ 
+-	if (last_size > (SHA512_BLOCK_SIZE - 16)) {
++	if (last_size > block_size) {
+ 		sha512_block(s, s->partial);
+ 		memset(s->partial, 0, sizeof(s->partial));
+ 	}
+Index: usign-2019-08-06-5a52b379/edsign.c
+===================================================================
+--- usign-2019-08-06-5a52b379.orig/edsign.c
++++ usign-2019-08-06-5a52b379/edsign.c
+@@ -18,13 +18,13 @@ static const uint8_t ed25519_order[FPRIM
+ 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10
+ };
+ 
+-static void expand_key(uint8_t *expanded, const uint8_t *secret)
++static void expand_key(uint8_t *expanded, const uint8_t *secret, bool bsha512)
+ {
+ 	struct sha512_state s;
+ 
+ 	sha512_init(&s);
+ 	sha512_add(&s, secret, EDSIGN_SECRET_KEY_SIZE);
+-	sha512_final(&s, expanded);
++	sha512_final(&s, expanded, bsha512);
+ 
+ 	ed25519_prepare(expanded);
+ }
+@@ -56,35 +56,35 @@ static void sm_pack(uint8_t *r, const ui
+ 	pp(r, &p);
+ }
+ 
+-void edsign_sec_to_pub(void *pub, const void *secret)
++void edsign_sec_to_pub(void *pub, const void *secret, bool bsha512)
+ {
+ 	uint8_t expanded[EXPANDED_SIZE];
+ 
+-	expand_key(expanded, secret);
++	expand_key(expanded, secret, bsha512);
+ 	sm_pack(pub, expanded);
+ }
+ 
+-static void save_hash(struct sha512_state *s, uint8_t *out)
++static void save_hash(struct sha512_state *s, uint8_t *out, bool bsha512)
+ {
+ 	void *hash;
+ 
+-	hash = sha512_final_get(s);
++	hash = sha512_final_get(s, bsha512);
+ 	fprime_from_bytes(out, hash, SHA512_HASH_SIZE, ed25519_order);
+ }
+ 
+ static void generate_k(uint8_t *k, const uint8_t *kgen_key,
+-		       const uint8_t *message, size_t len)
++		       const uint8_t *message, size_t len, bool bsha512)
+ {
+ 	struct sha512_state s;
+ 
+ 	sha512_init(&s);
+ 	sha512_add(&s, kgen_key, 32);
+ 	sha512_add(&s, message, len);
+-	save_hash(&s, k);
++	save_hash(&s, k, bsha512);
+ }
+ 
+ static void hash_message(uint8_t *z, const uint8_t *r, const uint8_t *a,
+-			 const uint8_t *m, size_t len)
++			 const uint8_t *m, size_t len, bool bsha512)
+ {
+ 	struct sha512_state s;
+ 
+@@ -92,12 +92,12 @@ static void hash_message(uint8_t *z, con
+ 	sha512_add(&s, r, 32);
+ 	sha512_add(&s, a, 32);
+ 	sha512_add(&s, m, len);
+-	save_hash(&s, z);
++	save_hash(&s, z, bsha512);
+ }
+ 
+ void edsign_sign(uint8_t *signature, const uint8_t *pub,
+ 		 const uint8_t *secret,
+-		 const uint8_t *message, size_t len)
++		 const uint8_t *message, size_t len, bool bsha512)
+ {
+ 	uint8_t expanded[EXPANDED_SIZE];
+ 	uint8_t e[FPRIME_SIZE];
+@@ -105,14 +105,14 @@ void edsign_sign(uint8_t *signature, con
+ 	uint8_t k[FPRIME_SIZE];
+ 	uint8_t z[FPRIME_SIZE];
+ 
+-	expand_key(expanded, secret);
++	expand_key(expanded, secret, bsha512);
+ 
+ 	/* Generate k and R = kB */
+-	generate_k(k, expanded + 32, message, len);
++	generate_k(k, expanded + 32, message, len, bsha512);
+ 	sm_pack(signature, k);
+ 
+ 	/* Compute z = H(R, A, M) */
+-	hash_message(z, signature, pub, message, len);
++	hash_message(z, signature, pub, message, len, bsha512);
+ 
+ 	/* Obtain e */
+ 	fprime_from_bytes(e, expanded, 32, ed25519_order);
+@@ -131,7 +131,8 @@ void edsign_verify_init(struct edsign_ve
+ 	sha512_add(&st->sha, pub, 32);
+ }
+ 
+-bool edsign_verify(struct edsign_verify_state *st, const void *sig, const void *pub)
++bool edsign_verify(struct edsign_verify_state *st, const void *sig,
++		   const void *pub, bool bsha512)
+ {
+ 	struct ed25519_pt p;
+ 	struct ed25519_pt q;
+@@ -141,7 +142,7 @@ bool edsign_verify(struct edsign_verify_
+ 	uint8_t ok = 1;
+ 
+ 	/* Compute z = H(R, A, M) */
+-	save_hash(&st->sha, z);
++	save_hash(&st->sha, z, bsha512);
+ 
+ 	/* sB = (ze + k)B = ... */
+ 	sm_pack(lhs, sig + 32);
+Index: usign-2019-08-06-5a52b379/edsign.h
+===================================================================
+--- usign-2019-08-06-5a52b379.orig/edsign.h
++++ usign-2019-08-06-5a52b379/edsign.h
+@@ -36,14 +36,14 @@
+  */
+ #define EDSIGN_PUBLIC_KEY_SIZE		32
+ 
+-void edsign_sec_to_pub(void *pub, const void *secret);
++void edsign_sec_to_pub(void *pub, const void *secret, bool bsha512);
+ 
+ /* Produce a signature for a message. */
+ #define EDSIGN_SIGNATURE_SIZE		64
+ 
+ void edsign_sign(uint8_t *signature, const uint8_t *pub,
+ 		 const uint8_t *secret,
+-		 const uint8_t *message, size_t len);
++		 const uint8_t *message, size_t len, bool bsha512);
+ 
+ struct edsign_verify_state {
+ 	struct sha512_state sha;
+@@ -59,6 +59,7 @@ edsign_verify_add(struct edsign_verify_s
+ }
+ 
+ /* Verify a message signature. Returns non-zero if ok. */
+-bool edsign_verify(struct edsign_verify_state *st, const void *sig, const void *pub);
++bool edsign_verify(struct edsign_verify_state *st, const void *sig,
++		   const void *pub, bool bsha512);
+ 
+ #endif

@@ -15,10 +15,16 @@
 #include "wpa_supplicant_i.h"
 #include "wps_supplicant.h"
 #include "ubus.h"
+#include "config.h"
 
 static struct ubus_context *ctx;
 static struct blob_buf b;
 static int ctx_ref;
+
+static inline struct wpa_global *get_wpa_global_from_object(struct ubus_object *obj)
+{
+	return container_of(obj, struct wpa_global, ubus_global);
+}
 
 static inline struct wpa_supplicant *get_wpas_from_object(struct ubus_object *obj)
 {
@@ -95,6 +101,47 @@ wpas_bss_get_features(struct ubus_context *ctx, struct ubus_object *obj,
 	return 0;
 }
 
+static int
+wpas_bss_reload(struct ubus_context *ctx, struct ubus_object *obj,
+		struct ubus_request_data *req, const char *method,
+		struct blob_attr *msg)
+{
+	struct wpa_supplicant *wpa_s = get_wpas_from_object(obj);
+
+	if (wpa_supplicant_reload_configuration(wpa_s))
+		return UBUS_STATUS_UNKNOWN_ERROR;
+	else
+		return 0;
+}
+
+static int
+wpas_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	struct wpa_supplicant *wpa_s = get_wpas_from_object(obj);
+	struct wpa_config *conf = wpa_s->conf;
+	struct wpa_ssid *ssid = conf->ssid;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "disconnect_reason", wpa_s->disconnect_reason);
+	blobmsg_add_string(&b, "wpa_state", wpa_supplicant_state_txt(wpa_s->wpa_state));
+	blobmsg_add_string(&b, "conf_id", ssid->config_id);
+	ubus_send_reply(ctx, req, b.head);
+
+	return 0;
+}
+
+static void
+blobmsg_add_macaddr(struct blob_buf *buf, const char *name, const u8 *addr)
+{
+        char *s;
+
+        s = blobmsg_alloc_string_buffer(buf, name, 20);
+        sprintf(s, MACSTR, MAC2STR(addr));
+        blobmsg_add_string_buffer(buf);
+}
+
 #ifdef CONFIG_WPS
 enum {
 	WPS_START_MULTI_AP,
@@ -146,11 +193,13 @@ wpas_bss_wps_cancel(struct ubus_context *ctx, struct ubus_object *obj,
 #endif
 
 static const struct ubus_method bss_methods[] = {
+	UBUS_METHOD_NOARG("reload", wpas_bss_reload),
+	UBUS_METHOD_NOARG("get_features", wpas_bss_get_features),
+	UBUS_METHOD_NOARG("get_status", wpas_bss_get_status),
 #ifdef CONFIG_WPS
 	UBUS_METHOD_NOARG("wps_start", wpas_bss_wps_start),
 	UBUS_METHOD_NOARG("wps_cancel", wpas_bss_wps_cancel),
 #endif
-	UBUS_METHOD_NOARG("get_features", wpas_bss_get_features),
 };
 
 static struct ubus_object_type bss_object_type =
@@ -190,6 +239,204 @@ void wpas_ubus_free_bss(struct wpa_supplicant *wpa_s)
 	}
 
 	free(name);
+}
+
+enum {
+	WPAS_CONFIG_DRIVER,
+	WPAS_CONFIG_IFACE,
+	WPAS_CONFIG_BRIDGE,
+	WPAS_CONFIG_HOSTAPD_CTRL,
+	WPAS_CONFIG_CTRL,
+	WPAS_CONFIG_FILE,
+	__WPAS_CONFIG_MAX
+};
+
+static const struct blobmsg_policy wpas_config_add_policy[__WPAS_CONFIG_MAX] = {
+	[WPAS_CONFIG_DRIVER] = { "driver", BLOBMSG_TYPE_STRING },
+	[WPAS_CONFIG_IFACE] = { "iface", BLOBMSG_TYPE_STRING },
+	[WPAS_CONFIG_BRIDGE] = { "bridge", BLOBMSG_TYPE_STRING },
+	[WPAS_CONFIG_HOSTAPD_CTRL] = { "hostapd_ctrl", BLOBMSG_TYPE_STRING },
+	[WPAS_CONFIG_CTRL] = { "ctrl", BLOBMSG_TYPE_STRING },
+	[WPAS_CONFIG_FILE] = { "config", BLOBMSG_TYPE_STRING },
+};
+
+static int
+wpas_config_add(struct ubus_context *ctx, struct ubus_object *obj,
+		struct ubus_request_data *req, const char *method,
+		struct blob_attr *msg)
+{
+	struct blob_attr *tb[__WPAS_CONFIG_MAX];
+	struct wpa_global *global = get_wpa_global_from_object(obj);
+	struct wpa_interface *iface;
+
+	blobmsg_parse(wpas_config_add_policy, __WPAS_CONFIG_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (!tb[WPAS_CONFIG_FILE] || !tb[WPAS_CONFIG_IFACE] || !tb[WPAS_CONFIG_DRIVER])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	iface = os_zalloc(sizeof(struct wpa_interface));
+	if (iface == NULL)
+		return UBUS_STATUS_UNKNOWN_ERROR;
+
+	iface->driver = blobmsg_get_string(tb[WPAS_CONFIG_DRIVER]);
+	iface->ifname = blobmsg_get_string(tb[WPAS_CONFIG_IFACE]);
+	iface->confname = blobmsg_get_string(tb[WPAS_CONFIG_FILE]);
+
+	if (tb[WPAS_CONFIG_BRIDGE])
+		iface->bridge_ifname = blobmsg_get_string(tb[WPAS_CONFIG_BRIDGE]);
+
+	if (tb[WPAS_CONFIG_CTRL])
+		iface->ctrl_interface = blobmsg_get_string(tb[WPAS_CONFIG_CTRL]);
+
+	if (tb[WPAS_CONFIG_HOSTAPD_CTRL])
+		iface->hostapd_ctrl = blobmsg_get_string(tb[WPAS_CONFIG_HOSTAPD_CTRL]);
+
+	if (!wpa_supplicant_add_iface(global, iface, NULL))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u32(&b, "pid", getpid());
+	ubus_send_reply(ctx, req, b.head);
+
+	return UBUS_STATUS_OK;
+}
+
+enum {
+	WPAS_CONFIG_REM_IFACE,
+	__WPAS_CONFIG_REM_MAX
+};
+
+static const struct blobmsg_policy wpas_config_remove_policy[__WPAS_CONFIG_REM_MAX] = {
+	[WPAS_CONFIG_REM_IFACE] = { "iface", BLOBMSG_TYPE_STRING },
+};
+
+static int
+wpas_config_remove(struct ubus_context *ctx, struct ubus_object *obj,
+		   struct ubus_request_data *req, const char *method,
+		   struct blob_attr *msg)
+{
+	struct blob_attr *tb[__WPAS_CONFIG_REM_MAX];
+	struct wpa_global *global = get_wpa_global_from_object(obj);
+	struct wpa_supplicant *wpa_s = NULL;
+	unsigned int found = 0;
+
+	blobmsg_parse(wpas_config_remove_policy, __WPAS_CONFIG_REM_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (!tb[WPAS_CONFIG_REM_IFACE])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	/* find wpa_s object for to-be-removed interface */
+	for (wpa_s = global->ifaces; wpa_s; wpa_s = wpa_s->next) {
+		if (!strncmp(wpa_s->ifname,
+			     blobmsg_get_string(tb[WPAS_CONFIG_REM_IFACE]),
+			     sizeof(wpa_s->ifname)))
+		{
+			found = 1;
+			break;
+		}
+	}
+
+	if (!found)
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	if (wpa_supplicant_remove_iface(global, wpa_s, 0))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	return UBUS_STATUS_OK;
+}
+
+static const struct ubus_method wpas_daemon_methods[] = {
+	UBUS_METHOD("config_add", wpas_config_add, wpas_config_add_policy),
+	UBUS_METHOD("config_remove", wpas_config_remove, wpas_config_remove_policy),
+};
+
+static struct ubus_object_type wpas_daemon_object_type =
+	UBUS_OBJECT_TYPE("wpa_supplicant", wpas_daemon_methods);
+
+void wpas_ubus_add(struct wpa_global *global)
+{
+	struct ubus_object *obj = &global->ubus_global;
+	int ret;
+
+	if (!wpas_ubus_init())
+		return;
+
+	obj->name = strdup("wpa_supplicant");
+
+	obj->type = &wpas_daemon_object_type;
+	obj->methods = wpas_daemon_object_type.methods;
+	obj->n_methods = wpas_daemon_object_type.n_methods;
+	ret = ubus_add_object(ctx, obj);
+	wpas_ubus_ref_inc();
+}
+
+void wpas_ubus_free(struct wpa_global *global)
+{
+	struct ubus_object *obj = &global->ubus_global;
+	char *name = (char *) obj->name;
+
+	if (!ctx)
+		return;
+
+	if (obj->id) {
+		ubus_remove_object(ctx, obj);
+		wpas_ubus_ref_dec();
+	}
+
+	free(name);
+}
+
+struct ubus_event_req {
+        struct ubus_notify_request nreq;
+        int resp;
+};
+
+static void
+ubus_event_cb(struct ubus_notify_request *req, int idx, int ret)
+{
+        struct ubus_event_req *ureq = container_of(req, struct ubus_event_req, nreq);
+
+        ureq->resp = ret;
+}
+
+int wpas_ubus_handle_event(struct wpa_supplicant *wpa_s, struct wpas_ubus_request *req)
+{
+	const char *types[WPAS_UBUS_TYPE_MAX] = {
+		[WPAS_UBUS_PROBE_REQ] = "probe",
+		[WPAS_UBUS_BEACON] = "beacon",
+	};
+	const char *type = "mgmt";
+	struct ubus_event_req ureq = {};
+	const u8 *addr;
+
+	if (req->mgmt_frame)
+		addr = req->mgmt_frame->sa;
+	else
+		addr = req->addr;
+
+	if (!wpa_s->ubus.obj.has_subscribers)
+		return WLAN_STATUS_SUCCESS;
+
+	if (req->type < ARRAY_SIZE(types))
+		type = types[req->type];
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_macaddr(&b, "address", addr);
+	if (req->mgmt_frame)
+		blobmsg_add_macaddr(&b, "target", req->mgmt_frame->da);
+	if (req->frame_info)
+		blobmsg_add_u32(&b, "signal", req->frame_info->ssi_signal);
+
+	if (ubus_notify_async(ctx, &wpa_s->ubus.obj, type, b.head, &ureq.nreq))
+		return WLAN_STATUS_SUCCESS;
+
+	ureq.nreq.status_cb = ubus_event_cb;
+	ubus_complete_request(ctx, &ureq.nreq.req, 100);
+
+	if (ureq.resp)
+		return ureq.resp;
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 #ifdef CONFIG_WPS

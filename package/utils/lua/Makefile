@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006-2012 OpenWrt.org
+#
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,14 +9,12 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lua
 PKG_VERSION:=5.1.5
-PKG_RELEASE:=1
+PKG_RELEASE:=9
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
-	http://ftp.gwdg.de/pub/languages/lua/ \
-	http://mirrors.dotsrc.org/lua/ \
 	http://www.tecgraf.puc-rio.br/lua/ftp/
-PKG_MD5SUM:=2e115fe26e435e33b0d5c022e4490567
+PKG_HASH:=2640fc56a795f29d28ef15e13c34a47e223960b0240e8cb0a82d9b0738695333
 PKG_BUILD_PARALLEL:=1
 
 PKG_LICENSE:=MIT
@@ -33,7 +31,7 @@ define Package/lua/Default
   CATEGORY:=Languages
   TITLE:=Lua programming language
   URL:=http://www.lua.org/
-  MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+  MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 endef
 
 define Package/lua/Default/description
@@ -48,6 +46,7 @@ $(call Package/lua/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE+= (libraries)
+  ABI_VERSION:=5.1.5
 endef
 
 define Package/liblua/description
@@ -93,12 +92,6 @@ endef
 
 TARGET_CFLAGS += -DLUA_USE_LINUX $(FPIC) -std=gnu99
 
-ifneq ($(CONFIG_USE_EGLIBC),)
-  ifeq ($(CONFIG_EGLIBC_OPTION_EGLIBC_UTMP),)
-    TARGET_CFLAGS += -DNO_GETLOGIN
-  endif
-endif
-
 define Build/Compile
 	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CROSS)gcc" \
@@ -106,7 +99,7 @@ define Build/Compile
 		RANLIB="$(TARGET_CROSS)ranlib" \
 		INSTALL_ROOT=/usr \
 		CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
-		MYLDFLAGS="$(TARGET_LDFLAGS)" \
+		MYLDFLAGS="$(TARGET_LDFLAGS) $(if $(CONFIG_USE_GLIBC),-lm -ldl)" \
 		PKG_VERSION=$(PKG_VERSION) \
 		linux
 	rm -rf $(PKG_INSTALL_DIR)
@@ -117,7 +110,7 @@ define Build/Compile
 endef
 
 define Host/Configure
-	$(SED) 's,"/usr/local/","$(STAGING_DIR_HOST)/",' $(HOST_BUILD_DIR)/src/luaconf.h
+	$(SED) 's,"/usr/local/","$(STAGING_DIR_HOSTPKG)/",' $(HOST_BUILD_DIR)/src/luaconf.h
 endef
 
 ifeq ($(HOST_OS),Darwin)
@@ -138,18 +131,22 @@ endef
 
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) \
-		INSTALL_TOP="$(STAGING_DIR_HOST)" \
+		INSTALL_TOP="$(STAGING_DIR_HOSTPKG)" \
 		install
+
+	$(LN) $(STAGING_DIR_HOSTPKG)/bin/lua5.1 $(STAGING_DIR_HOSTPKG)/bin/lua
+	$(LN) $(STAGING_DIR_HOSTPKG)/bin/luac5.1 $(STAGING_DIR_HOSTPKG)/bin/luac
 endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/lua{,lib,conf}.h $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/lua.hpp $(1)/usr/include/
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/lauxlib.h $(1)/usr/include/
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/lnum_config.h $(1)/usr/include/
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblua.{a,so*} $(1)/usr/lib/
-	ln -sf liblua.so.$(PKG_VERSION) $(1)/usr/lib/liblualib.so
+	$(LN) liblua.so.$(PKG_VERSION) $(1)/usr/lib/liblualib.so
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_BUILD_DIR)/etc/lua.pc $(1)/usr/lib/pkgconfig/
 endef
@@ -161,12 +158,14 @@ endef
 
 define Package/lua/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/lua $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/lua5.1 $(1)/usr/bin/
+	$(LN) lua5.1 $(1)/usr/bin/lua
 endef
 
 define Package/luac/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/luac $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/luac5.1 $(1)/usr/bin/
+	$(LN) luac5.1 $(1)/usr/bin/luac
 endef
 
 define Package/lua-examples/install

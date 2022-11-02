@@ -1,0 +1,19 @@
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -8587,8 +8587,13 @@
+ 		if (WARN_ON(!arvif->is_started))
+ 			continue;
+ 
+-		if (WARN_ON(!arvif->is_up))
+-			continue;
++		/* For STA+AP:
++		* comment hunk below, because when STA vif is created and AP
++		* is not stopped, this WARN_ON gets triggered, but everything
++		* is working.
++		* if (WARN_ON(!arvif->is_up))
++		* 	continue;
++		*/
+ 
+ 		ret = ath10k_mac_setup_bcn_tmpl(arvif);
+ 		if (ret)
+

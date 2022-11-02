@@ -1,0 +1,21 @@
+#!/bin/sh
+
+#UHTTPD START
+#IPV6 MIGRATION
+
+local main_http="$(uci -q get uhttpd.main.listen_http)"
+local main_https="$(uci -q get uhttpd.main.listen_https)"
+local hotspot_http="$(uci -q get uhttpd.hotspot.listen_http)"
+local hotspot_https="$(uci -q get uhttpd.hotspot.listen_https)"
+[ -n "$main_http" ] && [ "$main_http" != "${main_http##*:}" ] && uci set uhttpd.main.listen_http="${main_http##*:}"
+[ -n "$main_https" ] && [ "$main_https" != "${main_https##*:}" ] && uci set uhttpd.main.listen_https="${main_https##*:}"
+[ -n "$hotspot_http" ] && [ "$hotspot_http" != "${hotspot_http##*:}" ] && uci set uhttpd.hotspot.listen_http="${hotspot_http##*:}"
+[ -n "$hotspot_https" ] && [ "$hotspot_https" != "${hotspot_https##*:}" ] && uci set uhttpd.hotspot.listen_https="${hotspot_https##*:}"
+
+#UHTTPD TOTSPOT UBUS_PREFIX DELETEION
+[ $(uci -q get uhttpd.hotspot.ubus_prefix) ] && uci -q delete uhttpd.hotspot.ubus_prefix
+
+uci commit uhttpd
+#UHTTPD END
+
+exit 0

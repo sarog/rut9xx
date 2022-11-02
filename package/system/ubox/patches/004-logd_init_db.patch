@@ -1,0 +1,114 @@
+--- a/log/logread.c
++++ b/log/logread.c
+@@ -84,7 +84,7 @@ static struct uloop_fd sender;
+ static regex_t regexp_preg;
+ static const char *log_file, *log_ip, *log_port, *log_prefix, *pid_file, *hostname, *regexp_pattern;
+ static int log_type = LOG_STDOUT;
+-static int log_size, log_udp, log_follow, log_trailer_null = 0;
++static int log_size, log_udp, log_follow, log_db_init, log_trailer_null = 0;
+ static int log_timestamp;
+ static int logd_conn_tries = LOGD_CONNECT_RETRY;
+ static int facility_include;
+@@ -360,7 +360,7 @@ int main(int argc, char **argv)
+ 
+ 	signal(SIGPIPE, SIG_IGN);
+ 
+-	while ((ch = getopt(argc, argv, "u0fcs:l:z:Z:r:F:p:S:P:h:e:t")) != -1) {
++	while ((ch = getopt(argc, argv, "u0fics:l:z:Z:r:F:p:S:P:h:e:t")) != -1) {
+ 		switch (ch) {
+ 		case 'u':
+ 			log_udp = 1;
+@@ -387,6 +387,9 @@ int main(int argc, char **argv)
+ 		case 'f':
+ 			log_follow = 1;
+ 			break;
++		case 'i':
++		    log_db_init = 1;
++		    break;
+ 		case 'l':
+ 			lines = atoi(optarg);
+ 			break;
+@@ -428,7 +431,7 @@ int main(int argc, char **argv)
+ 	}
+ 	ubus_add_uloop(ctx);
+ 
+-	if (init_db() != 0) {
++	if (log_db_init && init_db() != 0) {
+ 		fprintf(stderr, "Failed to init db\n");
+ 		return -1;
+ 	}
+--- a/log/logd.c
++++ b/log/logd.c
+@@ -193,16 +193,23 @@ read_log(struct ubus_context *ctx, struc
+ 	return 0;
+ }
+ 
+-static void db_fill_msg(struct blob_buf *b, sqlite3_stmt *res)
++static void db_fill_msg(struct blob_buf *b, const char *tbl, sqlite3_stmt *res)
+ {
+         blobmsg_add_string(b, "id", (const char *) sqlite3_column_text(res, 0));
+-        blobmsg_add_string(b, "time", (const char *) sqlite3_column_text(res, 1));
+-        blobmsg_add_string(b, "source", (const char *) sqlite3_column_text(res, 2));
+-        blobmsg_add_string(b, "priority", (const char *) sqlite3_column_text(res, 3));
+-        blobmsg_add_string(b, "text", (const char *) sqlite3_column_text(res, 4));
++
++        if (!strcmp(tbl, "SMS_TABLE")) {
++                blobmsg_add_string(b, "sim", (const char *) sqlite3_column_text(res, 1));
++                blobmsg_add_string(b, "send", (const char *) sqlite3_column_text(res, 2));
++                blobmsg_add_string(b, "time", (const char *) sqlite3_column_text(res, 3));
++        } else {
++                blobmsg_add_string(b, "time", (const char *) sqlite3_column_text(res, 1));
++                blobmsg_add_string(b, "source", (const char *) sqlite3_column_text(res, 2));
++                blobmsg_add_string(b, "priority", (const char *) sqlite3_column_text(res, 3));
++                blobmsg_add_string(b, "text", (const char *) sqlite3_column_text(res, 4));
++        }
+ }
+ 
+-static int parse_query(char *query, struct ubus_context *ctx, struct ubus_request_data *req)
++static int parse_query(char *query, char *tbl, struct ubus_context *ctx, struct ubus_request_data *req)
+ {
+ 	sqlite3 *con = NULL;
+ 	sqlite3_stmt *res;
+@@ -237,7 +244,7 @@ static int parse_query(char *query, stru
+ 	c = blobmsg_open_array(&b, "log");
+ 	while (output == SQLITE_ROW) {
+ 		e = blobmsg_open_table(&b, NULL);
+-		db_fill_msg(&b, res);
++		db_fill_msg(&b, tbl, res);
+ 		blobmsg_close_table(&b, e);
+ 		output = sqlite3_step(res);
+ 	}
+@@ -258,8 +265,11 @@ static int read_db(struct ubus_context *
+ {
+ 	struct blob_attr *tb[READ_DB_MAX] = {0};
+ 	char *table_name;
++	char tmp_var[16];
+ 	char full_query[QUERY_SIZE];
++	size_t len;
+ 	int ret = 0;
++	int c_idx = 0;
+ 
+ 	blobmsg_parse(read_db_policy, ARRAY_SIZE(read_db_policy), tb, blob_data(msg), blob_len(msg));
+ 
+@@ -270,7 +280,20 @@ static int read_db(struct ubus_context *
+ 
+ 	sprintf(full_query, "select * from %s", table_name);
+ 
+-	if ((ret = parse_query(full_query, ctx, req)) < 0) {
++	len = strlen(table_name);
++
++	while (table_name[c_idx] != ' ' && c_idx < len) {
++		c_idx++;
++	}
++
++	if (c_idx > sizeof(tmp_var)) {
++		return UBUS_STATUS_UNKNOWN_ERROR;
++	}
++
++	strncpy(tmp_var, table_name, c_idx);
++	tmp_var[c_idx] = '\0';
++
++	if ((ret = parse_query(full_query, tmp_var, ctx, req)) < 0) {
+ 		fprintf(stderr, "Failed to parse given query\n");
+ 		return UBUS_STATUS_UNKNOWN_ERROR;
+ 	}

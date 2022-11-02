@@ -9,8 +9,8 @@
 TOPDIR:=${CURDIR}
 LC_ALL:=C
 LANG:=C
-
-export TOPDIR LC_ALL LANG
+TZ:=UTC
+export TOPDIR LC_ALL LANG TZ
 
 empty:=
 space:= $(empty) $(empty)
@@ -18,7 +18,8 @@ $(if $(findstring $(space),$(TOPDIR)),$(error ERROR: The path to the OpenWrt dir
 
 world:
 
-include $(TOPDIR)/include/host.mk
+DISTRO_PKG_CONFIG:=$(shell which -a pkg-config | grep -E '\/usr' | head -n 1)
+export PATH:=$(TOPDIR)/staging_dir/host/bin:$(PATH)
 
 ifneq ($(OPENWRT_BUILD),1)
   _SINGLE=export MAKEFLAGS=$(space);
@@ -27,6 +28,8 @@ ifneq ($(OPENWRT_BUILD),1)
   export OPENWRT_BUILD
   GREP_OPTIONS=
   export GREP_OPTIONS
+  CDPATH=
+  export CDPATH
   include $(TOPDIR)/include/debug.mk
   include $(TOPDIR)/include/depends.mk
   include $(TOPDIR)/include/toplevel.mk
@@ -39,11 +42,12 @@ else
   include tools/Makefile
   include toolchain/Makefile
 
-$(toolchain/stamp-install): $(tools/stamp-install)
-$(target/stamp-compile): $(toolchain/stamp-install) $(tools/stamp-install) $(BUILD_DIR)/.prepared
+$(toolchain/stamp-compile): $(tools/stamp-compile)
+$(target/stamp-compile): $(toolchain/stamp-compile) $(tools/stamp-compile) $(BUILD_DIR)/.prepared
 $(package/stamp-compile): $(target/stamp-compile) $(package/stamp-cleanup)
 $(package/stamp-install): $(package/stamp-compile)
 $(target/stamp-install): $(package/stamp-compile) $(package/stamp-install)
+check: $(tools/stamp-check) $(toolchain/stamp-check) $(package/stamp-check)
 
 printdb:
 	@true
@@ -51,14 +55,10 @@ printdb:
 prepare: $(target/stamp-compile)
 
 clean: FORCE
-	rm -rf $(BUILD_DIR) $(BIN_DIR) $(BUILD_LOG_DIR)
-
-dlclean:
-	rm -rf ./dl
+	rm -rf $(BUILD_DIR) $(STAGING_DIR) $(BIN_DIR) $(OUTPUT_DIR)/packages/$(ARCH_PACKAGES) $(BUILD_LOG_DIR) $(TOPDIR)/staging_dir/packages
 
 dirclean: clean
-	./scripts/feeds update
-	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST) $(BUILD_DIR_TOOLCHAIN)
+	rm -rf $(STAGING_DIR_HOST) $(STAGING_DIR_HOSTPKG) $(TOOLCHAIN_DIR) $(BUILD_DIR_BASE)/host $(BUILD_DIR_BASE)/hostpkg $(BUILD_DIR_TOOLCHAIN)
 	rm -rf $(TMP_DIR)
 
 ifndef DUMP_TARGET_DB
@@ -80,23 +80,45 @@ endif
 
 # check prerequisites before starting to build
 prereq: $(target/stamp-prereq) tmp/.prereq_packages
-	@if [ ! -f "$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)" ]; then \
-		echo 'ERROR: Missing site config for target "$(REAL_GNU_TARGET_NAME)" !'; \
+	@if [ ! -f "$(INCLUDE_DIR)/site/$(ARCH)" ]; then \
+		echo 'ERROR: Missing site config for architecture "$(ARCH)" !'; \
 		echo '       The missing file will cause configure scripts to fail during compilation.'; \
-		echo '       Please provide a "$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)" file and restart the build.'; \
+		echo '       Please provide a "$(INCLUDE_DIR)/site/$(ARCH)" file and restart the build.'; \
 		exit 1; \
 	fi
 
-prepare: .config $(tools/stamp-install) $(toolchain/stamp-install) FORCE
+$(BIN_DIR)/profiles.json: FORCE
+	$(if $(CONFIG_JSON_OVERVIEW_IMAGE_INFO), \
+		WORK_DIR=$(BUILD_DIR)/json_info_files \
+			$(SCRIPT_DIR)/json_overview_image_info.py $@ \
+	)
 
-compile-install: prepare $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) FORCE
+json_overview_image_info: $(BIN_DIR)/profiles.json
 
-world: FORCE
-	$(MAKE) compile-install CONFIG_TLT_VERSIONING_GPL=y
+checksum: FORCE
+	$(call sha256sums,$(BIN_DIR),$(CONFIG_BUILDBOT))
+
+buildversion: FORCE
+	$(SCRIPT_DIR)/getver.sh > $(BIN_DIR)/version.buildinfo
+
+feedsversion: FORCE
+	$(SCRIPT_DIR)/feeds list -fs > $(BIN_DIR)/feeds.buildinfo
+
+diffconfig: FORCE
+	mkdir -p $(BIN_DIR)
+	$(SCRIPT_DIR)/diffconfig.sh > $(BIN_DIR)/config.buildinfo
+
+buildinfo: FORCE
+	$(_SINGLE)$(SUBMAKE) -r diffconfig buildversion feedsversion
+
+prepare: .config $(tools/stamp-compile) $(toolchain/stamp-compile)
+	$(_SINGLE)$(SUBMAKE) -r buildinfo
+
+world: prepare $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) FORCE
 	$(_SINGLE)$(SUBMAKE) -r package/index
-	@cp -f scripts/fwFinalization.sh bin/ar71xx;  \
-	cd bin/ar71xx; \
-	./fwFinalization.sh "master"; \
+	$(_SINGLE)$(SUBMAKE) -r json_overview_image_info
+	$(_SINGLE)$(SUBMAKE) -r checksum
 
-.PHONY: clean dlclean dirclean miniclean prereq prepare world
+.PHONY: clean dirclean prereq prepare world package/symlinks package/symlinks-install package/symlinks-clean
+
 endif

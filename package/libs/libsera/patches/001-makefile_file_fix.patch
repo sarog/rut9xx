@@ -7,7 +7,8 @@
  SR_SOCK_RXBUF_SIZE:=1024
  SR_AGENT_VAL:=5
 @@ -8,6 +8,7 @@
- SR_CURL_SIGNAL:=1
+-SR_CURL_SIGNAL:=1
++SR_CURL_SIGNAL:=0
  SR_SSL_VERIFYCERT:=1
  SR_FILEBUF_PAGE_SCALE:=3
 +SR_SSL_CACERT:=/etc/cacert.pem
@@ -21,7 +22,8 @@
 +CPPFLAGS+=-DSR_SSL_CACERT=\"$(SR_SSL_CACERT)\"
  CFLAGS+=-fPIC -pipe -MMD
  CXXFLAGS+=-std=c++11 -fPIC -pipe -pthread -MMD
- LDFLAGS+=-Wl,-soname,$(SONAME) -Wl,--no-undefined -shared -ldl
+-LDFLAGS+=-Wl,-soname,$(SONAME) -Wl,--no-undefined -shared -ldl
++LDFLAGS+=-Wl,-soname,$(SONAME) -Wl,--no-undefined -shared -ldl -fPIC
 -LDLIBS+=-pthread
 +LDLIBS+=-pthread -lcurl -llua
 

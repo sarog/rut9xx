@@ -1,26 +1,18 @@
 #!/bin/sh
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2016 OpenWrt.org
 
 export HOTPLUG_TYPE="$1"
 
 . /lib/functions.sh
 
-PATH=/bin:/sbin:/usr/bin:/usr/sbin
+PATH="%PATH%"
 LOGNAME=root
 USER=root
-STR="ELF"
 export PATH LOGNAME USER
 export DEVICENAME="${DEVPATH##*/}"
 
-[ \! -z "$1" -a -d /etc/hotplug.d/$1 ] && {
+if [ \! -z "$1" -a -d /etc/hotplug.d/$1 ]; then
 	for script in $(ls /etc/hotplug.d/$1/* 2>&-); do (
-		
-		if [ $(hexdump -s 1 -n 3 -e '16/1 "%c""\n"' $script) == $STR ]; then
-    			./$script
-
-			
-		else
-   		 	[ -f $script ] && . $script
-		fi	
+		[ -f $script ] && . $script
 	); done
-}
+fi

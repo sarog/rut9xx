@@ -1,0 +1,49 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=99
+STOP=15
+
+ENABLED=`uci -q get dnp3_outstation.dnp3_outstation.enabled`
+
+if [ "$ENABLED" = "1" ]; then
+	PROTOCOL=`uci -q get dnp3_outstation.dnp3_outstation.protocol`
+	PORT=`uci -q get dnp3_outstation.dnp3_outstation.port`
+	UNSOLICITED=`uci -q get dnp3_outstation.dnp3_outstation.unsolicited_enabled`
+	DNP3_ADDR_LOCAL=`uci -q get dnp3_outstation.dnp3_outstation.local_addr`
+	DNP3_ADDR_REMOTE=`uci -q get dnp3_outstation.dnp3_outstation.remote_addr`
+	PORT2=`uci -q get dnp3_outstation.dnp3_outstation.udp_response_port`
+	RESPONSE_IP=`uci -q get dnp3_outstation.dnp3_outstation.udp_response_ip`
+
+	start_service() {
+		procd_open_instance
+		procd_set_param command /usr/sbin/dnp3_outstation
+		procd_append_param command -t $PROTOCOL
+		procd_append_param command -p $PORT
+		procd_append_param command -a $DNP3_ADDR_LOCAL
+		procd_append_param command -b $DNP3_ADDR_REMOTE
+		if [ "$UNSOLICITED" = "1" ]; then
+			procd_append_param command -u
+		fi
+		
+		if [ "$PROTOCOL" = "udp" ]; then
+			procd_append_param command -r $PORT2
+			procd_append_param command -i $RESPONSE_IP
+		fi
+		
+		procd_set_param file /etc/config/dnp3_outstation
+		procd_set_param respawn ${respawn_threshold:-0} ${respawn_timeout:-6} ${respawn_retry:-0}
+		procd_close_instance
+	}
+fi
+
+service_triggers() {
+        procd_add_reload_trigger "dnp3_outstation"
+	procd_add_reload_trigger "system"
+}
+
+reload_service(){
+	stop
+	start
+}
+

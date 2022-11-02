@@ -1,0 +1,95 @@
+--- a/circbuffer.c
++++ b/circbuffer.c
+@@ -47,7 +47,7 @@ circbuffer * cbuf_new(unsigned int size)
+ 	return cbuf;
+ }
+ 
+-void cbuf_free(circbuffer * cbuf) {
++void dropbear_cbuf_free(circbuffer * cbuf) {
+ 
+ 	if (cbuf->data) {
+ 		m_burn(cbuf->data, cbuf->size);
+--- a/circbuffer.h
++++ b/circbuffer.h
+@@ -36,7 +36,7 @@ struct circbuf {
+ typedef struct circbuf circbuffer;
+ 
+ circbuffer * cbuf_new(unsigned int size);
+-void cbuf_free(circbuffer * cbuf);
++void dropbear_cbuf_free(circbuffer * cbuf);
+ 
+ unsigned int cbuf_getused(const circbuffer * cbuf); /* how much data stored */
+ unsigned int cbuf_getavail(const circbuffer * cbuf); /* how much we can write */
+--- a/common-channel.c
++++ b/common-channel.c
+@@ -638,7 +638,7 @@ static void remove_channel(struct Channe
+ 	TRACE(("enter remove_channel"))
+ 	TRACE(("channel index is %d", channel->index))
+ 
+-	cbuf_free(channel->writebuf);
++	dropbear_cbuf_free(channel->writebuf);
+ 	channel->writebuf = NULL;
+ 
+ 	if (channel->extrabuf) {
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -108,7 +108,7 @@ STRIP=@STRIP@
+ INSTALL=@INSTALL@
+ CPPFLAGS=@CPPFLAGS@
+ CFLAGS+=-I. -I$(srcdir) $(CPPFLAGS) @CFLAGS@
+-LIBS+=@LIBS@ -lubus -lubox -luci
++LIBS+=@LIBS@ -lubus -lubox -luci -llog
+ LDFLAGS=@LDFLAGS@
+ 
+ EXEEXT=@EXEEXT@
+--- a/svr-authpasswd.c
++++ b/svr-authpasswd.c
+@@ -31,6 +31,32 @@
+ #include "auth.h"
+ #include "runopts.h"
+ 
++#include <liblog.h>
++
++void log_event(char *text, char *a, char *b) {
++	struct events_log new_task = {0};
++	struct ubus_context *ubus;
++	char cmd[BUFFER_SIZE*8];
++
++	ubus = ubus_connect(NULL);
++	if (!ubus){
++		dropbear_log(LOG_WARNING, "Failed to connect to ubus");
++		return;
++	}
++
++	cmd[0] = '\0';
++	sprintf(cmd, "%s for %s from %s", text, a, b);
++
++	new_task.table = LLOG_CONNECTIONS;
++	new_task.sender = "SSH";
++	new_task.priority = EVENTLOG_NOTICE;
++	new_task.db_flag = 1;
++	new_task.text = cmd;
++
++	llog_add_task(ubus, &new_task);
++	ubus_free(ubus);
++}
++
+ #if DROPBEAR_SVR_PASSWORD_AUTH
+ 
+ /* not constant time when strings are differing lengths. 
+@@ -115,6 +141,7 @@ void svr_auth_password(int valid_user) {
+ 				ses.authstate.pw_name,
+ 				svr_ses.addrstring);
+ 		send_msg_userauth_success();
++		log_event("Password auth succeeded", ses.authstate.pw_name, svr_ses.addrstring);
+ 	} else {
+ 		sprintf(commandset, ". ./lib/teltonika-functions.sh; check_this_ip '%s' 'false' 2>/dev/null >/dev/null &", svr_ses.addrstring);
+   		system(commandset);
+@@ -123,6 +150,7 @@ void svr_auth_password(int valid_user) {
+ 				ses.authstate.pw_name,
+ 				svr_ses.addrstring);
+ 		send_msg_userauth_failure(0, 1);
++		log_event("Bad password attempt", ses.authstate.pw_name, svr_ses.addrstring);
+ 	}
+ }
+ 

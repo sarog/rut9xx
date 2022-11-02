@@ -1,5 +1,58 @@
 # Copyright (C) 2006-2013 OpenWrt.org
 
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+get_mac_binary() {
+	local path="$1"
+	local offset="$2"
+
+	if ! [ -e "$path" ]; then
+		echo "get_mac_binary: file $path not found!" >&2
+		return
+	fi
+
+	hexdump -v -n 6 -s $offset -e '5/1 "%02x:" 1/1 "%02x"' $path 2>/dev/null
+}
+
+get_mac_label_dt() {
+	local basepath="/proc/device-tree"
+	local macdevice="$(cat "$basepath/aliases/label-mac-device" 2>/dev/null)"
+	local macaddr
+
+	[ -n "$macdevice" ] || return
+
+	macaddr=$(get_mac_binary "$basepath/$macdevice/mac-address" 0 2>/dev/null)
+	[ -n "$macaddr" ] || macaddr=$(get_mac_binary "$basepath/$macdevice/local-mac-address" 0 2>/dev/null)
+
+	echo $macaddr
+}
+
+get_mac_label_json() {
+	local cfg="/etc/board.json"
+	local macaddr
+
+	[ -s "$cfg" ] || return
+
+	json_init
+	json_load "$(cat $cfg)"
+	if json_is_a system object; then
+		json_select system
+			json_get_var macaddr label_macaddr
+		json_select ..
+	fi
+
+	echo $macaddr
+}
+
+get_mac_label() {
+	local macaddr=$(get_mac_label_dt)
+
+	[ -n "$macaddr" ] || macaddr=$(get_mac_label_json)
+
+	echo $macaddr
+}
+
 find_mtd_chardev() {
 	local INDEX=$(find_mtd_index "$1")
 	local PREFIX=/dev/mtd
@@ -8,8 +61,7 @@ find_mtd_chardev() {
 	echo "${INDEX:+$PREFIX$INDEX}"
 }
 
-mtd_get_mac_ascii()
-{
+mtd_get_mac_ascii() {
 	local mtdname="$1"
 	local key="$2"
 	local part
@@ -27,18 +79,48 @@ mtd_get_mac_ascii()
 	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
 }
 
+mtd_get_mac_text() {
+	local mtdname=$1
+	local offset=$(($2))
+	local part
+	local mac_dirty
+
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "mtd_get_mac_text: partition $mtdname not found!" >&2
+		return
+	fi
+
+	if [ -z "$offset" ]; then
+		echo "mtd_get_mac_text: offset missing!" >&2
+		return
+	fi
+
+	mac_dirty=$(dd if="$part" bs=1 skip="$offset" count=17 2>/dev/null)
+
+	# "canonicalize" mac
+	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
+}
+
 mtd_get_mac_binary() {
 	local mtdname="$1"
 	local offset="$2"
 	local part
 
 	part=$(find_mtd_part "$mtdname")
-	if [ -z "$part" ]; then
-		echo "mtd_get_mac_binary: partition $mtdname not found!" >&2
-		return
-	fi
+	get_mac_binary "$part" "$offset"
+}
 
-	dd bs=1 skip=$offset count=6 if=$part 2>/dev/null | hexdump -v -n 6 -e '5/1 "%02x:" 1/1 "%02x"'
+mtd_get_mac_binary_ubi() {
+	local mtdname="$1"
+	local offset="$2"
+
+	. /lib/upgrade/nand.sh
+
+	local ubidev=$(nand_find_ubi $CI_UBIPART)
+	local part=$(nand_find_volume $ubidev $1)
+
+	get_mac_binary "/dev/$part" "$offset"
 }
 
 mtd_get_part_size() {
@@ -59,29 +141,62 @@ macaddr_add() {
 	local oui=${mac%:*:*:*}
 	local nic=${mac#*:*:*:}
 
-	nic=$(printf "%06x" $((0x${nic//:/} + $val & 0xffffff)) | sed 's/^\(.\{2\}\)\(.\{2\}\)\(.\{2\}\)/\1:\2:\3/')
+	nic=$(printf "%06x" $((0x${nic//:/} + val & 0xffffff)) | sed 's/^\(.\{2\}\)\(.\{2\}\)\(.\{2\}\)/\1:\2:\3/')
 	echo $oui:$nic
 }
 
-macaddr_setbit_la()
-{
+macaddr_geteui() {
 	local mac=$1
+	local sep=$2
 
-	printf "%02x:%s" $((0x${mac%%:*} | 0x02)) ${mac#*:}
+	echo ${mac:9:2}$sep${mac:12:2}$sep${mac:15:2}
 }
 
-macaddr_2bin()
-{
+macaddr_setbit() {
+	local mac=$1
+	local bit=${2:-0}
+
+	[ $bit -gt 0 -a $bit -le 48 ] || return
+
+	printf "%012x" $(( 0x${mac//:/} | 2**(48-bit) )) | sed -e 's/\(.\{2\}\)/\1:/g' -e 's/:$//'
+}
+
+macaddr_unsetbit() {
+	local mac=$1
+	local bit=${2:-0}
+
+	[ $bit -gt 0 -a $bit -le 48 ] || return
+
+	printf "%012x" $(( 0x${mac//:/} & ~(2**(48-bit)) )) | sed -e 's/\(.\{2\}\)/\1:/g' -e 's/:$//'
+}
+
+macaddr_setbit_la() {
+	macaddr_setbit $1 7
+}
+
+macaddr_unsetbit_mc() {
+	local mac=$1
+
+	printf "%02x:%s" $((0x${mac%%:*} & ~0x01)) ${mac#*:}
+}
+
+macaddr_random() {
+	local randsrc=$(get_mac_binary /dev/urandom 0)
+	
+	echo "$(macaddr_unsetbit_mc "$(macaddr_setbit_la "${randsrc}")")"
+}
+
+macaddr_2bin() {
 	local mac=$1
 
 	echo -ne \\x${mac//:/\\x}
 }
 
-macaddr_canonicalize()
-{
+macaddr_canonicalize() {
 	local mac="$1"
 	local canon=""
 
+	mac=$(echo -n $mac | tr -d \")
 	[ ${#mac} -gt 17 ] && return
 	[ -n "${mac//[a-fA-F0-9\.: -]/}" ] && return
 

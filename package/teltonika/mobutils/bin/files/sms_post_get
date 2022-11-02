@@ -1,0 +1,2 @@
+config post_get 'post_get'
+	option enabled '0'

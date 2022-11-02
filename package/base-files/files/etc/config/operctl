@@ -1,3 +1,0 @@
-config operctl 'general'
-	option operlist '0'
-

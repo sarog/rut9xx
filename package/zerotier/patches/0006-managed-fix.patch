@@ -1,7 +1,0 @@
---- a/osdep/ManagedRoute.hpp
-+++ b/osdep/ManagedRoute.hpp
-@@ -43,4 +43,1 @@
--		} else {
--			fprintf(stderr,"Applied ManagedRoute isn't copyable!\n");
--			abort();
- 		}

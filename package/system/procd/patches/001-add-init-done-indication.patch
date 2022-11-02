@@ -1,0 +1,21 @@
+Index: procd-2021-02-23-37eed131/state.c
+===================================================================
+--- procd-2021-02-23-37eed131.orig/state.c
++++ procd-2021-02-23-37eed131/state.c
+@@ -127,6 +127,7 @@ static void state_enter(void)
+ {
+ 	char ubus_cmd[] = "/sbin/ubusd";
+ 	struct passwd *p;
++	FILE *file;
+ 
+ 	switch (state) {
+ 	case STATE_EARLY:
+@@ -170,6 +171,8 @@ static void state_enter(void)
+ 
+ 	case STATE_RUNNING:
+ 		LOG("- init complete -\n");
++		file = fopen("/var/run/init-done","w");
++		fclose(file);
+ 		procd_inittab_run("respawnlate");
+ 		procd_inittab_run("askconsolelate");
+ 		break;

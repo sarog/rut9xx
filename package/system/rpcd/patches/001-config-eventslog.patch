@@ -1,0 +1,90 @@
+--- a/uci.c
++++ b/uci.c
+@@ -26,6 +26,8 @@
+ #include <rpcd/exec.h>
+ #include <rpcd/session.h>
+ 
++#include <liblog.h>
++
+ static struct blob_buf buf;
+ static struct uci_context *cursor;
+ static struct uloop_timeout apply_timer;
+@@ -1449,6 +1451,7 @@ rpc_uci_apply_config(struct ubus_context
+ 		uci_commit(cursor, &p, false);
+ 		uci_unload(cursor, p);
+ 	}
++    log_event(config);
+ 	rpc_uci_trigger_event(ctx, config);
+ 
+ 	return 0;
+@@ -1491,8 +1494,11 @@ rpc_uci_apply_access(const char *sid, gl
+ 
+ 		if (*config == '.')
+ 			continue;
+-		if (stat(gl->gl_pathv[i], &s) || !s.st_size)
++		if (stat(gl->gl_pathv[i], &s) || !s.st_size){
++			log_event(config);
++			remove(gl->gl_pathv[i]);
+ 			continue;
++		}
+ 		if (!rpc_session_access(sid, "uci", config, "write"))
+ 			return UBUS_STATUS_PERMISSION_DENIED;
+ 		c++;
+@@ -1727,6 +1733,28 @@ rpc_uci_reload(struct ubus_context *ctx,
+ 	return 0;
+ }
+ 
++void log_event(char *config) {
++    struct ubus_context *ubus;
++    char cmd[BUFFER_SIZE*8];
++	struct events_log new_task = {
++			.db_flag  = 1,
++			.table    = LLOG_EVENTS,
++			.priority = EVENTLOG_NOTICE,
++			.text     = cmd,
++			.sender   = "CONFIG",
++	};
++
++    ubus = ubus_connect(NULL);
++	if (!ubus)
++		return;
++
++    cmd[0] = '\0';
++    sprintf(cmd, "%s configuration has been changed", config);
++
++    llog_add_task(ubus, &new_task);
++    ubus_free(ubus);
++}
++
+ /*
+  * Session destroy callback to purge associated delta directory.
+  */
+--- a/include/rpcd/uci.h
++++ b/include/rpcd/uci.h
+@@ -40,5 +40,6 @@
+ int rpc_uci_api_init(struct ubus_context *ctx);
+ 
+ void rpc_uci_purge_savedirs(void);
++void log_event(char *config);
+ 
+ #endif
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -26,7 +26,7 @@ FIND_LIBRARY(uci NAMES uci)
+ FIND_LIBRARY(ubus NAMES ubus)
+ FIND_LIBRARY(ubox NAMES ubox)
+ FIND_LIBRARY(blobmsg_json NAMES blobmsg_json)
+-FIND_LIBRARY(json NAMES json-c json)
++FIND_LIBRARY(json NAMES json-c json log)
+ FIND_LIBRARY(crypt NAMES crypt)
+ IF(crypt STREQUAL "crypt-NOTFOUND")
+   SET(crypt "")
+@@ -39,7 +39,7 @@ FIND_PATH(ubox_include_dir libubox/blobm
+ INCLUDE_DIRECTORIES(${ubox_include_dir})
+ 
+ ADD_EXECUTABLE(rpcd main.c exec.c session.c uci.c rc.c plugin.c)
+-TARGET_LINK_LIBRARIES(rpcd ${ubox} ${ubus} ${uci} ${blobmsg_json} ${json} ${crypt} dl)
++TARGET_LINK_LIBRARIES(rpcd ${ubox} ${ubus} ${uci} log ${blobmsg_json} ${json} ${crypt} dl)
+ 
+ SET(PLUGINS "")
+ 

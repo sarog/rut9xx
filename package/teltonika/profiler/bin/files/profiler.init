@@ -1,0 +1,97 @@
+#!/bin/sh /etc/rc.common
+
+START=45
+MD5FILE=/var/run/config.md5
+PROFILE_PATH=/etc/profiles/
+
+USE_PROCD=1
+
+send_signal(){
+    local service="$1"
+    local signal="$2"
+    local __idx=1 pid
+
+    case "$signal" in
+        [A-Z]*)	signal="$(kill -l "$signal" 2>/dev/null)" || return 1;;
+    esac
+
+    json_load "$(/bin/ubus call service list "{\"name\":\"$service\"}")"
+
+    json_is_a "$service" object || return 1
+    json_select "$service"
+    json_is_a "instances" object || return 1
+    json_select "instances"
+
+    while json_is_a "instance$__idx" object; do
+        json_select "instance$((__idx++))"
+        json_get_var pid pid
+        json_select ".."
+        [ -n "$pid" ] && kill -$signal $pid
+    done
+}
+
+start_service() {
+    local enabled
+
+    config_load profiles
+    config_get enabled general enabled 0
+
+    [ ${enabled} -eq 1 ] || return 0
+
+    procd_open_instance
+    procd_set_param command /usr/sbin/profiler -d 1
+    procd_set_param respawn
+    procd_set_param stdout 1
+    procd_set_param stderr 1
+    procd_set_param term_timeout 30
+    procd_close_instance
+}
+
+service_triggers()
+{
+    procd_add_reload_trigger "profiles"
+}
+
+reload_service() {
+    config_load profiles
+    config_get enabled general enabled 0
+    if [ ${enabled} -eq 1 ]; then
+        pid=`pgrep profiler`
+        if [ "$pid" == "" ]; then
+            start
+        else
+            #Sending a signal to renew instead of reloading service
+            send_signal profiler HUP
+        fi
+    else
+        stop
+        start
+    fi
+}
+
+boot()
+{
+	#Create initial profile and template.
+	[[ -e ${PROFILE_PATH} ]] || mkdir ${PROFILE_PATH}
+    [[ -f "${PROFILE_PATH}default.tar.gz" ]] || {
+    	/usr/sbin/profile.sh -b "${PROFILE_PATH}default.tar.gz"
+    	/usr/sbin/profile.sh -m "${PROFILE_PATH}default.md5"
+    }
+    [[ "$(uci -q get profiles.default)" == "profile" ]] || {
+		uci -q batch <<-EOF >/dev/null
+		set profiles.default='profile'
+		set profiles.default.archive='default.tar.gz'
+		set profiles.default.md5file='default.md5'
+		set profiles.default.id='0'
+		set profiles.default.updated='$(date +%s)'
+		commit profiles
+		EOF
+    }
+    [[ -f "${PROFILE_PATH}template.tar.gz" ]] || {
+        cp "${PROFILE_PATH}default.tar.gz" "${PROFILE_PATH}template.tar.gz"
+        cp "${PROFILE_PATH}default.md5" "${PROFILE_PATH}template.md5"
+    }
+
+	start
+}
+

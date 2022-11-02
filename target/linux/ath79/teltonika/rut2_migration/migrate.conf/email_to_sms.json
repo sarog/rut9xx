@@ -1,0 +1,28 @@
+{
+  "config": {
+	"old_name": "sms_gateway",
+	"new_name": "email_to_sms"
+  },
+  "sections": [
+	{
+	  "old_name": "pop3",
+	  "new_name": "pop3",
+	  "remove": true,
+	  "options": {
+		"limit": {
+		  "cb": "limit_cb"
+		},
+		"enabled": {},
+		"host": {},
+		"port": {},
+		"username": {},
+		"password": {},
+		"ssl": {},
+		"min": {},
+		"time": {},
+		"hour": {},
+		"day": {}
+	  }
+	}
+  ]
+}

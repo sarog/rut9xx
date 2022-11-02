@@ -1,0 +1,9 @@
+menu "Target options and settings"
+depends on TARGET_ath79
+
+config DEFAULT_TARGET_OPTIONS
+	bool
+	default y
+	select KERNEL_MTD_UBI if TARGET_ath79_generic_DEVICE_teltonika_rut36x
+
+endmenu

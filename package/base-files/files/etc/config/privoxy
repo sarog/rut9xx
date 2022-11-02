@@ -1,2 +1,0 @@
-config privoxy 'privoxy'
-	option enabled '0'

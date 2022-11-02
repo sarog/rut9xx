@@ -17,6 +17,7 @@ define KernelPackage/mmc-spi
   FILES:=\
 	$(if $(CONFIG_OF),$(LINUX_DIR)/drivers/mmc/host/of_mmc_spi.ko) \
 	$(LINUX_DIR)/drivers/mmc/host/mmc_spi.ko
+  AUTOLOAD:=$(call AutoProbe,$(if $(CONFIG_OF),of_mmc_spi) mmc_spi,1)
 endef
 
 define KernelPackage/mmc-spi/description
@@ -42,29 +43,13 @@ endef
 $(eval $(call KernelPackage,spi-bitbang))
 
 
-define KernelPackage/spi-gpio-old
-  SUBMENU:=$(SPI_MENU)
-  TITLE:=Old GPIO based bitbanging SPI controller (DEPRECATED)
-  DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
-  KCONFIG:=CONFIG_SPI_GPIO_OLD
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio_old.ko
-  AUTOLOAD:=$(call AutoProbe,spi_gpio_old)
-endef
-
-define KernelPackage/spi-gpio-old/description
- This package contains the GPIO based bitbanging SPI controller driver
-endef
-
-$(eval $(call KernelPackage,spi-gpio-old))
-
-
 define KernelPackage/spi-gpio
   SUBMENU:=$(SPI_MENU)
   TITLE:=GPIO-based bitbanging SPI Master
   DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
   KCONFIG:=CONFIG_SPI_GPIO
   FILES:=$(LINUX_DIR)/drivers/spi/spi-gpio.ko
-  AUTOLOAD:=$(call AutoProbe,spi-gpio)
+  AUTOLOAD:=$(call AutoProbe,spi-gpio,1)
 endef
 
 define KernelPackage/spi-gpio/description

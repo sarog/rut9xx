@@ -1,0 +1,35 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2019 Teltonika
+
+START=94
+STOP=51
+USE_PROCD=1
+
+start_service() {
+    enabled=`uci -q get iottw.thingworx.enabled`
+    if [ "$enabled" -eq "1" ]; then
+        server=`uci -q get iottw.thingworx.server`
+        port=`uci -q get iottw.thingworx.port`
+        thing=`uci -q get iottw.thingworx.thing`
+        appkey=`uci -q get iottw.thingworx.appkey`
+
+        if [ -z "$server" ] || [ -z "$port" ] || [ -z "$thing" ] || [ -z "$appkey" ]; then
+            logger "twd.init error: invalid configuration"
+        else
+            procd_open_instance
+            procd_set_param respawn 0
+            procd_set_param command /usr/bin/twStreamApp
+            procd_append_param command "$server" "$port" "$appkey" "$thing"
+            procd_close_instance
+        fi
+    fi
+}
+
+service_triggers() {
+	procd_add_reload_trigger "iottw"
+}
+
+reload_service() {
+	stop
+	start
+}

@@ -1,0 +1,16 @@
+#!/bin/sh /etc/rc.common
+
+enabled="0"
+
+check_enabled() {
+	local service="$1"
+	config_get enabled "$service" enabled "0"
+}
+
+config_load ddns
+config_foreach check_enabled service
+
+if [ "$enabled" = "1" ]; then
+    /usr/lib/ddns/dynamic_dns_updater.sh -- stop
+    /usr/lib/ddns/dynamic_dns_updater.sh -- start
+fi

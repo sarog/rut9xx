@@ -1,0 +1,59 @@
+--- a/lua/pop3.lua
++++ b/lua/pop3.lua
+@@ -179,17 +179,18 @@
+ local tls_connect 
+ if socket then 
+   local ok, ssl = pcall (require, "ssl")
+-  if ok then 
++  if ok then
++    function tls_connect(ssl_verify, host, port)
++      local tls_cfg = {
++            protocol    = "any",
++            options     = {"all", "no_sslv2", "no_sslv3", "no_tlsv1", "no_tlsv1_1"},
++            verify      = ssl_verify and "peer" or "none",
++            certificate = "/etc/ssl/cert.pem",
++            cafile      = "/etc/cacert.pem",
++            mode        = "client"
++      }
+ 
+-    local tls_cfg = {
+-      protocol = "tlsv1",
+-      options  = "all",
+-      verify   = "none",
+-      mode     = "client"
+-    }
+-
+-    function tls_connect(host, port)
+-      local cnn, err = socket.connect(host,port)
++      local cnn, err = socket.connect(host, port)
+       if not cnn then return nil, err end
+ 
+       local scnn, err  = ssl.wrap(cnn, tls_cfg)
+@@ -260,12 +261,18 @@
+ -- @tparam string|number port
+ -- @tparam[opt] number timeout
+ -- @return true if session established
+-function pop3:open_with(cnn_fn, host, port, timeout)
++function pop3:open_with(cnn_fn, host, port, timeout, ssl_verify)
+   if self:is_open() then
+     return true
+   end
+ 
+-  local cnn, err = cnn_fn(host,port)
++  local cnn, err
++  if cnn_fn == tls_connect then
++    cnn, err = cnn_fn(ssl_verify, host, port)
++  else
++	cnn, err = cnn_fn(host, port)
++  end
++
+   if not cnn then return nil, err end
+   if timeout then
+     cnn:settimeout(timeout)
+@@ -752,4 +759,4 @@
+ 
+ M.message = message
+ 
+-return M
+\ No newline at end of file
++return M

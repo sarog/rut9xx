@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,14 +10,15 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=wireless-tools
 PKG_VERSION:=29
 PKG_MINOR:=
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 
 PKG_SOURCE:=wireless_tools.$(PKG_VERSION)$(PKG_MINOR).tar.gz
-PKG_SOURCE_URL:=http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux
-PKG_MD5SUM:=e06c222e186f7cc013fd272d023710cb
+PKG_SOURCE_URL:=https://hewlettpackard.github.io/wireless-tools
+PKG_HASH:=6fb80935fe208538131ce2c4178221bab1078a1656306bce8909c19887e2e5a1
 TAR_OPTIONS += || true
 
-PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_LICENSE:=GPL-2.0
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/wireless_tools.$(PKG_VERSION)
 
@@ -44,6 +45,7 @@ $(call Package/wireless-tools/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Library for manipulating Linux Wireless Extensions
+  ABI_VERSION:=29
 endef
 
 define Package/libiw/description
@@ -72,14 +74,14 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/{iwlib,wireless}.h $(1)/usr/include/
 	mkdir -p $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/libiw.so* $(1)/usr/lib/
-	ln -sf libiw.so.$(PKG_VERSION) $(1)/usr/lib/libiw.so
+	$(LN) libiw.so.$(PKG_VERSION) $(1)/usr/lib/libiw.so
 endef
 
 define Package/wireless-tools/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/iwconfig $(1)/usr/sbin/
-	ln -sf iwconfig $(1)/usr/sbin/iwlist
-	ln -sf iwconfig $(1)/usr/sbin/iwpriv
+	$(LN) iwconfig $(1)/usr/sbin/iwlist
+	$(LN) iwconfig $(1)/usr/sbin/iwpriv
 endef
 
 define Package/libiw/install
@@ -87,5 +89,5 @@ define Package/libiw/install
 	$(CP) $(PKG_BUILD_DIR)/libiw.so.* $(1)/usr/lib/
 endef
 
-$(eval $(call BuildPackage,wireless-tools))
 $(eval $(call BuildPackage,libiw))
+$(eval $(call BuildPackage,wireless-tools))

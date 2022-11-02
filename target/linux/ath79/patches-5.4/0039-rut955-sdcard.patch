@@ -1,0 +1,27 @@
+Index: linux-5.4.137/drivers/mmc/core/core.c
+===================================================================
+--- linux-5.4.137.orig/drivers/mmc/core/core.c
++++ linux-5.4.137/drivers/mmc/core/core.c
+@@ -1135,7 +1135,7 @@ u32 mmc_select_voltage(struct mmc_host *
+ 
+ 	ocr &= host->ocr_avail;
+ 	if (!ocr) {
+-		dev_warn(mmc_dev(host), "no support for card's volts\n");
++		dev_warn(mmc_dev(host), "no card detected\n");
+ 		return 0;
+ 	}
+ 
+Index: linux-5.4.137/drivers/mmc/host/mmc_spi.c
+===================================================================
+--- linux-5.4.137.orig/drivers/mmc/host/mmc_spi.c
++++ linux-5.4.137/drivers/mmc/host/mmc_spi.c
+@@ -1418,6 +1418,9 @@ static int mmc_spi_probe(struct spi_devi
+ 		mmc->caps2 |= host->pdata->caps2;
+ 	}
+ 
++	if ((status = mmc_of_parse(mmc)))
++		goto fail_add_host;
++
+ 	status = mmc_add_host(mmc);
+ 	if (status != 0)
+ 		goto fail_add_host;

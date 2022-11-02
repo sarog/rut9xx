@@ -1,0 +1,36 @@
+--- a/client.c
++++ b/client.c
+@@ -45,6 +45,24 @@ const char * const http_methods[] = {
+ 	[UH_HTTP_MSG_DELETE] = "DELETE",
+ };
+ 
++static void add_security_headers(struct client *cl)
++{
++	if (cl->tls) {
++		ustream_printf(cl->us, "Expect-CT: max-age=86400\r\n");
++	}
++
++	ustream_printf(cl->us, "Strict-Transport-Security: max-age=63072000; includeSubDomains; preload\r\n");
++	ustream_printf(cl->us, "X-Frame-Options: SAMEORIGIN\r\n");
++	ustream_printf(cl->us, "X-Content-Type-Options: nosniff\r\n");
++	if (!strncmp(conf.docroot, "/www", 4)) {
++		ustream_printf(cl->us, "Content-Security-Policy: \
++				default-src 'self'; frame-src * 'self'; \
++				img-src * 'self'; \
++				script-src https://cdn.jsdelivr.net 'unsafe-eval' 'self' 'sha256-8yE2w7Bv8/Il8SvtEkB35j3QNRei9CKtdX8HgqblU04=' 'nonce-pbfMmwrsnzqz1rg86SUDb6A+NvckQ8U3s4almwle63M' 'sha256-3/SyFyEV0Y/9yrhH8vNQqUrPTjxumNcaYo5gRtJvm2c='; \
++				style-src https://cdn.jsdelivr.net 'unsafe-hashes' 'sha256-4Su6mBWzEIFnH4pAGMOuaeBrstwJN4Z3pq/s1Kn4/KQ=' 'sha256-kwpt3lQZ21rs4cld7/uEm9qI5yAbjYzx+9FGm/XmwNU=' 'self'\r\n");
++	}
++}
++
+ void uh_http_header(struct client *cl, int code, const char *summary)
+ {
+ 	struct http_request *r = &cl->request;
+@@ -75,6 +89,8 @@ void uh_http_header(struct client *cl, i
+ 	blobmsg_for_each_attr(cur, cl->hdr_response.head, rem)
+ 		ustream_printf(cl->us, "%s: %s\r\n", blobmsg_name(cur),
+ 			       blobmsg_get_string(cur));
++
++	add_security_headers(cl);
+ }
+ 
+ static void uh_connection_close(struct client *cl)

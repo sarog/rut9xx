@@ -1,0 +1,15 @@
+#!/bin/sh
+
+[ "$PLUTO_MY_PROTOCOL" = "47" ] || exit 0
+config="${PLUTO_CONNECTION##*-}"
+ifname="$(uci -q get ipsec.$config.bind_to)"
+[ -z "$ifname" ] && exit 0
+
+case "$PLUTO_VERB" in
+	up-host)
+		ifup $ifname
+		;;
+	down-host)
+		ifdown $ifname
+		;;
+esac

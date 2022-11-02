@@ -8,9 +8,10 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=padjffs2
-PKG_VERSION:=1
+PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/gpl.mk
 
 define Host/Prepare
 	mkdir -p $(HOST_BUILD_DIR)
@@ -19,7 +20,7 @@ define Host/Prepare
 endef
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) LDFLAGS="$(HOST_STATIC_LINKING)"
+	$(MAKE) -C $(HOST_BUILD_DIR)
 endef
 
 define Host/Configure

@@ -1,0 +1,59 @@
+#!/bin/sh /etc/rc.common
+  
+START=60
+STOP=60
+
+USE_PROCD=1
+
+NAME=events_reporting
+PROG=/usr/bin/$NAME
+ENABLED=0
+SW_ENABLED=0
+
+check_if_enabled()
+{
+        local event
+        local enable
+        config_get event $1 "event"
+        config_get_bool enable "$1" 'enable' 0
+
+        if [[ $enable -eq 1 ]]; then
+                ENABLED=1
+
+                if [[ "$event" = "Switch Topology" ]]; then
+                        SW_ENABLED=1
+                fi
+        fi
+}
+
+service_triggers()
+{
+	    procd_add_reload_trigger "events_reporting"
+}
+
+start_service() {
+        config_load 'events_reporting'
+        config_foreach check_if_enabled 'rule'
+        if [ "$ENABLED" -gt 0 ]; then
+            procd_open_instance
+
+            procd_set_param command $PROG
+
+            procd_close_instance
+        fi
+
+        if [[ "$SW_ENABLED" = "1" ]]; then
+                ubus call port_events set_topo_ev '{"enable":true}'
+        else
+                ubus call port_events set_topo_ev '{"enable":false}'
+        fi
+}
+
+stop_service() {
+        service_stop ${PROG}
+        rm /tmp/events_reporting.lock 2>/dev/null
+}
+
+reload_service() {
+        restart
+}

@@ -1,0 +1,46 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2021 Teltonika
+
+START=05
+USE_PROCD=1
+
+CONFIG="sms_gateway"
+
+service_triggers() {
+	procd_add_reload_trigger "$CONFIG"
+}
+
+set_location() {
+	local new_storage="$1" modem_id="$2"
+	local storage
+
+	storage=$(/usr/sbin/gsmctl -O "$modem_id" \
+    		--at "AT+CPMS?" | cut -d, -f1)
+	[ "$storage" = "+CPMS: \"$new_storage\"" ] && return
+
+	/usr/sbin/gsmctl -O "$modem_id" \
+		--at "AT+CPMS=\"${1}\",\"${1}\",\"${1}\""
+}
+
+check_sms_storage_location() {
+	local sec="$1"
+	local modem_id msg_storage
+
+	config_get modem_id "$sec" info_modem_id
+	[ -z "$modem_id" ] && return
+
+	config_get msg_storage "$sec" "msg_storage" ""
+	case "$msg_storage" in
+		me)
+			set_location "ME" "$modem_id"
+			;;
+		sm)
+			set_location "SM" "$modem_id"
+			;;
+	esac
+}
+
+start_service() {
+	config_load "$CONFIG"
+	config_foreach check_sms_storage_location "simman"
+}

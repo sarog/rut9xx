@@ -1,0 +1,305 @@
+Index: linux-5.4.208/drivers/net/usb/qmi_wwan.c
+===================================================================
+--- linux-5.4.208.orig/drivers/net/usb/qmi_wwan.c
++++ linux-5.4.208/drivers/net/usb/qmi_wwan.c
+@@ -20,6 +20,8 @@
+ #include <linux/usb/usbnet.h>
+ #include <linux/usb/cdc-wdm.h>
+ #include <linux/u64_stats_sync.h>
++#include <linux/bitfield.h>
++#include <net/sock.h>
+ 
+ /* This driver supports wwan (3G/LTE/?) devices using a vendor
+  * specific management protocol called Qualcomm MSM Interface (QMI) -
+@@ -45,6 +47,8 @@
+  * commands on a serial interface
+  */
+ 
++#define RMNET_V5_URB_SIZE 31744 // 31 bit * 1024
++
+ /* driver specific data */
+ struct qmi_wwan_state {
+ 	struct usb_driver *subdriver;
+@@ -61,6 +65,7 @@ enum qmi_wwan_flags {
+ 
+ enum qmi_wwan_quirks {
+ 	QMI_WWAN_QUIRK_DTR = 1 << 0,	/* needs "set DTR" request */
++	QMI_WWAN_V5_HEAD = 1 << 1,
+ };
+ 
+ struct qmimux_hdr {
+@@ -72,9 +77,29 @@ struct qmimux_hdr {
+ struct qmimux_priv {
+ 	struct net_device *real_dev;
+ 	u8 mux_id;
++	u8 qmap_v5;
+ 	struct pcpu_sw_netstats __percpu *stats64;
+ };
+ 
++enum rmnet_map_v5_header_type {
++	RMNET_MAP_HEADER_TYPE_UNKNOWN,
++	RMNET_MAP_HEADER_TYPE_COALESCING = 0x1,
++	RMNET_MAP_HEADER_TYPE_CSUM_OFFLOAD = 0x2,
++	RMNET_MAP_HEADER_TYPE_ENUM_LENGTH
++};
++
++struct rmnet_map_header {
++	u8 flags; // MAP_CMD_FLAG, MAP_PAD_LEN_MASK
++	u8 mux_id;
++	__be16 pkt_len; // Length of packet, including pad
++} __aligned(1);
++
++struct rmnet_map_v5_csum_header {
++	u8 header_info;
++	u8 csum_info;
++	__be16 reserved;
++} __aligned(1);
++
+ static int qmimux_open(struct net_device *dev)
+ {
+ 	struct qmimux_priv *priv = netdev_priv(dev);
+@@ -94,6 +119,106 @@ static int qmimux_stop(struct net_device
+ 	return 0;
+ }
+ 
++#define RMNET_FLAGS_EGRESS_MAP_CKSUMV5 (1U << 5)
++#define MAPV5_HDRINFO_HDR_TYPE_FMASK GENMASK(7, 1)
++#define MAP_PAD_LEN_MASK GENMASK(5, 0)
++#define MAP_NEXT_HEADER_FLAG BIT(6)
++#define MAP_CMD_FLAG BIT(7)
++
++static void map_v5_checksum_uplink_packet(struct sk_buff *skb)
++{
++	struct rmnet_map_v5_csum_header *ul_header;
++
++	ul_header = skb_push(skb, sizeof(*ul_header));
++	memset(ul_header, 0, sizeof(*ul_header));
++	ul_header->header_info =
++		u8_encode_bits(RMNET_MAP_HEADER_TYPE_CSUM_OFFLOAD,
++			       MAPV5_HDRINFO_HDR_TYPE_FMASK);
++
++	/* In case of checksum issues --- this is here it should be applied for tx */
++}
++
++static struct rmnet_map_header *add_map_header(struct sk_buff *skb, int hdrlen,
++					       int pad)
++{
++	struct rmnet_map_header *map_header;
++	u32 padding, map_datalen;
++	u8 *padbytes;
++
++	map_datalen = skb->len - hdrlen;
++	map_header = (struct rmnet_map_header *)skb_push(
++		skb, sizeof(struct rmnet_map_header));
++	memset(map_header, 0, sizeof(struct rmnet_map_header));
++
++	// Set next_hdr bit for csum offload packets
++	map_header->flags |= MAP_NEXT_HEADER_FLAG;
++
++	if (!pad) {
++		map_header->pkt_len = htons(map_datalen);
++		return map_header;
++	}
++
++	// Padding for now is not needed
++	padding = ALIGN(map_datalen, 4) - map_datalen;
++
++	if (!padding)
++		goto done;
++
++	if (skb_tailroom(skb) < padding)
++		return NULL;
++
++	padbytes = (u8 *)skb_put(skb, padding);
++	memset(padbytes, 0, padding);
++done:
++
++	map_header->pkt_len = htons(map_datalen + padding);
++	/* This is a data packet, so the CMD bit is 0 */
++	map_header->flags = padding & MAP_PAD_LEN_MASK;
++
++	return map_header;
++}
++
++static int handle_egress(struct sk_buff *skb, struct net_device *dev)
++{
++	struct net_device *orig_dev;
++	struct qmimux_priv *priv;
++	struct rmnet_map_header *map_header;
++	u8 mux_id;
++
++	sk_pacing_shift_update(skb->sk, 8);
++
++	orig_dev = skb->dev;
++	priv = netdev_priv(dev);
++	skb->dev = priv->real_dev;
++	mux_id = priv->mux_id;
++
++	int required_headroom, additional_header_len, csum_type = 0;
++
++	additional_header_len = 0;
++	required_headroom = sizeof(struct rmnet_map_header);
++
++	additional_header_len = sizeof(struct rmnet_map_v5_csum_header);
++	csum_type = RMNET_FLAGS_EGRESS_MAP_CKSUMV5;
++
++	required_headroom += additional_header_len;
++
++	if (skb_cow_head(skb, required_headroom) < 0)
++		return -ENOMEM;
++
++	map_v5_checksum_uplink_packet(skb);
++
++	map_header = add_map_header(skb, additional_header_len, 0);
++
++	if (!map_header)
++		return -ENOMEM;
++
++	map_header->mux_id = mux_id;
++
++	skb->protocol = htons(ETH_P_MAP);
++
++	return 0;
++}
++
+ static netdev_tx_t qmimux_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct qmimux_priv *priv = netdev_priv(dev);
+@@ -101,11 +226,15 @@ static netdev_tx_t qmimux_start_xmit(str
+ 	struct qmimux_hdr *hdr;
+ 	netdev_tx_t ret;
+ 
+-	hdr = skb_push(skb, sizeof(struct qmimux_hdr));
+-	hdr->pad = 0;
+-	hdr->mux_id = priv->mux_id;
+-	hdr->pkt_len = cpu_to_be16(len);
+-	skb->dev = priv->real_dev;
++	if (!priv->qmap_v5) {
++		hdr = skb_push(skb, sizeof(struct qmimux_hdr));
++		hdr->pad = 0;
++		hdr->mux_id = priv->mux_id;
++		hdr->pkt_len = cpu_to_be16(len);
++		skb->dev = priv->real_dev;
++	} else {
++		handle_egress(skb, dev);
++	}
+ 	ret = dev_queue_xmit(skb);
+ 
+ 	if (likely(ret == NET_XMIT_SUCCESS || ret == NET_XMIT_CN)) {
+@@ -203,6 +332,10 @@ static int qmimux_rx_fixup(struct usbnet
+ 	struct sk_buff *skbn;
+ 	u8 qmimux_hdr_sz = sizeof(*hdr);
+ 
++	if (dev->driver_info->data & QMI_WWAN_V5_HEAD) {
++		qmimux_hdr_sz += sizeof(struct rmnet_map_v5_csum_header);
++	}
++
+ 	while (offset + qmimux_hdr_sz < skb->len) {
+ 		hdr = (struct qmimux_hdr *)(skb->data + offset);
+ 		len = be16_to_cpu(hdr->pkt_len);
+@@ -211,6 +344,7 @@ static int qmimux_rx_fixup(struct usbnet
+ 		if (offset + len + qmimux_hdr_sz > skb->len)
+ 			return 0;
+ 
++		/* struct rmnet_map_header has the same size as qmimux_hdr */
+ 		/* control packet, we do not know what to do */
+ 		if (hdr->pad & 0x80)
+ 			goto skip;
+@@ -289,7 +423,7 @@ static struct attribute_group qmi_wwan_s
+ 	.attrs = qmi_wwan_sysfs_qmimux_attrs,
+ };
+ 
+-static int qmimux_register_device(struct net_device *real_dev, u8 mux_id)
++static int qmimux_register_device(struct net_device *real_dev, u8 mux_id, int qmap_v5)
+ {
+ 	struct net_device *new_dev;
+ 	struct qmimux_priv *priv;
+@@ -304,6 +438,7 @@ static int qmimux_register_device(struct
+ 	priv = netdev_priv(new_dev);
+ 	priv->mux_id = mux_id;
+ 	priv->real_dev = real_dev;
++	priv->qmap_v5 = qmap_v5;
+ 
+ 	priv->stats64 = netdev_alloc_pcpu_stats(struct pcpu_sw_netstats);
+ 	if (!priv->stats64) {
+@@ -363,7 +498,7 @@ static void qmi_wwan_netdev_setup(struct
+ 		net->addr_len        = 0;
+ 		net->flags           = IFF_POINTOPOINT | IFF_NOARP | IFF_MULTICAST;
+ 		set_bit(EVENT_NO_IP_ALIGN, &dev->flags);
+-		netdev_dbg(net, "mode: raw IP\n");
++		netdev_info(net, "mode: raw IP\n");
+ 	} else if (!net->header_ops) { /* don't bother if already set */
+ 		ether_setup(net);
+ 		/* Restoring min/max mtu values set originally by usbnet */
+@@ -470,7 +605,7 @@ static ssize_t add_mux_store(struct devi
+ 		goto err;
+ 	}
+ 
+-	ret = qmimux_register_device(dev->net, mux_id);
++	ret = qmimux_register_device(dev->net, mux_id, dev->driver_info->data & QMI_WWAN_V5_HEAD);
+ 	if (!ret) {
+ 		info->flags |= QMI_WWAN_FLAG_MUX;
+ 		ret = len;
+@@ -830,6 +965,13 @@ static int qmi_wwan_bind(struct usbnet *
+ 	}
+ 	dev->net->netdev_ops = &qmi_wwan_netdev_ops;
+ 	dev->net->sysfs_groups[0] = &qmi_wwan_sysfs_attr_group;
++
++	if (dev->driver_info->data & QMI_WWAN_V5_HEAD) {
++		dev->rx_urb_size = RMNET_V5_URB_SIZE;
++		//dev->net->flags |= IFF_NOARP;
++		//dev->net->flags &= ~(IFF_BROADCAST | IFF_MULTICAST);
++		printk("QMI_WWAN: extending urb size to %d\n", dev->rx_urb_size);
++	}
+ err:
+ 	return status;
+ }
+@@ -844,7 +986,8 @@ static void qmi_wwan_unbind(struct usbne
+ 		info->subdriver->disconnect(info->control);
+ 
+ 	/* disable MDM9x30 quirk */
+-	if (le16_to_cpu(dev->udev->descriptor.bcdUSB) >= 0x0201) {
++	if (dev->driver_info->data & QMI_WWAN_QUIRK_DTR ||
++	    le16_to_cpu(dev->udev->descriptor.bcdUSB) >= 0x0201) {
+ 		qmi_wwan_change_dtr(dev, false);
+ 		qmi_wwan_manage_power(dev, 0);
+ 	}
+@@ -933,6 +1076,16 @@ static const struct driver_info	qmi_wwan
+ 	.data           = QMI_WWAN_QUIRK_DTR,
+ };
+ 
++static const struct driver_info qmi_wwan_info_quirk_dtr_sdx55 = {
++	.description    = "WWAN/QMI device",
++	.flags          = FLAG_WWAN | FLAG_RX_ASSEMBLE | FLAG_NOARP | FLAG_SEND_ZLP,
++	.bind           = qmi_wwan_bind,
++	.unbind         = qmi_wwan_unbind,
++	.manage_power   = qmi_wwan_manage_power,
++	.rx_fixup       = qmi_wwan_rx_fixup,
++	.data           = QMI_WWAN_QUIRK_DTR | QMI_WWAN_V5_HEAD,
++};
++
+ #define HUAWEI_VENDOR_ID	0x12D1
+ 
+ /* map QMI/wwan function by a fixed interface number */
+@@ -966,6 +1119,11 @@ static const struct driver_info	qmi_wwan
+ 				      USB_SUBCLASS_VENDOR_SPEC, 0xff), \
+ 	.driver_info = (unsigned long)&qmi_wwan_info_quirk_dtr
+ 
++#define QMI_MATCH_FF_RAWIP_INTF(vend, prod, chip)                              \
++	USB_DEVICE_AND_INTERFACE_INFO(vend, prod, USB_CLASS_VENDOR_SPEC,       \
++				      USB_SUBCLASS_VENDOR_SPEC, 0xff),         \
++		.driver_info = (unsigned long)&qmi_wwan_info_quirk_dtr_##chip
++
+ static const struct usb_device_id products[] = {
+ 	/* 1. CDC ECM like devices match on the control interface */
+ 	{	/* Huawei E392, E398 and possibly others sharing both device id and more... */
+@@ -1074,7 +1232,8 @@ static const struct usb_device_id produc
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0306)},	/* Quectel EP06/EG06/EM06 */
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0512)},	/* Quectel EG12/EM12 */
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0620)},	/* Quectel EM160R-GL */
+-	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0800)},	/* Quectel RM500Q-GL */
++	{QMI_MATCH_FF_RAWIP_INTF(0x2c7c, 0x0800, sdx55)},	/* Quectel RM500Q-GL */
++	{QMI_MATCH_FF_RAWIP_INTF(0x2c7c, 0x0801, sdx55)},	/* Quectel RM520N-EU */
+ 	{QMI_MATCH_FF_FF_FF(0x05c6, 0xf601)},   /* MeigLink SLM750 */
+ 
+ 	/* 3. Combined interface devices matching on interface number */

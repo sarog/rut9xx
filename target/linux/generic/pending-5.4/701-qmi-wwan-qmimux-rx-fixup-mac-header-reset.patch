@@ -1,0 +1,14 @@
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -227,6 +227,10 @@
+ 		skbn = netdev_alloc_skb(net, pkt_len);
+ 		if (!skbn)
+ 			return 0;
++		/* packet doesn't have mac header
++		 * so reset its offset */
++		skb_reset_mac_header(skbn);
++
+ 		skbn->dev = net;
+ 
+ 		switch (skb->data[offset + qmimux_hdr_sz] & 0xf0) {
+

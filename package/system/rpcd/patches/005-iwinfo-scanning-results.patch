@@ -1,0 +1,17 @@
+--- a/iwinfo.c
++++ b/iwinfo.c
+@@ -504,6 +504,14 @@
+ 			blobmsg_close_table(&buf, d);
+ 		}
+ 	}
++	else if (iw->scanlist(ifname, res, &len))
++	{
++		d = blobmsg_open_table(&buf, NULL);
++
++		blobmsg_add_string(&buf, "status", "Scanning not possible");
++
++		blobmsg_close_table(&buf, d);
++	}
+ 
+ 	blobmsg_close_array(&buf, c);
+ 

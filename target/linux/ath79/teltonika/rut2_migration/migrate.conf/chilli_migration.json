@@ -1,0 +1,133 @@
+{
+  "config": {
+	"old_name": "coovachilli",
+	"new_name": "chilli"
+  },
+  "sections": [
+	{
+	  "old_type": "general",
+	  "new_type": "chilli",
+	  "new_name": "chilli",
+	  "options": {
+		"network": {
+		  "cb": "move_network_cb"
+		},
+		"mode": {
+		  "new_name": "_mode",
+		  "cb": "move_mode_cb"
+		},
+		"uamlogoutip": {},
+		"enabled": {},
+		"net": {
+		  "cb": "move_net_cb"
+		},
+		"protocol": {
+		  "new_name": "_protocol"
+		},
+		"tos_enb": {
+		  "new_name": "tos"
+		},
+		"externalpage": {
+		  "new_name": "_landingpage",
+		  "default": "int",
+		  "if": [
+			[ "1", "ext" ]
+		  ]
+		},
+		"externadress": {
+		  "new_name": "uamserver"
+		},
+		"dns1": {
+		  "default": "8.8.8.8"
+		},
+		"dns2": {
+		  "default": "8.8.4.4"
+		},
+		"https": {},
+		"sslkeyfile": {},
+		"sslcertfile": {},
+		"locationname": {},
+		"swapoctets": {},
+		"nasid": {
+		  "new_name": "radiusnasid"
+		},
+		"uamsecret": {},
+		"uamport": {
+		  "default": "3990"
+		},
+		"radiussecret": {},
+		"radiusacctport": {},
+		"radiusauthport": {},
+		"radiusserver1": {},
+		"radiusserver2": {},
+		"uamdomainfile": {
+		  "default": "/etc/chilli/uamdomainfile_chilli"
+		},
+		"ipup": {
+		  "default": "/etc/chilli/up.sh"
+		},
+		"ipdown": {
+		  "default": "/etc/chilli/down.sh"
+		},
+		"dbpath": {
+		  "default": "/var/hotspot.db"
+		},
+		"usersdbpath": {
+		  "default": "/etc/chilli/users.db"
+		},
+		"success_url": {
+		  "cb": "success_page_cb"
+		},
+		  "profile": {
+			"new_name": "_profile"
+		 }
+	  }
+	},
+	{
+	  "old_name": "url",
+	  "new_name": "chilli",
+	  "new_type": "chilli",
+	  "options": {
+		"uamip": {
+		  "new_name": "paramuamip"
+		},
+		"uamport": {
+		  "new_name": "paramuamport"
+		},
+		"called": {
+		  "new_name": "paramcalled"
+		},
+		"mac": {
+		  "new_name": "parammac"
+		},
+		"ip": {
+		  "new_name": "paramip"
+		},
+		"nasid": {
+		  "new_name": "paramnasid"
+		},
+		"sessionid": {
+		  "new_name": "paramsessionid"
+		},
+		"userurl": {
+		  "new_name": "paramuserurl"
+		},
+		"challenge": {
+		  "new_name": "paramchallenge"
+		},
+		"custom_name_nr1": {
+		  "new_name": "param1"
+		},
+		"custom_value_nr1": {
+		  "new_name": "param1value"
+		},
+		"custom_name_nr2": {
+		  "new_name": "param2"
+		},
+		"custom_value_nr2": {
+		  "new_name": "param2value"
+		}
+	  }
+	}
+  ]
+}

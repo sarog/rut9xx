@@ -1,0 +1,12 @@
+diff --git a/device.c b/device.c
+index b3d0e85..d442ee3 100644
+--- a/device.c
++++ b/device.c
+@@ -1149,6 +1149,7 @@ device_dump_status(struct blob_buf *b, struct device *dev)
+ 		system_if_dump_info(dev, b);
+ 
+ 	if (dev->active) {
++		system_if_get_settings(dev, &dev->settings);
+ 		device_merge_settings(dev, &st);
+ 		if (st.flags & DEV_OPT_MTU)
+ 			blobmsg_add_u32(b, "mtu", st.mtu);

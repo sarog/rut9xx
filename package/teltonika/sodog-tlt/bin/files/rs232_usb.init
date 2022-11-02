@@ -1,0 +1,346 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=99
+STOP=99
+
+check_value(){
+	value="$1"
+	variable="$2"
+
+	if [ -n "$value" ]; then
+		echo "-$variable "$value""
+	fi
+}
+
+rs_cb() {
+	local id
+	config_get id $1 id
+	local SERIAL="rs232_usb_$id"
+
+	config_get ENABLED $1 enabled
+	[ "$ENABLED" = "1" -a -e "/dev/$SERIAL" ] || return 0
+
+	local TYPE SPEED DBITS PARITY SBITS FCTRL ECHO_ENABLED
+	config_get TYPE $1 type
+	config_get SPEED $1 baudrate
+	config_get DBITS $1 databits
+	config_get PARITY $1 parity
+	config_get SBITS $1 stopbits
+	config_get FCTRL $1 flowcontrol
+	config_get ECHO_ENABLED $1 echo_enabled
+
+	local PARITY_TMP SBITS_TMP FCTRL_TMP
+	case "$PARITY" in
+		"none")	PARITY_TMP="-parenb -parodd";;
+		"odd")	PARITY_TMP="parenb parodd";;
+		"even")	PARITY_TMP="parenb -parodd";;
+		*)		PARITY_TMP="-parenb -parodd";;
+	esac
+
+	case "$SBITS" in
+		1) SBITS_TMP="-cstopb";;
+		2) SBITS_TMP="cstopb";;
+		*) SBITS_TMP="-cstopb";;
+	esac
+
+	case "$FCTRL" in
+		"none")		FCTRL_TMP="-crtscts -ixon -ixoff";;
+		"rts/cts")	FCTRL_TMP="crtscts -ixon -ixoff";;
+		"xon/xoff")	FCTRL_TMP="-crtscts ixon ixoff";;
+		*)			FCTRL_TMP="-crtscts -ixon -ixoff";;
+	esac
+
+	if [ "$ECHO_ENABLED" = "1" ]; then
+		FCTRL_TMP="$FCTRL_TMP echo"
+	else
+		FCTRL_TMP="$FCTRL_TMP -echo"
+	fi
+
+	local stty_retries=0
+	while ! stty -F /dev/"$SERIAL" "$SPEED" cs"$DBITS" $PARITY_TMP "$SBITS_TMP" $FCTRL_TMP; do
+		if [ $stty_retries -lt 5 ]; then
+			stty_retries=$((stty_retries+1))
+			echo "stty was unable to set all the parameters, retrying in 10 seconds"
+			sleep 10
+		else
+			echo "stty failed, continuing anyway"
+			break
+		fi
+	done
+
+	if [ "$TYPE" = "console" ]; then
+		# leaving these commented for clarity
+		# start_service() {
+			procd_open_instance $SERIAL
+			procd_set_param file /etc/config/rs
+			procd_set_param command /sbin/getty "$SPEED" /dev/"$SERIAL" vt100
+			procd_set_param respawn 0 1 0
+			procd_close_instance
+		# }
+	elif [ "$TYPE" = "dnp3_outstation" ]; then
+		DNP3_LOCAL_ADDR=$(uci -q get rs."$SERIAL".local_addr)
+		DNP3_REMOTE_ADDR=$(uci -q get rs."$SERIAL".remote_addr)
+		DNP3_UNSOLICITED=$(uci -q get rs."$SERIAL".unsolicited_enabled)
+		
+		DNP3_BAUDRATE=$(uci -q get rs."$SERIAL".baudrate)
+		DNP3_DATABITS=$(uci -q get rs."$SERIAL".databits)
+		DNP3_STOPBITS=$(uci -q get rs."$SERIAL".stopbits)
+		
+		PARITY=$(uci -q get rs."$SERIAL".parity)
+		if [ "$PARITY" = "odd" ]; then
+			DNP3_PARITY="1"
+		elif [ "$PARITY" = "even" ]; then
+			DNP3_PARITY="2"
+		else
+			DNP3_PARITY="0"
+		fi
+		
+		FLOWCONTROL=$(uci -q get rs."$SERIAL".flowcontrol)
+		if [ "$FLOWCONTROL" = "rts/cts" ]; then
+			DNP3_FLOWCONTROL="3"
+		elif [ "$FLOWCONTROL" = "Xon/Xoff" ]; then
+			DNP3_FLOWCONTROL="4"
+		else
+			DNP3_FLOWCONTROL="0"
+		fi
+		
+		start_service() {
+			procd_open_instance
+			procd_set_param file /etc/config/rs
+			procd_set_param command /usr/sbin/dnp3_outstation
+			
+			procd_append_param command -t serial
+			procd_append_param command -s usb
+			procd_append_param command -c "$DNP3_BAUDRATE"
+			procd_append_param command -d "$DNP3_DATABITS"
+			procd_append_param command -o "$DNP3_STOPBITS"
+			procd_append_param command -e "$DNP3_PARITY"
+			procd_append_param command -f "$DNP3_FLOWCONTROL"
+			
+			procd_append_param command -a "$DNP3_LOCAL_ADDR"
+			procd_append_param command -b "$DNP3_REMOTE_ADDR"
+			if [ "$DNP3_UNSOLICITED" = "1" ]; then
+				procd_append_param command -u
+			fi
+			
+			procd_set_param respawn "${respawn_threshold:-0}" "${respawn_timeout:-6}" "${respawn_retry:-0}"
+			procd_close_instance
+		}
+	elif [ "$TYPE" = "overip" ]; then
+		local DEBUG_LEVEL MODE spec_char ALWAYS_RECONNECT
+		config_get DEBUG_LEVEL $1 debug
+		config_get MODE $1 mode
+		config_get spec_char $1 spec_char
+		config_get ALWAYS_RECONNECT $1 always_reconnect
+
+		DEBUG_LEVEL=`check_value "$DEBUG_LEVEL" "D"`
+		SBITS=`check_value "$SBITS" "t"`
+		DBITS=`check_value "$DBITS" "b"`
+		SPEED=`check_value "$SPEED" "s"`
+		PARITY=`check_value "$PARITY" "a"`
+
+		if [ "$MODE" = "server" ]; then
+			local PROTOCOL PORT_LISTEN IP_LISTEN TIMEOUT
+			config_get PROTOCOL $1 protocol
+			config_get PORT_LISTEN $1 port_listen
+			config_get IP_LISTEN $1 ip_listen
+			config_get TIMEOUT $1 timeout
+
+			MODE=`check_value "$MODE" "m"`
+			TIMEOUT=`check_value "$TIMEOUT" "c"`
+			IP_LISTEN=`check_value "$IP_LISTEN" "i"`
+			PORT_LISTEN=`check_value "$PORT_LISTEN" "g"`
+
+			# start_service() {
+				procd_open_instance $SERIAL
+				procd_set_param file /etc/config/rs
+				procd_set_param command /usr/sbin/sodog -p "/dev/$SERIAL" $DBITS $SPEED $PARITY $SBITS $MODE $DEBUG_LEVEL $TIMEOUT $IP_LISTEN $PORT_LISTEN
+
+				if [ -n "$spec_char" ]; then
+					spec_char="-x $spec_char"
+					procd_append_param command $spec_char
+				fi
+				if [ "$PROTOCOL" = "udp" ]; then
+					procd_append_param command -f
+				fi
+				if [ "$ALWAYS_RECONNECT" = "1" ]; then
+					procd_append_param command -r
+				fi
+				procd_set_param respawn ${respawn_threshold:-0} ${respawn_timeout:-6} ${respawn_retry:-0}
+				procd_close_instance
+			# }
+		elif [ "$MODE" = "client" ]; then
+			local INTERVAL IP_CONNECT PORT_CONNECT
+			config_get INTERVAL $1 recon_interval
+			config_get IP_CONNECT $1 ip_connect
+			config_get PORT_CONNECT $1 port_connect
+
+			MODE=`check_value "$MODE" "m"`
+			INTERVAL=`check_value "$INTERVAL" "y"`
+			IP_CONNECT=`check_value "$IP_CONNECT" "l"`
+			PORT_CONNECT=`check_value "$PORT_CONNECT" "k"`
+			
+			KEEPALIVE_TIME=$(uci -q get rs."$SERIAL".keepalive_time)
+			KEEPALIVE_TIME=$(check_value "$KEEPALIVE_TIME" "q")
+			KEEPALIVE_INTV=$(uci -q get rs."$SERIAL".keepalive_interval)
+			KEEPALIVE_INTV=$(check_value "$KEEPALIVE_INTV" "d")
+			KEEPALIVE_PRBS=$(uci -q get rs."$SERIAL".keepalive_probes)
+			KEEPALIVE_PRBS=$(check_value "$KEEPALIVE_PRBS" "o")
+
+			# start_service() {
+				procd_open_instance $SERIAL
+				procd_set_param file /etc/config/rs
+				procd_set_param command /usr/sbin/sodog -p "/dev/$SERIAL" $DBITS $SPEED $PARITY $SBITS $MODE $DEBUG_LEVEL $IP_CONNECT $PORT_CONNECT $INTERVAL $KEEPALIVE_TIME $KEEPALIVE_INTV $KEEPALIVE_PRBS
+
+				if [ -n "$spec_char" ]; then
+					spec_char="-x $spec_char"
+					procd_append_param command $spec_char
+				fi
+				if [ "$PROTOCOL" = "udp" ]; then
+					procd_append_param command -f
+				fi
+				if [ "$ALWAYS_RECONNECT" = "1" ]; then
+					procd_append_param command -r
+				fi
+
+				procd_set_param respawn ${respawn_threshold:-0} ${respawn_timeout:-6} ${respawn_retry:-0}
+				procd_close_instance
+			# }
+		elif [ "$MODE" = "bidirect" ]; then
+			local TIMEOUT IP_LISTEN PORT_LISTEN INTERVAL IP_CONNECT PORT_CONNECT
+			config_get TIMEOUT $1 timeout
+			config_get IP_LISTEN $1 ip_listen
+			config_get PORT_LISTEN $1 port_listen
+			config_get INTERVAL $1 recon_interval
+			config_get IP_CONNECT $1 ip_connect
+			config_get PORT_CONNECT $1 port_connect
+
+			MODE=`check_value "$MODE" "m"`
+			TIMEOUT=`check_value "$TIMEOUT" "c"`
+			IP_LISTEN=`check_value "$IP_LISTEN" "i"`
+			PORT_LISTEN=`check_value "$PORT_LISTEN" "g"`
+			INTERVAL=`check_value "$INTERVAL" "y"`
+			IP_CONNECT=`check_value "$IP_CONNECT" "l"`
+			PORT_CONNECT=`check_value "$PORT_CONNECT" "k"`
+
+			KEEPALIVE_TIME=$(uci -q get rs."$SERIAL".keepalive_time)
+			KEEPALIVE_TIME=$(check_value "$KEEPALIVE_TIME" "q")
+			KEEPALIVE_INTV=$(uci -q get rs."$SERIAL".keepalive_interval)
+			KEEPALIVE_INTV=$(check_value "$KEEPALIVE_INTV" "d")
+			KEEPALIVE_PRBS=$(uci -q get rs."$SERIAL".keepalive_probes)
+			KEEPALIVE_PRBS=$(check_value "$KEEPALIVE_PRBS" "o")
+
+			# start_service() {
+				procd_open_instance $SERIAL
+				procd_set_param file /etc/config/rs
+				procd_set_param command /usr/sbin/sodog -p "/dev/$SERIAL" $DBITS $SPEED $PARITY $SBITS $MODE $DEBUG_LEVEL $IP_CONNECT $PORT_CONNECT $INTERVAL $TIMEOUT $IP_LISTEN $PORT_LISTEN $KEEPALIVE_TIME $KEEPALIVE_INTV $KEEPALIVE_PRBS
+				procd_set_param respawn ${respawn_threshold:-0} ${respawn_timeout:-6} ${respawn_retry:-0}
+				procd_close_instance
+			# }
+		fi
+	elif [ "$TYPE" = "modem" ]; then
+		local DCONNECT PORT SPECIAL_CRLF INIT_STRING
+		config_get DCONNECT $1 direct_connect
+		config_get PORT $1 modem_port
+		config_get SPECIAL_CRLF $1 use_alternative_crlf
+		config_get INIT_STRING $1 init_string
+
+		[ -n "$DCONNECT" ] && PARAMS="$PARAMS -D $DCONNECT"
+		[ -n "$PORT" ] && PARAMS="$PARAMS -p $PORT"
+		[ -n "$INIT_STRING" ] && PARAMS="$PARAMS -i $INIT_STRING"
+		[ -n "$SPECIAL_CRLF" ] && [ "$SPECIAL_CRLF" = "1" ] && PARAMS="$PARAMS -x 1"
+		# start_service() {
+			procd_open_instance $SERIAL
+			procd_set_param file /etc/config/rs
+			procd_set_param command /usr/bin/tcpser -s "$SPEED" -d "/dev/$SERIAL" $PARAMS
+			procd_set_param respawn
+			procd_close_instance
+		# }
+	elif [ "$TYPE" = "modbus" ]; then
+		local MODBUS_IP MODBUS_PORT SLAVE_ID SLAVE_ID_CONFIG MULTI_SLAVE_ID SINGLE_SLAVE_ID CRC_ENABLED CRC_REPEAT
+		config_get MODBUS_IP $1 modbus_ip
+		config_get MODBUS_PORT $1 modbus_port
+		config_get SLAVE_ID $1 slave_id
+		config_get SLAVE_ID_CONFIG $1 slave_id_config
+		config_get MULTI_SLAVE_ID $1 multi_slave_id
+		config_get SINGLE_SLAVE_ID $1 single_slave_id
+		config_get CRC_ENABLED $1 crc_enabled
+		config_get CRC_REPEAT $1 crc_repeat
+
+		# start_service() {
+			echo "$MULTI_SLAVE_ID"
+			procd_open_instance $SERIAL
+			procd_set_param file /etc/config/rs
+			if [ "$SLAVE_ID_CONFIG" = "single" ]; then
+				procd_set_param command /usr/sbin/modbusgwd -p /dev/"$SERIAL" -s "$SPEED" -b "$DBITS" -a "$PARITY" -t "$SBITS" -g "$SINGLE_SLAVE_ID" -i "$MODBUS_IP" -m "$MODBUS_PORT"
+			else
+				procd_set_param command /usr/sbin/modbusgwd -p /dev/"$SERIAL" -s "$SPEED" -b "$DBITS" -a "$PARITY" -t "$SBITS" -r "$MULTI_SLAVE_ID" -i "$MODBUS_IP" -m "$MODBUS_PORT"
+			fi
+
+			if [ "$CRC_ENABLED" -eq 1 ]; then
+				procd_append_param command -c "$CRC_REPEAT"
+			fi
+			procd_set_param respawn ${respawn_threshold:-0} ${respawn_timeout:-6} ${respawn_retry:-0}
+			procd_close_instance
+		# }
+	elif [ "$TYPE" = "ntrip" ]; then
+		local NTRIP_IP NTRIP_PORT NTRIP_MOUNTPT NTRIP_DATAF NTRIP_USER NTRIP_PSW USE_GPS NTRIP_USER_NMEA
+		config_get NTRIP_IP $1 ntrip_ip
+		config_get NTRIP_PORT $1 ntrip_port
+		config_get NTRIP_MOUNTPT $1 ntrip_mount_point
+		config_get NTRIP_DATAF $1 ntrip_data_format
+		config_get NTRIP_USER $1 ntrip_user
+		config_get NTRIP_PSW $1 ntrip_password
+		config_get USE_GPS $1 use_router_gps
+		config_get NTRIP_USER_NMEA $1 user_nmea
+
+		HAVE_GPS=`uci get -q hwinfo.hwinfo.gps`
+		GPS_FIXTIME=`gpsctl -f`
+		NTRIP_NMEA=""
+		GPS_RETRY_COUNTER=0
+		GPS_NMEA_LEN=0
+
+		# start_service() {
+			if [ "$HAVE_GPS" = "1" ] && [ "$USE_GPS" = "1" ]; then
+				#echo "Trying to acquire and use NMEA from the GPS module"
+				NTRIP_NMEA="get_from_gps"
+			elif [ -n "$NTRIP_USER_NMEA" ]; then
+				#echo "Using NMEA preconfigured by the user"
+				NTRIP_NMEA="$NTRIP_USER_NMEA"
+			fi
+
+			procd_open_instance $SERIAL
+				procd_set_param file /etc/config/rs
+				procd_set_param command /usr/bin/ntripclient
+
+				procd_append_param command -s $NTRIP_IP
+				procd_append_param command -r $NTRIP_PORT
+				procd_append_param command -m $NTRIP_MOUNTPT
+				procd_append_param command -M $NTRIP_DATAF
+				procd_append_param command -u $NTRIP_USER
+				procd_append_param command -p $NTRIP_PSW
+				procd_append_param command -D /dev/$SERIAL
+				procd_append_param command -B $SPEED
+				procd_append_param command -A $DBITS
+				procd_append_param command -Y $PARITY
+				procd_append_param command -T $SBITS
+
+				if [ -n "$NTRIP_NMEA" ]; then
+					procd_append_param command -n $NTRIP_NMEA
+				fi
+
+				procd_set_param respawn ${respawn_threshold:-0} ${respawn_timeout:-6} ${respawn_retry:-0}
+			procd_close_instance
+		# }
+	fi
+}
+
+start_service() {
+	config_load rs
+	config_foreach rs_cb usb
+}
+
+service_triggers() {
+	procd_add_reload_trigger "rs"
+}

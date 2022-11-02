@@ -1,0 +1,75 @@
+{
+  "config": {
+	"old_name": "sms_gateway",
+	"new_name": "sms_gateway"
+  },
+  "sections": [
+	{
+	  "old_name": "forwarding_to_http",
+	  "new_type": "fwd_to_http",
+	  "remove": true,
+	  "options": {
+		"enabled": {},
+		"every_sms": {},
+		"message_encode_b64": {},
+		"verify_cert": {},
+		"method": {},
+		"number_name": {},
+		"message_name": {},
+		"extra_name1": {},
+		"extra_value1": {},
+		"extra_name2": {},
+		"extra_value2": {},
+		"mode": {
+		  "if": [
+			["list", "list_number"]
+		  ]
+		},
+		"number": {},
+		"url": {}
+	  }
+	},
+	{
+	  "old_name": "forwarding_to_sms",
+	  "new_type": "fwd_to_sms",
+	  "remove": true,
+	  "options": {
+		"enabled": {},
+		"every_sms": {},
+		"sender_num": {},
+		"mode": {
+		  "if": [
+		  	["list", "list_number"]
+		  ]
+		},
+		"number": {
+		  "new_name": "fwd_number"
+		},
+		"senders_number": {
+		  "new_name": "number"
+		}
+	  }
+	},
+	{
+	  "old_name": "forwarding_to_smtp",
+	  "new_type": "fwd_to_smtp",
+	  "remove": true,
+	  "options": {
+		"enabled": {},
+		"every_sms": {},
+		"sender_num": {},
+		"subject": {},
+		"recipemail": {},
+		"mode": {
+		  "if": [
+			["list", "list_number"]
+		  ]
+		},
+		"number": {},
+		"email_name": {
+		  "cb": "sms_to_email_cb"
+		}
+	  }
+	}
+  ]
+}

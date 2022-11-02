@@ -1,0 +1,57 @@
+--- a/block.c
++++ b/block.c
+@@ -81,6 +81,7 @@ struct mount {
+ 	int overlay;
+ 	int disabled_fsck;
+ 	unsigned int prio;
++	bool enabled;
+ };
+ 
+ static struct vlist_tree mounts;
+@@ -269,11 +270,12 @@ static int mount_add(struct uci_section
+ 	if (!tb[MOUNT_LABEL] && !tb[MOUNT_UUID] && !tb[MOUNT_DEVICE])
+ 		return -1;
+ 
+-	if (tb[MOUNT_ENABLE] && !blobmsg_get_u32(tb[MOUNT_ENABLE]))
+-		return -1;
+-
+ 	m = malloc(sizeof(struct mount));
+ 	m->type = TYPE_MOUNT;
++	if (tb[MOUNT_ENABLE])
++		m->enabled = !!blobmsg_get_u32(tb[MOUNT_ENABLE]);
++	else
++		m->enabled = true;
+ 	m->uuid = blobmsg_get_strdup(tb[MOUNT_UUID]);
+ 	m->label = blobmsg_get_strdup(tb[MOUNT_LABEL]);
+ 	m->target = blobmsg_get_strdup(tb[MOUNT_TARGET]);
+@@ -290,7 +292,7 @@ static int mount_add(struct uci_section
+ 	if (m->target && !strcmp(m->target, "/overlay"))
+ 		m->extroot = m->overlay = 1;
+ 
+-	if (m->target && *m->target != '/') {
++	if (m->target && *m->target != '/' && m->enabled) {
+ 		ULOG_WARN("ignoring mount section %s due to invalid target '%s'\n",
+ 		          s->e.name, m->target);
+ 		free(m);
+@@ -1121,6 +1123,11 @@ static int mount_device(struct probe_inf
+ 
+ 	/* Check if device should be mounted & set the target directory */
+ 	if (m) {
++		if (!m->enabled) {
++			ULOG_INFO("automounting %s is disabled in fstab\n", pr->dev);
++			return 0;
++		}
++
+ 		switch (type) {
+ 		case TYPE_HOTPLUG:
+ 			if (m->autofs)
+@@ -1152,6 +1159,9 @@ static int mount_device(struct probe_inf
+ 			target = _target;
+ 		}
+ 	} else if (anon_mount) {
++		if (!strncmp(device, "mtdblock", 8)) {
++			return 0;
++		}
+ 		if (asprintf(&_target, "/mnt/%s", device) == -1)
+ 			exit(ENOMEM);
+ 

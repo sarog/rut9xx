@@ -1,0 +1,58 @@
+#!/bin/sh
+
+[ -n "$PLUTO_DNS4_1" ] || exit 0
+
+. /lib/functions.sh
+
+connection_up() {
+	local servers added
+	config_get servers "$1" server
+
+	if ! list_contains servers "$PLUTO_DNS4_1"; then
+		uci add_list dhcp.@dnsmasq[0].server="$PLUTO_DNS4_1"
+		added=1
+	fi
+
+	if ! list_contains servers "$PLUTO_DNS4_2"; then
+		uci add_list dhcp.@dnsmasq[0].server="$PLUTO_DNS4_2"
+		added=1
+	fi
+
+	[ -n "$added" ] && {
+		uci commit dhcp
+		/etc/init.d/dnsmasq reload
+		echo "Added additional DNS servers: $PLUTO_DNS4_1 $PLUTO_DNS4_2"
+	}
+}
+
+connection_down() {
+	local removed
+
+	remove_server() {
+		[ "$1" = "$PLUTO_DNS4_1" ] || [ "$1" = "$PLUTO_DNS4_2" ] && {
+			uci del_list dhcp."$2".server="$1"
+			removed=1
+		}
+	}
+
+	config_list_foreach "$1" server remove_server "$1"
+
+	[ -n "$removed" ] && {
+		uci commit dhcp
+		/etc/init.d/dnsmasq reload
+		echo "Removed additional DNS servers: $PLUTO_DNS4_1 $PLUTO_DNS4_2"
+	}
+}
+
+case "$PLUTO_VERB:" in
+	up-client:)
+		config_load dhcp
+		config_foreach connection_up dnsmasq
+		;;
+	down-client:)
+		config_load dhcp
+		config_foreach connection_down dnsmasq
+		;;
+esac
+
+exit 0

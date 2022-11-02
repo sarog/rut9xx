@@ -1,0 +1,13 @@
+--- a/wireless.c
++++ b/wireless.c
+@@ -1407,6 +1407,10 @@ wireless_device_set_retry(struct wireless_device *wdev, struct blob_attr *data)
+ 		return UBUS_STATUS_INVALID_ARGUMENT;
+ 
+ 	wdev->retry = blobmsg_get_u32(val);
++
++	if (wdev->retry > 0)
++		wdev->retry_setup_failed = false;
++			
+ 	netifd_log_message(L_NOTICE, "Wireless device '%s' set retry=%d\n", wdev->name, wdev->retry);
+ 	return 0;
+ }

@@ -1,0 +1,11 @@
+--- a/drivers/tty/serial/ar933x_uart.c
++++ b/drivers/tty/serial/ar933x_uart.c
+@@ -35,7 +35,7 @@
+ #define DRIVER_NAME "ar933x-uart"
+ 
+ #define AR933X_UART_MAX_SCALE	0xff
+-#define AR933X_UART_MAX_STEP	0xffff
++#define AR933X_UART_MAX_STEP	13107  //From datasheet section 8.20.3
+ 
+ #define AR933X_UART_MIN_BAUD	300
+ #define AR933X_UART_MAX_BAUD	3000000

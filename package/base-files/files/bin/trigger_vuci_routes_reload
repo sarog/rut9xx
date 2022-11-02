@@ -1,0 +1,48 @@
+#!/bin/sh
+
+print_help() {
+	printf "Usage: %s [options]\n
+Options:
+	-t | --triggerer WHO \t WHO called this script (triggered vuci reload). Used for logging.
+	-h | --help \t\t Print this help and exit
+" "$0"
+}
+
+log() {
+	logger -t "$0" "$*"
+}
+
+while [ -n "$1" ]; do
+	arg=$1
+	value=$2
+
+	case "$arg" in
+	-h | --help)
+		print_help
+		exit
+		;;
+	-t | --triggerer)
+		triggerer=$value
+		;;
+	*)
+		printf "Unknown option '%s'\n" "$arg"
+		print_help
+		exit 1
+		;;
+	esac
+	shift 2
+done
+
+# If any of the following commands fail, further commands will not be executed (in the subshell scope).
+# This way we can elegantly know if any of the commands in the subshell failed and react accordingly.
+(						# Create a subshell.
+	set -o errexit				# Set shell option to exit if any of the following commands return a non-zero exit code.
+	/bin/mkdir -p /tmp/vuci			# Execute required commands 
+	/bin/touch /tmp/vuci/reload_routes	#   to trigger a reload.
+)
+[ $? -eq 0 ] || { 				# Check exit code of the subshell.
+	log "Failed to trigger vuci routes reload${triggerer:+" requested by $triggerer"}"
+	exit 1
+}
+
+log "vuci reload_routes triggered${triggerer:+" by $triggerer"}"

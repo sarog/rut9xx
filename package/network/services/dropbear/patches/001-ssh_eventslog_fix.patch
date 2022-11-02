@@ -1,33 +1,33 @@
 --- a/svr-auth.c
 +++ b/svr-auth.c
-@@ -231,6 +231,7 @@
+@@ -233,6 +233,7 @@ static int checkusername(const char *use
  
  	char* listshell = NULL;
  	char* usershell = NULL;
-+	char commandset[120];
++	char commandset[256];
  	uid_t uid;
+ 
  	TRACE(("enter checkusername"))
- 	if (userlen > MAX_USERNAME_LEN) {
-@@ -254,6 +255,8 @@
+@@ -265,6 +266,8 @@ static int checkusername(const char *use
  	/* check that user exists */
  	if (!ses.authstate.pw_name) {
  		TRACE(("leave checkusername: user '%s' doesn't exist", username))
 +		sprintf(commandset, ". ./lib/teltonika-functions.sh; check_this_ip '%s' 'nonexistent' 2>/dev/null >/dev/null &", svr_ses.addrstring);
 +  		system(commandset);
  		dropbear_log(LOG_WARNING,
- 				"Login attempt for nonexistent user from %s",
- 				svr_ses.addrstring);
+ 				"Login attempt for nonexistent user");
+ 		ses.authstate.checkusername_failed = 1;
 --- a/svr-authpasswd.c
 +++ b/svr-authpasswd.c
-@@ -53,6 +53,7 @@
+@@ -53,6 +53,7 @@ void svr_auth_password(int valid_user) {
  	char * passwdcrypt = NULL; /* the crypt from /etc/passwd or /etc/shadow */
  	char * testcrypt = NULL; /* crypt generated from the user's password sent */
  	char * password = NULL;
-+	char commandset[120] = {0};
++	char commandset[256] = {0};
  	unsigned int passwordlen;
  	unsigned int changepw;
-
-@@ -97,12 +97,16 @@
+ 
+@@ -107,12 +108,16 @@ void svr_auth_password(int valid_user) {
  
  	if (constant_time_strcmp(testcrypt, passwdcrypt) == 0) {
  		/* successful authentication */

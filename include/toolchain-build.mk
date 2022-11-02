@@ -1,17 +1,16 @@
-# 
-# Copyright (C) 2009 OpenWrt.org
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2009-2020 OpenWrt.org
 
 override CONFIG_AUTOREBUILD=
+override CONFIG_AUTOREMOVE=
 
-REAL_STAGING_DIR_HOST:=$(STAGING_DIR_HOST)
-STAGING_DIR_HOST:=$(TOOLCHAIN_DIR)
+HOST_BUILD_PREFIX:=$(TOOLCHAIN_DIR)
 BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 
 include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/hardening.mk
+include $(INCLUDE_DIR)/gpl.mk
 
 HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared
 

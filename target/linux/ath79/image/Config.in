@@ -1,0 +1,14 @@
+config BUILD_BOOTLOADER
+	bool
+	depends on BUILD_FACTORY_IMAGE && TARGET_ath79
+	select PACKAGE_uboot-ath79
+
+config RUT9_MIGRATION
+	bool "RUT9 Migration scripts and their dependencies"
+	default y if TARGET_ath79_generic_DEVICE_teltonika_rut9xx
+	select BUSYBOX_CONFIG_BASE64
+
+config RUT2_MIGRATION
+	bool "RUT2 Migration scripts and their dependencies"
+	default y if TARGET_ath79_generic_DEVICE_teltonika_rut2xx
+	select BUSYBOX_CONFIG_BASE64

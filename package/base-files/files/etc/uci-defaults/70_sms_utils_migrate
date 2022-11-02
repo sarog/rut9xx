@@ -1,0 +1,22 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+change_monitoring_action(){
+	local section_id="$1"
+
+	local action
+
+	config_get action "$section_id" action
+
+	if [ "$action" == "monitoring" ]; then
+		uci -q set "sms_utils"."${section_id}.action=rms_action"
+	fi
+
+}
+
+config_load "sms_utils"
+config_foreach change_monitoring_action "rule"
+uci commit sms_utils
+
+exit 0

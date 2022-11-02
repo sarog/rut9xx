@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,18 +7,26 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libtool
+PKG_CPE_ID:=cpe:/a:gnu:libtool
 PKG_VERSION:=2.4
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
-PKG_MD5SUM:=b32b04148ecdd7344abc6fe8bd1bb021
+PKG_HASH:=afcce660d3dc54c63a0a5ba3cf05272239dc3c54bbeba20f6bad250f9dc007ae
 
 HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/gpl.mk
 
 HOST_CONFIGURE_VARS += \
 	lt_cv_sys_dlsearch_path=""
+
+define Host/Prepare
+	$(call Host/Prepare/Default)
+	(cd $(STAGING_DIR_HOST)/share/aclocal/ && rm -f libtool.m4 ltdl.m4 lt~obsolete.m4 ltoptions.m4 ltsugar.m4 ltversion.m4)
+	(cd $(HOST_BUILD_DIR); $(AM_TOOL_PATHS) ./bootstrap)
+endef
 
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) install

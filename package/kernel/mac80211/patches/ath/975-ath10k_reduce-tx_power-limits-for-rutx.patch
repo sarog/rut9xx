@@ -1,0 +1,20 @@
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -9274,7 +9274,7 @@ static const struct ieee80211_ops ath10k
+ 	.center_freq		= (_freq), \
+ 	.flags			= (_flags), \
+ 	.max_antenna_gain	= 0, \
+-	.max_power		= 30, \
++	.max_power		= 23, \
+ }
+ 
+ #define CHAN5G(_channel, _freq, _flags) { \
+@@ -9283,7 +9283,7 @@ static const struct ieee80211_ops ath10k
+ 	.center_freq		= (_freq), \
+ 	.flags			= (_flags), \
+ 	.max_antenna_gain	= 0, \
+-	.max_power		= 30, \
++	.max_power		= 20, \
+ }
+ 
+ static const struct ieee80211_channel ath10k_2ghz_channels[] = {

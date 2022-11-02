@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 
 #define IMG_SIZE     0x3e0000
@@ -85,6 +86,8 @@ void write_img(unsigned char* img, const char *fname)
     fclose(fp);
     exit(-1);
   }
+
+  fclose(fp);
 }
 
 
@@ -103,6 +106,8 @@ void write_rootfs(unsigned char* img, const char *fname)
     fclose(fp);
     exit(-1);
   }
+
+  fclose(fp);
 }
 
 
@@ -121,6 +126,8 @@ void write_kernel(unsigned char* img, const char *fname)
     fclose(fp);
     exit(-1);
   }
+
+  fclose(fp);
 }
 
 

@@ -1,0 +1,95 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+. /usr/share/libubox/jshn.sh
+
+include /lib/upgrade
+
+VALID=1
+HW_SUPPORT=1
+FORCEABLE=1
+ALLOW_BACKUP=1
+IS_DOWNGRADE=0
+
+# Mark image as invalid but still possible to install
+notify_firmware_invalid() {
+	VALID=0
+}
+
+# Mark image as broken (impossible to install)
+notify_firmware_broken() {
+	VALID=0
+	FORCEABLE=0
+}
+
+# Mark image as unsupported by hardware (impossible to install)
+notify_firmware_hw_unsupported() {
+	VALID=0
+	HW_SUPPORT=0
+}
+
+# Mark image as incompatible with preserving a backup
+notify_firmware_no_backup() {
+	ALLOW_BACKUP=0
+}
+
+# Mark image as downgrade
+notify_firmware_is_downgrade() {
+	IS_DOWNGRADE=1
+}
+
+# Add result of validation test
+notify_firmware_test_result() {
+	local old_ns
+
+	json_set_namespace validate_firmware_image old_ns
+	json_add_boolean "$1" "$2"
+	json_set_namespace $old_ns
+}
+
+err_to_bool() {
+	[ "$1" -ne 0 ] && echo 0 || echo 1
+}
+
+echo 0 > /tmp/fwtool_last_error
+
+if type 'platform_pre_check_image' >/dev/null 2>/dev/null; then
+	platform_pre_check_image "$1" >&2
+	[ "$?" -ne 0 ] && notify_firmware_invalid
+fi
+fwtool_check_signature "$1" >&2
+FWTOOL_SIGNATURE=$?
+[ "$FWTOOL_SIGNATURE" -ne 0 ] && notify_firmware_invalid
+
+fwtool_check_image "$1" >&2
+FWTOOL_DEVICE_MATCH=$?
+[ "$FWTOOL_DEVICE_MATCH" -ne 0 ] && notify_firmware_invalid
+
+[ "$BACKUP_INCOMPATIBLE" -eq 1 2>/dev/null ] && notify_firmware_is_downgrade
+
+if type 'platform_check_hw_support' >/dev/null 2>/dev/null; then
+	platform_check_hw_support "$1" >&2
+	[ "$?" -ne 0 ] && notify_firmware_hw_unsupported
+fi
+
+json_set_namespace validate_firmware_image old_ns
+json_init
+	json_add_object "tests"
+		json_add_boolean fwtool_signature "$(err_to_bool $FWTOOL_SIGNATURE)"
+		json_add_boolean fwtool_device_match "$(err_to_bool $FWTOOL_DEVICE_MATCH)"
+		json_add_string fwtool_last_error "$(cat /tmp/fwtool_last_error)"
+		
+		# Call platform_check_image() here so it can add its test
+		# results and still mark image properly.
+		json_set_namespace $old_ns
+		platform_check_image "$1" >&2 || notify_firmware_invalid
+		json_set_namespace validate_firmware_image old_ns
+	json_close_object
+	json_add_boolean valid "$VALID"
+	json_add_boolean hw_support "$HW_SUPPORT"
+	json_add_boolean forceable "$FORCEABLE"
+	json_add_boolean allow_backup "$ALLOW_BACKUP"
+	json_add_boolean is_downgrade "$IS_DOWNGRADE"
+json_dump -i
+json_set_namespace $old_ns

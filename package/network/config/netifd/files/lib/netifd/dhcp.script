@@ -15,14 +15,21 @@ set_classless_routes() {
 
 setup_interface () {
 	proto_init_update "*" 1
-	#/usr/sbin/wan_rule_man.sh "edit" "$ip" "$INTERFACE"
 	proto_add_ipv4_address "$ip" "${subnet:-255.255.255.0}"
 	# TODO: apply $broadcast
 
+	local ip_net
+	eval "$(ipcalc.sh "$ip/$mask")";ip_net="$NETWORK"
+
+	local i
 	for i in $router; do
-		proto_add_ipv4_route "$i" 32 "" "$ip"
+		local gw_net
+		eval "$(ipcalc.sh "$i/$mask")";gw_net="$NETWORK"
+
+		[ "$ip_net" != "$gw_net" ] && proto_add_ipv4_route "$i" 32 "" "$ip"
 		proto_add_ipv4_route 0.0.0.0 0 "$i" "$ip"
 
+		local r
 		for r in $CUSTOMROUTES; do
 			proto_add_ipv4_route "${r%%/*}" "${r##*/}" "$i" "$ip"
 		done
@@ -32,17 +39,23 @@ setup_interface () {
 	[ -n "$staticroutes" ] && set_classless_routes $staticroutes
 	[ -n "$msstaticroutes" ] && set_classless_routes $msstaticroutes
 
-	for dns in $dns; do
-		proto_add_dns_server "$dns"
+	for i in $dns; do
+		proto_add_dns_server "$i"
 	done
-	for domain in $domain; do
-		proto_add_dns_search "$domain"
+	for i in $domain; do
+		proto_add_dns_search "$i"
 	done
+
+	# TODO: Deprecate timesvr in favor of timesrv
+	if [ -n "$timesvr" -a -z "$timesrv" ]; then
+		timesrv="$timesvr"
+		echo "Environment variable 'timesvr' will be deprecated; use 'timesrv' instead."
+	fi
 
 	proto_add_data
 	[ -n "$ZONE" ]     && json_add_string zone "$ZONE"
 	[ -n "$ntpsrv" ]   && json_add_string ntpserver "$ntpsrv"
-	[ -n "$timesvr" ]  && json_add_string timeserver "$timesvr"
+	[ -n "$timesrv" ]  && json_add_string timeserver "$timesrv"
 	[ -n "$hostname" ] && json_add_string hostname "$hostname"
 	[ -n "$message" ]  && json_add_string message "$message"
 	[ -n "$timezone" ] && json_add_int timezone "$timezone"
@@ -61,7 +74,7 @@ setup_interface () {
 		ip6rd="${ip6rd#* }"
 		local ip6rdbr="${ip6rd%% *}"
 
-		[ -n "$ZONE" ] || ZONE=$(fw3 -q network $INTERFACE)
+		[ -n "$ZONE" ] || ZONE=$(fw3 -q network $INTERFACE 2>/dev/null)
 		[ -z "$IFACE6RD" -o "$IFACE6RD" = 1 ] && IFACE6RD=${INTERFACE}_6
 
 		json_init
@@ -81,7 +94,6 @@ setup_interface () {
 
 		ubus call network add_dynamic "$(json_dump)"
 	fi
-	/sbin/chroutes
 }
 
 deconfig_interface() {
@@ -100,5 +112,8 @@ esac
 
 # user rules
 [ -f /etc/udhcpc.user ] && . /etc/udhcpc.user "$@"
+for f in /etc/udhcpc.user.d/*; do
+	[ -f "$f" ] && (. "$f" "$@")
+done
 
 exit 0

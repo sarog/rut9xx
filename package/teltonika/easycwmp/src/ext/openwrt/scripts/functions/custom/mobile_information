@@ -1,0 +1,131 @@
+#!/bin/sh
+# Copyright (C) 2015 PIVA Software <www.pivasoftware.com>
+# 	Author: MOHAMED Kallel <mohamed.kallel@pivasoftware.com>
+
+#common_execute_method_param "$parameter" "$permission" "$get_cmd" "$set_cmd" "xsd:$type" "$forcedinform"
+#  $forcedinform should be set to 1 if the parameter is included in the inform message otherwise empty
+#  Default of $type = string
+
+#############################
+#   Entry point functuons   #
+#############################
+
+prefix_list="$prefix_list $DMROOT.MobileInfo."
+entry_execute_method_list="$entry_execute_method_list entry_execute_method_root_MobileInfo"
+entry_execute_method_list_forcedinform="$entry_execute_method_list_forcedinform  entry_execute_method_root_MobileInfo"
+GSMCTL_BIN="/usr/sbin/gsmctl"
+MDCOLLECTCTL_BIN=/usr/bin/mdcollectdctl
+current_sim="1"
+PARAM_LIST="RSSI;-q ConnState;-j NetState;-g ICCID;-J IMSI;-x RSCP;-X ECIO;-E RSRP;-W \
+SINR;-Z RSRQ;-M CellID;-C Operator;-o OperatorNum;-f ConnType;-t Model;-m Manufacturer;-w Serial;-a \
+Revision;-y IMEI;-i SimState;-z PinState;-u Temperature;-c"
+MODEMS=""
+
+modem_list(){
+	json_select $2
+	json_get_vars id
+	json_select ..
+
+	MODEMS=${MODEMS:+$MODEMS }$id
+}
+
+get_modems(){
+	json_load "$(ubus call gsmd get_modems)"
+	json_for_each_item modem_list modems
+}
+
+list_foreach(){
+	[ "$#" -ge 2 ] || return 0
+	local list=$1; shift
+	local callback=$1; shift
+
+	for element in $list
+	do
+		$callback $element $@
+	done
+}
+
+entry_execute_method_root_MobileInfo() {
+	case "$1" in ""|"$DMROOT."|"$DMROOT.MobileInfo."*)
+		common_execute_method_obj "$DMROOT.MobileInfo." "0"
+		common_execute_method_obj "$DMROOT.MobileInfo.Modem." "0" "" "" "mobileinfo_browse_modems $1"
+
+		return 0;
+		;;
+	esac
+	return $E_INVALID_PARAMETER_NAME;
+}
+
+sub_entry_modem_info(){
+	name=$(echo $1 | awk 'BEGIN { FS = ";" }; {print $1}')
+	param=$(echo $1 | awk 'BEGIN { FS = ";" }; {print $2}')
+
+	[ -n "$name" -a -n "$param" ] && {
+		common_execute_method_param "$DMROOT.MobileInfo.Modem.$2.$name" "0"\
+		 	"$GSMCTL_BIN --usb $3 $param" "" "" "1"
+	}
+}
+
+sub_entry_modem() {
+	local modem sim=1
+
+	modem=${1//\./-}
+	case_param "$2" belongto "$DMROOT.MobileInfo.Modem.$modem." && {
+		common_execute_method_obj "$DMROOT.MobileInfo.Modem.$modem." "0"
+		list_foreach "$PARAM_LIST" sub_entry_modem_info $modem $1
+		common_execute_method_param "$DMROOT.MobileInfo.Modem.$modem.SentToday" "0" \
+			"get_sent_today $1 $sim" "" "" "1"
+		common_execute_method_param "$DMROOT.MobileInfo.Modem.$modem.ReceivedToday" "0" \
+			"get_received_today $1 $sim" "" "" "1"
+		common_execute_method_param "$DMROOT.MobileInfo.Modem.$modem.SentThisMonth" "0" \
+			"get_sent_month $1 $sim" "" "" "1"
+		common_execute_method_param "$DMROOT.MobileInfo.Modem.$modem.ReceivedThisMonth" "0" \
+			"get_received_month $1 $sim" "" "" "1"
+
+		return 0
+	}
+	return "$E_INVALID_PARAMETER_NAME"
+}
+
+mobileinfo_browse_modems() {
+	#We're not using json_for_each_item here, cus json is overwrited by system.
+	[ -n "$MODEMS" ] || get_modems
+
+	list_foreach "$MODEMS" sub_entry_modem "$1"
+}
+
+get_sent_today() {
+	json_load "$(ubus call mdcollect get \
+		 '{"modem": "'$1'", "sim": '$2', "period": "day", "current": false}')"
+	json_get_var sent_today tx
+
+	echo "$sent_today"
+}
+
+get_received_today() {
+	json_load "$(ubus call mdcollect get \
+		'{"modem": "'$1'", "sim": '$2', "period": "day", "current": false}')"
+	json_get_var received_today rx
+
+	echo "$received_today"
+}
+
+get_sent_month() {
+	json_load "$(ubus call mdcollect get \
+		'{"modem": "'$1'", "sim": '$2', "period": "month", "current": false}')"
+	json_get_var sent_month tx 
+
+	echo "$sent_month"
+}
+
+get_received_month() {
+	json_load "$(ubus call mdcollect get \
+		'{"modem": "'$1'", "sim": '$2', "period": "month", "current": false}')"
+	json_get_var received_month rx
+
+	echo "$received_month"
+}
+
+#######################################
+#   Data model parameters functions   #
+#######################################

@@ -1,0 +1,1235 @@
+Index: uqmi-2020-11-22-0a19b5b7/commands-nas.c
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/commands-nas.c
++++ uqmi-2020-11-22-0a19b5b7/commands-nas.c
+@@ -259,6 +259,18 @@ cmd_nas_get_serving_system_cb(struct qmi
+ 		[QMI_NAS_REGISTRATION_STATE_REGISTRATION_DENIED] = "registering_denied",
+ 		[QMI_NAS_REGISTRATION_STATE_UNKNOWN] = "unknown",
+ 	};
++	static const char *ext_serv_system[] = {
++		[QMI_NAS_SERVICE_STATUS_NONE] = "none",
++		[QMI_NAS_SERVICE_STATUS_LIMITED] = "limited",
++		[QMI_NAS_SERVICE_STATUS_AVAILABLE] = "available",
++		[QMI_NAS_SERVICE_STATUS_LIMITED_REGIONAL] = "limited_regional",
++		[QMI_NAS_SERVICE_STATUS_POWER_SAVE] = "power_save",
++	};
++	static const char *attach_states[] = {
++		[QMI_NAS_ATTACH_STATE_UNKNOWN] = "unknown",
++		[QMI_NAS_ATTACH_STATE_ATTACHED] = "attached",
++		[QMI_NAS_ATTACH_STATE_DETACHED] = "detached",
++	};
+ 	void *c;
+ 
+ 	qmi_parse_nas_get_serving_system_response(msg, &res);
+@@ -266,11 +278,15 @@ cmd_nas_get_serving_system_cb(struct qmi
+ 	c = blobmsg_open_table(&status, NULL);
+ 	if (res.set.serving_system) {
+ 		int state = res.data.serving_system.registration_state;
++		int cs_state = res.data.serving_system.cs_attach_state;
++		int ps_state = res.data.serving_system.ps_attach_state;
+ 
+ 		if (state > QMI_NAS_REGISTRATION_STATE_UNKNOWN)
+ 			state = QMI_NAS_REGISTRATION_STATE_UNKNOWN;
+ 
+ 		blobmsg_add_string(&status, "registration", reg_states[state]);
++		blobmsg_add_string(&status, "CS", attach_states[cs_state]);
++		blobmsg_add_string(&status, "PS", attach_states[ps_state]);
+ 	}
+ 	if (res.set.current_plmn) {
+ 		blobmsg_add_u32(&status, "plmn_mcc", res.data.current_plmn.mcc);
+@@ -282,6 +298,12 @@ cmd_nas_get_serving_system_cb(struct qmi
+ 	if (res.set.roaming_indicator)
+ 		blobmsg_add_u8(&status, "roaming", !res.data.roaming_indicator);
+ 
++	if (res.set.detailed_service_status) {
++		int ext_status = res.data.detailed_service_status.status;
++
++		blobmsg_add_string(&status, "status", ext_serv_system[ext_status]);
++	}
++
+ 	blobmsg_close_table(&status, c);
+ }
+ 
+Index: uqmi-2020-11-22-0a19b5b7/commands-wds.c
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/commands-wds.c
++++ uqmi-2020-11-22-0a19b5b7/commands-wds.c
+@@ -24,6 +24,24 @@
+ 
+ #include "qmi-message.h"
+ 
++static struct {
++	uint32_t mux_id;
++	uint32_t iface_number;
++	//QmiDataEndpointType endpoint_type;
++} wds_endpoint_info;
++
++static struct {
++	QmiWdsProfileType type;
++	QmiWdsPdpType pdp_type;
++	QmiWdsAuthentication authentication;
++	uint32_t profile_index;
++	char *profile_name;
++	bool no_roam;
++	char *username;
++	char *password;
++	char *apn;
++} wds_modify_profile_info;
++
+ static struct qmi_wds_start_network_request wds_sn_req = {
+ 	QMI_INIT(authentication_preference,
+ 	         QMI_WDS_AUTHENTICATION_PAP | QMI_WDS_AUTHENTICATION_CHAP),
+@@ -35,6 +53,7 @@ static enum qmi_cmd_result
+ cmd_wds_set_apn_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+ {
+ 	qmi_set_ptr(&wds_sn_req, apn, arg);
++	wds_modify_profile_info.apn = arg;
+ 	return QMI_CMD_DONE;
+ }
+ 
+@@ -57,6 +76,7 @@ cmd_wds_set_auth_prepare(struct qmi_dev
+ 		if (strcasecmp(modes[i].name, arg) != 0)
+ 			continue;
+ 
++		wds_modify_profile_info.authentication = modes[i].auth;
+ 		qmi_set(&wds_sn_req, authentication_preference, modes[i].auth);
+ 		return QMI_CMD_DONE;
+ 	}
+@@ -70,6 +90,7 @@ static enum qmi_cmd_result
+ cmd_wds_set_username_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+ {
+ 	qmi_set_ptr(&wds_sn_req, username, arg);
++	wds_modify_profile_info.username = arg;
+ 	return QMI_CMD_DONE;
+ }
+ 
+@@ -78,6 +99,7 @@ static enum qmi_cmd_result
+ cmd_wds_set_password_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+ {
+ 	qmi_set_ptr(&wds_sn_req, password, arg);
++	wds_modify_profile_info.password = arg;
+ 	return QMI_CMD_DONE;
+ }
+ 
+@@ -132,8 +154,20 @@ cmd_wds_start_network_cb(struct qmi_dev
+ 	struct qmi_wds_start_network_response res;
+ 
+ 	qmi_parse_wds_start_network_response(msg, &res);
+-	if (res.set.packet_data_handle)
++
++	if (res.set.packet_data_handle) {
+ 		blobmsg_add_u32(&status, NULL, res.data.packet_data_handle);
++	}
++
++	if (res.set.call_end_reason) {
++		blobmsg_add_u32(&status, "call end reason", res.data.call_end_reason);
++	}
++
++	if (res.set.verbose_call_end_reason) {
++		blobmsg_add_u32(&status, "call end type", res.data.verbose_call_end_reason.type);
++
++		blobmsg_add_u32(&status, "verbose reason", res.data.verbose_call_end_reason.reason);
++	}
+ }
+ 
+ static enum qmi_cmd_result
+@@ -243,6 +277,51 @@ cmd_wds_set_ip_family_prepare(struct qmi
+ 	return QMI_CMD_EXIT;
+ }
+ 
++#define cmd_wds_bind_mux_data_port_cb no_cb
++
++static enum qmi_cmd_result
++cmd_wds_bind_mux_data_port_prepare(struct qmi_dev *qmi, struct qmi_request *req,
++				   struct qmi_msg *msg, char *arg)
++{
++	struct qmi_wds_bind_mux_data_port_request wds_mux_req = {
++		QMI_INIT_SEQUENCE(
++				  endpoint_info,
++				  .endpoint_type = QMI_DATA_ENDPOINT_TYPE_HSUSB,
++				  .interface_number = wds_endpoint_info.iface_number,
++				  ),
++		QMI_INIT(mux_id, wds_endpoint_info.mux_id),
++		QMI_INIT(client_type, QMI_WDS_CLIENT_TYPE_TETHERED),
++	};
++
++	qmi_set_wds_bind_mux_data_port_request(msg, &wds_mux_req);
++        return QMI_CMD_REQUEST;
++}
++
++#define cmd_wds_mux_id_cb no_cb
++
++static enum qmi_cmd_result cmd_wds_mux_id_prepare(struct qmi_dev *qmi,
++						  struct qmi_request *req,
++						  struct qmi_msg *msg,
++						  char *arg)
++{
++	uint32_t mux_num = strtoul(arg, NULL, 10);
++
++	wds_endpoint_info.mux_id = mux_num;
++	return QMI_CMD_DONE;
++}
++
++#define cmd_wds_ep_iface_number_cb no_cb
++
++static enum qmi_cmd_result
++cmd_wds_ep_iface_number_prepare(struct qmi_dev *qmi, struct qmi_request *req,
++				struct qmi_msg *msg, char *arg)
++{
++        uint32_t iface_num = strtoul(arg, NULL, 10);
++
++        wds_endpoint_info.iface_number = iface_num;
++        return QMI_CMD_DONE;
++}
++
+ static void wds_to_ipv4(const char *name, const uint32_t addr)
+ {
+ 	struct in_addr ip_addr;
+@@ -363,3 +442,135 @@ cmd_wds_get_current_settings_prepare(str
+ 	qmi_set_wds_get_current_settings_request(msg, &gcs_req);
+ 	return QMI_CMD_REQUEST;
+ }
++
++static void
++cmd_wds_get_dormancy_status_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
++{
++	struct qmi_wds_get_dormancy_status_response res;
++	const char *dormancy_types[] = {
++		[QMI_WDS_DORMANCY_STATUS_UNKNOWN] = "unknown",
++		[QMI_WDS_DORMANCY_STATUS_TRAFFIC_CHANNEL_ACTIVE] = "traffic-channel-active",
++		[QMI_WDS_DORMANCY_STATUS_TRAFFIC_CHANNEL_DORMANT] = "traffic-channel-dormant",
++	};
++	void *c;
++
++	qmi_parse_wds_get_dormancy_status_response(msg, &res);
++
++	c = blobmsg_open_table(&status, NULL);
++	if (res.set.dormancy_status) {
++		int dormancy_state = res.data.dormancy_status;
++
++		blobmsg_add_string(&status, "dormancy_status", dormancy_types[dormancy_state]);
++	}
++
++	blobmsg_close_table(&status, c);
++}
++
++static enum qmi_cmd_result
++cmd_wds_get_dormancy_status_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
++{
++	qmi_set_wds_get_dormancy_status_request(msg);
++	return QMI_CMD_REQUEST;
++}
++
++// ---- MODIFY PROFILE ----
++#define cmd_wds_modify_profile_cb no_cb
++
++static enum qmi_cmd_result
++cmd_wds_modify_profile_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
++{
++	struct qmi_wds_modify_profile_request wds_mod_prof_req = {
++		QMI_INIT_SEQUENCE(profile_identifier,
++				  .profile_type = wds_modify_profile_info.type,
++				  .profile_index = wds_modify_profile_info.profile_index),
++		QMI_INIT_PTR(profile_name, wds_modify_profile_info.profile_name),
++		QMI_INIT_PTR(username, wds_modify_profile_info.username),
++		QMI_INIT_PTR(password, wds_modify_profile_info.password),
++		QMI_INIT_PTR(apn_name, wds_modify_profile_info.apn),
++		QMI_INIT(roaming_disallowed_flag, wds_modify_profile_info.no_roam),
++		QMI_INIT(authentication, wds_modify_profile_info.authentication),
++		QMI_INIT(pdp_type, wds_modify_profile_info.pdp_type),
++	};
++
++	qmi_set_wds_modify_profile_request(msg, &wds_mod_prof_req);
++	return QMI_CMD_REQUEST;
++}
++
++#define cmd_wds_set_profile_identifier_cb no_cb
++
++static enum qmi_cmd_result
++cmd_wds_set_profile_identifier_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
++{
++	char *tmp = NULL;
++
++	tmp = strtok(arg, ",");
++
++	if (!strcmp(tmp, "3gpp2")) {
++		wds_modify_profile_info.type = QMI_WDS_PROFILE_TYPE_3GPP2;
++	} else if (!strcmp(tmp, "3gpp")) {
++		wds_modify_profile_info.type = QMI_WDS_PROFILE_TYPE_3GPP;
++	} else {
++		uqmi_add_error("Invalid profile type (valid: 3gpp, 3gpp2)");
++		return QMI_CMD_EXIT;
++	}
++
++	tmp = strtok(NULL, "\0");
++	wds_modify_profile_info.profile_index = strtol(tmp, NULL, 10);
++
++	return QMI_CMD_DONE;
++}
++
++#define cmd_wds_set_roaming_disallowed_flag_cb no_cb
++
++static enum qmi_cmd_result
++cmd_wds_set_roaming_disallowed_flag_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
++{
++	if (!strcasecmp(arg, "yes") || !strcasecmp(arg, "true")) {
++		wds_modify_profile_info.no_roam = 1;
++	} else if (!strcasecmp(arg, "no") || !strcasecmp(arg, "false")) {
++		wds_modify_profile_info.no_roam = 0;
++	} else {
++		uqmi_add_error("Invalid flag (valid: yes, true, no, false)");
++		return QMI_CMD_EXIT;
++	}
++
++	return QMI_CMD_DONE;
++}
++
++#define cmd_wds_set_profile_name_cb no_cb
++
++static enum qmi_cmd_result
++cmd_wds_set_profile_name_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
++{
++	wds_modify_profile_info.profile_name = arg;
++	return QMI_CMD_DONE;
++}
++
++#define cmd_wds_set_pdp_type_cb no_cb
++
++static enum qmi_cmd_result
++cmd_wds_set_pdp_type_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
++{
++	const struct pdp_modes {
++		const char *name;
++		const QmiWdsPdpType mode;
++	} modes[] = {
++		{ "ip", QMI_WDS_PDP_TYPE_IPV4 },
++		{ "ipv4", QMI_WDS_PDP_TYPE_IPV4 },
++		{ "ipv6", QMI_WDS_PDP_TYPE_IPV6 },
++		{ "ppp", QMI_WDS_PDP_TYPE_PPP },
++		{ "ipv4v6", QMI_WDS_PDP_TYPE_IPV4_OR_IPV6 },
++	};
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(modes); i++) {
++		if (strcasecmp(modes[i].name, arg) != 0)
++			continue;
++
++		wds_modify_profile_info.pdp_type = modes[i].mode;
++		return QMI_CMD_DONE;
++	}
++
++	uqmi_add_error("Invalid value (valid: ipv4, ipv6, ppp, ipv4v6)");
++	return QMI_CMD_EXIT;
++}
+Index: uqmi-2020-11-22-0a19b5b7/commands-wds.h
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/commands-wds.h
++++ uqmi-2020-11-22-0a19b5b7/commands-wds.h
+@@ -28,13 +28,21 @@
+ 	__uqmi_command(wds_set_ip_family_pref, ip-family, required, CMD_TYPE_OPTION), \
+ 	__uqmi_command(wds_set_autoconnect, autoconnect, no, CMD_TYPE_OPTION), \
+ 	__uqmi_command(wds_set_profile, profile, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wds_modify_profile, modify-profile, no, QMI_SERVICE_WDS), \
++	__uqmi_command(wds_set_profile_identifier, profile-identifier, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wds_set_roaming_disallowed_flag, roaming-disallowed-flag, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wds_set_profile_name, profile-name, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wds_set_pdp_type, pdp-type, required, CMD_TYPE_OPTION), \
+ 	__uqmi_command(wds_stop_network, stop-network, required, QMI_SERVICE_WDS), \
+ 	__uqmi_command(wds_get_packet_service_status, get-data-status, no, QMI_SERVICE_WDS), \
+ 	__uqmi_command(wds_set_ip_family, set-ip-family, required, QMI_SERVICE_WDS), \
+ 	__uqmi_command(wds_set_autoconnect_setting, set-autoconnect, required, QMI_SERVICE_WDS), \
+ 	__uqmi_command(wds_reset, reset-wds, no, QMI_SERVICE_WDS), \
+-	__uqmi_command(wds_get_current_settings, get-current-settings, no, QMI_SERVICE_WDS) \
+-
++	__uqmi_command(wds_get_current_settings, get-current-settings, no, QMI_SERVICE_WDS), \
++	__uqmi_command(wds_get_dormancy_status, get-dormancy-status, no, QMI_SERVICE_WDS), \
++	__uqmi_command(wds_bind_mux_data_port, wds-bind-mux-data-port, no, QMI_SERVICE_WDS), \
++	__uqmi_command(wds_mux_id, mux-id, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wds_ep_iface_number, ep-iface-number, required, CMD_TYPE_OPTION) \
+ 
+ #define wds_helptext \
+ 		"  --start-network:                  Start network connection (use with options below)\n" \
+@@ -45,10 +53,19 @@
+ 		"    --ip-family <family>:           Use ip-family for the connection (ipv4, ipv6, unspecified)\n" \
+ 		"    --autoconnect:                  Enable automatic connect/reconnect\n" \
+ 		"    --profile <index>:              Use connection profile\n" \
++		"  --modify-network:                 Modify pdp configuration (with options below)\n" \
++		"    --profile-identifier <type>,<pdp>: Use profile identifier (3gpp,3gpp2|number)\n" \
++		"    --roaming-disallowed-flag <bool> : Use roaming disallowed flag\n" \
++		"    --profile-name <name>:	     Use profile name\n" \
++		"    --pdp-type <type>:		     Use pdp profile type (ipv4, ipv6, ppp, ipv4v6)\n" \
+ 		"  --stop-network <pdh>:             Stop network connection (use with option below)\n" \
+ 		"    --autoconnect:                  Disable automatic connect/reconnect\n" \
+ 		"  --get-data-status:                Get current data access status\n" \
+ 		"  --set-ip-family <val>:            Set ip-family (ipv4, ipv6, unspecified)\n" \
+ 		"  --set-autoconnect <val>:          Set automatic connect/reconnect (disabled, enabled, paused)\n" \
+ 		"  --get-current-settings:           Get current connection settings\n" \
++		"  --get-dormancy-status:	     Get current dormancy status\n" \
++		"  --wds-bind-mux-data-port:	     Bind qmux data port to controller device (use with options below)\n" \
++		"    --mux-id <id>:		     Set qmux port id\n" \
++		"    --ep-iface-number <number>:     Set endpoint interface number\n" \
+ 
+Index: uqmi-2020-11-22-0a19b5b7/data/qmi-service-wds.json
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/data/qmi-service-wds.json
++++ uqmi-2020-11-22-0a19b5b7/data/qmi-service-wds.json
+@@ -948,7 +948,20 @@
+                       "format"    : "guint16",
+                       "public-format" : "QmiWdsExtendedTechnologyPreference",
+                       "prerequisites" : [ { "common-ref" : "Success" } ] } ] },
+-
++  // *********************************************************************************
++  {  "name"      : "Get Dormancy Status",
++     "type"      : "Message",
++     "service"   : "WDS",
++     "id"        : "0x0030",
++     "version"   : "1.18",
++     "output"    : [ { "common-ref" : "Operation Result" },
++                     { "name"           : "Dormancy Status",
++                       "id"             : "0x01",
++                       "mandatory"      : "yes",
++                       "type"           : "TLV",
++                       "format"         : "gint8",
++                       "public-format"  : "QmiWdsDormancyStatus",
++                       "prerequisities" : [ { "common-ref" : "Success" } ] } ] },
+   // *********************************************************************************
+   {  "name"    : "Get Autoconnect Setting",
+      "type"    : "Message",
+@@ -1064,6 +1077,209 @@
+                       "type"          : "TLV",
+                       "format"        : "guint8",
+                       "public-format" : "gboolean" } ],
+-     "output"  : [  { "common-ref" : "Operation Result" } ] }
+-
++     "output"  : [  { "common-ref" : "Operation Result" } ] },
++  // *********************************************************************************
++  {  "name"    : "Bind Mux Data Port",
++     "type"    : "Message",
++     "service" : "WDS",
++     "id"      : "0x00A2",
++     "since"   : "1.18",
++     "input"   : [ { "name"          : "Endpoint Info",
++                   "id"            : "0x10",
++                   "type"          : "TLV",
++                   "since"         : "1.18",
++                   "format"        : "sequence",
++                   "contents"  : [ { "name" : "Endpoint Type",
++                                     "format" : "guint32",
++                                     "public-format" : "QmiDataEndpointType"},
++                                   { "name" : "Interface Number",
++                                     "format" : "guint32" }]},
++                 { "name"          : "Mux ID",
++                   "id"            : "0x11",
++                   "type"          : "TLV",
++                   "since"         : "1.18",
++                   "format"        : "guint8"},
++                 { "name"          : "Client Type",
++                   "id"            : "0x13",
++                   "type"          : "TLV",
++                   "since"         : "1.18",
++                   "format"        : "guint32",
++                   "public-format" : "QmiWdsClientType"}
++                ],
++     "output"  : [  { "common-ref" : "Operation Result" } ] },
++   // *********************************************************************************
++   {  "name"    : "Modify Profile",
++      "type"    : "Message",
++      "service" : "WDS",
++      "id"      : "0x0028",
++      "version" : "1.1",
++      "since"   : "1.18",
++      "input"   : [ { "name"         : "Profile Identifier",
++                     "id"            : "0x01",
++                     "type"          : "TLV",
++                     "format"        : "sequence",
++                     "since"         : "1.18",
++                     "contents"      : [ { "name"   : "Profile Type",
++                                         "format" : "guint8",
++                                         "public-format" : "QmiWdsProfileType"},
++                                       { "name" : "Profile Index",
++                                          "format" : "guint8" } ] },
++                   { "name"          : "Profile Name",
++                     "id"            : "0x10",
++                     "type"          : "TLV",
++                     "format"        : "string",
++                     "since"         : "1.18" },
++                   { "name"          : "PDP Type",
++                     "id"            : "0x11",
++                     "type"          : "TLV",
++                     "format"        : "guint8",
++                     "public-format" : "QmiWdsPdpType",
++                     "since"         : "1.18" },
++                   { "name"          : "PDP Header Compression Type",
++                     "id"            : "0x12",
++                     "type"          : "TLV",
++                     "format"        : "guint8",
++                     "public-format" : "QmiWdsPdpHeaderCompressionType",
++                     "since"         : "1.18" },
++                   { "name"          : "PDP Data Compression Type",
++                     "id"            : "0x13",
++                     "type"          : "TLV",
++                     "format"        : "guint8",
++                     "public-format" : "QmiWdsPdpDataCompressionType",
++                     "since"         : "1.18" },
++                   { "name"          : "APN Name",
++                     "id"            : "0x14",
++                     "type"          : "TLV",
++                     "format"        : "string",
++                     "since"         : "1.18" },
++                   { "name"          :  "Primary IPv4 DNS Address",
++                     "id"            : "0x15",
++                     "type"          : "TLV",
++                     "format"        : "guint32",
++                     "since"         : "1.18" },
++                   { "name"          : "Secondary IPv4 DNS Address",
++                     "id"            : "0x16",
++                     "type"          : "TLV",
++                     "format"        : "guint32",
++                     "since"         : "1.18" },
++                   { "name"          : "Username",
++                     "id"            : "0x1B",
++                     "type"          : "TLV",
++                     "format"        : "string",
++                     "since"         : "1.18" },
++                   { "name"          : "Password",
++                     "id"            : "0x1C",
++                     "type"          : "TLV",
++                     "format"        : "string",
++                     "since"         : "1.18" },
++                   { "name"          : "Authentication",
++                     "id"            : "0x13",
++                     "type"          : "TLV",
++                     "format"        : "guint8",
++                     "public-format" : "QmiWdsAuthentication",
++                     "since"         : "1.18" },
++                   { "name"          : "IPv4 Address Preference",
++                     "id"            : "0x1E",
++                     "type"          : "TLV",
++                     "format"        : "guint32",
++                     "since"         : "1.18" },
++                   { "name"          : "PCSCF Address Using PCO",
++                     "id"            : "0x1F",
++                     "type"          : "TLV",
++                     "format"        : "guint8",
++                     "public-format" : "gboolean",
++                     "since"         : "1.18" },
++                   // 0x20, PDP access control flag
++                   { "name"          : "PCSCF Address Using DHCP",
++                     "id"            : "0x21",
++                     "type"          : "TLV",
++                     "format"        : "guint8",
++                     "public-format" : "gboolean",
++                     "since"         : "1.18" },
++                   { "name"          : "IMCN Flag",
++                     "id"            : "0x22",
++                     "type"          : "TLV",
++                     "format"        : "guint8",
++                     "public-format" : "gboolean",
++                     "since"         : "1.18" },
++                   // 0x23, TFT ID1 Parameters
++                   // 0x24, TFT ID2 Parameters
++                   { "name"          : "PDP Context Number",
++                     "id"            : "0x25",
++                     "type"          : "TLV",
++                     "format"        : "guint8",
++                     "since"         : "1.18" },
++                   { "name"          : "PDP Context Secondary Flag",
++                     "id"            : "0x26",
++                     "type"          : "TLV",
++                     "format"        : "guint8",
++                     "public-format" : "gboolean",
++                     "since"         : "1.18" },
++                   { "name"          : "PDP Context Primary ID",
++                     "id"            : "0x27",
++                     "type"          : "TLV",
++                     "format"        : "guint8",
++                     "since"         : "1.18" },
++                   // 0x28 IPv6 Address Preference
++                   // 0x29 UMTS Requested QoS With Signaling Indication Flag
++                   // 0x2A UMTS Minimum QoS With Signaling Indication Flag
++                   // 0x2B IPv6 Primary DNS Address Preference
++                   // 0x2C IPv6 Secondary DNS Address Preference
++                   // 0x2D, DHCP/NAS Preference
++                   // 0x2E LTE QoS Pramateres
++                   { "name"          : "APN Disabled Flag",
++                     "id"            : "0x2F",
++                     "type"          : "TLV",
++                     "format"        : "guint8",
++                     "public-format" : "gboolean",
++                     "since"         : "1.22" },
++                   // 0x30, PDN inactivity timeout
++                   // 0x31, APN class
++                   { "name"          : "Roaming Disallowed Flag",
++                     "id"            : "0x3E",
++                     "type"          : "TLV",
++                     "format"        : "guint8",
++                     "public-format" : "gboolean",
++                     "since"         : "1.22" } ],
++                   // 0x90, Negotiate DNS server preference
++                   // 0x91, PPP session close timer for DO
++                   // 0x92, PPP session close timer for 1X
++                   // 0x93, Allow/disallow lingering of interface
++                   // 0x94, LCP ACK timeout
++                   // 0x95, IPCP ACK timeout
++                   // 0x96, AUTH timeout
++                   // 0x97, LCP configuration request retry count value
++                   // 0x98, IPCP configuration request retry count value
++                   // 0x99, Authentication retry
++                   // 0x9A, Authentication protocol,
++                   // 0x9B, User ID
++                   // 0x9C, Authentication password
++                   // 0x9D, Data rate
++                   // 0x9E, Application type
++                   // 0x9F, Data mode
++                   // 0xA0, Application priority
++                   // 0xA1, APN string
++                   // 0xA2, PDN type
++                   // 0xA3, Is PCSCF address needed
++                   // 0xA4, IPv4 Primary DNS address
++                   // 0xA5, IPv4 Secondary DNS address
++                   // 0xA6, IPv6 Primary DNS address
++                   // 0xA7, IPv6 Secondary DNS address
++                   // 0xA8, RAT type
++                   // 0xA9, APN enabled
++                   // 0xAA, PDN inactivity timeout
++                   // 0xAB, APN class
++     "output"  : [ { "common-ref" : "Operation Result" },
++                   { "name" : "Extended Error Code",
++                     "id"            : "0xE0",
++                     "type"          : "TLV",
++                     "format"        : "guint16",
++                     "public-format" : "QmiWdsDsProfileError",
++                     "since"         : "1.18",
++                     "prerequisites" : [ { "field"      : "Result.Error Status",
++                                            "operation" : "!=",
++                                            "value"     : "QMI_STATUS_SUCCESS" },
++                                         { "field"      : "Result.Error Code",
++                                           "operation"  : "==",
++                                           "value"      : "QMI_PROTOCOL_ERROR_EXTENDED_INTERNAL" } ] } ] }
+ ]
+Index: uqmi-2020-11-22-0a19b5b7/qmi-enums-wds.h
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/qmi-enums-wds.h
++++ uqmi-2020-11-22-0a19b5b7/qmi-enums-wds.h
+@@ -877,6 +877,24 @@ typedef enum { /*< underscore_name=qmi_w
+ } QmiWdsPdpType;
+ 
+ /**
++ * QmiWdsPdpDataCompressionType:
++ * @QMI_WDS_PDP_DATA_COMPRESSION_TYPE_OFF: no data compression
++ * @QMI_WDS_PDP_DATA_COMPRESSION_TYPE_MANUFACTURER_PREFERRED: manufacturer preferred
++ * @QMI_WDS_PDP_DATA_COMPRESSION_TYPE_V42BIS: V42bis
++ * @QMI_WDS_PDP_DATA_COMPRESSION_TYPE_V44: V44
++ *
++ * PDP data compression types.
++ *
++ * Since: 1.18
++ */
++typedef enum { /*< underscore_name=qmi_wds_pdp_data_compression_type >*/
++    QMI_WDS_PDP_DATA_COMPRESSION_TYPE_OFF                    = 0,
++    QMI_WDS_PDP_DATA_COMPRESSION_TYPE_MANUFACTURER_PREFERRED = 1,
++    QMI_WDS_PDP_DATA_COMPRESSION_TYPE_V42BIS                 = 2,
++    QMI_WDS_PDP_DATA_COMPRESSION_TYPE_V44                    = 3,
++} QmiWdsPdpDataCompressionType;
++
++/**
+  * QmiWdsTrafficClass:
+  * @QMI_WDS_TRAFFIC_CLASS_SUBSCRIBED: default (?) class, best-effort
+  * @QMI_WDS_TRAFFIC_CLASS_CONVERSATIONAL: two-way video/voice, most delay sensitive
+@@ -1014,4 +1032,56 @@ typedef enum {
+     QMI_WDS_AUTOCONNECT_PAUSED                           = 2,
+ } QmiWdsAutoconnectSetting;
+ 
++/**
++ * QmiWdsDormancyStatus:
++ * @QMI_WDS_DORMANCY_STATUS_UNKNOWN: dormancy status unknown.
++ * @QMI_WDS_DORMANCY_STATUS_TRAFFIC_CHANNEL_DORMANT: traffic channel is dormant.
++ * @QMI_WDS_DORMANCY_STATUS_TRAFFIC_CHANNEL_ACTIVE: traffic channel is active.
++ *
++ * Dormancy status.
++ *
++ * Since: 1.18
++ */
++typedef enum {
++	QMI_WDS_DORMANCY_STATUS_UNKNOWN			= 0,
++	QMI_WDS_DORMANCY_STATUS_TRAFFIC_CHANNEL_DORMANT = 1,
++	QMI_WDS_DORMANCY_STATUS_TRAFFIC_CHANNEL_ACTIVE	= 2,
++} QmiWdsDormancyStatus;
++
++/**
++ * QmiWdsClientType:
++ * @QMI_WDS_CLIENT_TYPE_TETHERED: client type tethered
++ * @QMI_WDS_CLIENT_TYPE_UNDEFINED: no client type defined
++ *
++ * Client Type
++ *
++ * Since: 1.18
++ */
++typedef enum { /*< underscore_name=qmi_wds_client_type > */
++	       QMI_WDS_CLIENT_TYPE_TETHERED  = 0x01,
++	       QMI_WDS_CLIENT_TYPE_UNDEFINED = 0xFF,
++} QmiWdsClientType;
++
++/**
++ * QmiWdsPdpHeaderCompressionType:
++ * @QMI_WDS_PDP_HEADER_COMPRESSION_TYPE_OFF: no header compression
++ * @QMI_WDS_PDP_HEADER_COMPRESSION_TYPE_MANUFACTURER_PREFERRED: manufacturer preferred
++ * @QMI_WDS_PDP_HEADER_COMPRESSION_TYPE_RFC1144: RFC1144
++ * @QMI_WDS_PDP_HEADER_COMPRESSION_TYPE_RFC2507: RFC2507
++ * @QMI_WDS_PDP_HEADER_COMPRESSION_TYPE_RFC3095: RFC3095
++ *
++ * PDP header compression types.
++ *
++ * Since: 1.18
++ */
++typedef enum { /*< underscore_name=qmi_wds_pdp_header_compression_type >*/
++    QMI_WDS_PDP_HEADER_COMPRESSION_TYPE_OFF                    = 0,
++    QMI_WDS_PDP_HEADER_COMPRESSION_TYPE_MANUFACTURER_PREFERRED = 1,
++    QMI_WDS_PDP_HEADER_COMPRESSION_TYPE_RFC1144                = 2,
++    QMI_WDS_PDP_HEADER_COMPRESSION_TYPE_RFC2507                = 3,
++    QMI_WDS_PDP_HEADER_COMPRESSION_TYPE_RFC3095                = 4,
++} QmiWdsPdpHeaderCompressionType;
++
++
++
+ #endif /* _LIBQMI_GLIB_QMI_ENUMS_WDS_H_ */
+Index: uqmi-2020-11-22-0a19b5b7/commands-wda.c
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/commands-wda.c
++++ uqmi-2020-11-22-0a19b5b7/commands-wda.c
+@@ -31,29 +31,166 @@ static const struct {
+ 	{ "raw-ip", QMI_WDA_LINK_LAYER_PROTOCOL_RAW_IP },
+ };
+ 
++static const struct {
++	const char *name;
++	QmiWdaDataAggregationProtocol aggreg;
++} aggreg_modes[] = {
++	{ "tlp", QMI_WDA_DATA_AGGREGATION_PROTOCOL_TLP },
++	{ "qc-cm", QMI_WDA_DATA_AGGREGATION_PROTOCOL_QC_NCM },
++	{ "mbim", QMI_WDA_DATA_AGGREGATION_PROTOCOL_MBIM },
++	{ "rndis", QMI_WDA_DATA_AGGREGATION_PROTOCOL_RNDIS },
++	{ "qmap", QMI_WDA_DATA_AGGREGATION_PROTOCOL_QMAP },
++};
++
++static struct {
++//	uint32_t iface_number;
++	uint32_t dl_max_size;
++	uint32_t dl_max_datagrams;
++//	QmiDataEndpointType endpoint_type;
++	QmiWdaDataAggregationProtocol ul_aggreg;
++	QmiWdaDataAggregationProtocol dl_aggreg;
++	QmiWdaLinkLayerProtocol val;
++} wda_endpoint_info;
++
+ #define cmd_wda_set_data_format_cb no_cb
+ 
+ static enum qmi_cmd_result
+-cmd_wda_set_data_format_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
++cmd_wda_set_data_format_prepare(struct qmi_dev *qmi, struct qmi_request *req,
++				struct qmi_msg *msg, char *arg)
+ {
+-	struct qmi_wda_set_data_format_request data_req = {};
+-	int i;
++	struct qmi_wda_set_data_format_request wda_sdf_req = {
++/*		QMI_INIT_SEQUENCE(
++			endpoint_info,
++			.endpoint_type	  = wda_endpoint_info.endpoint_type,
++			.interface_number = wda_endpoint_info.iface_number),*/
++		QMI_INIT(link_layer_protocol, wda_endpoint_info.val),
++		QMI_INIT(uplink_data_aggregation_protocol, wda_endpoint_info.ul_aggreg),
++		QMI_INIT(downlink_data_aggregation_protocol, wda_endpoint_info.dl_aggreg),
++		QMI_INIT(downlink_data_aggregation_max_datagrams, wda_endpoint_info.dl_max_datagrams),
++		QMI_INIT(downlink_data_aggregation_max_size, wda_endpoint_info.dl_max_size),
++	};
+ 
+-	for (i = 0; i < ARRAY_SIZE(link_modes); i++) {
+-		if (strcasecmp(link_modes[i].name, arg) != 0)
++	qmi_set_wda_set_data_format_request(msg, &wda_sdf_req);
++	return QMI_CMD_REQUEST;
++}
++
++#define cmd_wda_link_layer_protocol_cb no_cb
++
++static enum qmi_cmd_result cmd_wda_link_layer_protocol_prepare(
++	struct qmi_dev * qmi, struct qmi_request * req, struct qmi_msg * msg,
++	char *arg)
++{
++	for (uint32_t i = 0; i < ARRAY_SIZE(link_modes); i++) {
++		if (strcasecmp(link_modes[i].name, arg))
++		    continue;
++
++		wda_endpoint_info.val = link_modes[i].val;
++		return QMI_CMD_DONE;
++	}
++
++	uqmi_add_error("Invalid value (valid: 802.3, raw-ip");
++	return QMI_CMD_EXIT;
++}
++
++#define cmd_wda_uplink_data_aggregation_protocol_cb no_cb
++
++static enum qmi_cmd_result
++cmd_wda_uplink_data_aggregation_protocol_prepare(struct qmi_dev *qmi,
++						 struct qmi_request *req,
++						 struct qmi_msg *msg, char *arg)
++{
++	for (uint32_t i = 0; i < ARRAY_SIZE(aggreg_modes); i++) {
++		if (strcasecmp(aggreg_modes[i].name, arg))
+ 			continue;
+ 
+-		qmi_set(&data_req, link_layer_protocol, link_modes[i].val);
+-		qmi_set_wda_set_data_format_request(msg, &data_req);
+-		return QMI_CMD_REQUEST;
++		wda_endpoint_info.ul_aggreg = aggreg_modes[i].aggreg;
++		return QMI_CMD_DONE;
+ 	}
+ 
+-	uqmi_add_error("Invalid auth mode (valid: 802.3, raw-ip)");
++	uqmi_add_error("Invalid value (valid: tlp, qc-cm, mbim, rndis, qmap");
+ 	return QMI_CMD_EXIT;
+ }
+ 
+-static void
+-cmd_wda_get_data_format_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
++#define cmd_wda_downlink_data_aggregation_protocol_cb no_cb
++
++static enum qmi_cmd_result cmd_wda_downlink_data_aggregation_protocol_prepare(
++	struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg,
++	char *arg)
++{
++	for (uint32_t i = 0; i < ARRAY_SIZE(aggreg_modes); i++) {
++		if (strcasecmp(aggreg_modes[i].name, arg))
++			continue;
++
++		wda_endpoint_info.dl_aggreg = aggreg_modes[i].aggreg;
++		return QMI_CMD_DONE;
++	}
++
++	uqmi_add_error("Invalid value (valid: tlp, qc-cm, mbim, rndis, qmap");
++	return QMI_CMD_EXIT;
++}
++
++#define cmd_wda_downlink_data_aggregation_max_datagrams_cb no_cb
++
++static enum qmi_cmd_result cmd_wda_downlink_data_aggregation_max_datagrams_prepare(
++	struct qmi_dev * qmi, struct qmi_request * req, struct qmi_msg * msg,
++	char *arg)
++{
++	uint32_t max_datagrams = strtoul(arg, NULL, 10);
++
++	wda_endpoint_info.dl_max_datagrams = max_datagrams;
++	return QMI_CMD_DONE;
++}
++
++#define cmd_wda_downlink_data_aggregation_max_size_cb no_cb
++
++static enum qmi_cmd_result cmd_wda_downlink_data_aggregation_max_size_prepare(
++	struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg,
++	char *arg)
++{
++	uint32_t max_size = strtoul(arg, NULL, 10);
++
++	wda_endpoint_info.dl_max_size = max_size;
++	return QMI_CMD_DONE;
++}
++/*
++#define cmd_wda_endpoint_type_cb no_cb
++
++static enum qmi_cmd_result
++cmd_wda_endpoint_type_prepare(struct qmi_dev *qmi, struct qmi_request *req,
++			      struct qmi_msg *msg, char *arg)
++{
++	static const char *endpoint_type[] = {
++		[QMI_DATA_ENDPOINT_TYPE_HSUSB] = "hsusb",
++		[QMI_DATA_ENDPOINT_TYPE_UNDEFINED] = "undefined",
++	};
++
++	for (uint32_t i = 0; i < ARRAY_SIZE(endpoint_type); i++) {
++		if (!strcmp(endpoint_type[i], arg)) {
++			wda_endpoint_info.endpoint_type = i;
++			return QMI_CMD_DONE;
++		}
++	}
++
++	uqmi_add_error("Invalid value (valid: undefined, hsusb");
++	return QMI_CMD_EXIT;
++}
++
++#define cmd_wda_endpoint_interface_number_cb no_cb
++
++static enum qmi_cmd_result
++cmd_wda_endpoint_interface_number_prepare(struct qmi_dev *qmi,
++					  struct qmi_request *req,
++					  struct qmi_msg *msg, char *arg)
++{
++	uint32_t iface_num = strtoul(arg, NULL, 10);
++
++	wda_endpoint_info.iface_number = iface_num;
++	return QMI_CMD_DONE;
++}
++*/
++static void cmd_wda_get_data_format_cb(struct qmi_dev *qmi,
++				       struct qmi_request *req,
++				       struct qmi_msg *msg)
+ {
+ 	struct qmi_wda_get_data_format_response res;
+ 	const char *name = "unknown";
+@@ -71,8 +208,9 @@ cmd_wda_get_data_format_cb(struct qmi_de
+ 	blobmsg_add_string(&status, NULL, name);
+ }
+ 
+-static enum qmi_cmd_result
+-cmd_wda_get_data_format_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
++static enum qmi_cmd_result cmd_wda_get_data_format_prepare(
++	struct qmi_dev * qmi, struct qmi_request * req, struct qmi_msg * msg,
++	char *arg)
+ {
+ 	qmi_set_wda_get_data_format_request(msg);
+ 	return QMI_CMD_REQUEST;
+Index: uqmi-2020-11-22-0a19b5b7/commands-wda.h
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/commands-wda.h
++++ uqmi-2020-11-22-0a19b5b7/commands-wda.h
+@@ -19,12 +19,22 @@
+  * Boston, MA 02110-1301 USA.
+  */
+ 
++
+ #define __uqmi_wda_commands \
+-	__uqmi_command(wda_set_data_format, wda-set-data-format, required, QMI_SERVICE_WDA), \
++	__uqmi_command(wda_set_data_format, wda-set-data-format, no, QMI_SERVICE_WDA), \
++	__uqmi_command(wda_link_layer_protocol, link-layer-protocol, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wda_uplink_data_aggregation_protocol, ul-protocol, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wda_downlink_data_aggregation_protocol, dl-protocol, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wda_downlink_data_aggregation_max_datagrams, dl-max-datagrams, required, CMD_TYPE_OPTION), \
++	__uqmi_command(wda_downlink_data_aggregation_max_size, dl-datagram-max-size, required, CMD_TYPE_OPTION), \
+ 	__uqmi_command(wda_get_data_format, wda-get-data-format, no, QMI_SERVICE_WDA)
+ 
+-
+ #define wda_helptext \
+-		"  --wda-set-data-format <type>:     Set data format (type: 802.3|raw-ip)\n" \
++		"  --wda-set-data-format:     	     Set data format (Use with options below)\n" \
++		"    --link-layer-protocol <type>:   Set data format (type: 802.3|raw-ip)\n" \
++		"    --ul-protocol <proto>:	     Set upload protocol (proto: tlp|qc-cm|mbim|rndis|qmap)\n" \
++		"    --dl-protocol <proto>:	     Set downlink protocol (proto: tlp|qc-cm|mbim|rndis|qmap)\n" \
++		"    --dl-max-datagrams <size>:      Set downlink max datagrams (number)\n" \
++		"    --dl-datagram-max-size <size>:  Set downlink datagram max size (number)\n" \
+ 		"  --wda-get-data-format:            Get data format\n" \
+ 
+Index: uqmi-2020-11-22-0a19b5b7/data/qmi-service-wda.json
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/data/qmi-service-wda.json
++++ uqmi-2020-11-22-0a19b5b7/data/qmi-service-wda.json
+@@ -56,7 +56,16 @@
+                      "id"            : "0x16",
+                      "mandatory"     : "no",
+                      "type"          : "TLV",
+-                     "format"        : "guint32" } ],
++                     "format"        : "guint32" },
++                   { "name"          : "Endpoint Info",
++                     "id"            : "0x17",
++                     "type"          : "TLV",
++                     "format"        : "sequence",
++                     "contents"  : [ { "name"          : "Endpoint Type",
++                                     "format"        : "guint32",
++                                     "public-format" : "QmiDataEndpointType"},
++                                     { "name"          : "Interface Number",
++                                       "format"        : "guint32"}] }],
+      "output"  : [ { "common-ref" : "Operation Result" },
+                    { "name"          : "QoS Format",
+                      "id"            : "0x10",
+Index: uqmi-2020-11-22-0a19b5b7/qmi-enums.h
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/qmi-enums.h
++++ uqmi-2020-11-22-0a19b5b7/qmi-enums.h
+@@ -132,4 +132,24 @@ typedef enum {
+     QMI_SERVICE_OMA = 226
+ } QmiService;
+ 
++/**
++ * QmiDataEndpointType:
++ * @QMI_DATA_ENDPOINT_TYPE_HSUSB: Data Endpoint Type HSUSB.
++ * @QMI_DATA_ENDPOINT_TYPE_UNDEFINED: Data Endpoint Type undefined.
++ *
++ * Data Endpoint Type.
++ *
++ * Since: 1.18
++ */
++typedef enum { /*< underscore_name=qmi_data_endpoint_type > */
++	       QMI_DATA_ENDPOINT_TYPE_HSUSB	= 0X02,
++	       QMI_DATA_ENDPOINT_TYPE_UNDEFINED = 0XFF,
++} QmiDataEndpointType;
++
++/**
++ * qmi_data_endpoint_type_get_string:
++ *
++ * Since: 1.18
++ */
++
+ #endif /* _LIBQMI_GLIB_QMI_ENUMS_H_ */
+Index: uqmi-2020-11-22-0a19b5b7/commands.c
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/commands.c
++++ uqmi-2020-11-22-0a19b5b7/commands.c
+@@ -24,6 +24,7 @@
+ #include <strings.h>
+ #include <stdlib.h>
+ #include <unistd.h>
++#include <dirent.h>
+ 
+ #include <libubox/blobmsg.h>
+ #include <libubox/blobmsg_json.h>
+@@ -164,6 +165,174 @@ cmd_ctl_set_data_format_prepare(struct q
+ 	return QMI_CMD_DONE;
+ }
+ 
++static void
++reload_wwan_iface_name(struct qmi_dev *qmi)
++{
++	const char *cdc_wdm_device_name;
++	static const char *driver_names[] = { "usbmisc", "usb" };
++	uint32_t i;
++
++	cdc_wdm_device_name = strrchr(qmi->fd_path, '/');
++	if (!cdc_wdm_device_name) {
++		uqmi_add_error("invalid path for cdc-wdm control port");
++		return;
++	}
++	cdc_wdm_device_name++;
++
++	for (i = 0; i < ARRAY_SIZE(driver_names) && !qmi->wwan_iface; i++) {
++		char *sysfs_path;
++		struct dirent *sysfs_entry;
++		DIR *sysfs_fold;
++
++		asprintf(&sysfs_path, "/sys/class/%s/%s/device/net",
++			 driver_names[i], cdc_wdm_device_name);
++		sysfs_fold = opendir(sysfs_path);
++		if (!sysfs_fold) {
++//			uqmi_add_error("Failed to open");
++			continue;
++		}
++
++		while ((sysfs_entry = readdir(sysfs_fold))) {
++			if (strstr(sysfs_entry->d_name, ".")) {
++				continue;
++			}
++			/* We only expect ONE file in the sysfs directory corresponding
++                         * to this control port, if more found for any reason, warn about it */
++			if (qmi->wwan_iface) {
++				uqmi_add_error("Invalid additional wwan iface found");
++			} else {
++				qmi->wwan_iface = strdup(sysfs_entry->d_name);
++				break;
++			}
++		}
++
++		closedir(sysfs_fold);
++		free(sysfs_path);
++	}
++
++	if (!qmi->wwan_iface) {
++		uqmi_add_error("wwan iface not found");
++	}
++}
++
++static enum qmi_cmd_result
++set_expected_data_format(char *sysfs_path,
++			 QmiCtlDataLinkProtocol requested)
++{
++	enum qmi_cmd_result ret = QMI_CMD_EXIT;
++	char value;
++	FILE *f = NULL;
++
++	if (requested == QMI_CTL_DATA_LINK_PROTOCOL_RAW_IP)
++		value = 'Y';
++	else if (requested == QMI_CTL_DATA_LINK_PROTOCOL_802_3)
++		value = 'N';
++	else
++		goto out;
++
++	if (!(f = fopen(sysfs_path, "w"))) {
++		uqmi_add_error("Failed to open file for R/W");
++		goto out;
++	}
++
++	if (fwrite(&value, 1, 1, f) != 1) {
++		uqmi_add_error("Failed to write to file");
++		goto out;
++	}
++
++	ret = QMI_CMD_DONE;
++out:
++	if (f)
++		fclose(f);
++	return ret;
++}
++
++static QmiCtlDataLinkProtocol get_expected_data_format(char *sysfs_path)
++{
++	QmiCtlDataLinkProtocol expected = QMI_CTL_DATA_LINK_PROTOCOL_UNKNOWN;
++	char value = '\0';
++	FILE *f;
++
++	if (!(f = fopen(sysfs_path, "r"))) {
++		uqmi_add_error("Failed to open file");
++		goto out;
++	}
++
++	if (fread(&value, 1, 1, f) != 1) {
++		uqmi_add_error("Failed to read from file");
++		goto out;
++	}
++
++	if (value == 'Y')
++		expected = QMI_CTL_DATA_LINK_PROTOCOL_RAW_IP;
++	else if (value == 'N')
++		expected = QMI_CTL_DATA_LINK_PROTOCOL_802_3;
++	else
++		uqmi_add_error("Unexpected sysfs file contents");
++
++out:
++	if (f)
++		fclose(f);
++	return expected;
++}
++
++static enum qmi_cmd_result
++cmd_ctl_get_set_expected_data_format(struct qmi_dev *qmi,
++				     QmiCtlDataLinkProtocol requested)
++{
++	char *sysfs_path = NULL;
++	QmiCtlDataLinkProtocol expected = QMI_CTL_DATA_LINK_PROTOCOL_UNKNOWN;
++	bool read_only;
++	enum qmi_cmd_result ret = QMI_CMD_EXIT;
++
++	read_only = (requested == QMI_CTL_DATA_LINK_PROTOCOL_UNKNOWN);
++
++	reload_wwan_iface_name(qmi);
++	if (!qmi->wwan_iface) {
++		uqmi_add_error("Unknown wwan iface");
++		goto out;
++	}
++
++	asprintf(&sysfs_path, "/sys/class/net/%s/qmi/raw_ip", qmi->wwan_iface);
++
++	if (!read_only && set_expected_data_format(sysfs_path, requested))
++		goto out;
++
++	if ((expected = get_expected_data_format(sysfs_path)) ==
++	    QMI_CTL_DATA_LINK_PROTOCOL_UNKNOWN)
++		goto out;
++
++	if (!read_only && (requested != expected)) {
++		uqmi_add_error("Expected data format not updated properly");
++		expected = QMI_CTL_DATA_LINK_PROTOCOL_UNKNOWN;
++		goto out;
++	}
++
++	ret = QMI_CMD_DONE;
++out:
++	free(sysfs_path);
++	return ret;
++}
++
++#define cmd_ctl_set_expected_data_format_cb no_cb
++static enum qmi_cmd_result
++cmd_ctl_set_expected_data_format_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
++{
++	const char *modes[] = {
++		[QMI_CTL_DATA_LINK_PROTOCOL_802_3] = "802.3",
++		[QMI_CTL_DATA_LINK_PROTOCOL_RAW_IP] = "raw-ip",
++	};
++	int mode = qmi_get_array_idx(modes, ARRAY_SIZE(modes), arg);
++
++	if (mode < 0) {
++		uqmi_add_error("Invalid mode (modes: 802.3, raw-ip)");
++		return QMI_CMD_EXIT;
++	}
++
++	cmd_ctl_get_set_expected_data_format(qmi, mode);
++	return QMI_CMD_DONE;
++}
++
+ #include "commands-wds.c"
+ #include "commands-dms.c"
+ #include "commands-nas.c"
+Index: uqmi-2020-11-22-0a19b5b7/dev.c
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/dev.c
++++ uqmi-2020-11-22-0a19b5b7/dev.c
+@@ -364,6 +364,7 @@ int qmi_device_open(struct qmi_dev *qmi,
+ 	INIT_LIST_HEAD(&qmi->req);
+ 	qmi->ctl_tid = 1;
+ 	qmi->buf = msgbuf.u.buf;
++	qmi->fd_path = path;
+ 
+ 	return 0;
+ }
+Index: uqmi-2020-11-22-0a19b5b7/uqmi.h
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/uqmi.h
++++ uqmi-2020-11-22-0a19b5b7/uqmi.h
+@@ -72,6 +72,8 @@ struct qmi_msg;
+ typedef void (*request_cb)(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg);
+ 
+ struct qmi_dev {
++	const char *fd_path;
++	char *wwan_iface;
+ 	struct ustream_fd sf;
+ 
+ 	struct list_head req;
+Index: uqmi-2020-11-22-0a19b5b7/commands.h
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/commands.h
++++ uqmi-2020-11-22-0a19b5b7/commands.h
+@@ -59,6 +59,7 @@ struct uqmi_cmd {
+ 	__uqmi_command(set_client_id, set-client-id, required, CMD_TYPE_OPTION), \
+ 	__uqmi_command(get_client_id, get-client-id, required, QMI_SERVICE_CTL), \
+ 	__uqmi_command(ctl_set_data_format, set-data-format, required, QMI_SERVICE_CTL), \
++	__uqmi_command(ctl_set_expected_data_format, set-expected-data-format, required, QMI_SERVICE_CTL), \
+ 	__uqmi_wds_commands, \
+ 	__uqmi_dms_commands, \
+ 	__uqmi_nas_commands, \
+Index: uqmi-2020-11-22-0a19b5b7/main.c
+===================================================================
+--- uqmi-2020-11-22-0a19b5b7.orig/main.c
++++ uqmi-2020-11-22-0a19b5b7/main.c
+@@ -53,22 +53,23 @@ static int usage(const char *progname)
+ {
+ 	fprintf(stderr, "Usage: %s <options|actions>\n"
+ 		"Options:\n"
+-		"  --single, -s:                     Print output as a single line (for scripts)\n"
+-		"  --device=NAME, -d NAME:           Set device name to NAME (required)\n"
+-		"  --keep-client-id <name>:          Keep Client ID for service <name>\n"
+-		"  --release-client-id <name>:       Release Client ID after exiting\n"
+-		"  --mbim, -m                        NAME is an MBIM device with EXT_QMUX support\n"
+-		"  --timeout, -t                     response timeout in msecs\n"
++		"  --single, -s:                      Print output as a single line (for scripts)\n"
++		"  --device=NAME, -d NAME:            Set device name to NAME (required)\n"
++		"  --keep-client-id <name>:           Keep Client ID for service <name>\n"
++		"  --release-client-id <name>:        Release Client ID after exiting\n"
++		"  --mbim, -m                         NAME is an MBIM device with EXT_QMUX support\n"
++		"  --timeout, -t                      response timeout in msecs\n"
+ 		"\n"
+-		"Services:                           dms, nas, pds, wds, wms\n"
++		"Services:                            dms, nas, pds, wds, wms\n"
+ 		"\n"
+ 		"Actions:\n"
+-		"  --get-versions:                   Get service versions\n"
+-		"  --set-client-id <name>,<id>:      Set Client ID for service <name> to <id>\n"
+-		"                                    (implies --keep-client-id)\n"
+-		"  --get-client-id <name>:           Connect and get Client ID for service <name>\n"
+-		"                                    (implies --keep-client-id)\n"
+-		"  --sync:                           Release all Client IDs\n"
++		"  --get-versions:                    Get service versions\n"
++		"  --set-client-id <name>,<id>:       Set Client ID for service <name> to <id>\n"
++		"                                     (implies --keep-client-id)\n"
++		"  --get-client-id <name>:            Connect and get Client ID for service <name>\n"
++		"                                     (implies --keep-client-id)\n"
++		"  --sync:                            Release all Client IDs\n"
++		"  --set-expected-data-format <type>: Set expected data format (type: 802.3, raw-ip)\n"
+ 		wds_helptext
+ 		dms_helptext
+ 		uim_helptext

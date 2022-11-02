@@ -1,1 +1,0 @@
-DICE/RIoT Emulator package and tests for Node.js

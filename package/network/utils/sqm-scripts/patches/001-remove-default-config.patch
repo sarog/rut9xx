@@ -1,0 +1,13 @@
+Index: sqm-scripts-1.4.0-1/Makefile
+===================================================================
+--- sqm-scripts-1.4.0-1.orig/Makefile
++++ sqm-scripts-1.4.0-1/Makefile
+@@ -17,7 +17,7 @@ install-openwrt: install-lib
+ 		$(DESTDIR)/etc/init.d
+ 	install -m 0755 platform/openwrt/sqm-hotplug $(DESTDIR)/etc/hotplug.d/iface/11-sqm
+ 	install -m 0755 platform/openwrt/sqm-init $(DESTDIR)/etc/init.d/sqm
+-	install -m 0644 platform/openwrt/sqm-uci $(DESTDIR)/etc/config/sqm
++	install -m 0644 /dev/null $(DESTDIR)/etc/config/sqm
+ 	install -m 0744 src/run-openwrt.sh $(DESTDIR)$(PREFIX)/lib/sqm/run.sh
+ 
+ install-linux: install-lib

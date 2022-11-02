@@ -1,12 +1,10 @@
 # 1: destination variable
-# 2: expected field value
+# 2: interface
 # 3: path
 # 4: separator
 # 5: limit
-# 6: field (default: "interface")
 __network_ifstatus() {
 	local __tmp
-	local __cmp="interface"
 
 	[ -z "$__NETWORK_CACHE" ] && {
 		__tmp="$(ubus call network.interface dump 2>&1)"
@@ -17,11 +15,7 @@ __network_ifstatus() {
 		esac
 	}
 
-	[ ! -z "$6" ] && {
-		__cmp="$6"
-	}
-
-	__tmp="$(jsonfilter ${4:+-F "$4"} ${5:+-l "$5"} -s "${__NETWORK_CACHE:-{}}" -e "$1=@.interface${2:+[@."$__cmp"='$2']}$3")"
+	__tmp="$(jsonfilter ${4:+-F "$4"} ${5:+-l "$5"} -s "${__NETWORK_CACHE:-{}}" -e "$1=@.interface${2:+[@.interface='$2']}$3")"
 
 	[ -z "$__tmp" ] && \
 		unset "$1" && \
@@ -44,13 +38,6 @@ network_get_ipaddr6() {
 	__network_ifstatus "$1" "$2" "['ipv6-address'][0].address" || \
 		__network_ifstatus "$1" "$2" "['ipv6-prefix-assignment'][0]['local-address'].address" || \
 		return 1
-}
-
-# determine first IPv4 address of given L3 device
-# 1: destination variable
-# 2: L3 device
-network_get_l3_ipaddr() {
-	__network_ifstatus "$1" "$2" "['ipv4-address'][0].address" "" "" "l3_device";
 }
 
 # determine first IPv4 subnet of given logical interface
@@ -246,29 +233,31 @@ network_get_dnssearch() {
 		__network_ifstatus "$1" "$2" ".inactive['dns-search'][*]"
 }
 
-
 # 1: destination variable
 # 2: addr
 # 3: inactive
+# 4: limit
 __network_wan()
 {
+	limit=1
+	[ -n "$4" ] && limit="$4"
 	__network_ifstatus "$1" "" \
-		"[@.route[@.target='$2' && !@.table]].interface" "" 1 && \
+		"[@.route[@.target='$2' && !@.table]].interface" "" $limit && \
 			return 0
 
 	[ "$3" = 1 -o "$3" = "true" ] && \
 		__network_ifstatus "$1" "" \
-			"[@.inactive.route[@.target='$2' && !@.table]].interface" "" 1
+			"[@.inactive.route[@.target='$2' && !@.table]].interface" "" $limit
 }
 
 # find the logical interface which holds the current IPv4 default route
 # 1: destination variable
 # 2: consider inactive default routes if "true" (optional)
-network_find_wan() { __network_wan "$1" "0.0.0.0" "$2"; }
+network_find_wan() { __network_wan "$1" "0.0.0.0" "$2" "$3"; }
 
 # find the logical interface which holds the current IPv6 default route
 # 1: destination variable
-# 2: consider inactive dafault routes if "true" (optional)
+# 2: consider inactive default routes if "true" (optional)
 network_find_wan6() { __network_wan "$1" "::" "$2"; }
 
 # test whether the given logical interface is running
@@ -283,6 +272,11 @@ network_is_up()
 # 1: destination variable
 # 2: interface
 network_get_protocol() { __network_ifstatus "$1" "$2" ".proto"; }
+
+# determine the uptime of the given logical interface
+# 1: destination variable
+# 2: interface
+network_get_uptime() { __network_ifstatus "$1" "$2" ".uptime"; }
 
 # determine the metric of the given logical interface
 # 1: destination variable

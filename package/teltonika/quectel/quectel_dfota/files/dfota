@@ -1,0 +1,392 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/network.sh
+. /usr/share/libubox/jshn.sh
+
+# Status codes:
+# Need to skip 1-2, 126-165, and 255 because it's reserved status codes
+UPDATE_SUCCESS=0
+UPDATE_ERROR=3
+INSTANCE_RUNNING=4
+
+#prepare ENV
+modem_ids=""
+forced="false"
+update="false"
+old_revision=""
+new_revision=""
+firmware_size=0
+status="$UPDATE_SUCCESS"
+
+#~ #######################FUNCTIONS##############################
+print_help() {
+	cat <<EOF
+	Tool to update modem firmware using Quectel DFOTA
+	By default script check if update exist
+	Usage: $0 [option]
+	Options:
+	-h	Print help message
+	-u	Check if there is an update available and start the update"
+	-w	Wait for default route and modem to appear
+EOF
+}
+
+# ****************parse options****************
+while [ -n "$1" ]; do
+	case "$1" in
+		-w) export WAIT_FOR_WAN=1;;
+		-d) debug=1;;
+		-u) update="true";;
+		-*)
+			print_help
+			exit 1
+		;;
+		*) break;;
+	esac
+	shift;
+done
+
+debug() {
+	[ "$debug" = "1" ] || return 0
+	echo "$@"
+}
+
+print_output() {
+	local message="$1"
+	echo "$message"
+}
+
+strstr() {
+	[ "${1#*$2*}" = "$1" ] && return 1
+	return 0
+}
+
+control_services() {
+	#Temporary reboot services control
+	local command="$1"
+	local list="modem_tracker periodic_reboot ping_reboot"
+	local i
+	for i in $list; do
+		debug "Executing $command to $i"
+		"/etc/init.d/$i" enabled && "/etc/init.d/$i" "$command"
+	done
+}
+
+end() {
+	local option="$1"
+	local message="$2"
+	case "$option" in
+		"$UPDATE_SUCCESS" | "$UPDATE_ERROR")
+			notify_webui "stop"
+			control_services "start"
+			;;
+		"$INSTANCE_RUNNING")
+			;;
+	esac
+	[ -n "$message" ] && print_output "$message"
+
+	exit "$option"
+}
+
+wait_for_wan() {
+	local wan_iface
+	print_output "Searching for WAN..."
+
+	while true; do
+		network_flush_cache
+		network_find_wan wan_iface
+		debug "WAN iface: $wan_iface"
+		[ -n "$wan_iface" ] && {
+			print_output "WAN found on interface: $wan_iface"
+			break
+		}
+		sleep 10
+	done
+	return 0
+}
+
+notify_webui() {
+	local action="$1"
+	case "$action" in
+		start)
+			mkdir -p /tmp/vuci
+			touch /tmp/vuci/dfota_update
+			touch /tmp/dfota_update
+			;;
+		stop)
+			mkdir -p /tmp/vuci
+			touch /tmp/vuci/dfota_finish
+			rm -rf /tmp/dfota_update
+			;;
+	esac
+}
+
+########################MODEM#######################################
+search_for_modems() {
+	local id modems
+	json_load_file "/etc/board.json"
+	debug "Looking for modems in system!"
+	if json_is_a modems array; then
+		json_get_keys modems modems
+		json_select modems
+		for modem in $modems; do
+			json_select "$modem"
+			json_get_var id id
+			modem_ids="$modem_ids $id"
+			json_select ..
+		done
+		json_select ..
+	else
+		end "$UPDATE_ERROR" "Modem doesn't exist!"
+	fi
+	debug "Found modem ids: $modem_ids"
+}
+
+check_manufacturer() {
+	#Check if modem is from Quectel
+	local modem_id="$1"
+	local counter=0
+
+	debug "Checking manufacturer of the $modem_id  modem..."
+
+	manufacturer="$(gsmctl -w -O $modem_id | sed "s/\r//g")"
+	debug "Modem $modem_id manufacturer: $manufacturer"
+	while [ "$counter" -lt 5 ]; do
+		case "$manufacturer" in
+			Quectel) return 0;;
+			Meig) break;;
+		esac
+
+		let "counter+=1"
+		sleep 1
+		manufacturer="$(gsmctl -w -O $modem_id | sed "s/\r//g")"
+	done;
+
+	if [ "$counter" -eq 5 ]; then
+		print_output "Unable to get manufacturer of modem $modem_id"
+	else
+		print_output "DFOTA is available only for Quectel modems!"
+	fi
+
+	return 1
+}
+
+check_modem_status() {
+	#Check if modem is available and respond to requests
+	#If fait for WAN is set, wait for modem too
+	local modem_id="$1"
+	local ret
+
+	if [ "$WAIT_FOR_WAN" = 1 ]; then
+		for i in $(seq 18); do
+			ret=$(gsmctl -z -O "$modem_id")
+			[ "$ret" = "inserted" ] || [ "$ret" = "not inserted" ] && return 0
+			sleep 10
+		done
+		return 1
+	else
+		ret=$(gsmctl -z -O "$modem_id")
+		[ "$ret" = "N/A" ] && return 1
+	fi
+
+	return 0
+}
+
+check_update() {
+	#Check if there is available update
+	local rv
+	local modem_id="$1"
+	forced="false"
+
+	print_output "Searching for the update..."
+
+	rut_fota -i -m "$modem_id" > /dev/null 2>&1
+	rv="$?"
+
+	if [ "$rv" != 0 ]; then
+		print_output "Connection error to FOTA server!"
+	fi
+
+	json_load "$(ubus call rut_fota get_info)"
+	json_get_var download_link modem
+	json_get_var firmware_size modem_size
+
+	if [ -z "$download_link" ] || [ "$download_link" = "N/A" ] || [ "$download_link" = "Modem_newest" ]; then
+		print_output "No update found!"
+		return 1
+	fi
+
+	if strstr "$download_link" "forced"; then
+		forced=true
+	fi
+
+	print_output "Update found! Update size: $firmware_size"
+	return 0
+}
+
+get_modem_cmd_port() {
+	local modem_id="$1"
+	local modem modems
+	local cmd_port
+
+	json_load "$(ubus call gsmd get_modems)"
+	json_get_keys modems modems
+	json_select modems
+
+	for modem in $modems; do
+		json_select "$modem"
+		json_get_vars id
+		if [ "$id" = "$modem_id" ]; then
+			json_get_vars cmd_port
+			break
+		fi
+		json_select ..
+	done
+	echo -ne "$cmd_port"
+}
+
+do_update() {
+	#Do modem firmware update
+
+	local free_size
+	local dl_file_size
+	local cmd_port
+	local modem_id="$1"
+	local ret
+
+	print_output "Preparing system for update!"
+
+	gsmctl -A 'AT+QFDEL="UFS:dfota.zip"' -O "$modem_id" > /dev/null 2>&1
+	sleep 1
+
+	free_size="$(gsmctl -O "$modem_id" -A 'AT+QFLDS="UFS"' | awk -F ' ' '{print $2}' | awk -F ',' '{print $1}')"
+	[ -n "$free_size" ] || [ "$free_size" -eq "$free_size" ] || {
+		print_output "Not enough memory in modem filesystem!"
+		return 1
+	}
+
+	cmd_port=$(get_modem_cmd_port "$modem_id")
+	debug "Found cmd port: $cmd_port"
+
+	ubus call gcont update_modems "{\"array\":\"modems\",\"state\":0,\"id\":\"${modem_id}\"}"
+	notify_webui "start"
+
+	sleep 2
+
+	ret=$(ubus call gsmd file "{\"id\":\"${modem_id}\",\"action\":\"upload\",\"path\":\"UFS:dfota.zip\",\"size\":${firmware_size}}")
+	echo "$ret" | grep -q "CONNECT" || {
+		print_output "Failed to enter download mode!"
+		return 1
+	}
+
+	sleep 1
+
+	print_output "Starting download!"
+	curl -s --connect-timeout 30 --max-time 900 -L "$download_link" -o "$cmd_port"
+	ret="$?"
+
+	sleep 2
+	gsmctl -A '+++' -O "$modem_id" 
+
+	sleep 2
+	[ "$ret" = "0" ] || {
+		print_output "Firmware update download was unsuccessful. Error: $ret"
+		return 1
+	}
+
+	dl_file_size="$(gsmctl -A 'AT+QFLST' -O "$modem_id" | sed "s/\r//g" | grep dfota.zip | cut -d',' -f2)"
+
+	[ -n "$dl_file_size" ] &&\
+	[ -n "$firmware_size" ] &&\
+	[ "$dl_file_size" -gt 0 ] &&\
+	[ "$dl_file_size" -eq "$firmware_size" ] && {
+		print_output "Firmware update was successfully downloaded!"
+		print_output "Sending update command!"
+		ret="$(gsmctl -A 'AT+QFOTADL="/data/ufs/dfota.zip"' -O $modem_id | sed "s/\r//g")"
+		if [ "$ret" != "OK" ]; then
+			ret="$(gsmctl -A 'AT+QFOTADL="/usrdata/ufs/dfota.zip"' -O $modem_id | sed "s/\r//g")"
+			[ "$ret" != "OK" ] && return 1
+		fi
+		return 0
+	}
+
+	debug "Download values dlsize: $dl_file_size fw: $firmware_size"
+
+	print_output "Firmware update verify was unsuccessful..."
+	return 1
+}
+
+track_update_status() {
+	local modem_id="$1"
+	local ret
+	print_output "Waiting for the update to start..."
+	while [ -e "/sys/bus/usb/devices/$modem_id" ]; do
+		sleep 1
+	done
+
+	print_output "Update has been started! Modem will perform few restarts and will be available after few minutes."
+	print_output "*** DO NOT POWER OFF THE DEVICE! ***"
+
+	while true; do
+		ret="$(gsmctl -k -O "$modem_id" 2> /dev/null | sed "s/\r//g")"
+		[ "$?" != "0" ] || [ "$ret" = "N/A" ] || [ "$ret" = "not supported" ] || [ -z "$ret" ] || break
+		debug "Update status result: $ret"
+		print_output "Update is in progress..."
+		sleep 10
+	done;
+
+	print_output "Update finished! Firmware version - \"$ret\""
+	return 0
+}
+
+reset_on_fail() {
+	#Hack if modem fails to leave data state :/
+	local st="$1"
+	[ "$st" = "$UPDATE_ERROR" ] || return
+	print_output "Reseting modems due error!"
+	mctl -r -m "modem" 2>&1 > /dev/null
+	mctl -r -m "modem2" 2>&1 > /dev/null
+}
+
+#********************************
+# Main
+#*********************************
+
+if [ "$(ps w | grep -v grep | grep -c /usr/sbin/quectel_dfota)" -gt "2" ]; then
+	end "$INSTANCE_RUNNING" "Unable to start because another instance is running!"
+fi
+
+#Wait for full system boot
+while true; do
+	[ -e "/var/run/init-done" ] && break
+	sleep 1
+done
+
+#Wait for default route to check connection
+[ "$WAIT_FOR_WAN" = "1" ] && wait_for_wan
+
+#Find if router have upgradable modems
+search_for_modems
+
+#Iterate modem ids
+for m_id in $modem_ids; do
+	print_output "Preparing for $m_id update!"
+	check_modem_status "$m_id" || continue
+	check_manufacturer "$m_id" || continue
+	check_update "$m_id" || continue
+
+	if [ "$forced" = "true" ] || [ "$update" = "true" ]; then
+		debug "Update flag found!"
+		control_services "stop"
+		do_update "$m_id" || {
+			status="$UPDATE_ERROR"
+			break
+		}
+		track_update_status "$m_id"
+		sleep 60
+	fi
+done
+
+reset_on_fail "$status"
+end "$status" "Update script done!"

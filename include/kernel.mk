@@ -1,12 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright (C) 2006-2015 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2006-2020 OpenWrt.org
+
+ifneq ($(filter check,$(MAKECMDGOALS)),)
+CHECK:=1
+DUMP:=1
+endif
+
+ifneq ($(SOURCE_DATE_EPOCH),)
+  ifndef DUMP
+    KBUILD_BUILD_TIMESTAMP:=$(shell perl -e 'print scalar gmtime($(SOURCE_DATE_EPOCH))')
+  endif
+endif
 
 ifeq ($(__target_inc),)
-  include $(INCLUDE_DIR)/target.mk
+  ifndef CHECK
+    include $(INCLUDE_DIR)/target.mk
+  endif
 endif
 
 ifeq ($(DUMP),1)
@@ -30,8 +40,8 @@ else
   endif
 
   ifeq ($(TARGET_BUILD),1)
-    PATCH_DIR ?= ./patches$(if $(wildcard ./patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
-    FILES_DIR ?= $(foreach dir,$(wildcard ./files ./files-$(KERNEL_PATCHVER)),"$(dir)")
+    PATCH_DIR ?= $(CURDIR)/patches$(if $(wildcard ./patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
+    FILES_DIR ?= $(foreach dir,$(wildcard $(CURDIR)/files $(CURDIR)/files-$(KERNEL_PATCHVER)),"$(dir)")
   endif
   KERNEL_BUILD_DIR ?= $(BUILD_DIR)/linux-$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET))
   LINUX_DIR ?= $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
@@ -39,94 +49,138 @@ else
   LINUX_VERMAGIC:=$(strip $(shell cat $(LINUX_DIR)/.vermagic 2>/dev/null))
   LINUX_VERMAGIC:=$(if $(LINUX_VERMAGIC),$(LINUX_VERMAGIC),unknown)
 
-  LINUX_UNAME_VERSION:=$(if $(word 3,$(subst ., ,$(KERNEL_BASE))),$(KERNEL_BASE),$(KERNEL_BASE).0)
+  LINUX_UNAME_VERSION:=$(KERNEL_BASE)
   ifneq ($(findstring -rc,$(LINUX_VERSION)),)
     LINUX_UNAME_VERSION:=$(LINUX_UNAME_VERSION)-$(strip $(lastword $(subst -, ,$(LINUX_VERSION))))
   endif
 
-  MODULES_SUBDIR:=lib/modules/$(LINUX_UNAME_VERSION)
-  TARGET_MODULES_DIR := $(LINUX_TARGET_DIR)/$(MODULES_SUBDIR)
-
   LINUX_KERNEL:=$(KERNEL_BUILD_DIR)/vmlinux
 
-  LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.xz
-  TESTING:=$(if $(findstring -rc,$(LINUX_VERSION)),/testing,)
-  ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
-      LINUX_SITE:=@KERNEL/linux/kernel/v$(word 1,$(subst ., ,$(KERNEL_BASE))).x$(TESTING)
+  ifneq (,$(findstring -rc,$(LINUX_VERSION)))
+      LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.gz
+  else
+      LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.xz
   endif
 
+  ifneq (,$(findstring -rc,$(LINUX_VERSION)))
+      LINUX_SITE:=https://git.kernel.org/torvalds/t
+  else ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
+      LINUX_SITE:=@KERNEL/linux/kernel/v$(word 1,$(subst ., ,$(KERNEL_BASE))).x
+  else
+      LINUX_UNAME_VERSION:=$(strip $(shell cat $(LINUX_DIR)/include/config/kernel.release 2>/dev/null))
+  endif
+
+  MODULES_SUBDIR:=lib/modules/$(LINUX_UNAME_VERSION)
+  TARGET_MODULES_DIR:=$(LINUX_TARGET_DIR)/$(MODULES_SUBDIR)
+
   ifneq ($(TARGET_BUILD),1)
-    PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
+    PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(if $(BUILD_VARIANT),$(PKG_NAME)-$(BUILD_VARIANT)/)$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
   endif
 endif
 
 ifneq (,$(findstring uml,$(BOARD)))
   LINUX_KARCH=um
-else ifneq (,$(findstring $(ARCH), aarch64 aarch64_be))
+else ifneq (,$(findstring $(ARCH) , aarch64 aarch64_be ))
   LINUX_KARCH := arm64
-else ifneq (,$(findstring $(ARCH), armeb))
+else ifneq (,$(findstring $(ARCH) , arceb ))
+  LINUX_KARCH := arc
+else ifneq (,$(findstring $(ARCH) , armeb ))
   LINUX_KARCH := arm
-else ifneq (,$(findstring $(ARCH), mipsel mips64 mips64el))
+else ifneq (,$(findstring $(ARCH) , mipsel mips64 mips64el ))
   LINUX_KARCH := mips
-else ifneq (,$(findstring $(ARCH), sh2 sh3 sh4))
+else ifneq (,$(findstring $(ARCH) , powerpc64 ))
+  LINUX_KARCH := powerpc
+else ifneq (,$(findstring $(ARCH) , sh2 sh3 sh4 ))
   LINUX_KARCH := sh
-else ifneq (,$(findstring $(ARCH), i386 x86_64))
+else ifneq (,$(findstring $(ARCH) , i386 x86_64 ))
   LINUX_KARCH := x86
 else
   LINUX_KARCH := $(ARCH)
 endif
 
+KERNEL_MAKE = $(MAKE) $(KERNEL_MAKEOPTS)
+
+KERNEL_MAKE_FLAGS = \
+	KCFLAGS="$(call iremap,$(BUILD_DIR),$(notdir $(BUILD_DIR)))" \
+	HOSTCFLAGS="$(HOST_CFLAGS) -Wall -Wmissing-prototypes -Wstrict-prototypes" \
+	CROSS_COMPILE="$(KERNEL_CROSS)" \
+	ARCH="$(LINUX_KARCH)" \
+	KBUILD_HAVE_NLS=no \
+	KBUILD_BUILD_USER="$(call qstrip,$(CONFIG_KERNEL_BUILD_USER))" \
+	KBUILD_BUILD_HOST="$(call qstrip,$(CONFIG_KERNEL_BUILD_DOMAIN))" \
+	KBUILD_BUILD_TIMESTAMP="$(KBUILD_BUILD_TIMESTAMP)" \
+	KBUILD_BUILD_VERSION="0" \
+	HOST_LOADLIBES="-L$(STAGING_DIR_HOST)/lib" \
+	KBUILD_HOSTLDLIBS="-L$(STAGING_DIR_HOST)/lib" \
+	CONFIG_SHELL="$(BASH)" \
+	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
+	$(if $(PKG_BUILD_ID),LDFLAGS_MODULE=--build-id=0x$(PKG_BUILD_ID)) \
+	cmd_syscalls= \
+	$(if $(__package_mk),KBUILD_EXTRA_SYMBOLS="$(wildcard $(PKG_SYMVERS_DIR)/*.symvers)")
+
+KERNEL_NOSTDINC_FLAGS = \
+	-nostdinc $(if $(DUMP),, -isystem $(shell $(TARGET_CC) -print-file-name=include))
+
+ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
+  KERNEL_MAKE_FLAGS += \
+	KERNELRELEASE=$(LINUX_VERSION)
+endif
+
+KERNEL_MAKEOPTS := -C $(LINUX_DIR) $(KERNEL_MAKE_FLAGS)
+
+ifdef CONFIG_USE_SPARSE
+  KERNEL_MAKEOPTS += C=1 CHECK=$(STAGING_DIR_HOST)/bin/sparse
+endif
+
+ifneq ($(HOST_OS),Linux)
+  KERNEL_MAKEOPTS += CONFIG_STACK_VALIDATION=
+  export SKIP_STACK_VALIDATION:=1
+endif
+
+PKG_EXTMOD_SUBDIRS ?= .
+
+PKG_SYMVERS_DIR = $(KERNEL_BUILD_DIR)/symvers
+
+define collect_module_symvers
+	for subdir in $(PKG_EXTMOD_SUBDIRS); do \
+		realdir=$$$$(readlink -f $(PKG_BUILD_DIR)); \
+		grep -F $(PKG_BUILD_DIR) $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
+		[ "$(PKG_BUILD_DIR)" = "$$$$realdir" ] || \
+			grep -F $$$$realdir $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
+	done; \
+	sort -u $(PKG_BUILD_DIR)/Module.symvers.tmp > $(PKG_BUILD_DIR)/Module.symvers; \
+	mkdir -p $(PKG_SYMVERS_DIR); \
+	mv $(PKG_BUILD_DIR)/Module.symvers $(PKG_SYMVERS_DIR)/$(PKG_NAME).symvers
+endef
+
+define KernelPackage/hooks
+  ifneq ($(PKG_NAME),kernel)
+    Hooks/Compile/Post += collect_module_symvers
+  endif
+  define KernelPackage/hooks
+  endef
+endef
+
 define KernelPackage/Defaults
   FILES:=
   AUTOLOAD:=
+  MODPARAMS:=
+  PKGFLAGS+=nonshared
 endef
 
+# 1: name
+# 2: install prefix
+# 3: module priority prefix
+# 4: required for boot
+# 5: module list
 define ModuleAutoLoad
-	$(SH_FUNC) \
-	export modules=; \
-	probe_module() { \
-		mods="$$$$$$$$1"; \
-		boot="$$$$$$$$2"; \
-		shift 2; \
-		for mod in $$$$$$$$mods; do \
-			mkdir -p $(2)/etc/modules.d; \
-			echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$(1); \
-		done; \
-		if [ -e $(2)/etc/modules.d/$(1) ]; then \
-			if [ "$$$$$$$$boot" = "1" ]; then \
-				mkdir -p $(2)/etc/modules-boot.d; \
-				ln -s ../modules.d/$(1) $(2)/etc/modules-boot.d/; \
-			fi; \
-			modules="$$$$$$$${modules:+$$$$$$$$modules }$$$$$$$$mods"; \
-		fi; \
-	}; \
-	add_module() { \
-		priority="$$$$$$$$1"; \
-		mods="$$$$$$$$2"; \
-		boot="$$$$$$$$3"; \
-		shift 3; \
-		for mod in $$$$$$$$mods; do \
-			mkdir -p $(2)/etc/modules.d; \
-			echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$$$$$$$$priority-$(1); \
-		done; \
-		if [ -e $(2)/etc/modules.d/$$$$$$$$priority-$(1) ]; then \
-			if [ "$$$$$$$$boot" = "1" ]; then \
-				mkdir -p $(2)/etc/modules-boot.d; \
-				ln -s ../modules.d/$$$$$$$$priority-$(1) $(2)/etc/modules-boot.d/; \
-			fi; \
-			modules="$$$$$$$${modules:+$$$$$$$$modules }$$$$$$$$priority-$(1)"; \
-		fi; \
-	}; \
-	$(3) \
-	if [ -n "$$$$$$$$modules" ]; then \
-		mkdir -p $(2)/etc/modules.d; \
-		mkdir -p $(2)/CONTROL; \
-		echo "#!/bin/sh" > $(2)/CONTROL/postinst-pkg; \
-		echo "[ -z \"\$$$$$$$$IPKG_INSTROOT\" ] || exit 0" >> $(2)/CONTROL/postinst-pkg; \
-		echo ". /lib/functions.sh" >> $(2)/CONTROL/postinst-pkg; \
-		echo "insert_modules $$$$$$$$modules" >> $(2)/CONTROL/postinst-pkg; \
-		chmod 0755 $(2)/CONTROL/postinst-pkg; \
-	fi
+  $(if $(5), \
+    mkdir -p $(2)/etc/modules.d; \
+    ($(foreach mod,$(5), \
+      echo "$(mod)$(if $(MODPARAMS.$(mod)), $(MODPARAMS.$(mod)),$(if $(MODPARAMS), $(MODPARAMS)))"; )) > $(2)/etc/modules.d/$(3)$(1); \
+    $(if $(4), \
+      mkdir -p $(2)/etc/modules-boot.d; \
+      ln -sf ../modules.d/$(3)$(1) $(2)/etc/modules-boot.d/;))
 endef
 
 ifeq ($(DUMP)$(TARGET_BUILD),)
@@ -145,6 +199,7 @@ define KernelPackage
   $(eval $(call KernelPackage/Defaults))
   $(eval $(call KernelPackage/$(1)))
   $(eval $(call KernelPackage/$(1)/$(BOARD)))
+  $(eval $(call KernelPackage/$(1)/$(BOARD)/$(if $(SUBTARGET),$(SUBTARGET),generic)))
 
   define Package/kmod-$(1)
     TITLE:=$(TITLE)
@@ -153,8 +208,10 @@ define KernelPackage
     DESCRIPTION:=$(DESCRIPTION)
     EXTRA_DEPENDS:=kernel (=$(LINUX_VERSION)-$(LINUX_RELEASE)-$(LINUX_VERMAGIC))
     VERSION:=$(LINUX_VERSION)$(if $(PKG_VERSION),+$(PKG_VERSION))-$(if $(PKG_RELEASE),$(PKG_RELEASE),$(LINUX_RELEASE))
+    PKGFLAGS:=$(PKGFLAGS)
     $(call KernelPackage/$(1))
     $(call KernelPackage/$(1)/$(BOARD))
+    $(call KernelPackage/$(1)/$(BOARD)/$(if $(SUBTARGET),$(SUBTARGET),generic))
   endef
 
   ifdef KernelPackage/$(1)/conffiles
@@ -176,29 +233,24 @@ $(call KernelPackage/$(1)/config)
   endif
 
   $(call KernelPackage/depends)
+  $(call KernelPackage/hooks)
 
   ifneq ($(if $(filter-out %=y %=n %=m,$(KCONFIG)),$(filter m y,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
-    ifneq ($(if $(SDK),$(filter-out $(LINUX_DIR)/%.ko,$(FILES)),$(strip $(FILES))),)
-      define Package/kmod-$(1)/install
+    define Package/kmod-$(1)/install
 		  @for mod in $$(call version_filter,$$(FILES)); do \
-			if [ -e $$$$$$$$mod ]; then \
+			if grep -q "$$$$$$$${mod##$(LINUX_DIR)/}" "$(LINUX_DIR)/modules.builtin"; then \
+				echo "NOTICE: module '$$$$$$$$mod' is built-in."; \
+			elif [ -e $$$$$$$$mod ]; then \
 				mkdir -p $$(1)/$(MODULES_SUBDIR) ; \
 				$(CP) -L $$$$$$$$mod $$(1)/$(MODULES_SUBDIR)/ ; \
-			elif [ -e "$(LINUX_DIR)/modules.builtin" ]; then \
-				if grep -q "$$$$$$$${mod##$(LINUX_DIR)/}" "$(LINUX_DIR)/modules.builtin"; then \
-					echo "NOTICE: module '$$$$$$$$mod' is built-in."; \
-				else \
-					echo "ERROR: module '$$$$$$$$mod' is missing." >&2; \
-					exit 1; \
-				fi; \
 			else \
-				echo "WARNING: module '$$$$$$$$mod' missing and modules.builtin not available, assuming built-in." >&2; \
+				echo "ERROR: module '$$$$$$$$mod' is missing." >&2; \
+				exit 1; \
 			fi; \
 		  done;
-		  $(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
+		  $(call ModuleAutoLoad,$(1),$$(1),$(filter-out 0-,$(word 1,$(AUTOLOAD))-),$(filter-out 0,$(word 2,$(AUTOLOAD))),$(sort $(wordlist 3,99,$(AUTOLOAD))))
 		  $(call KernelPackage/$(1)/install,$$(1))
-      endef
-    endif
+    endef
   $(if $(CONFIG_PACKAGE_kmod-$(1)),
     else
       compile: $(1)-disabled
@@ -212,17 +264,23 @@ $(call KernelPackage/$(1)/config)
   endif
   $$(eval $$(call BuildPackage,kmod-$(1)))
 
-  $$(IPKG_kmod-$(1)): $$(wildcard $$(FILES))
+  $$(IPKG_kmod-$(1)): $$(wildcard $$(call version_filter,$$(FILES)))
+
 endef
 
-version_filter=$(if $(findstring @,$(1)),$(shell $(SCRIPT_DIR)/metadata.pl version_filter $(KERNEL_PATCHVER) $(1)),$(1))
+version_filter=$(if $(findstring @,$(1)),$(shell $(SCRIPT_DIR)/package-metadata.pl version_filter $(KERNEL_PATCHVER) $(1)),$(1))
 
+# 1: priority (optional)
+# 2: module list
+# 3: boot flag
 define AutoLoad
-  add_module "$(1)" "$(call version_filter,$(2))" "$(3)";
+  $(if $(1),$(1),0) $(if $(3),1,0) $(call version_filter,$(2))
 endef
 
+# 1: module list
+# 2: boot flag
 define AutoProbe
-  probe_module "$(call version_filter,$(1))" "$(2)";
+  $(call AutoLoad,,$(1),$(2))
 endef
 
 version_field=$(if $(word $(1),$(2)),$(word $(1),$(2)),0)

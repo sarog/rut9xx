@@ -1,0 +1,47 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=99
+STOP=1
+
+. /lib/functions.sh
+. /lib/functions/network.sh
+
+start_tunnel(){
+	local enabled proto peeraddr keep_alive keep_alive_interval dev localIP
+
+	config_get proto "$1" "proto" ""
+	config_get disabled "$1" "disabled" "0"
+
+	[ "$disabled" != 1 -a "$proto" = "gre" ] && {
+
+		config_get peeraddr "$1" "peeraddr" ""
+		config_get keep_alive "$1" "keep_alive" "0"
+		config_get keep_alive_interval "$1" "keep_alive_interval" "10"
+		dev="gre4-$1"
+		config_get ipaddr_tunlink "$1" "tunlink"
+
+		network_get_device t_source_interface $ipaddr_tunlink
+
+		procd_open_instance "$1"
+		
+		if [ "$keep_alive" = "1" ]; then
+			procd_set_param command gkeepalive $t_source_interface send $peeraddr $keep_alive_interval
+		else
+			procd_set_param command gkeepalive $t_source_interface
+		fi
+
+		procd_set_param respawn
+		procd_close_instance
+	}
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger "network"
+}
+
+start_service() {
+	config_load 'network'
+	config_foreach start_tunnel 'interface'
+}

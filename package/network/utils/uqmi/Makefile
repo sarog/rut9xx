@@ -1,23 +1,21 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uqmi
-PKG_VERSION:=2014-12-03
-PKG_RELEASE=$(PKG_SOURCE_VERSION)
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=git://nbd.name/uqmi.git
-PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=86bcdb8cca652676a78b2df8b5e3fb27a40c60a4
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
+PKG_SOURCE_URL=$(PROJECT_GIT)/project/uqmi.git
+PKG_SOURCE_DATE:=2020-11-22
+PKG_SOURCE_VERSION:=0a19b5b77140465c29e2afa7d611fe93abc9672f
+PKG_MIRROR_HASH:=0a6641f8e167efd21d464b0b2aeb1fec5f974dddcdb8822fbd5d7190d0b741b4
 PKG_MAINTAINER:=Matti Laakso <malaakso@elisanet.fi>
-PATCH_DIR:=patches
-# PKG_MIRROR_MD5SUM:=
-# CMAKE_INSTALL:=1
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=
 
 PKG_BUILD_PARALLEL:=1
+
+# PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -25,7 +23,8 @@ include $(INCLUDE_DIR)/cmake.mk
 define Package/uqmi
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+libubox +libblobmsg-json +kmod-usb-net +kmod-usb-net-qmi-wwan
+  SUBMENU:=WWAN
+  DEPENDS:=+libubox +libblobmsg-json +kmod-usb-net +kmod-usb-net-qmi-wwan +wwan
   TITLE:=Control utility for mobile broadband modems
 endef
 
@@ -43,9 +42,19 @@ CMAKE_OPTIONS += \
 	-DDEBUG=1
 
 define Package/uqmi/install
-	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_DIR) $(1)/sbin $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uqmi $(1)/sbin/
-	$(CP) ./files/* $(1)/
+
+	$(INSTALL_DIR) $(1)/lib/netifd/proto
+	$(INSTALL_BIN) ./files/qmi.sh $(1)/lib/netifd/proto
+	$(INSTALL_BIN) ./files/qmux.sh $(1)/lib/netifd/proto
+	$(INSTALL_BIN) ./files/qmux_track.sh $(1)/usr/bin/qmuxtrack
+	$(INSTALL_BIN) ./files/connm.sh $(1)/lib/netifd/proto
+	$(INSTALL_BIN) ./files/dhcp_mobile.script $(1)/lib/netifd/
+	$(INSTALL_BIN) ./files/ncm.sh $(1)/lib/netifd/proto
+
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/bridge_fix.sh $(1)/etc/uci-defaults/bridge_fix
 endef
 
 $(eval $(call BuildPackage,uqmi))

@@ -1,7 +1,0 @@
-<div class="cbi-section-create">
-	<% if self.invalid_cts then -%><div class="cbi-section-error"><% end %>
-	<label class="cbi-value-title-2" style="padding-left:10px;"<%= attr("for", cbid) %>><span onmouseover="ShowHint(this, 'Name of the new DDNS configuration. Used for easier configurations management purpose only')" onmouseout="HideHint(this)"><%=translate("New configuration name:")%></span></label>
-	<input type="text" class="cbi-section-create-name" name="cbid.<%=self.config%>.<%=self.sectiontype%>.name" maxlength="8" />
-	<input class="cbi-button cbi-button-add" type="submit" value="<%:Add New%>" title="<%=translate('Add New')%>" />
-	<% if self.invalid_cts then %><br /><%=translate("Invalid")%></div><% end %>
-</div>

@@ -1,0 +1,236 @@
+Index: linux-5.4.137/drivers/mtd/spi-nor/spi-nor.c
+===================================================================
+--- linux-5.4.137.orig/drivers/mtd/spi-nor/spi-nor.c
++++ linux-5.4.137/drivers/mtd/spi-nor/spi-nor.c
+@@ -237,6 +237,7 @@ struct flash_info {
+ 					 * Flash SR has 4 bit fields (BP0-3)
+ 					 * for block protection.
+ 					 */
++#define USE_DYB		BIT(18)	/* use DYB lock/unlock command */
+ 
+ 	/* Part specific fixup hooks. */
+ 	const struct spi_nor_fixups *fixups;
+@@ -244,6 +245,24 @@ struct flash_info {
+ 
+ #define JEDEC_MFR(info)	((info)->id[0])
+ 
++static int spi_read_reg_cust(struct spi_nor *nor, u8 *tx_buf, int tx_len, u8 *rx_buf, int len)
++{
++	struct spi_device *spi;
++	int ret;
++
++	if (!nor->spimem) {
++		dev_err(&spi->dev, "SPI-MEM not supported\n");
++		return -EIO;
++	}
++
++	spi = nor->spimem->spi;
++	ret = spi_write_then_read(spi, tx_buf, tx_len, rx_buf, len);
++	if (ret < 0)
++		dev_err(&spi->dev, "error %d reading %x\n", ret, tx_buf[0]);
++
++	return ret;
++}
++
+ /**
+  * spi_nor_spimem_xfer_data() - helper function to read/write data to
+  *                              flash's memory region
+@@ -720,6 +739,114 @@ static int winbond_set_4byte(struct spi_
+ 	return ret;
+ }
+ 
++static int micron_dyb_read(struct spi_nor *nor, loff_t ofs, int *reply)
++{
++	int ret;
++	int i;
++
++	/* Micron SDK uses six bytes rx buffer, but result register is only
++	 * 1 byte.
++	 * */
++	u8 rx_gpr[6];
++	u8 tx_gpr[4];
++	memset(rx_gpr, 0, 6);
++
++	for (i = nor->addr_width; i >= 1; i--) {
++		tx_gpr[i] = ofs & 0xff;
++		ofs >>= 8;
++	}
++
++	tx_gpr[0] = SPINOR_OP_RD_DYB; // Opcode for Read volatile lock bit
++
++	ret = nor->read_reg_cust(nor, tx_gpr, sizeof(tx_gpr), rx_gpr, sizeof(rx_gpr));
++
++	*reply = rx_gpr[0] & 0x01; // Volatile lock status is bit 0
++	return 0;
++}
++
++static int micron_dyb_write(struct spi_nor *nor, loff_t ofs, u8 lock)
++{
++	u8 tx_gpr[4];
++	int i;
++
++	for (i = nor->addr_width - 1; i >= 0; i--) {
++		tx_gpr[i] = ofs & 0xff;
++		ofs >>= 8;
++	}
++
++	tx_gpr[3] = lock;
++
++	if (nor->spimem) {
++		struct spi_mem_op op = SPI_MEM_OP(
++							SPI_MEM_OP_CMD(SPINOR_OP_WR_DYB, 1),
++							SPI_MEM_OP_NO_ADDR,
++							SPI_MEM_OP_NO_DUMMY,
++							SPI_MEM_OP_DATA_OUT(4, tx_gpr, 1));
++		return spi_mem_exec_op(nor->spimem, &op);
++	}
++
++	return nor->write_reg(nor, SPINOR_OP_WR_DYB, tx_gpr, sizeof(tx_gpr));
++}
++
++static int micron_lock(struct spi_nor *nor, loff_t ofs, uint64_t len)
++{
++	struct mtd_info *mtd = &nor->mtd;
++	int ret;
++	int is_locked = 0;
++
++	while (len) {
++		ret = micron_dyb_read(nor, ofs, &is_locked);
++		if (!is_locked){
++			write_enable(nor);
++			ret = micron_dyb_write(nor, ofs, 1);
++		}
++		ofs += mtd->erasesize;
++		len -= mtd->erasesize;
++	}
++
++	return ret;
++}
++
++static int micron_unlock(struct spi_nor *nor, loff_t ofs, uint64_t len)
++{
++	struct mtd_info *mtd = &nor->mtd;
++	int ret;
++	int is_locked = 0;
++
++	while (len) {
++		ret = micron_dyb_read(nor, ofs, &is_locked);
++		if (is_locked){
++			write_enable(nor);
++			ret = micron_dyb_write(nor, ofs, 0);
++		}
++		ofs += mtd->erasesize;
++		len -= mtd->erasesize;
++	}
++
++	return ret;
++}
++
++/* If Micron Authenta flash is provisioned, default state of all volatile
++ * lock bits is 1b. Check if any sector in range from ofs to ofs+len
++ * is unlocked/unlocked, and return lock status. Currently not used
++ *  */
++static int micron_is_locked(struct spi_nor *nor, loff_t ofs, uint64_t len)
++{
++	struct mtd_info *mtd = &nor->mtd;
++	int is_locked = 0;
++
++	while (len) {
++		micron_dyb_read(nor, ofs, &is_locked);
++		if (is_locked)
++			break;
++
++		ofs += mtd->erasesize;
++		len -= mtd->erasesize;
++	}
++
++	return is_locked;
++}
++
+ static int spi_nor_xread_sr(struct spi_nor *nor, u8 *sr)
+ {
+ 	if (nor->spimem) {
+@@ -1466,7 +1593,12 @@ static int stm_lock(struct spi_nor *nor,
+ 	loff_t lock_len;
+ 	bool can_be_top = true, can_be_bottom = nor->flags & SNOR_F_HAS_SR_TB;
+ 	bool use_top;
++	bool has_dyb = nor->flags & SNOR_F_HAS_DYB;
++
+ 
++	/* if DYB locking is present, try to lock */
++	if (has_dyb && (micron_lock(nor, ofs, len) != 0))
++		dev_warn(nor->dev, "failed to lock DYB\n");
+ 	status_old = read_sr(nor);
+ 	if (status_old < 0)
+ 		return status_old;
+@@ -1546,7 +1678,12 @@ static int stm_unlock(struct spi_nor *no
+ 	loff_t lock_len;
+ 	bool can_be_top = true, can_be_bottom = nor->flags & SNOR_F_HAS_SR_TB;
+ 	bool use_top;
++	bool has_dyb = nor->flags & SNOR_F_HAS_DYB;
+ 
++
++	/* if DYB locking is present, try to unlock */
++	if (has_dyb && (micron_unlock(nor, ofs, len) != 0))
++		dev_warn(nor->dev, "failed to unlock DYB\n");
+ 	status_old = read_sr(nor);
+ 	if (status_old < 0)
+ 		return status_old;
+@@ -2377,7 +2514,7 @@ static const struct flash_info spi_nor_i
+ 	{ "n25q064",     INFO(0x20ba17, 0, 64 * 1024,  128, SECT_4K | SPI_NOR_QUAD_READ) },
+ 	{ "n25q064a",    INFO(0x20bb17, 0, 64 * 1024,  128, SECT_4K | SPI_NOR_QUAD_READ) },
+ 	{ "n25q128a11",  INFO(0x20bb18, 0, 64 * 1024,  256, SECT_4K | SPI_NOR_QUAD_READ) },
+-	{ "n25q128a13",  INFO(0x20ba18, 0, 64 * 1024,  256, SECT_4K | SPI_NOR_QUAD_READ) },
++	{ "n25q128a13",  INFO(0x20ba18, 0, 64 * 1024,  256, SECT_4K | SPI_NOR_QUAD_READ | USE_DYB) },
+ 	{ "n25q256a",    INFO(0x20ba19, 0, 64 * 1024,  512, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+ 	{ "n25q256ax1",  INFO(0x20bb19, 0, 64 * 1024,  512, SECT_4K | SPI_NOR_QUAD_READ) },
+ 	{ "n25q512ax3",  INFO(0x20ba20, 0, 64 * 1024, 1024, SECT_4K | USE_FSR | SPI_NOR_QUAD_READ) },
+@@ -5111,6 +5248,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	memset(&mtd->payload4bypass[0],0,64);
+ 	mtd->payload4bypasslength=0;
+ 
++	if (info->flags & USE_DYB)
++		nor->flags |= SNOR_F_HAS_DYB;
++
+ 	if (info->flags & SPI_NOR_NO_ERASE)
+ 		mtd->flags |= MTD_NO_ERASE;
+ 
+@@ -5195,6 +5335,7 @@ static int spi_nor_probe(struct spi_mem
+ 	if (!nor->mtd.name)
+ 		nor->mtd.name = spi_mem_get_name(spimem);
+ 
++	nor->read_reg_cust = spi_read_reg_cust;
+ 	/*
+ 	 * For some (historical?) reason many platforms provide two different
+ 	 * names in flash_platform_data: "name" and "type". Quite often name is
+Index: linux-5.4.137/include/linux/mtd/spi-nor.h
+===================================================================
+--- linux-5.4.137.orig/include/linux/mtd/spi-nor.h
++++ linux-5.4.137/include/linux/mtd/spi-nor.h
+@@ -124,6 +124,10 @@
+ #define SPINOR_OP_RD_GPR	0x96    /* Read general purpose register */
+ #define SPINOR_OP_CRTM		0x9B    /* Read/Write CRTM register */
+ 
++/* Micron additions */
++#define SPINOR_OP_RD_DYB	0xE8    /* Read VOLATILE LOCK BITS register */
++#define SPINOR_OP_WR_DYB	0xE5    /* Write VOLATILE LOCK BITS register */
++
+ /* Status Register bits. */
+ #define SR_WIP			BIT(0)	/* Write in progress */
+ #define SR_WEL			BIT(1)	/* Write enable latch */
+@@ -249,6 +253,7 @@ enum spi_nor_option_flags {
+ 	SNOR_F_HAS_4BAIT	= BIT(7),
+ 	SNOR_F_HAS_LOCK		= BIT(8),
+ 	SNOR_F_HAS_4BIT_BP      = BIT(12),
++	SNOR_F_HAS_DYB		= BIT(13),
+ };
+ 
+ /**
+@@ -598,6 +603,7 @@ struct spi_nor {
+ 	void (*unprepare)(struct spi_nor *nor, enum spi_nor_ops ops);
+ 	int (*read_reg)(struct spi_nor *nor, u8 opcode, u8 *buf, int len);
+ 	int (*write_reg)(struct spi_nor *nor, u8 opcode, u8 *buf, int len);
++	int (*read_reg_cust)(struct spi_nor *nor, u8 *tx_buf, int tx_len, u8 *rx_buf, int len);
+ 
+ 	ssize_t (*read)(struct spi_nor *nor, loff_t from,
+ 			size_t len, u_char *read_buf);

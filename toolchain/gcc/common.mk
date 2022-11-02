@@ -1,7 +1,7 @@
 #
 # Copyright (C) 2002-2003 Erik Andersen <andersen@uclibc.org>
 # Copyright (C) 2004 Manuel Novoa III <mjn3@uclibc.org>
-# Copyright (C) 2005-2006 Felix Fietkau <nbd@openwrt.org>
+# Copyright (C) 2005-2006 Felix Fietkau <nbd@nbd.name>
 # Copyright (C) 2006-2014 OpenWrt.org
 #
 # This program is free software; you can redistribute it and/or modify
@@ -25,50 +25,29 @@ GCC_VERSION:=$(call qstrip,$(CONFIG_GCC_VERSION))
 PKG_VERSION:=$(firstword $(subst +, ,$(GCC_VERSION)))
 GCC_DIR:=$(PKG_NAME)-$(PKG_VERSION)
 
-ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
-    LINARO_RELEASE:=
-    ifeq ($(CONFIG_GCC_VERSION),"4.6-linaro")
-      PKG_REV:=4.6-2013.05
-      PKG_VERSION:=4.6.4
-      PKG_VERSION_MAJOR:=4.6
-      PKG_MD5SUM:=26b48802ae1203cd99415026fbf56ed7
-      PKG_COMP:=bz2
-    endif
-    ifeq ($(CONFIG_GCC_VERSION),"4.8-linaro")
-      PKG_REV:=4.8-2014.04
-      PKG_VERSION:=4.8.3
-      PKG_VERSION_MAJOR:=4.8
-      PKG_MD5SUM:=5ba2f3a449b1658ccc09d27cc7ab3c03
-      PKG_COMP:=xz
-    endif
-    ifneq ($(LINARO_RELEASE),)
-      PKG_SOURCE_URL:=http://releases.linaro.org/$(LINARO_RELEASE)/components/toolchain/gcc-linaro/$(PKG_VERSION_MAJOR)
-    else
-      PKG_SOURCE_URL:=http://launchpad.net/gcc-linaro/$(PKG_VERSION_MAJOR)/$(PKG_REV)/+download/
-    endif
-    PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.$(PKG_COMP)
-    GCC_DIR:=gcc-linaro-$(PKG_REV)
-    HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GCC_DIR)
-else
-  PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
-  PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 
-  ifeq ($(PKG_VERSION),4.6.3)
-    PKG_MD5SUM:=773092fe5194353b02bb0110052a972e
-  endif
-  ifeq ($(PKG_VERSION),4.8.0)
-    PKG_MD5SUM:=e6040024eb9e761c3bea348d1fa5abb0
-  endif
+ifeq ($(PKG_VERSION),7.5.0)
+  PKG_HASH:=b81946e7f01f90528a1f7352ab08cc602b9ccc05d4e44da4bd501c5a189ee661
+endif
+
+ifeq ($(PKG_VERSION),8.4.0)
+  PKG_HASH:=e30a6e52d10e1f27ed55104ad233c30bd1e99cfb5ff98ab022dc941edd1b2dd4
+endif
+
+ifeq ($(PKG_VERSION),9.3.0)
+  PKG_HASH:=71e197867611f6054aa1119b13a0c0abac12834765fe2d81f35ac57f84f742d1
+endif
+
+ifeq ($(PKG_VERSION),10.2.0)
+  PKG_HASH:=b8dd4368bb9c7f0b98188317ee0254dd8cc99d1e3a18d0ff146c855fe16c1d8c
 endif
 
 PATCH_DIR=../patches/$(GCC_VERSION)
 
-BUGURL=https://dev.openwrt.org/
-ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
-  PKGVERSION=OpenWrt/Linaro GCC $(PKG_REV) $(REVISION)
-else
-  PKGVERSION=OpenWrt GCC $(PKG_VERSION) $(REVISION)
-endif
+BUGURL=http://bugs.openwrt.org/
+PKGVERSION=OpenWrt GCC $(PKG_VERSION) $(REVISION)
 
 HOST_BUILD_PARALLEL:=1
 
@@ -85,19 +64,29 @@ endif
 HOST_STAMP_PREPARED:=$(HOST_BUILD_DIR)/.prepared
 HOST_STAMP_BUILT:=$(GCC_BUILD_DIR)/.built
 HOST_STAMP_CONFIGURED:=$(GCC_BUILD_DIR)/.configured
-HOST_STAMP_INSTALLED:=$(STAGING_DIR_HOST)/stamp/.gcc_$(GCC_VARIANT)_installed
+HOST_STAMP_INSTALLED:=$(HOST_BUILD_PREFIX)/stamp/.gcc_$(GCC_VARIANT)_installed
 
 SEP:=,
-TARGET_LANGUAGES:="c,c++$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)$(if $(CONFIG_INSTALL_GFORTRAN),$(SEP)fortran)"
+TARGET_LANGUAGES:="c,c++$(if $(CONFIG_INSTALL_GFORTRAN),$(SEP)fortran)$(if $(CONFIG_INSTALL_GCCGO),$(SEP)go)"
+
+TAR_OPTIONS += \
+	--exclude-from='$(CURDIR)/../exclude-testsuite' --exclude=gcc/ada/*.ad* \
+	--exclude=libjava
 
 export libgcc_cv_fixed_point=no
-ifdef CONFIG_USE_UCLIBC
-  export glibcxx_cv_c99_math_tr1=no
+ifdef CONFIG_INSTALL_GCCGO
+  export libgo_cv_c_split_stack_supported=no
+endif
+
+ifdef CONFIG_GCC_USE_GRAPHITE
+  GRAPHITE_CONFIGURE:= --with-isl=$(TOPDIR)/staging_dir/host
+else
+  GRAPHITE_CONFIGURE:= --without-isl --without-cloog
 endif
 
 GCC_CONFIGURE:= \
 	SHELL="$(BASH)" \
-	$(if $(shell gcc --version 2>&1 | grep LLVM), \
+	$(if $(shell gcc --version 2>&1 | grep -E "Apple.(LLVM|clang)"), \
 		CFLAGS="-O2 -fbracket-depth=512 -pipe" \
 		CXXFLAGS="-O2 -fbracket-depth=512 -pipe" \
 	) \
@@ -113,27 +102,36 @@ GCC_CONFIGURE:= \
 		--disable-libgomp \
 		--disable-libmudflap \
 		--disable-multilib \
+		--disable-libmpx \
 		--disable-nls \
+		--disable-libssp \
 		$(GRAPHITE_CONFIGURE) \
 		--with-host-libstdcxx=-lstdc++ \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 \
-			--with-abi=$(subst ",,$(CONFIG_MIPS64_ABI))) \
+			--with-abi=$(call qstrip,$(CONFIG_MIPS64_ABI))) \
+		$(if $(CONFIG_arc),--with-cpu=$(CONFIG_CPU_TYPE)) \
 		--with-gmp=$(TOPDIR)/staging_dir/host \
 		--with-mpfr=$(TOPDIR)/staging_dir/host \
 		--with-mpc=$(TOPDIR)/staging_dir/host \
-		--disable-decimal-float
+		--disable-decimal-float \
+		--with-diagnostics-color=auto-if-env \
+		--enable-__cxa_atexit \
+		--disable-libstdcxx-dual-abi \
+		--with-default-libstdcxx-abi=new
 ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
   GCC_CONFIGURE += --with-mips-plt
 endif
 
-ifneq ($(CONFIG_SSP_SUPPORT),)
+ifneq ($(CONFIG_GCC_DEFAULT_PIE),)
   GCC_CONFIGURE+= \
-		--enable-libssp
-else
+		--enable-default-pie
+endif
+
+ifneq ($(CONFIG_GCC_DEFAULT_SSP),)
   GCC_CONFIGURE+= \
-		--disable-libssp
+		--enable-default-ssp
 endif
 
 ifneq ($(CONFIG_EXTRA_TARGET_ARCH),)
@@ -148,23 +146,28 @@ ifdef CONFIG_sparc
 		--with-long-double-128
 endif
 
-ifeq ($(LIBC),uClibc)
-  GCC_CONFIGURE+= \
-		--disable-__cxa_atexit
-else
-  GCC_CONFIGURE+= \
-		--enable-__cxa_atexit
-endif
-
 ifneq ($(GCC_ARCH),)
   GCC_CONFIGURE+= --with-arch=$(GCC_ARCH)
 endif
 
-ifneq ($(CONFIG_SOFT_FLOAT),y)
-  ifeq ($(CONFIG_arm),y)
+ifeq ($(CONFIG_arm),y)
+  GCC_CONFIGURE+= \
+	--with-cpu=$(word 1, $(subst +," ,$(CONFIG_CPU_TYPE)))
+
+  ifneq ($(CONFIG_SOFT_FLOAT),y)
     GCC_CONFIGURE+= \
+		--with-fpu=$(word 2, $(subst +, ",$(CONFIG_CPU_TYPE))) \
 		--with-float=hard
   endif
+
+  # Do not let TARGET_CFLAGS get poisoned by extra CPU optimization flags
+  # that do not belong here. The cpu,fpu type should be specified via
+  # --with-cpu and --with-fpu for ARM and not CFLAGS.
+  TARGET_CFLAGS:=$(filter-out -m%,$(call qstrip,$(TARGET_CFLAGS)))
+endif
+
+ifeq ($(CONFIG_TARGET_x86)$(CONFIG_USE_GLIBC)$(CONFIG_INSTALL_GCCGO),yyy)
+  TARGET_CFLAGS+=-fno-split-stack
 endif
 
 GCC_MAKE:= \
@@ -172,11 +175,32 @@ GCC_MAKE:= \
 	$(MAKE) \
 		CFLAGS="$(HOST_CFLAGS)" \
 		CFLAGS_FOR_TARGET="$(TARGET_CFLAGS)" \
-		CXXFLAGS_FOR_TARGET="$(TARGET_CFLAGS)"
+		CXXFLAGS_FOR_TARGET="$(TARGET_CFLAGS)" \
+		GOCFLAGS_FOR_TARGET="$(TARGET_CFLAGS)"
 
-define Host/Prepare
-	mkdir -p $(GCC_BUILD_DIR)
+define Host/SetToolchainInfo
+	$(SED) 's,TARGET_CROSS=.*,TARGET_CROSS=$(REAL_GNU_TARGET_NAME)-,' $(TOOLCHAIN_DIR)/info.mk
+	$(SED) 's,GCC_VERSION=.*,GCC_VERSION=$(GCC_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 endef
+
+ifneq ($(GCC_PREPARE),)
+  define Host/Prepare
+	$(call Host/SetToolchainInfo)
+	$(call Host/Prepare/Default)
+	ln -snf $(GCC_DIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
+	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_SOURCE_DIR)/
+	$(SED) 's,^MULTILIB_OSDIRNAMES,# MULTILIB_OSDIRNAMES,' $(HOST_SOURCE_DIR)/gcc/config/*/t-*
+	$(SED) 'd' $(HOST_SOURCE_DIR)/gcc/DEV-PHASE
+	$(SED) 's, DATESTAMP,,' $(HOST_SOURCE_DIR)/gcc/version.c
+	#(cd $(HOST_SOURCE_DIR)/libstdc++-v3; autoconf;);
+	$(SED) 's,gcc_no_link=yes,gcc_no_link=no,' $(HOST_SOURCE_DIR)/libstdc++-v3/configure
+	mkdir -p $(GCC_BUILD_DIR)
+  endef
+else
+  define Host/Prepare
+	mkdir -p $(GCC_BUILD_DIR)
+  endef
+endif
 
 define Host/Configure
 	(cd $(GCC_BUILD_DIR) && rm -f config.cache; \
@@ -185,9 +209,9 @@ define Host/Configure
 endef
 
 define Host/Clean
-	rm -rf \
-		$(STAGING_DIR_HOST)/stamp/.gcc_* \
-		$(STAGING_DIR_HOST)/stamp/.binutils_* \
+	rm -rf $(if $(GCC_PREPARE),$(HOST_SOURCE_DIR)) \
+		$(HOST_BUILD_PREFIX)/stamp/.gcc_* \
+		$(HOST_BUILD_PREFIX)/stamp/.binutils_* \
 		$(GCC_BUILD_DIR) \
 		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME) \
 		$(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME) \

@@ -1,0 +1,15 @@
+#!/bin/sh
+
+tar_file="/etc/default-config/config.tar.gz"
+
+[ ! -f "$tar_file" ] && return 1
+
+/usr/bin/ledman --clean
+cp $tar_file /tmp/user_defaults.tgz
+if grep rootfs_data /proc/mtd >/dev/null; then
+	# squashfs+jffs2
+	mtd -e rootfs_data jffs2write "/tmp/user_defaults.tgz" rootfs_data
+else
+	# jffs2
+	mtd jffs2write "/tmp/user_defaults.tgz" rootfs
+fi

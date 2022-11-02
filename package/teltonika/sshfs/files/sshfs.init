@@ -1,0 +1,38 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2021 Teltonika
+
+. /lib/functions.sh
+
+USE_PROCD=1
+START=96
+STOP=60
+
+PROG="/usr/sbin/run_sshfs_application.sh"
+DEF_MOUNT_POINT="/sshmount"
+
+start_service() {
+	procd_open_instance
+	procd_set_param command "$PROG"
+	procd_close_instance
+}
+
+stop_service() {
+	config_load sshfs
+	config_get mount_point "sshfs" mount_point "$DEF_MOUNT_POINT"
+
+	fusermount -uzq "$mount_point" 2> /dev/null
+	check_pid=$(pgrep sshfs)
+	if [ "$check_pid" != "" ]; then
+		killall -9 sshfs
+	fi
+}
+
+
+reload_service() {
+	stop
+	start
+}
+
+service_triggers() {
+	procd_add_reload_trigger "sshfs"
+}

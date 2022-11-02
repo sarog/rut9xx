@@ -1,0 +1,42 @@
+Index: iwinfo/iwinfo_nl80211.c
+===================================================================
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -740,7 +740,8 @@ static int nl80211_get_mode(const char *
+ static int __nl80211_hostapd_query(const char *ifname, ...)
+ {
+ 	va_list ap, ap_cur;
+-	char *phy, *search, *dest, *key, *val, buf[128];
++	char *phy, *search, *dest, *key, *val, buf[128], wps_conf_act = 0, 
++		has_wps_conf = 0, *buf_ptr = buf;
+ 	int len, mode, found = 0, match = 1;
+ 	FILE *fp;
+ 
+@@ -779,7 +780,26 @@ static int __nl80211_hostapd_query(const
+ 	/* iterate applicable lines and copy found values into dest buffers */
+ 	while (fgets(buf, sizeof(buf), fp))
+ 	{
+-		key = strtok(buf, " =\t\n");
++		buf_ptr = buf;
++
++		if (!strncmp(buf_ptr, "# WPS configuration - START", 27)) {
++			has_wps_conf = 1;
++			wps_conf_act = 1;
++		}
++
++		if (!strncmp(buf_ptr, "# WPS configuration - END", 25)) {
++			wps_conf_act = 0;
++		}
++
++		if (wps_conf_act){
++			continue;
++		}
++
++		if (!strncmp(buf_ptr, "#WPS# ", 6)) {
++			buf_ptr += 6;
++		}
++
++		key = strtok(buf_ptr, " =\t\n");
+ 		val = strtok(NULL, "\n");
+ 
+ 		if (!key || !val || !*key || *key == '#')

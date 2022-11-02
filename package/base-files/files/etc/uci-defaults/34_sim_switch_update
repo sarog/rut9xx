@@ -1,0 +1,29 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+get_modem() {
+	[ -z "$modem" ] && config_get modem $1 "modem" ""
+}
+
+set_option() {
+	[ "$1" != "mob1s1" -o "$1" != "mob1s2" ] || return 0
+
+	uci set sim_switch.$1.modem="$modem"
+	if [ "${1}" == "mob1s1" ]; then
+		uci set sim_switch.$1.position="1"
+	else
+		uci set sim_switch.$1.position="2"
+	fi
+	uci set sim_switch.$1="sim"
+}
+
+config_load simcard
+config_foreach get_modem "sim"
+
+config_load sim_switch
+config_foreach set_option "entry"
+
+uci commit "sim_switch"
+
+exit 0

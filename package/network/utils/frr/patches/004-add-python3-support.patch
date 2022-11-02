@@ -1,0 +1,35 @@
+Index: frr-5.0.2/configure.ac
+===================================================================
+--- frr-5.0.2.orig/configure.ac
++++ frr-5.0.2/configure.ac
+@@ -535,7 +535,30 @@ int main(void);
+       unset PYTHON_CFLAGS
+     ])
+   fi
++  if test -z "$PYTHONCONFIG"; then
++    AC_CHECK_TOOLS([PYTHONCONFIG], [python3-config python-config python2-config])
++    PYTHON_CFLAGS="`\"${PYTHONCONFIG}\" --includes`"
++    PYTHON_LIBS="`\"${PYTHONCONFIG}\" --libs --embed` -lz"
+ 
++    AC_MSG_CHECKING([whether we found a working Python version])
++    AC_LINK_IFELSE_FLAGS([$PYTHON_CFLAGS], [$PYTHON_LIBS], [AC_LANG_PROGRAM([
++#include <Python.h>
++#if PY_VERSION_HEX < 0x02070000
++#error python too old
++#endif
++int main(void);
++],
++[
++{
++  Py_Initialize();
++  return 0;
++}
++])], [
++      PYTHONCONFIG=""
++      unset PYTHON_LIBS
++      unset PYTHON_CFLAGS
++    ])
++  fi
+   if test -z "$PYTHONCONFIG"; then
+     PKG_CHECK_MODULES([PYTHON], python-3.5, [], [
+       PKG_CHECK_MODULES([PYTHON], python-3.4, [], [

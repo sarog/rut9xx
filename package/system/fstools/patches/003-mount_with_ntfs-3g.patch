@@ -1,0 +1,14 @@
+--- a/block.c
++++ b/block.c
+@@ -1096,6 +1096,11 @@ static int mount_device(struct probe_inf
+ 		return 0;
+ 	}
+ 
++	if (!strcmp(pr->type, "ntfs")) {
++		free(pr->type);
++		pr->type = strdup("ntfs-3g");
++	}
++
+ 	m = find_block(pr->uuid, pr->label, device, NULL);
+ 	if (m && m->extroot)
+ 		return -1;

@@ -1,0 +1,24 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+config_load network
+config_get proto "$INTERFACE" proto
+
+[ -f /tmp/wireguard/default-status ] || exit 0
+
+default="$(ip route show default | grep -w "$DEVICE" )"
+
+[ -n "$default" ] || exit 0
+
+config="$(cat /tmp/wireguard/default-status | sed '2q;d')"
+peer_config="$(cat /tmp/wireguard/default-status | sed '1q;d')"
+
+config_get peer "$peer_config" endpoint_host
+iface="$(echo "$INTERFACE" | sed 's/_4//')"
+config_get metric "$iface" metric
+
+[ "$ACTION" = "ifup" ] && {
+	ip route add "$peer" dev "$DEVICE" metric "$metric"
+	echo "ip route del "$peer" dev "$DEVICE" metric $metric" >> "/tmp/wireguard/default-status"
+}

@@ -1,9 +1,0 @@
-#!/bin/sh
-redirect_https=`uci get -q uhttpd.main.redirect_https`
-
-
-if [ -n "$redirect_https" ]; then
-	uci delete uhttpd.main.redirect_https
-	uci commit uhttpd
-fi
-exit 0

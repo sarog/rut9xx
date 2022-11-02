@@ -22,15 +22,20 @@ add_insmod() {
 [ -e /etc/config/network ] && {
 	# only try to parse network config on openwrt
 
-	find_ifname() {(
-		reset_cb
-		include /lib/network
-		scan_interfaces
-		config_get "$1" ifname
-	)}
+	. /lib/functions/network.sh
+
+	find_ifname() {
+		local ifname
+		if network_get_device ifname "$1"; then
+			echo "$ifname"
+		else
+			echo "Device for interface $1 not found." >&2
+			exit 1
+		fi
+	}
 } || {
 	find_ifname() {
-		echo "Interface not found."
+		echo "Interface not found." >&2
 		exit 1
 	}
 }
@@ -218,6 +223,7 @@ qos_parse_config() {
 				config_get device "$1" device
 				[ -z "$device" ] && {
 					device="$(find_ifname $1)"
+					[ -z "$device" ] && return 1
 					config_set "$1" device "$device"
 				}
 			}
@@ -275,18 +281,19 @@ start_interface() {
 	local iface="$1"
 	local num_ifb="$2"
 	config_get device "$iface" device
-	config_get_bool enabled "$iface" enabled 0
+	config_get_bool enabled "$iface" enabled 1
 	[ -z "$device" -o 1 -ne "$enabled" ] && {
 		return 1 
 	}
-
 	config_get upload "$iface" upload
+	config_get_bool halfduplex "$iface" halfduplex
 	config_get download "$iface" download
 	config_get classgroup "$iface" classgroup
 	config_get_bool overhead "$iface" overhead 0
-
+	
+	download="${download:-${halfduplex:+$upload}}"
 	enum_classes "$classgroup"
-	for dir in up ${download:+down}; do
+	for dir in ${halfduplex:-up} ${download:+down}; do
 		case "$dir" in
 			up)
 				[ "$overhead" = 1 ] && upload=$(($upload * 98 / 100 - (15 * 128 / $upload)))
@@ -319,7 +326,8 @@ start_interface() {
 			append cstr "$classnr:$prio:$avgrate:$pktsize:$pktdelay:$maxrate:$qdisc:$filter" "$N"
 		done
 		append ${prefix}q "$(tcrules)" "$N"
-		export dev_${dir}="ifconfig $dev up >&- 2>&-
+		export dev_${dir}="ip link add ${dev} type ifb >&- 2>&-
+ip link set $dev up >&- 2>&-
 tc qdisc del dev $dev root >&- 2>&-
 tc qdisc add dev $dev root handle 1: hfsc default ${class_default}0
 tc class add dev $dev parent 1: classid 1:1 hfsc sc rate ${rate}kbit ul rate ${rate}kbit"
@@ -331,10 +339,16 @@ tc class add dev $dev parent 1: classid 1:1 hfsc sc rate ${rate}kbit ul rate ${r
 		add_insmod act_mirred
 		add_insmod sch_ingress
 	}
-	if [ -n "$download" ]; then
-		append dev_${dir} "tc qdisc del dev $device ingress >&- 2>&-
-tc qdisc add dev $device ingress
-tc filter add dev $device parent ffff: prio 1 u32 match u32 0 0 flowid 1:1 action connmark action mirred egress redirect dev ifb$ifbdev" "$N"
+	if [ -n "$halfduplex" ]; then
+		export dev_up="tc qdisc del dev $device root >&- 2>&-
+tc qdisc add dev $device root handle 1: hfsc
+tc filter add dev $device parent 1: prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb$ifbdev"
+	elif [ -n "$download" ]; then
+		tc qdisc add dev $device root handle 1: htb
+		tc class add dev $device parent 1: classid 1:1 htb rate ${download}kbit
+
+		tc qdisc add dev $device ingress
+		tc filter add dev $device parent ffff: protocol ip u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb$ifbdev
 	fi
 	add_insmod cls_fw
 	add_insmod sch_hfsc
@@ -413,6 +427,8 @@ start_cg() {
 		config_get ifbdev "$iface" ifbdev
 		config_get upload "$iface" upload
 		config_get download "$iface" download
+		config_get halfduplex "$iface" halfduplex
+		download="${download:-${halfduplex:+$upload}}"
 		for command in $iptables; do
 			append up "$command -w -t mangle -A OUTPUT -o $device -j qos_${cg}" "$N"
 			append up "$command -w -t mangle -A FORWARD -o $device -j qos_${cg}" "$N"
@@ -508,7 +524,7 @@ done
 case "$1" in
 	all)
 		start_interfaces "$C"
-		start_firewall
+		[ "$C" -gt 0 ] && start_firewall
 	;;
 	interface)
 		start_interface "$2" "$C"
@@ -527,5 +543,3 @@ case "$1" in
 		esac
 	;;
 esac
-
-

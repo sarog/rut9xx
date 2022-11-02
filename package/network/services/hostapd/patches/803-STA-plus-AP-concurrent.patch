@@ -1,0 +1,206 @@
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -102,6 +102,7 @@
+ static void hostapd_reload_bss(struct hostapd_data *hapd)
+ {
+ 	struct hostapd_ssid *ssid;
++	u8 channel = 0;
+ 
+ 	if (!hapd->started)
+ 		return;
+@@ -114,6 +115,21 @@
+ #endif /* CONFIG_NO_RADIUS */
+ 
+ 	ssid = &hapd->conf->ssid;
++
++	/*
++	 * For STA+AP:
++	 * hapd->iconf struct variables may be not fully set if
++	 * wpa_supplicant calls hostapd_reload() with wpa_s->current_bss
++	 * not initialized(No AP is detected by STA, channel cannot
++	 * be set by STA yet). hapd->iface->freq is set by hostapd AP
++	 * for underlying radio, and for STA also. If there is no channel
++	 * value, convert frequency to channel and use that value to
++	 * set AP up.
++	 */
++	if (hapd->iconf->channel == 0) {
++		ieee80211_freq_to_chan(hapd->iface->freq, &channel);
++		hapd->iconf->channel = channel;
++	}
+ 
+ 	hostapd_set_freq(hapd, hapd->iconf->hw_mode, hapd->iface->freq,
+ 			 hapd->iconf->channel,
+--- a/wpa_supplicant/scan.c
++++ b/wpa_supplicant/scan.c
+@@ -184,6 +184,7 @@
+ 	struct wpa_supplicant *wpa_s = work->wpa_s;
+ 	struct wpa_driver_scan_params *params = work->ctx;
+ 	int ret;
++	unsigned int band;
+ 
+ 	if (deinit) {
+ 		if (!work->started) {
+@@ -226,8 +227,18 @@
+ 	 * Revisit this logic if concurrent scan operations per interface
+ 	 * is supported.
+ 	 */
+-	if (ret == 0)
++	if (wpa_s->hostapd) {
++		band = wpas_get_bands(wpa_s, NULL);
++	}
++	if (ret == 0) {
+ 		wpa_s->curr_scan_cookie = params->scan_cookie;
++		if (wpa_s->hostapd && band != BAND_5_GHZ) {
++			if (wpa_s->last_scan_failed) {
++				hostapd_reload(wpa_s, NULL, 1);
++				wpa_s->last_scan_failed = 0;
++			}
++		}
++	}
+ 	wpa_scan_free_params(params);
+ 	work->ctx = NULL;
+ 	if (ret) {
+@@ -244,6 +255,8 @@
+ 						 wpa_s->scan_prev_wpa_state);
+ 		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_SCAN_FAILED "ret=%d%s",
+ 			ret, retry ? " retry=1" : "");
++		if (wpa_s->hostapd && band != BAND_5_GHZ)
++			wpa_s->last_scan_failed = 1;
+ 		radio_work_done(work);
+ 
+ 		if (retry) {
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -142,7 +142,7 @@
+ 	return 0;
+ }
+ 
+-static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
++int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss, int no_params)
+ {
+ 	char *cmd = NULL;
+ 	char buf[256];
+@@ -152,6 +152,12 @@
+ 	int sec_chan = 0;
+ 	int ret;
+ 
++	if (no_params) {
++		if (asprintf(&cmd, "UPDATE NO_PARAMS") < 0)
++			return -1;
++		goto reload_no_params;
++	}
++
+ 	if (!bss)
+ 		return -1;
+ 
+@@ -168,6 +174,7 @@
+ 		     channel, sec_chan, hw_mode) < 0)
+ 		return -1;
+ 
++reload_no_params:
+ 	ret = wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL);
+ 	free(cmd);
+ 
+@@ -944,6 +951,7 @@
+ #if defined(CONFIG_FILS) && defined(IEEE8021X_EAPOL)
+ 	bool update_fils_connect_params = false;
+ #endif /* CONFIG_FILS && IEEE8021X_EAPOL */
++	unsigned int band;
+ 
+ 	wpa_dbg(wpa_s, MSG_DEBUG, "State: %s -> %s",
+ 		wpa_supplicant_state_txt(wpa_s->wpa_state),
+@@ -1040,7 +1048,7 @@
+ 		sme_sched_obss_scan(wpa_s, 1);
+ 
+ 		if (wpa_s->hostapd)
+-			hostapd_reload(wpa_s, wpa_s->current_bss);
++			hostapd_reload(wpa_s, wpa_s->current_bss, 0);
+ #if defined(CONFIG_FILS) && defined(IEEE8021X_EAPOL)
+ 		if (!fils_hlp_sent && ssid && ssid->eap.erp)
+ 			update_fils_connect_params = true;
+@@ -1051,8 +1059,17 @@
+ #endif /* CONFIG_OWE */
+ 	} else if (state == WPA_DISCONNECTED || state == WPA_ASSOCIATING ||
+ 		   state == WPA_ASSOCIATED) {
+-		if (wpa_s->hostapd)
++		if (wpa_s->hostapd) {
+ 			hostapd_stop(wpa_s);
++			/*
++			 * For STA+AP:
++			 * Start AP iface
++			 */
++			band = wpas_get_bands(wpa_s, NULL);
++
++			if (band != BAND_5_GHZ)
++				hostapd_reload(wpa_s, wpa_s->current_bss, 0);
++		}
+ 		wpa_s->new_connection = 1;
+ 		wpa_drv_set_operstate(wpa_s, 0);
+ #ifndef IEEE8021X_EAPOL
+@@ -2278,7 +2295,7 @@
+ 		}
+ 		wpa_s->current_bss = bss;
+ 		if (wpa_s->hostapd)
+-			hostapd_reload(wpa_s, wpa_s->current_bss);
++			hostapd_reload(wpa_s, wpa_s->current_bss, 0);
+ #else /* CONFIG_MESH */
+ 		wpa_msg(wpa_s, MSG_ERROR,
+ 			"mesh mode support not included in the build");
+@@ -5016,6 +5033,7 @@
+ 	wpa_s->parent = parent ? parent : wpa_s;
+ 	wpa_s->p2pdev = wpa_s->parent;
+ 	wpa_s->sched_scanning = 0;
++	wpa_s->last_scan_failed = 0;
+ 
+ 	dl_list_init(&wpa_s->bss_tmp_disallowed);
+ 	dl_list_init(&wpa_s->fils_hlp_req);
+@@ -6181,6 +6199,7 @@
+ 	struct wpa_driver_capa capa;
+ 	int capa_res;
+ 	u8 dfs_domain;
++	unsigned int band;
+ 
+ 	wpa_printf(MSG_DEBUG, "Initializing interface '%s' conf '%s' driver "
+ 		   "'%s' ctrl_interface '%s' bridge '%s'", iface->ifname,
+@@ -6541,6 +6560,23 @@
+ #endif /* CONFIG_MBO */
+ 
+ 	wpa_supplicant_set_default_scan_ies(wpa_s);
++
++	/*
++	 * For STA+AP:
++	 * wpa_s->hostapd is not NULL if AP iface is configured and enabled
++	 * (AP+STA in this case). wpa_s->scan_interval is the interval
++	 * for scanning, while STA is not connected to any AP. When STA
++	 * connects to AP, scanning is stopped.
++	 * Increase STA scan_interval while STA is not connectet to any AP
++	 * because AP interface is running, and this value doesn't affect
++	 * AP performance very much. hostapd_reload starts AP iface
++	 */
++	band = wpas_get_bands(wpa_s, NULL);
++
++	if (wpa_s->hostapd && band != BAND_5_GHZ) {
++		wpa_s->scan_interval = 10;
++		hostapd_reload(wpa_s, wpa_s->current_bss, 1);
++	}
+ 
+ 	return 0;
+ }
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -1321,6 +1321,7 @@
+ 	unsigned int multi_ap_ie:1;
+ 	unsigned int multi_ap_backhaul:1;
+ 	unsigned int multi_ap_fronthaul:1;
++	int last_scan_failed;
+ };
+ 
+ 
+@@ -1626,4 +1627,6 @@
+ 
+ void wpas_clear_driver_signal_override(struct wpa_supplicant *wpa_s);
+ 
++int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss, int no_params);
++
+ #endif /* WPA_SUPPLICANT_I_H */
+

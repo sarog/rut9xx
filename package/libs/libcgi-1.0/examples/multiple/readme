@@ -1,4 +1,0 @@
-Just type 'make' to compile the examples.
-You need to have libcgi compiled and installed before.
-
-Remember to change CGIBIN directive in the Makefile

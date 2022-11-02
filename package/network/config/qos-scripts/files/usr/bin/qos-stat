@@ -66,4 +66,3 @@ interface_stats() {
 }
 
 [ -z "$1" ] && config_foreach interface_stats interface || interface_stats "$1"
-

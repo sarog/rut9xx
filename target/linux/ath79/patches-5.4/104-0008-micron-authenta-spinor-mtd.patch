@@ -1,0 +1,269 @@
+Index: linux-5.4.124/include/linux/mtd/mtd.h
+===================================================================
+--- linux-5.4.124.orig/include/linux/mtd/mtd.h
++++ linux-5.4.124/include/linux/mtd/mtd.h
+@@ -19,6 +19,8 @@
+ 
+ #define MTD_FAIL_ADDR_UNKNOWN -1LL
+ 
++#define MICRON_SPI_OFFSET 1
++
+ struct mtd_info;
+ 
+ /*
+@@ -339,6 +341,12 @@ struct mtd_info {
+ 	int usecount;
+ 	struct mtd_debug_info dbg;
+ 	struct nvmem_device *nvmem;
++
++	/* Micron Authenta additions */
++	unsigned char opcode4bypass;
++	unsigned char subopcode4bypass;
++	unsigned char payload4bypass[64];
++	unsigned char payload4bypasslength;
+ };
+ 
+ int mtd_ooblayout_ecc(struct mtd_info *mtd, int section,
+Index: linux-5.4.124/include/uapi/mtd/mtd-abi.h
+===================================================================
+--- linux-5.4.124.orig/include/uapi/mtd/mtd-abi.h
++++ linux-5.4.124/include/uapi/mtd/mtd-abi.h
+@@ -46,6 +46,20 @@ struct mtd_oob_buf64 {
+ 	__u64 usr_ptr;
+ };
+ 
++/* SFR-MICRON START xxxxxxxxxxxxxx */
++struct mtd_read_gpr {
++        unsigned char opcode4bypass;
++        unsigned char *ptr;
++};
++
++struct mtd_crtm {
++        unsigned char opcode4bypass;
++        unsigned char subopcode4bypass;
++        unsigned char payload4bypasslength;
++        unsigned char *ptr;
++};
++/* SFR-MICRON END XXXXXXXXXXXXXXX*/
++
+ /**
+  * MTD operation modes
+  *
+@@ -205,6 +219,10 @@ struct otp_info {
+  */
+ #define MEMWRITE		_IOWR('M', 24, struct mtd_write_req)
+ 
++/* Micron Authenta additions. Add new IOCTLs for SPI ops. */
++#define NAXOSGBR		_IOR('M', 25, struct mtd_read_gpr)
++#define NAXOSCRTM		_IOWR('M', 26, struct mtd_crtm)
++
+ /*
+  * Obsolete legacy interface. Keep it in order not to break userspace
+  * interfaces
+Index: linux-5.4.124/include/linux/mtd/spi-nor.h
+===================================================================
+--- linux-5.4.124.orig/include/linux/mtd/spi-nor.h
++++ linux-5.4.124/include/linux/mtd/spi-nor.h
+@@ -120,6 +120,10 @@
+ #define SPINOR_OP_RD_EVCR      0x65    /* Read EVCR register */
+ #define SPINOR_OP_WD_EVCR      0x61    /* Write EVCR register */
+ 
++/* Micron Authenta additions */
++#define SPINOR_OP_RD_GPR	0x96    /* Read general purpose register */
++#define SPINOR_OP_CRTM		0x9B    /* Read/Write CRTM register */
++
+ /* Status Register bits. */
+ #define SR_WIP			BIT(0)	/* Write in progress */
+ #define SR_WEL			BIT(1)	/* Write enable latch */
+Index: linux-5.4.124/drivers/mtd/mtdpart.c
+===================================================================
+--- linux-5.4.124.orig/drivers/mtd/mtdpart.c
++++ linux-5.4.124/drivers/mtd/mtdpart.c
+@@ -79,6 +79,12 @@ static int part_read(struct mtd_info *mt
+ 	struct mtd_ecc_stats stats;
+ 	int res;
+ 
++	/* Micron Authenta additions. In case this is CRTM operation, copy CRTM MTD data */
++	part->parent->opcode4bypass = mtd->opcode4bypass;
++	part->parent->subopcode4bypass = mtd->subopcode4bypass;
++	part->parent->payload4bypasslength = mtd->payload4bypasslength;
++	memcpy(part->parent->payload4bypass, mtd->payload4bypass, 64);
++
+ 	stats = part->parent->ecc_stats;
+ 	res = part->parent->_read(part->parent, from + part->offset, len,
+ 				  retlen, buf);
+@@ -161,6 +167,13 @@ static int part_write(struct mtd_info *m
+ 		size_t *retlen, const u_char *buf)
+ {
+ 	struct mtd_part *part = mtd_to_part(mtd);
++
++	/* Micron Authenta additions. In case this is a CRTM operation, code CRTM data in MTD */
++	part->parent->opcode4bypass = mtd->opcode4bypass;
++	part->parent->subopcode4bypass = mtd->subopcode4bypass;
++	part->parent->payload4bypasslength = mtd->payload4bypasslength;
++	memcpy(part->parent->payload4bypass, mtd->payload4bypass, 64);
++
+ 	return part->parent->_write(part->parent, to + part->offset, len,
+ 				    retlen, buf);
+ }
+Index: linux-5.4.124/drivers/mtd/mtdchar.c
+===================================================================
+--- linux-5.4.124.orig/drivers/mtd/mtdchar.c
++++ linux-5.4.124/drivers/mtd/mtdchar.c
+@@ -643,6 +643,9 @@ static int mtdchar_ioctl(struct file *fi
+ 	 * permissions.
+ 	 */
+ 	switch (cmd) {
++	/* Micron Authenta additions */
++	case NAXOSGBR:
++	case NAXOSCRTM:
+ 	/* "safe" commands */
+ 	case MEMGETREGIONCOUNT:
+ 	case MEMGETREGIONINFO:
+@@ -681,6 +684,56 @@ static int mtdchar_ioctl(struct file *fi
+ 	}
+ 
+ 	switch (cmd) {
++	/* Micron Authenta additions. Special IOCTLs for reading GPRR */
++	case NAXOSGBR:
++	{
++		unsigned char *kbuf = (unsigned char *) kmalloc(64 + MICRON_SPI_OFFSET, GFP_KERNEL);
++		struct mtd_read_gpr *pgpr = (struct mtd_read_gpr *) argp;
++		size_t retlen;
++
++		mtd->opcode4bypass = pgpr->opcode4bypass;
++
++		printk(KERN_DEBUG "SFR-NAXOS *********************** NAXOS GPRR ***********************");
++		printk(KERN_DEBUG "SFR-NAXOS cmd==NAXOSGBR mtd->opcode4bypass=0x%02X 0x%02X %s(),%d\r\n",
++			mtd->opcode4bypass,mtd->subopcode4bypass, __FUNCTION__,__LINE__);
++
++		ret = mtd->_read(mtd, 0, 64 + MICRON_SPI_OFFSET, &retlen, kbuf);	/* part_read */
++
++		if(ret == 0){
++				memcpy(pgpr->ptr, kbuf + MICRON_SPI_OFFSET, 64);
++		}
++		mtd->opcode4bypass = 0;
++		kfree(kbuf);
++		break;
++
++	}
++
++	/* Micron Authenta additions. Special IOCTLs for sending CRTM commands */
++	case NAXOSCRTM:
++	{
++		struct mtd_crtm *pcrtm = (struct mtd_crtm *) argp;
++		size_t retlen;
++
++		printk(KERN_DEBUG "SFR-NAXOS *********************** NAXOS CRTM ***********************");
++		printk(KERN_DEBUG "SFR-NAXOS cmd==NAXOSCRTM opcode4bypass=0x%02X 0x%02X %s(),%d\r\n",
++			pcrtm->opcode4bypass, pcrtm->subopcode4bypass, __FUNCTION__,__LINE__);
++
++		mtd->opcode4bypass         = pcrtm->opcode4bypass;
++		mtd->subopcode4bypass      = pcrtm->subopcode4bypass;
++		mtd->payload4bypasslength  = pcrtm->payload4bypasslength;
++		// memcpy(mtd->payload4bypass, pcrtm->ptr, mtd->payload4bypasslength);
++		mtd->payload4bypass[0] =  pcrtm->opcode4bypass;
++		memcpy(&mtd->payload4bypass[1], pcrtm->ptr, mtd->payload4bypasslength);
++
++		ret = mtd->_write(mtd, 0, mtd->payload4bypasslength+1, &retlen, mtd->payload4bypass); /* part_write */
++
++		mtd->opcode4bypass         = 0;
++		mtd->subopcode4bypass      = 0;
++		mtd->payload4bypasslength  = 0;
++		break;
++
++	}
++
+ 	case MEMGETREGIONCOUNT:
+ 		if (copy_to_user(argp, &(mtd->numeraseregions), sizeof(int)))
+ 			return -EFAULT;
+Index: linux-5.4.124/drivers/mtd/spi-nor/spi-nor.c
+===================================================================
+--- linux-5.4.124.orig/drivers/mtd/spi-nor/spi-nor.c
++++ linux-5.4.124/drivers/mtd/spi-nor/spi-nor.c
+@@ -2640,6 +2640,35 @@ static int spi_nor_read(struct mtd_info
+ 	if (ret < 0)
+ 		return ret;
+ 
++	/* Micron Authenta additions. If we read a "Read GPRR operation",
++		bypass the regular SPI NOR read and do a read register for GPRR. */
++	if(mtd->opcode4bypass == SPINOR_OP_RD_GPR)
++	{
++		printk(KERN_DEBUG "SFR-NAXOS opcode4bypass=0x%02X %s(),%d\r\n",
++			mtd->opcode4bypass, __FUNCTION__,__LINE__);
++
++		if (nor->spimem)
++		{
++			struct spi_mem_op op = SPI_MEM_OP(
++						SPI_MEM_OP_CMD(SPINOR_OP_RD_GPR, 1),
++						SPI_MEM_OP_NO_ADDR,
++						SPI_MEM_OP_NO_DUMMY,
++						SPI_MEM_OP_DATA_IN(len, buf, 1));
++
++			ret = spi_mem_exec_op(nor->spimem, &op);
++		}
++		else
++		{
++			ret = nor->read_reg(nor, SPINOR_OP_RD_GPR, buf, len);
++		}
++		if(ret > 0)
++		{
++			ret=0;
++		}
++		spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_READ);
++		return ret;
++	}
++
+ 	while (len) {
+ 		loff_t addr = from;
+ 
+@@ -2770,6 +2799,36 @@ static int spi_nor_write(struct mtd_info
+ 	if (ret)
+ 		return ret;
+ 
++	/* Micron Authenta additions. If we read a "Write CRTM operation",
++		bypass the regular SPI NOR write and do a write register for CRTM. */
++	if(mtd->opcode4bypass == SPINOR_OP_CRTM)
++	{
++		printk(KERN_DEBUG "SFR-NAXOS opcode4bypass=0x%02X 0x%02X  %s(),%d\r\n",
++			mtd->opcode4bypass, mtd->subopcode4bypass, __FUNCTION__,__LINE__);
++
++		if (nor->spimem)
++		{
++			struct spi_mem_op op = SPI_MEM_OP(
++				SPI_MEM_OP_CMD(SPINOR_OP_CRTM, 1),
++				SPI_MEM_OP_NO_ADDR,
++				SPI_MEM_OP_NO_DUMMY,
++				SPI_MEM_OP_DATA_OUT(mtd->payload4bypasslength+1, mtd->payload4bypass, 1));
++
++			ret = spi_mem_exec_op(nor->spimem, &op);
++		}
++		else
++		{
++			ret = nor->write_reg(nor, SPINOR_OP_CRTM, (u8*)mtd->payload4bypass, mtd->payload4bypasslength+1);
++		}
++		if (ret < 0)
++		{
++			goto write_err;
++		}
++
++		ret = spi_nor_wait_till_ready(nor);
++		goto write_err;
++	}
++
+ 	ret = spi_nor_check_set_addr_width(nor, to + len);
+ 	if (ret < 0)
+ 		return ret;
+@@ -5046,6 +5106,12 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	if (info->flags & SPI_NOR_4BIT_BP)
+ 		nor->flags |= SNOR_F_HAS_4BIT_BP;
+ 
++	/* Micron Authenta additions. Initialize CRTM data in MTD */
++	mtd->opcode4bypass=0;
++	mtd->subopcode4bypass=0;
++	memset(&mtd->payload4bypass[0],0,64);
++	mtd->payload4bypasslength=0;
++
+ 	if (info->flags & SPI_NOR_NO_ERASE)
+ 		mtd->flags |= MTD_NO_ERASE;
+ 

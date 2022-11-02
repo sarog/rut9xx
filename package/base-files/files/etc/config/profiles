@@ -1,5 +1,0 @@
-config general 'general'
-    option path '/etc/profiles/'
-	option profile 'default'
-
-config scheduler 'scheduler'

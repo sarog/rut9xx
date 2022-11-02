@@ -238,6 +238,24 @@ static int b53_mdio_write64(struct b53_device *dev, u8 page, u8 reg,
 	return b53_mdio_op(dev, page, reg, REG_MII_ADDR_WRITE);
 }
 
+static int b53_mdio_phy_read16(struct b53_device *dev, int addr, u8 reg,
+			       u16 *value)
+{
+	struct mii_bus *bus = dev->priv;
+
+	*value = mdiobus_read(bus, addr, reg);
+
+	return 0;
+}
+
+static int b53_mdio_phy_write16(struct b53_device *dev, int addr, u8 reg,
+				u16 value)
+{
+	struct mii_bus *bus = dev->priv;
+
+	return mdiobus_write(bus, addr, reg, value);
+}
+
 static struct b53_io_ops b53_mdio_ops = {
 	.read8 = b53_mdio_read8,
 	.read16 = b53_mdio_read16,
@@ -249,50 +267,40 @@ static struct b53_io_ops b53_mdio_ops = {
 	.write32 = b53_mdio_write32,
 	.write48 = b53_mdio_write48,
 	.write64 = b53_mdio_write64,
+	.phy_read16 = b53_mdio_phy_read16,
+	.phy_write16 = b53_mdio_phy_write16,
 };
 
 static int b53_phy_probe(struct phy_device *phydev)
 {
-	struct b53_device dev;
-	int ret;
-
-	/* allow the generic phy driver to take over */
-	if (phydev->addr != B53_PSEUDO_PHY && phydev->addr != 0)
-		return -ENODEV;
-
-	dev.current_page = 0xff;
-	dev.priv = phydev->bus;
-	dev.ops = &b53_mdio_ops;
-	dev.pdata = NULL;
-	mutex_init(&dev.reg_mutex);
-
-	ret = b53_switch_detect(&dev);
-	if (ret)
-		return ret;
-
-	if (is5325(&dev) || is5365(&dev))
-		phydev->supported = SUPPORTED_100baseT_Full;
-	else
-		phydev->supported = SUPPORTED_1000baseT_Full;
-
-	phydev->advertising = phydev->supported;
-
-	return 0;
-}
-
-static int b53_phy_config_init(struct phy_device *phydev)
-{
 	struct b53_device *dev;
 	int ret;
 
-	dev = b53_switch_alloc(&phydev->dev, &b53_mdio_ops, phydev->bus);
+	/* allow the generic phy driver to take over */
+	if (phydev->mdio.addr != B53_PSEUDO_PHY && phydev->mdio.addr != 0)
+		return -ENODEV;
+
+	dev = b53_switch_alloc(&phydev->mdio.dev, &b53_mdio_ops, phydev->mdio.bus);
 	if (!dev)
 		return -ENOMEM;
 
-	/* we don't use page 0xff, so force a page set */
 	dev->current_page = 0xff;
-	/* force the ethX as alias */
-	dev->sw_dev.alias = phydev->attached_dev->name;
+	dev->priv = phydev->mdio.bus;
+	dev->ops = &b53_mdio_ops;
+	dev->pdata = NULL;
+	mutex_init(&dev->reg_mutex);
+
+	ret = b53_switch_detect(dev);
+	if (ret)
+		return ret;
+
+	linkmode_zero(phydev->supported);
+	if (is5325(dev) || is5365(dev))
+		linkmode_set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, phydev->supported);
+	else
+		linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, phydev->supported);
+
+	linkmode_copy(phydev->advertising, phydev->supported);
 
 	ret = b53_switch_register(dev);
 	if (ret) {
@@ -301,6 +309,18 @@ static int b53_phy_config_init(struct phy_device *phydev)
 	}
 
 	phydev->priv = dev;
+
+	return 0;
+}
+
+static int b53_phy_config_init(struct phy_device *phydev)
+{
+	struct b53_device *dev = phydev->priv;
+
+	/* we don't use page 0xff, so force a page set */
+	dev->current_page = 0xff;
+	/* force the ethX as alias */
+	dev->sw_dev.alias = phydev->attached_dev->name;
 
 	return 0;
 }
@@ -341,6 +361,26 @@ static int b53_phy_read_status(struct phy_device *phydev)
 	return 0;
 }
 
+static const struct of_device_id b53_of_match_1[] = {
+	{ .compatible = "brcm,bcm5325" },
+	{ .compatible = "brcm,bcm5395" },
+	{ .compatible = "brcm,bcm5397" },
+	{ .compatible = "brcm,bcm5398" },
+	{ /* sentinel */ },
+};
+
+static const struct of_device_id b53_of_match_2[] = {
+	{ .compatible = "brcm,bcm53115" },
+	{ .compatible = "brcm,bcm53125" },
+	{ .compatible = "brcm,bcm53128" },
+	{ /* sentinel */ },
+};
+
+static const struct of_device_id b53_of_match_3[] = {
+	{ .compatible = "brcm,bcm5365" },
+	{ /* sentinel */ },
+};
+
 /* BCM5325, BCM539x */
 static struct phy_driver b53_phy_driver_id1 = {
 	.phy_id		= 0x0143bc00,
@@ -352,8 +392,9 @@ static struct phy_driver b53_phy_driver_id1 = {
 	.config_aneg	= b53_phy_config_aneg,
 	.config_init	= b53_phy_config_init,
 	.read_status	= b53_phy_read_status,
-	.driver = {
-		.owner = THIS_MODULE,
+	.mdiodrv.driver = {
+		.name = "bcm539x",
+		.of_match_table = b53_of_match_1,
 	},
 };
 
@@ -368,24 +409,26 @@ static struct phy_driver b53_phy_driver_id2 = {
 	.config_aneg	= b53_phy_config_aneg,
 	.config_init	= b53_phy_config_init,
 	.read_status	= b53_phy_read_status,
-	.driver = {
-		.owner = THIS_MODULE,
+	.mdiodrv.driver = {
+		.name = "bcm531xx",
+		.of_match_table = b53_of_match_2,
 	},
 };
 
 /* BCM5365 */
 static struct phy_driver b53_phy_driver_id3 = {
-	.phy_id		= 0x00406000,
+	.phy_id		= 0x00406300,
 	.name		= "Broadcom B53 (3)",
-	.phy_id_mask	= 0x1ffffc00,
+	.phy_id_mask	= 0x1fffff00,
 	.features	= 0,
 	.probe		= b53_phy_probe,
 	.remove		= b53_phy_remove,
 	.config_aneg	= b53_phy_config_aneg,
 	.config_init	= b53_phy_config_init,
 	.read_status	= b53_phy_read_status,
-	.driver = {
-		.owner = THIS_MODULE,
+	.mdiodrv.driver = {
+		.name = "bcm5365",
+		.of_match_table = b53_of_match_3,
 	},
 };
 
@@ -393,15 +436,15 @@ int __init b53_phy_driver_register(void)
 {
 	int ret;
 
-	ret = phy_driver_register(&b53_phy_driver_id1);
+	ret = phy_driver_register(&b53_phy_driver_id1, THIS_MODULE);
 	if (ret)
 		return ret;
 
-	ret = phy_driver_register(&b53_phy_driver_id2);
+	ret = phy_driver_register(&b53_phy_driver_id2, THIS_MODULE);
 	if (ret)
 		goto err1;
 
-	ret = phy_driver_register(&b53_phy_driver_id3);
+	ret = phy_driver_register(&b53_phy_driver_id3, THIS_MODULE);
 	if (!ret)
 		return 0;
 

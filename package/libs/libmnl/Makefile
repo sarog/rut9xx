@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libmnl
 PKG_VERSION:=1.0.4
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/libmnl/files \
 	ftp://ftp.netfilter.org/pub/libmnl
-PKG_MD5SUM:=be9b4b5328c6da1bda565ac5dffadb2d
+PKG_HASH:=171f89699f286a5854b72b91d06e8f8e3683064c5901fb09d954a9ab6f551f81
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 
@@ -30,6 +30,7 @@ define Package/libmnl
   CATEGORY:=Libraries
   TITLE:=Minimalistic user-space library for Netlink
   URL:=http://www.netfilter.org/projects/libmnl/
+  ABI_VERSION:=0
 endef
 
 define Package/libmnl/description

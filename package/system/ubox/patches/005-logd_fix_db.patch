@@ -1,0 +1,105 @@
+--- a/log/logdb.c
++++ b/log/logdb.c
+@@ -9,6 +9,8 @@
+ 
+ #include "logdb.h"
+ 
++#define DB_BUFF_128 128
++
+ sqlite3 *conn = NULL;
+ static int EVENT_size = 0;
+ static int CON_size = 0;
+@@ -24,6 +26,63 @@ enum {
+ 	ACTION_SELECT
+ };
+ 
++static int check_column_exists(sqlite3 *con, const char *table, const char *column)
++{
++	int count = 0;
++	sqlite3_stmt *res;
++	char *err_msg = NULL;
++	char query[DB_BUFF_128] = { 0 };
++
++	snprintf(query, DB_BUFF_128, DB_CHECK_COLUMN, table, column);
++	if (sqlite3_prepare_v2(con, query, -1, &res, NULL) != SQLITE_OK) {
++		fprintf(stderr, "%s(%d) %s\n", __func__, __LINE__, err_msg);
++		sqlite3_free(err_msg);
++
++		return 1;
++	}
++
++	if (sqlite3_step(res) == SQLITE_ROW) {
++		count = sqlite3_column_int(res, 0);
++	}
++
++	return count ? 0 : 1;
++}
++
++static int add_column(sqlite3 *con, const char *table, const char *column)
++{
++	char *err_msg = NULL;
++	char query[DB_BUFF_128] = { 0 };
++
++	snprintf(query, DB_BUFF_128, DB_ADD_COL, table, column);
++	if (sqlite3_exec(con, query, NULL, NULL, &err_msg) != SQLITE_OK) {
++		fprintf(stderr, "%s(%d) %s\n", __func__, __LINE__, err_msg);
++		sqlite3_free(err_msg);
++
++		return 1;
++	}
++
++	return 0;
++}
++
++static void fix_table(sqlite3 *con, const char *tname)
++{	
++	if (check_column_exists(con, tname, "TYPE") != 0) {
++		if (add_column(con, tname, "TYPE CHAR(15) default 'info'") != SQLITE_OK) {
++			return;
++		}
++	}
++
++	return;
++}
++
++static void fix_db(sqlite3 *con)
++{
++	fix_table(con, TABLE_E);
++	fix_table(con, TABLE_C);
++	fix_table(con, TABLE_N);
++	fix_table(con, TABLE_SYS);
++}
++
+ static void execute_query(char *query)
+ {
+ 	sqlite3_stmt *res;
+@@ -239,6 +298,9 @@ int init_db()
+ 
+ 	sqlite3_db_config(conn, SQLITE_CONFIG_SERIALIZED);
+ 	create_table();
++	
++	//Migrate Old fashioned  DB
++	fix_db(conn);
+ 
+ 	if ((EVENT_size = check_db_size(TABLE_E)) < 0) {
+ 		syslog(LOG_ERR, "failed to check %s table size\n", TABLE_E);
+@@ -264,6 +326,6 @@ int init_db()
+ 		syslog(LOG_ERR, "failed to check %s table size\n", TABLE_N);
+ 		return -1;
+ 	}
+-
++	
+ 	return 0;
+ }
+--- a/log/logdb.h
++++ b/log/logdb.h
+@@ -15,6 +15,9 @@
+ #define MAX_CON 3500
+ #define MAX_SMS_TABLE 7000
+ 
++#define DB_CHECK_COLUMN "SELECT COUNT(*) FROM pragma_table_info('%s') WHERE name='%s';"
++#define DB_ADD_COL "ALTER TABLE %s ADD COLUMN %s;"
++
+ int init_db();
+ int db_action(char *buffer);
+ 

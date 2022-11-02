@@ -1,0 +1,104 @@
+diff --git a/file.c b/file.c
+index 85487f8..94c6444 100644
+--- a/file.c
++++ b/file.c
+@@ -143,6 +143,7 @@ uh_path_lookup(struct client *cl, const char *url)
+ 	int docroot_len = strlen(docroot);
+ 	char *pathptr = NULL;
+ 	bool slash;
++	bool precompressed = 0;
+ 
+ 	int i = 0;
+ 	int len;
+@@ -202,11 +203,26 @@ uh_path_lookup(struct client *cl, const char *url)
+ 			continue;
+ 
+ 		/* test current path */
+-		if (stat(path_phys, &p.stat))
++		if (stat(path_phys, &p.stat) == 0) {
++			snprintf(path_info, sizeof(path_info), "%s", uh_buf + i);
++			break;
++		}
++
++		pathptr = path_phys + strlen(path_phys);
++
++		/* try to locate precompressed file */
++		len = path_phys + sizeof(path_phys) - pathptr - 1;
++		if (strlen(".gz") > len)
+ 			continue;
+ 
+-		snprintf(path_info, sizeof(path_info), "%s", uh_buf + i);
+-		break;
++		strcpy(pathptr, ".gz");
++		if (stat(path_phys, &p.stat) == 0) {
++			snprintf(path_info, sizeof(path_info), "%s", uh_buf + i);
++			precompressed = 1;
++			break;
++		}
++
++		*pathptr = 0;
+ 	}
+ 
+ 	/* check whether found path is within docroot */
+@@ -221,6 +237,7 @@ uh_path_lookup(struct client *cl, const char *url)
+ 		p.phys = path_phys;
+ 		p.name = &path_phys[docroot_len];
+ 		p.info = path_info[0] ? path_info : NULL;
++		p.compressed = precompressed;
+ 		return &p;
+ 	}
+ 
+@@ -273,6 +290,7 @@ uh_path_lookup(struct client *cl, const char *url)
+ 	p.root = docroot;
+ 	p.phys = path_phys;
+ 	p.name = &path_phys[docroot_len];
++	p.compressed = precompressed;
+ 
+ 	return p.phys ? &p : NULL;
+ }
+@@ -593,12 +611,15 @@ static void uh_file_free(struct client *cl)
+ 
+ static void uh_file_data(struct client *cl, struct path_info *pi, int fd)
+ {
++	static char name[PATH_MAX];
++
+ 	/* test preconditions */
+ 	if (!cl->dispatch.no_cache &&
+ 	    (!uh_file_if_modified_since(cl, &pi->stat) ||
+ 	     !uh_file_if_match(cl, &pi->stat) ||
+ 	     !uh_file_if_range(cl, &pi->stat) ||
+ 	     !uh_file_if_unmodified_since(cl, &pi->stat) ||
++			 !uh_file_if_match(cl, &pi->stat) ||
+ 	     !uh_file_if_none_match(cl, &pi->stat))) {
+ 		ustream_printf(cl->us, "\r\n");
+ 		uh_request_done(cl);
+@@ -609,8 +630,16 @@ static void uh_file_data(struct client *cl, struct path_info *pi, int fd)
+ 	/* write status */
+ 	uh_file_response_200(cl, &pi->stat);
+ 
++	strcpy(name, pi->name);
++
++	if (pi->compressed) {
++		name[strlen(name) - strlen(".gz")] = 0;
++		ustream_printf(cl->us, "Content-Encoding: gzip\r\n");
++	}
++
++
+ 	ustream_printf(cl->us, "Content-Type: %s\r\n",
+-			   uh_file_mime_lookup(pi->name));
++			   uh_file_mime_lookup(name));
+ 
+ 	ustream_printf(cl->us, "Content-Length: %" PRIu64 "\r\n\r\n",
+ 			   pi->stat.st_size);
+diff --git a/uhttpd.h b/uhttpd.h
+index e61e176..a6b10f8 100644
+--- a/uhttpd.h
++++ b/uhttpd.h
+@@ -157,6 +157,7 @@ struct path_info {
+ 	const char *info;
+ 	const char *query;
+ 	bool redirected;
++	bool compressed;
+ 	struct stat stat;
+ 	const struct interpreter *ip;
+ };

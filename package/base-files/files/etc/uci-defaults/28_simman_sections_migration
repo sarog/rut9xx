@@ -1,0 +1,23 @@
+#!/bin/sh
+
+. /lib/functions.sh
+CONFIG='sms_gateway'
+
+migrate_simman() {
+	local section="$1"
+	local modem_id
+
+	config_get modem_id "$section" "info_modem_id"
+
+	modem_id=$(echo "${modem_id}" | sed 's/\./_dot_/g;s/-/_dash_/g')
+
+	[ -n "$(eval echo \$"previous_section_${modem_id}")" ] && {
+		uci_remove "$CONFIG" "$(eval echo \$"previous_section_${modem_id}")"
+	}
+
+	eval "previous_section_${modem_id}=${section}"
+}
+
+config_load "$CONFIG"
+config_foreach migrate_simman simman
+uci_commit

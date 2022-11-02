@@ -20,106 +20,93 @@
 #include <getopt.h>     /* for getopt() */
 #include <stdarg.h>
 #include <errno.h>
+#include <stdbool.h>
+#include <endian.h>
 #include <sys/stat.h>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
 #include "md5.h"
-
-#define ALIGN(x,a) ({ typeof(a) __a = (a); (((x) + __a - 1) & ~(__a - 1)); })
-
-#define HEADER_VERSION_V2	0x02000000
-
-#define HWID_TD_W8970_V1		0x89700001
-
-#define MD5SUM_LEN	16
-
-struct file_info {
-	char		*file_name;	/* name of the file */
-	uint32_t	file_size;	/* length of the file */
-};
+#include "mktplinkfw-lib.h"
 
 struct fw_header {
-	uint32_t	version;	/* 0x00: header version */
-	char		fw_version[48]; /* 0x04: fw version string */
-	uint32_t	hw_id;		/* 0x34: hardware id */
-	uint32_t	hw_rev;		/* 0x38: FIXME: hardware revision? */
-	uint32_t	unk1;	        /* 0x3c: 0x00000000 */
-	uint8_t		md5sum1[MD5SUM_LEN]; /* 0x40 */
-	uint32_t	unk2;		/* 0x50: 0x00000000 */
-	uint8_t		md5sum2[MD5SUM_LEN]; /* 0x54 */
-	uint32_t	unk3;		/* 0x64: 0xffffffff */
+	uint32_t	version;			/* 0x00: header version */
+	char		fw_version[48];			/* 0x04: fw version string */
+	uint32_t	hw_id;				/* 0x34: hardware id */
+	uint32_t	hw_rev;				/* 0x38: FIXME: hardware revision? */
+	uint32_t	hw_ver_add;			/* 0x3c: additional hardware version */
+	uint8_t		md5sum1[MD5SUM_LEN];		/* 0x40 */
+	uint32_t	unk2;				/* 0x50: 0x00000000 */
+	uint8_t		md5sum2[MD5SUM_LEN];		/* 0x54 */
+	uint32_t	unk3;				/* 0x64: 0xffffffff */
 
-	uint32_t	kernel_la;	/* 0x68: kernel load address */
-	uint32_t	kernel_ep;	/* 0x6c: kernel entry point */
-	uint32_t	fw_length;	/* 0x70: total length of the image */
-	uint32_t	kernel_ofs;	/* 0x74: kernel data offset */
-	uint32_t	kernel_len;	/* 0x78: kernel data length */
-	uint32_t	rootfs_ofs;	/* 0x7c: rootfs data offset */
-	uint32_t	rootfs_len;	/* 0x80: rootfs data length */
-	uint32_t	boot_ofs;	/* 0x84: FIXME: seems to be unused */
-	uint32_t	boot_len;	/* 0x88: FIXME: seems to be unused */
-	uint16_t	unk4;		/* 0x8c: 0x55aa */
-	uint8_t		sver_hi;	/* 0x8e */
-	uint8_t		sver_lo;	/* 0x8f */
-	uint8_t		unk5;		/* 0x90: magic: 0xa5 */
-	uint8_t		ver_hi;         /* 0x91 */
-	uint8_t		ver_mid;        /* 0x92 */
-	uint8_t		ver_lo;         /* 0x93 */
+	uint32_t	kernel_la;			/* 0x68: kernel load address */
+	uint32_t	kernel_ep;			/* 0x6c: kernel entry point */
+	uint32_t	fw_length;			/* 0x70: total length of the image */
+	uint32_t	kernel_ofs;			/* 0x74: kernel data offset */
+	uint32_t	kernel_len;			/* 0x78: kernel data length */
+	uint32_t	rootfs_ofs;			/* 0x7c: rootfs data offset */
+	uint32_t	rootfs_len;			/* 0x80: rootfs data length */
+	uint32_t	boot_ofs;			/* 0x84: bootloader offset */
+	uint32_t	boot_len;			/* 0x88: bootloader length */
+	uint16_t	unk4;				/* 0x8c: 0x55aa */
+	uint8_t		sver_hi;			/* 0x8e */
+	uint8_t		sver_lo;			/* 0x8f */
+	uint8_t		unk5;				/* 0x90: magic: 0xa5 */
+	uint8_t		ver_hi;				/* 0x91 */
+	uint8_t		ver_mid;			/* 0x92 */
+	uint8_t		ver_lo;				/* 0x93 */
 	uint8_t		pad[364];
 } __attribute__ ((packed));
 
-struct flash_layout {
-	char		*id;
-	uint32_t	fw_max_len;
-	uint32_t	kernel_la;
-	uint32_t	kernel_ep;
-	uint32_t	rootfs_ofs;
-};
+#define FLAG_LE_KERNEL_LA_EP			0x00000001	/* Little-endian used for kernel load address & entry point */
 
 struct board_info {
 	char		*id;
 	uint32_t	hw_id;
 	uint32_t	hw_rev;
+	uint32_t	hw_ver_add;
 	char		*layout_id;
+	uint32_t	hdr_ver;
+	uint32_t	flags;
 };
 
 /*
  * Globals
  */
-static char *ofname;
-static char *progname;
+char *ofname;
+char *progname;
 static char *vendor = "TP-LINK Technologies";
 static char *version = "ver. 1.0";
 static char *fw_ver = "0.0.0";
 static char *sver = "1.0";
+static uint32_t hdr_ver = 2;
 
-static char *board_id;
+static struct board_info custom_board;
+
 static struct board_info *board;
 static char *layout_id;
-static struct flash_layout *layout;
+struct flash_layout *layout;
 static char *opt_hw_id;
-static uint32_t hw_id;
 static char *opt_hw_rev;
-static uint32_t hw_rev;
+static char *opt_hw_ver_add;
 static int fw_ver_lo;
 static int fw_ver_mid;
 static int fw_ver_hi;
 static int sver_lo;
 static int sver_hi;
-static struct file_info kernel_info;
+struct file_info kernel_info;
 static uint32_t kernel_la = 0;
 static uint32_t kernel_ep = 0;
-static uint32_t kernel_len = 0;
-static struct file_info rootfs_info;
-static uint32_t rootfs_ofs = 0;
-static uint32_t rootfs_align;
+uint32_t kernel_len = 0;
+struct file_info rootfs_info;
+uint32_t rootfs_ofs = 0;
+uint32_t rootfs_align;
 static struct file_info boot_info;
-static int combined;
-static int strip_padding;
-static int add_jffs2_eof;
-static unsigned char jffs2_eof_mark[4] = {0xde, 0xad, 0xc0, 0xde};
+int combined;
+int strip_padding;
+int add_jffs2_eof;
 
 static struct file_info inspect_info;
 static int extract = 0;
@@ -130,96 +117,75 @@ char md5salt_normal[MD5SUM_LEN] = {
 };
 
 char md5salt_boot[MD5SUM_LEN] = {
-	0x8c, 0xef, 0x33, 0x5b, 0xd5, 0xc5, 0xce, 0xfa,
-	0xa7, 0x9c, 0x28, 0xda, 0xb2, 0xe9, 0x0f, 0x42,
+	0x8c, 0xef, 0x33, 0x5f, 0xd5, 0xc5, 0xce, 0xfa,
+	0xac, 0x9c, 0x28, 0xda, 0xb2, 0xe9, 0x0f, 0x42,
 };
 
 static struct flash_layout layouts[] = {
 	{
+		.id		= "4Mmtk",
+		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80000000,
+		.kernel_ep	= 0x80000000,
+		.rootfs_ofs	= 0x140000,
+	}, {
+		.id		= "4MLmtk",
+		.fw_max_len	= 0x3d0000,
+		.kernel_la	= 0x80000000,
+		.kernel_ep	= 0x80000000,
+		.rootfs_ofs	= 0x140000,
+	}, {
 		.id		= "8Mltq",
 		.fw_max_len	= 0x7a0000,
 		.kernel_la	= 0x80002000,
 		.kernel_ep	= 0x80002000,
 		.rootfs_ofs	= 0x140000,
 	}, {
-		/* terminating entry */
-	}
-};
-
-static struct board_info boards[] = {
-	{
-		.id		= "TD-W8970v1",
-		.hw_id		= HWID_TD_W8970_V1,
-		.hw_rev		= 1,
-		.layout_id	= "8Mltq",
+		.id		= "16Mltq",
+		.fw_max_len	= 0xf90000,
+		.kernel_la	= 0x80002000,
+		.kernel_ep	= 0x800061b0,
+		.rootfs_ofs	= 0x140000,
+	}, {
+		.id		= "8Mmtk",
+		.fw_max_len	= 0x7a0000,
+		.kernel_la	= 0x80000000,
+		.kernel_ep	= 0x80000000,
+		.rootfs_ofs	= 0x140000,
+	}, {
+		.id		= "16Mmtk",
+		.fw_max_len	= 0xf10000,
+		.kernel_la	= 0x80000000,
+		.kernel_ep	= 0x80000000,
+		.rootfs_ofs	= 0x140000,
+	}, {
+		.id		= "8MSUmtk", /* Split U-Boot OS */
+		.fw_max_len	= 0x770000,
+		.kernel_la	= 0x80000000,
+		.kernel_ep	= 0x80000000,
+		.rootfs_ofs	= 0x140000,
+	}, {
+		.id		= "8MLmtk",
+		.fw_max_len	= 0x7b0000,
+		.kernel_la	= 0x80000000,
+		.kernel_ep	= 0x80000000,
+		.rootfs_ofs	= 0x140000,
+	}, {
+		.id             = "8Mqca",
+		.fw_max_len     = 0x7a0000,
+		.kernel_la      = 0x80060000,
+		.kernel_ep      = 0x80060000,
+		.rootfs_ofs     = 0x140000,
+	}, {
+		.id             = "16Mqca",
+		.fw_max_len     = 0xf90000,
+		.kernel_la      = 0x80060000,
+		.kernel_ep      = 0x80060000,
+		.rootfs_ofs     = 0x140000,
 	}, {
 		/* terminating entry */
 	}
 };
-
-/*
- * Message macros
- */
-#define ERR(fmt, ...) do { \
-	fflush(0); \
-	fprintf(stderr, "[%s] *** error: " fmt "\n", \
-			progname, ## __VA_ARGS__ ); \
-} while (0)
-
-#define ERRS(fmt, ...) do { \
-	int save = errno; \
-	fflush(0); \
-	fprintf(stderr, "[%s] *** error: " fmt "\n", \
-			progname, ## __VA_ARGS__, strerror(save)); \
-} while (0)
-
-#define DBG(fmt, ...) do { \
-	fprintf(stderr, "[%s] " fmt "\n", progname, ## __VA_ARGS__ ); \
-} while (0)
-
-static struct board_info *find_board(char *id)
-{
-	struct board_info *ret;
-	struct board_info *board;
-
-	ret = NULL;
-	for (board = boards; board->id != NULL; board++){
-		if (strcasecmp(id, board->id) == 0) {
-			ret = board;
-			break;
-		}
-	};
-
-	return ret;
-}
-
-static struct board_info *find_board_by_hwid(uint32_t hw_id)
-{
-	struct board_info *board;
-
-	for (board = boards; board->id != NULL; board++) {
-		if (hw_id == board->hw_id)
-			return board;
-	};
-
-	return NULL;
-}
-
-static struct flash_layout *find_layout(char *id)
-{
-	struct flash_layout *ret;
-	struct flash_layout *l;
-
-	ret = NULL;
-	for (l = layouts; l->id != NULL; l++){
-		if (strcasecmp(id, l->id) == 0) {
-			ret = l;
-			break;
-		}
-	};
-
-	return ret;
-}
 
 static void usage(int status)
 {
@@ -230,12 +196,13 @@ static void usage(int status)
 	fprintf(stream,
 "\n"
 "Options:\n"
-"  -B <board>      create image for the board specified with <board>\n"
 "  -c              use combined kernel image\n"
+"  -e              swap endianness in kernel load address and entry point\n"
 "  -E <ep>         overwrite kernel entry point with <ep> (hexval prefixed with 0x)\n"
 "  -L <la>         overwrite kernel load address with <la> (hexval prefixed with 0x)\n"
 "  -H <hwid>       use hardware id specified with <hwid>\n"
 "  -W <hwrev>      use hardware revision specified with <hwrev>\n"
+"  -w <hwveradd>   use additional hardware version specified with <hwveradd>\n"
 "  -F <id>         use flash layout specified with <id>\n"
 "  -k <file>       read kernel image from the file <file>\n"
 "  -r <file>       read rootfs image from the file <file>\n"
@@ -244,6 +211,8 @@ static void usage(int status)
 "  -o <file>       write output to the file <file>\n"
 "  -s              strip padding from the end of the image\n"
 "  -j              add jffs2 end-of-filesystem markers\n"
+"  -N <vendor>     set image vendor to <vendor>\n"
+"  -T <version>    set header version to <version>\n"
 "  -V <version>    set image version to <version>\n"
 "  -v <version>    set firmware version to <version>\n"
 "  -y <version>    set secondary version to <version>\n"
@@ -253,59 +222,6 @@ static void usage(int status)
 	);
 
 	exit(status);
-}
-
-static int get_md5(char *data, int size, char *md5)
-{
-	MD5_CTX ctx;
-
-	MD5_Init(&ctx);
-	MD5_Update(&ctx, data, size);
-	MD5_Final(md5, &ctx);
-}
-
-static int get_file_stat(struct file_info *fdata)
-{
-	struct stat st;
-	int res;
-
-	if (fdata->file_name == NULL)
-		return 0;
-
-	res = stat(fdata->file_name, &st);
-	if (res){
-		ERRS("stat failed on %s", fdata->file_name);
-		return res;
-	}
-
-	fdata->file_size = st.st_size;
-	return 0;
-}
-
-static int read_to_buf(struct file_info *fdata, char *buf)
-{
-	FILE *f;
-	int ret = EXIT_FAILURE;
-
-	f = fopen(fdata->file_name, "r");
-	if (f == NULL) {
-		ERRS("could not open \"%s\" for reading", fdata->file_name);
-		goto out;
-	}
-
-	errno = 0;
-	fread(buf, fdata->file_size, 1, f);
-	if (errno != 0) {
-		ERRS("unable to read from file \"%s\"", fdata->file_name);
-		goto out_close;
-	}
-
-	ret = EXIT_SUCCESS;
-
- out_close:
-	fclose(f);
- out:
-	return ret;
 }
 
 static int check_options(void)
@@ -323,36 +239,29 @@ static int check_options(void)
 		return -1;
 	}
 
-	if (board_id == NULL && opt_hw_id == NULL) {
-		ERR("either board or hardware id must be specified");
+	if (opt_hw_id == NULL) {
+		ERR("hardware id must be specified");
 		return -1;
 	}
 
-	if (board_id) {
-		board = find_board(board_id);
-		if (board == NULL) {
-			ERR("unknown/unsupported board id \"%s\"", board_id);
-			return -1;
-		}
-		if (layout_id == NULL)
-			layout_id = board->layout_id;
+	board = &custom_board;
 
-		hw_id = board->hw_id;
-		hw_rev = board->hw_rev;
-	} else {
-		if (layout_id == NULL) {
-			ERR("flash layout is not specified");
-			return -1;
-		}
-		hw_id = strtoul(opt_hw_id, NULL, 0);
-
-		if (opt_hw_rev)
-			hw_rev = strtoul(opt_hw_rev, NULL, 0);
-		else
-			hw_rev = 1;
+	if (layout_id == NULL) {
+		ERR("flash layout is not specified");
+		return -1;
 	}
 
-	layout = find_layout(layout_id);
+	board->hw_id = strtoul(opt_hw_id, NULL, 0);
+
+	board->hw_rev = 1;
+	board->hw_ver_add = 0;
+
+	if (opt_hw_rev)
+		board->hw_rev = strtoul(opt_hw_rev, NULL, 0);
+	if (opt_hw_ver_add)
+		board->hw_ver_add = strtoul(opt_hw_ver_add, NULL, 0);
+
+	layout = find_layout(layouts, layout_id);
 	if (layout == NULL) {
 		ERR("unknown flash layout \"%s\"", layout_id);
 		return -1;
@@ -394,10 +303,10 @@ static int check_options(void)
 
 		if (rootfs_align) {
 			kernel_len += sizeof(struct fw_header);
-			kernel_len = ALIGN(kernel_len, rootfs_align);
+			rootfs_ofs = ALIGN(kernel_len, rootfs_align);
 			kernel_len -= sizeof(struct fw_header);
 
-			DBG("kernel length aligned to %u", kernel_len);
+			DBG("rootfs offset aligned to 0x%u", rootfs_ofs);
 
 			if (kernel_len + rootfs_info.file_size >
 			    layout->fw_max_len - sizeof(struct fw_header)) {
@@ -439,14 +348,14 @@ static int check_options(void)
 	return 0;
 }
 
-static void fill_header(char *buf, int len)
+void fill_header(char *buf, int len)
 {
 	struct fw_header *hdr = (struct fw_header *)buf;
 	unsigned ver_len;
 
 	memset(hdr, '\xff', sizeof(struct fw_header));
 
-	hdr->version = htonl(HEADER_VERSION_V2);
+	hdr->version = htonl(bswap_32(hdr_ver));
 	ver_len = strlen(version);
 	if (ver_len > (sizeof(hdr->fw_version) - 1))
 		ver_len = sizeof(hdr->fw_version) - 1;
@@ -454,8 +363,9 @@ static void fill_header(char *buf, int len)
 	memcpy(hdr->fw_version, version, ver_len);
 	hdr->fw_version[ver_len] = 0;
 
-	hdr->hw_id = htonl(hw_id);
-	hdr->hw_rev = htonl(hw_rev);
+	hdr->hw_id = htonl(board->hw_id);
+	hdr->hw_rev = htonl(board->hw_rev);
+	hdr->hw_ver_add = htonl(board->hw_ver_add);
 
 	if (boot_info.file_size == 0) {
 		memcpy(hdr->md5sum1, md5salt_normal, sizeof(hdr->md5sum1));
@@ -480,7 +390,6 @@ static void fill_header(char *buf, int len)
 	hdr->boot_ofs = htonl(0);
 	hdr->boot_len = htonl(boot_info.file_size);
 
-	hdr->unk1 = htonl(0);
 	hdr->unk2 = htonl(0);
 	hdr->unk3 = htonl(0xffffffff);
 	hdr->unk4 = htons(0x55aa);
@@ -493,197 +402,12 @@ static void fill_header(char *buf, int len)
 	hdr->ver_mid = fw_ver_mid;
 	hdr->ver_lo = fw_ver_lo;
 
+	if (board->flags & FLAG_LE_KERNEL_LA_EP) {
+		hdr->kernel_la = bswap_32(hdr->kernel_la);
+		hdr->kernel_ep = bswap_32(hdr->kernel_ep);
+	}
+
 	get_md5(buf, len, hdr->md5sum1);
-}
-
-static int pad_jffs2(char *buf, int currlen)
-{
-	int len;
-	uint32_t pad_mask;
-
-	len = currlen;
-	pad_mask = (64 * 1024);
-	while ((len < layout->fw_max_len) && (pad_mask != 0)) {
-		uint32_t mask;
-		int i;
-
-		for (i = 10; i < 32; i++) {
-			mask = 1 << i;
-			if (pad_mask & mask)
-				break;
-		}
-
-		len = ALIGN(len, mask);
-
-		for (i = 10; i < 32; i++) {
-			mask = 1 << i;
-			if ((len & (mask - 1)) == 0)
-				pad_mask &= ~mask;
-		}
-
-		for (i = 0; i < sizeof(jffs2_eof_mark); i++)
-			buf[len + i] = jffs2_eof_mark[i];
-
-		len += sizeof(jffs2_eof_mark);
-	}
-
-	return len;
-}
-
-static int write_fw(char *data, int len)
-{
-	FILE *f;
-	int ret = EXIT_FAILURE;
-
-	f = fopen(ofname, "w");
-	if (f == NULL) {
-		ERRS("could not open \"%s\" for writing", ofname);
-		goto out;
-	}
-
-	errno = 0;
-	fwrite(data, len, 1, f);
-	if (errno) {
-		ERRS("unable to write output file");
-		goto out_flush;
-	}
-
-	DBG("firmware file \"%s\" completed", ofname);
-
-	ret = EXIT_SUCCESS;
-
- out_flush:
-	fflush(f);
-	fclose(f);
-	if (ret != EXIT_SUCCESS) {
-		unlink(ofname);
-	}
- out:
-	return ret;
-}
-
-static int build_fw(void)
-{
-	int buflen;
-	char *buf;
-	char *p;
-	int ret = EXIT_FAILURE;
-	int writelen = 0;
-
-	buflen = layout->fw_max_len;
-
-	buf = malloc(buflen);
-	if (!buf) {
-		ERR("no memory for buffer\n");
-		goto out;
-	}
-
-	memset(buf, 0xff, buflen);
-	p = buf + sizeof(struct fw_header);
-	ret = read_to_buf(&kernel_info, p);
-	if (ret)
-		goto out_free_buf;
-
-	writelen = sizeof(struct fw_header) + kernel_len;
-
-	if (!combined) {
-		if (rootfs_align)
-			p = buf + writelen;
-		else
-			p = buf + rootfs_ofs;
-
-		ret = read_to_buf(&rootfs_info, p);
-		if (ret)
-			goto out_free_buf;
-
-		if (rootfs_align)
-			writelen += rootfs_info.file_size;
-		else
-			writelen = rootfs_ofs + rootfs_info.file_size;
-
-		if (add_jffs2_eof)
-			writelen = pad_jffs2(buf, writelen);
-	}
-
-	if (!strip_padding)
-		writelen = buflen;
-
-	fill_header(buf, writelen);
-	ret = write_fw(buf, writelen);
-	if (ret)
-		goto out_free_buf;
-
-	ret = EXIT_SUCCESS;
-
- out_free_buf:
-	free(buf);
- out:
-	return ret;
-}
-
-/* Helper functions to inspect_fw() representing different output formats */
-static inline void inspect_fw_pstr(char *label, char *str)
-{
-	printf("%-23s: %s\n", label, str);
-}
-
-static inline void inspect_fw_phex(char *label, uint32_t val)
-{
-	printf("%-23s: 0x%08x\n", label, val);
-}
-
-static inline void inspect_fw_phexpost(char *label,
-                                       uint32_t val, char *post)
-{
-	printf("%-23s: 0x%08x (%s)\n", label, val, post);
-}
-
-static inline void inspect_fw_phexdef(char *label,
-                                      uint32_t val, uint32_t defval)
-{
-	printf("%-23s: 0x%08x                  ", label, val);
-
-	if (val == defval)
-		printf("(== OpenWrt default)\n");
-	else
-		printf("(OpenWrt default: 0x%08x)\n", defval);
-}
-
-static inline void inspect_fw_phexexp(char *label,
-                                      uint32_t val, uint32_t expval)
-{
-	printf("%-23s: 0x%08x ", label, val);
-
-	if (val == expval)
-		printf("(ok)\n");
-	else
-		printf("(expected: 0x%08x)\n", expval);
-}
-
-static inline void inspect_fw_phexdec(char *label, uint32_t val)
-{
-	printf("%-23s: 0x%08x / %8u bytes\n", label, val, val);
-}
-
-static inline void inspect_fw_phexdecdef(char *label,
-                                         uint32_t val, uint32_t defval)
-{
-	printf("%-23s: 0x%08x / %8u bytes ", label, val, val);
-
-	if (val == defval)
-		printf("(== OpenWrt default)\n");
-	else
-		printf("(OpenWrt default: 0x%08x)\n", defval);
-}
-
-static inline void inspect_fw_pmd5sum(char *label, uint8_t *val, char *text)
-{
-	int i;
-
-	printf("%-23s:", label);
-	for (i=0; i<MD5SUM_LEN; i++)
-		printf(" %02x", val[i]);
-	printf(" %s\n", text);
 }
 
 static int inspect_fw(void)
@@ -705,18 +429,26 @@ static int inspect_fw(void)
 		goto out_free_buf;
 	hdr = (struct fw_header *)buf;
 
+	board = &custom_board;
+
+	if (board->flags & FLAG_LE_KERNEL_LA_EP) {
+		hdr->kernel_la = bswap_32(hdr->kernel_la);
+		hdr->kernel_ep = bswap_32(hdr->kernel_ep);
+	}
+
 	inspect_fw_pstr("File name", inspect_info.file_name);
 	inspect_fw_phexdec("File size", inspect_info.file_size);
 
-	if (ntohl(hdr->version) != HEADER_VERSION_V2) {
-		ERR("file does not seem to have V2 header!\n");
+	switch(bswap_32(ntohl(hdr->version))) {
+	case 2:
+	case 3:
+		break;
+	default:
+		ERR("file does not seem to have V2/V3 header!\n");
 		goto out_free_buf;
 	}
 
 	inspect_fw_phexdec("Version 2 Header size", sizeof(struct fw_header));
-
-	if (ntohl(hdr->unk1) != 0)
-		inspect_fw_phexdec("Unknown value 1", hdr->unk1);
 
 	memcpy(md5sum, hdr->md5sum1, sizeof(md5sum));
 	if (ntohl(hdr->boot_len) == 0)
@@ -748,20 +480,11 @@ static int inspect_fw(void)
 	printf("\n");
 
 	inspect_fw_pstr("Firmware version", hdr->fw_version);
-
-	board = find_board_by_hwid(ntohl(hdr->hw_id));
-	if (board) {
-		layout = find_layout(board->layout_id);
-		inspect_fw_phexpost("Hardware ID",
-		                    ntohl(hdr->hw_id), board->id);
-		inspect_fw_phexexp("Hardware Revision",
-		                   ntohl(hdr->hw_rev), board->hw_rev);
-	} else {
-		inspect_fw_phexpost("Hardware ID",
-		                    ntohl(hdr->hw_id), "unknown");
-		inspect_fw_phex("Hardware Revision",
-		                ntohl(hdr->hw_rev));
-	}
+	inspect_fw_phex("Hardware ID", ntohl(hdr->hw_id));
+	inspect_fw_phex("Hardware Revision",
+			ntohl(hdr->hw_rev));
+	inspect_fw_phex("Additional HW Version",
+			ntohl(hdr->hw_ver_add));
 
 	printf("%-23s: %d.%d.%d-%d.%d\n", "Software version",
 	       hdr->ver_hi, hdr->ver_mid, hdr->ver_lo,
@@ -773,24 +496,12 @@ static int inspect_fw(void)
 	                   ntohl(hdr->kernel_ofs));
 	inspect_fw_phexdec("Kernel data length",
 	                   ntohl(hdr->kernel_len));
-	if (board) {
-		inspect_fw_phexdef("Kernel load address",
-		                   ntohl(hdr->kernel_la),
-		                   layout ? layout->kernel_la : 0xffffffff);
-		inspect_fw_phexdef("Kernel entry point",
-		                   ntohl(hdr->kernel_ep),
-		                   layout ? layout->kernel_ep : 0xffffffff);
-		inspect_fw_phexdecdef("Rootfs data offset",
-		                      ntohl(hdr->rootfs_ofs),
-		                      layout ? layout->rootfs_ofs : 0xffffffff);
-	} else {
-		inspect_fw_phex("Kernel load address",
-		                ntohl(hdr->kernel_la));
-		inspect_fw_phex("Kernel entry point",
-		                ntohl(hdr->kernel_ep));
-		inspect_fw_phexdec("Rootfs data offset",
-		                   ntohl(hdr->rootfs_ofs));
-	}
+	inspect_fw_phex("Kernel load address",
+			ntohl(hdr->kernel_la));
+	inspect_fw_phex("Kernel entry point",
+			ntohl(hdr->kernel_ep));
+	inspect_fw_phexdec("Rootfs data offset",
+			   ntohl(hdr->rootfs_ofs));
 	inspect_fw_phexdec("Rootfs data length",
 	                   ntohl(hdr->rootfs_len));
 	inspect_fw_phexdec("Boot loader data offset",
@@ -846,25 +557,19 @@ static int inspect_fw(void)
 int main(int argc, char *argv[])
 {
 	int ret = EXIT_FAILURE;
-	int err;
-
-	FILE *outfile;
 
 	progname = basename(argv[0]);
 
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:ci:k:r:R:o:xhsjv:y:");
+		c = getopt(argc, argv, "a:H:E:F:L:V:N:W:w:ci:k:r:R:o:xhsjv:y:T:e");
 		if (c == -1)
 			break;
 
 		switch (c) {
 		case 'a':
 			sscanf(optarg, "0x%x", &rootfs_align);
-			break;
-		case 'B':
-			board_id = optarg;
 			break;
 		case 'H':
 			opt_hw_id = optarg;
@@ -877,6 +582,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'W':
 			opt_hw_rev = optarg;
+			break;
+		case 'w':
+			opt_hw_ver_add = optarg;
 			break;
 		case 'L':
 			sscanf(optarg, "0x%x", &kernel_la);
@@ -920,6 +628,12 @@ int main(int argc, char *argv[])
 		case 'x':
 			extract = 1;
 			break;
+		case 'T':
+			hdr_ver = atoi(optarg);
+			break;
+		case 'e':
+			custom_board.flags = FLAG_LE_KERNEL_LA_EP;
+			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
 			break;
@@ -934,7 +648,7 @@ int main(int argc, char *argv[])
 		goto out;
 
 	if (!inspect_info.file_name)
-		ret = build_fw();
+		ret = build_fw(sizeof(struct fw_header));
 	else
 		ret = inspect_fw();
 

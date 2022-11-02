@@ -1,0 +1,95 @@
+config TLT_VERSIONING_PREFIX
+	depends on PACKAGE_libbrand-versioning
+	string "PREFIX"
+	help
+		Teltonika VERSIONING PREFIX
+	default RUTX if TARGET_ipq40xx_generic_DEVICE_teltonika_rutx
+	default TRB2 if TARGET_ath79_generic_DEVICE_teltonika_trb2xx
+	default RUT2 if TARGET_ath79_generic_DEVICE_teltonika_rut2xx
+	default RUT2M if TARGET_ramips_mt76x8_DEVICE_teltonika_rut2m
+	default TCR1 if TARGET_ath79_generic_DEVICE_teltonika_tcr1xx
+	default RUT9 if TARGET_ath79_generic_DEVICE_teltonika_rut9xx
+	default RUT9M if TARGET_ramips_mt76x8_DEVICE_teltonika_rut9m
+	default RUT952 if TARGET_ath79_generic_DEVICE_teltonika_rut952
+	default RUT30X if TARGET_ath79_generic_DEVICE_teltonika_rut30x
+	default RUT36X if TARGET_ath79_generic_DEVICE_teltonika_rut36x
+	default OTD1 if TARGET_ath79_generic_DEVICE_teltonika_otd1xx
+	default TRB5 if TARGET_sdxprairie_DEVICE_teltonika_trb5xx
+	default TRB1 if TARGET_mdm9x07_DEVICE_trb1400
+	default TRB1 if TARGET_mdm9x07_DEVICE_trb1401
+	default TRB1 if TARGET_mdm9x07_DEVICE_trb1410
+	default TRB1 if TARGET_mdm9x07_DEVICE_trb1411
+	default TRB1 if TARGET_mdm9x07_DEVICE_trb1412
+	default TRB1 if TARGET_mdm9x07_DEVICE_trb1420
+	default TRB1 if TARGET_mdm9x07_DEVICE_trb1421
+	default TRB1 if TARGET_mdm9x07_DEVICE_trb1422
+	default TRB1 if TARGET_mdm9x07_DEVICE_trb1430
+	default TRB1 if TARGET_mdm9x07_DEVICE_trb1450
+	default TRB1 if TARGET_mdm9x07_DEVICE_trb1451
+	default TRB1 if TARGET_DEVICE_mdm9x07_DEVICE_trb1400
+	default TRB1 if TARGET_DEVICE_mdm9x07_DEVICE_trb1401
+	default TRB1 if TARGET_DEVICE_mdm9x07_DEVICE_trb1410
+	default TRB1 if TARGET_DEVICE_mdm9x07_DEVICE_trb1411
+	default TRB1 if TARGET_DEVICE_mdm9x07_DEVICE_trb1412
+	default TRB1 if TARGET_DEVICE_mdm9x07_DEVICE_trb1420
+	default TRB1 if TARGET_DEVICE_mdm9x07_DEVICE_trb1421
+	default TRB1 if TARGET_DEVICE_mdm9x07_DEVICE_trb1422
+	default TRB1 if TARGET_DEVICE_mdm9x07_DEVICE_trb1430
+	default TRB1 if TARGET_DEVICE_mdm9x07_DEVICE_trb1450
+	default TRB1 if TARGET_DEVICE_mdm9x07_DEVICE_trb1451
+
+config TLT_VERSIONING_CLIENT
+	depends on PACKAGE_libbrand-versioning
+	string "Client"
+	help
+		Client code, two decimals
+	default 00
+
+config TLT_VERSIONING_MANUAL_ENABLE
+	depends on PACKAGE_libbrand-versioning
+	bool "Manual firmware versioning"
+	help
+		Use manual firmware versioning
+	default n
+
+config TLT_VERSIONING_RELEASE
+	depends on PACKAGE_libbrand-versioning && TLT_VERSIONING_MANUAL_ENABLE
+	string "Release/Test"
+	help
+		"R" for release, "T" for test version
+	default T
+
+config TLT_VERSIONING_BRANCH_PREFIX
+	depends on PACKAGE_libbrand-versioning
+	string "Define branch prefix string"
+	help
+		Define branch prefix, "-" for auto
+	default -
+
+config TLT_VERSIONING_MAJOR
+	depends on PACKAGE_libbrand-versioning && TLT_VERSIONING_MANUAL_ENABLE
+	string "Major"
+	help
+		Major version number, two decimals
+	default 00
+
+config TLT_VERSIONING_MINOR
+	depends on PACKAGE_libbrand-versioning && TLT_VERSIONING_MANUAL_ENABLE
+	string "Minor"
+	help
+		Minor version number, two decimals
+	default 00
+
+config TLT_VERSIONING_PATCH_ENABLE
+	depends on PACKAGE_libbrand-versioning && TLT_VERSIONING_MANUAL_ENABLE
+	bool "Add patch version to version string"
+	help
+		Add Patch version number
+	default n
+
+config TLT_VERSIONING_PATCH
+	depends on PACKAGE_libbrand-versioning && TLT_VERSIONING_MANUAL_ENABLE && TLT_VERSIONING_PATCH_ENABLE
+	string "Patch"
+	help
+		Patch version number
+	default 0

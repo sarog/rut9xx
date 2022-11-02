@@ -1,0 +1,47 @@
+#!/bin/sh /etc/rc.common
+
+APP=/usr/sbin/modbus_data_sender
+AZURE_APP="/sbin/azure_iothub"
+
+USE_PROCD=1
+START=99
+STOP=99
+
+ENABLED="0"
+
+service_triggers() {
+	procd_add_reload_trigger "modbus_data_sender"
+}
+
+check_data_senders(){
+	conf_name="$1"
+	config_get enabled $1 "enabled"
+	config_get protocol $1 "protocol"
+	config_get sender_id $1 "sender_id"
+	config_get connection_string $1 "host"
+	if [ "$enabled" = "1" ]; then
+		ENABLED="1"
+		if [ "$protocol" = "azure_mqtt" ]; then
+			if [ -n "$sender_id" ] && [ -n "$connection_string" ]; then
+				SOCKET_FILE="/tmp/$sender_id.sock"
+				procd_open_instance
+				procd_set_param command "$AZURE_APP" -custom "$connection_string" "$SOCKET_FILE"
+				procd_set_param respawn ${respawn_threshold:-0} ${respawn_timeout:-10} ${respawn_retry:-0}
+				procd_close_instance
+			fi
+		fi
+	fi
+}
+
+start_service() {
+	config_load modbus_data_sender
+	config_foreach check_data_senders "data_sender"
+	if [ "$ENABLED" -eq 1 ] ; then
+		procd_open_instance
+		procd_set_param command $APP
+		procd_set_param respawn ${respawn_threshold:-0} ${respawn_timeout:-10} ${respawn_retry:-0}
+		procd_set_param file /etc/config/modbus_data_sender
+		procd_close_instance
+	fi
+	ubus send blesemd.store_data
+}

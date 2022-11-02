@@ -1,0 +1,23 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+delete_vlan() {
+	local section="$1"
+	uci_remove network "$section"
+}
+
+configure_switch() {
+	config_load network
+	config_foreach delete_vlan switch
+	config_foreach delete_vlan switch_vlan
+	uci_commit network
+}
+
+case "$(board_name)" in
+	teltonika,rut360)
+		configure_switch
+		;;
+esac
+
+exit 0

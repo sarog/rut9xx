@@ -34,6 +34,8 @@ static unsigned char seed = 'O';
 static char *product;
 static char *version;
 static int do_decrypt;
+static int offset;
+static int size;
 
 void usage(int status)
 {
@@ -52,6 +54,8 @@ void usage(int status)
 "  -p <product>    set product name to <product>\n"
 "  -v <version>    set version to <version>\n"
 "  -h              show this screen\n"
+"  -O              Offset of encrypted data in file (decryption)\n"
+"  -S              Size of unencrypted data in file (encryption)\n"
 	);
 
 	exit(status);
@@ -85,8 +89,9 @@ static int decrypt_file(void)
 
 	memset(&ep, '\0', sizeof(ep));
 	ep.key = (unsigned char *) crypt_key;
+	ep.longstate = longstate;
 
-	err = decrypt_buf(&ep, buf, src_len);
+	err = decrypt_buf(&ep, buf + offset, src_len - offset);
 	if (err) {
 		ERR("unable to decrypt '%s'", ifname);
 		goto out;
@@ -99,7 +104,7 @@ static int decrypt_file(void)
 	printf("Data len\t: %u\n", ep.datalen);
 	printf("Checksum\t: 0x%08x\n", ep.csum);
 
-	err = write_buf_to_file(ofname, buf, ep.datalen);
+	err = write_buf_to_file(ofname, buf + offset, ep.datalen);
 	if (err) {
 		ERR("unable to write to file '%s'", ofname);
 		goto out;
@@ -115,7 +120,7 @@ out:
 static int encrypt_file(void)
 {
 	struct enc_param ep;
-	ssize_t src_len;
+	ssize_t src_len, tail_dst, tail_len, tail_src;
 	unsigned char *buf;
 	uint32_t hdrlen;
 	ssize_t totlen = 0;
@@ -128,8 +133,12 @@ static int encrypt_file(void)
 		goto out;
 	}
 
-	totlen = enc_compute_buf_len(product, version, src_len);
-	hdrlen = enc_compute_header_len(product, version);
+	if (size) {
+		tail_dst = enc_compute_buf_len(product, version, size);
+		tail_len = src_len - size;
+		totlen = tail_dst + tail_len;
+	} else
+		totlen = enc_compute_buf_len(product, version, src_len);
 
 	buf = malloc(totlen);
 	if (buf == NULL) {
@@ -137,10 +146,19 @@ static int encrypt_file(void)
 		goto out;
 	}
 
+	hdrlen = enc_compute_header_len(product, version);
+
 	err = read_file_to_buf(ifname, &buf[hdrlen], src_len);
 	if (err) {
 		ERR("unable to read from file '%s'", ofname);
 		goto free_buf;
+	}
+
+	if (size) {
+		tail_src = hdrlen + size;
+		memmove(&buf[tail_dst], &buf[tail_src], tail_len);
+		memset(&buf[tail_src], 0, tail_dst - tail_src);
+		src_len = size;
 	}
 
 	memset(&ep, '\0', sizeof(ep));
@@ -238,7 +256,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "adi:m:o:hp:v:k:r:s:");
+		c = getopt(argc, argv, "adi:m:o:hlp:v:k:O:r:s:S:");
 		if (c == -1)
 			break;
 
@@ -269,6 +287,12 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			seed = strtoul(optarg, NULL, 16);
+			break;
+		case 'O':
+			offset = strtoul(optarg, NULL, 0);
+			break;
+		case 'S':
+			size = strtoul(optarg, NULL, 0);
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);

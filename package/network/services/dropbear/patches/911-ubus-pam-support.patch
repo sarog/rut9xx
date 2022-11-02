@@ -1,0 +1,235 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -223,6 +223,24 @@ AC_ARG_ENABLE(pam,
+ 	]
+ )
+ 
++AC_ARG_ENABLE(ubus-pam,
++	[  --enable-ubus-pam            Try to include UBUS PAM support],
++	[
++		if test "x$enableval" = "xyes"; then
++			AC_DEFINE(DROPBEAR_SVR_UBUS_PAM_AUTH,1,Use UBUS PAM)
++			AC_MSG_NOTICE(Enabling UBUS PAM)
++		else
++			AC_DEFINE(DROPBEAR_SVR_UBUS_PAM_AUTH,0,Use UBUS PAM)
++			AC_MSG_NOTICE(Disabling UBUS PAM)
++		fi
++	],
++	[
++		# disable it by default
++		AC_DEFINE(DROPBEAR_SVR_UBUS_PAM_AUTH,0,Use UBUS PAM)
++		AC_MSG_NOTICE(Disabling UBUS PAM)
++	]
++)
++
+ AC_ARG_ENABLE(openpty,
+ 	[  --disable-openpty       Don't use openpty, use alternative method],
+ 	[
+--- a/runopts.h
++++ b/runopts.h
+@@ -125,6 +125,10 @@ typedef struct svr_runopts {
+ 
+ 	char * forced_command;
+ 
++#if DROPBEAR_SVR_UBUS_PAM_AUTH
++	int ubus_pam_auth;
++#endif //DROPBEAR_SVR_UBUS_PAM_AUTH
++
+ #if DROPBEAR_PLUGIN 
+         char *pubkey_plugin;
+         char *pubkey_plugin_options;
+--- a/svr-auth.c
++++ b/svr-auth.c
+@@ -146,18 +146,26 @@ void recv_msg_userauth_request() {
+ 		}
+ 	}
+ 	
+-#if DROPBEAR_SVR_PASSWORD_AUTH
++#if DROPBEAR_SVR_PASSWORD_AUTH  || DROPBEAR_SVR_UBUS_PAM_AUTH
+ 	if (!svr_opts.noauthpass &&
+ 			!(svr_opts.norootpass && ses.authstate.pw_uid == 0) ) {
+ 		/* user wants to try password auth */
+ 		if (methodlen == AUTH_METHOD_PASSWORD_LEN &&
+ 				strncmp(methodname, AUTH_METHOD_PASSWORD,
+ 					AUTH_METHOD_PASSWORD_LEN) == 0) {
++#if DROPBEAR_SVR_UBUS_PAM_AUTH
++			if (svr_opts.ubus_pam_auth) {
++				svr_auth_ubus_pam(valid_user);
++				
++				goto out;
++			}
++#endif //DROPBEAR_SVR_UBUS_PAM_AUTH
++
+ 			svr_auth_password(valid_user);
+ 			goto out;
+ 		}
+ 	}
+-#endif
++#endif //DROPBEAR_SVR_PASSWORD_AUTH  || DROPBEAR_SVR_UBUS_PAM_AUTH
+ 
+ #if DROPBEAR_SVR_PAM_AUTH
+ 	if (!svr_opts.noauthpass &&
+@@ -167,6 +175,7 @@ void recv_msg_userauth_request() {
+ 				strncmp(methodname, AUTH_METHOD_PASSWORD,
+ 					AUTH_METHOD_PASSWORD_LEN) == 0) {
+ 			svr_auth_pam(valid_user);
++			
+ 			goto out;
+ 		}
+ 	}
+--- a/svr-authpam.c
++++ b/svr-authpam.c
+@@ -296,3 +296,107 @@ cleanup:
+ }
+ 
+ #endif /* DROPBEAR_SVR_PAM_AUTH */
++
++#if DROPBEAR_SVR_UBUS_PAM_AUTH
++#include <libubus.h>
++#include <libubox/blobmsg.h>
++
++#define UBUS_TIMEOUT 10000
++
++enum {
++	PAM_AUTH_ACCESS,
++	__PAM_AUTH_MAX
++};
++
++static const struct blobmsg_policy pam_auth_policy[__PAM_AUTH_MAX] = {
++	[PAM_AUTH_ACCESS] = { "access", BLOBMSG_TYPE_BOOL },
++};
++
++
++static void auth_cb(struct ubus_request *req, int type, struct blob_attr *msg)
++{
++	(void)type;
++	
++	bool *access = (bool *) req->priv;
++	struct blob_attr *tb[__PAM_AUTH_MAX];
++
++	blobmsg_parse(pam_auth_policy, __PAM_AUTH_MAX, tb, blob_data(msg),
++			blob_len(msg));
++
++	if (tb[PAM_AUTH_ACCESS]) {
++		*access = blobmsg_get_bool(tb[PAM_AUTH_ACCESS]);
++	}
++}
++
++void svr_auth_ubus_pam(int valid_user)
++{
++	struct ubus_context *ctx = ubus_connect(NULL);
++	static struct blob_buf b = { 0 };
++	uint32_t id       = 0;
++	bool access       = 0;
++	unsigned int changepw;
++	char * password = NULL;
++	unsigned int passwordlen;
++	
++	/* check if client wants to change password */
++	changepw = buf_getbool(ses.payload);
++	if (changepw) {
++		/* not implemented by this server */
++		send_msg_userauth_failure(0, 1);
++		
++		goto cleanup;
++	}
++	
++	password = buf_getstring(ses.payload, &passwordlen);
++	if (!password) {
++		send_msg_userauth_failure(0, 1);
++		
++		goto cleanup;
++	}
++		
++	if (!valid_user || ubus_lookup_id(ctx, "pam", &id)) {
++		dropbear_log(LOG_WARNING, "Failed to lookup UBUS object 'pam'");
++		send_msg_userauth_failure(0, 1);
++		
++		goto cleanup;
++	}
++
++	blob_buf_init(&b, 0);
++ 	blobmsg_add_string(&b, "username", ses.authstate.username);
++	blobmsg_add_string(&b, "password", password);
++	blobmsg_add_string(&b, "rhost", svr_ses.remotehost);
++	blobmsg_add_string(&b, "service", "sshd");
++	if (ubus_invoke(ctx, id, "auth", b.head, auth_cb, &access, UBUS_TIMEOUT)) {
++		dropbear_log(LOG_WARNING, "UBUS authentication error.");
++		send_msg_userauth_failure(0, 1);
++		
++		goto full_cleanup;
++	}
++	
++	if (!access) {
++		dropbear_log(LOG_WARNING, "Bad UBUS PAM password attempt for '%s' from %s",
++				ses.authstate.pw_name,
++				svr_ses.addrstring);
++		send_msg_userauth_failure(0, 1);
++		
++		goto full_cleanup;
++	}
++	
++	send_msg_userauth_success();
++	/* successful authentication */
++	dropbear_log(LOG_NOTICE, "PAM password auth succeeded for '%s' from %s",
++			ses.authstate.pw_name,
++			svr_ses.addrstring);
++	
++full_cleanup:
++	blob_buf_free(&b);
++	
++cleanup:
++	ubus_free(ctx);
++	
++	if (password != NULL) {
++		m_burn(password, passwordlen);
++		m_free(password);
++	}
++}
++#endif /* DROPBEAR_SVR_UBUS_PAM_AUTH */
+--- a/svr-runopts.c
++++ b/svr-runopts.c
+@@ -102,6 +102,9 @@ static void printhelp(const char * progn
+ 					"-W <receive_window_buffer> (default %d, larger may be faster, max 1MB)\n"
+ 					"-K <keepalive>  (0 is never, default %d, in seconds)\n"
+ 					"-I <idle_timeout>  (0 is never, default %d, in seconds)\n"
++#if DROPBEAR_SVR_UBUS_PAM_AUTH
++					"-M		Enable UBUS PAM authentication\n"
++#endif //DROPBEAR_SVR_UBUS_PAM_AUTH
+ #if DROPBEAR_PLUGIN
+                                         "-A <authplugin>[,<options>]\n"
+                                         "               Enable external public key auth through <authplugin>\n"
+@@ -195,6 +198,10 @@ void svr_getopts(int argc, char ** argv)
+ #if DROPBEAR_SVR_REMOTETCPFWD
+ 	opts.listen_fwd_all = 0;
+ #endif
++	
++#if DROPBEAR_SVR_UBUS_PAM_AUTH
++	svr_opts.ubus_pam_auth = 0;
++#endif
+ 
+ 	for (i = 1; i < (unsigned int)argc; i++) {
+ 		if (argv[i][0] != '-' || argv[i][1] == '\0')
+@@ -296,6 +303,12 @@ void svr_getopts(int argc, char ** argv)
+                                         next = &pubkey_plugin;
+                                         break;
+ #endif
++
++#if DROPBEAR_SVR_UBUS_PAM_AUTH
++				case 'M':
++					svr_opts.ubus_pam_auth = 1;
++					break;
++#endif //DROPBEAR_SVR_UBUS_PAM_AUTH
+ #if DEBUG_TRACE
+ 				case 'v':
+ 					debug_trace = 1;
+--- a/auth.h
++++ b/auth.h
+@@ -40,6 +40,7 @@ void send_msg_userauth_banner(const buff
+ void svr_auth_password(int valid_user);
+ void svr_auth_pubkey(int valid_user);
+ void svr_auth_pam(int valid_user);
++void svr_auth_ubus_pam(int valid_user);
+ 
+ #if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+ int svr_pubkey_allows_agentfwd(void);

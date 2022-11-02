@@ -1,0 +1,113 @@
+Index: mwan3-2.10.12/files/etc/init.d/mwan3
+===================================================================
+--- mwan3-2.10.12.orig/files/etc/init.d/mwan3
++++ mwan3-2.10.12/files/etc/init.d/mwan3
+@@ -17,7 +17,6 @@ start_tracker() {
+ 	interface=$1
+ 	config_get_bool enabled $interface 'enabled' '0'
+ 	[ $enabled -eq 0 ] && return
+-	[ -z "$(config_get $interface track_ip)" ] && return
+ 
+ 	procd_open_instance "track_${1}"
+ 	procd_set_param command /usr/sbin/mwan3track $interface
+Index: mwan3-2.10.12/files/lib/mwan3/common.sh
+===================================================================
+--- mwan3-2.10.12.orig/files/lib/mwan3/common.sh
++++ mwan3-2.10.12/files/lib/mwan3/common.sh
+@@ -86,7 +86,8 @@ mwan3_get_mwan3track_status()
+ 	{
+ 		track_ips="$1 $track_ips"
+ 	}
+-	config_list_foreach "$1" track_ip mwan3_list_track_ips
++	cond="$(cat /var/run/mwan3track/${1}/CONDITION_ID 2>/dev/null)"
++	config_list_foreach "$cond" track_ip mwan3_list_track_ips
+ 
+ 	if [ -n "$track_ips" ]; then
+ 		pid="$(pgrep -f "mwan3track $1$")"
+Index: mwan3-2.10.12/files/usr/sbin/mwan3track
+===================================================================
+--- mwan3-2.10.12.orig/files/usr/sbin/mwan3track
++++ mwan3-2.10.12/files/usr/sbin/mwan3track
+@@ -197,7 +197,10 @@ main() {
+ 
+ 	local max_ttl httping_ssl track_ips do_log
+ 
+-	INTERFACE=$1
++	#condition section ID
++	local sect_id="$1"
++	INTERFACE=$2
++
+ 	STATUS=""
+ 	STARTED=0
+ 	TRACK_OUTPUT=$MWAN3TRACK_STATUS_DIR/$INTERFACE/TRACK_OUTPUT
+@@ -211,8 +214,8 @@ main() {
+ 	trap if_up USR2
+ 
+ 	config_get FAMILY $INTERFACE family ipv4
+-	config_get track_method $INTERFACE track_method ping
+-	config_get_bool httping_ssl $INTERFACE httping_ssl 0
++	config_get track_method $sect_id track_method ping
++	config_get_bool httping_ssl $sect_id httping_ssl 0
+ 	validate_track_method $track_method || {
+ 		track_method=ping
+ 		if validate_track_method $track_method; then
+@@ -222,22 +225,23 @@ main() {
+ 			exit 1
+ 		fi
+ 	}
+-	config_get reliability $INTERFACE reliability 1
+-	config_get count $INTERFACE count 1
+-	config_get timeout $INTERFACE timeout 4
++
++	config_get reliability $sect_id reliability 1
++	config_get count $sect_id count 1
++	config_get timeout $sect_id timeout 4
+ 	config_get interval $INTERFACE interval 10
+-	config_get down $INTERFACE down 5
+-	config_get up $INTERFACE up 5
+-	config_get size $INTERFACE size 56
+-	config_get max_ttl $INTERFACE max_ttl 60
+-	config_get failure_interval $INTERFACE failure_interval $interval
+-	config_get_bool keep_failure_interval $INTERFACE keep_failure_interval 0
+-	config_get recovery_interval $INTERFACE recovery_interval $interval
+-	config_get_bool check_quality $INTERFACE check_quality 0
+-	config_get failure_latency $INTERFACE failure_latency 1000
+-	config_get recovery_latency $INTERFACE recovery_latency 500
+-	config_get failure_loss $INTERFACE failure_loss 40
+-	config_get recovery_loss $INTERFACE recovery_loss 10
++	config_get down $sect_id down 5
++	config_get up $sect_id up 5
++	config_get size $sect_id size 56
++	config_get max_ttl $sect_id max_ttl 60
++	config_get failure_interval $sect_id failure_interval $interval
++	config_get_bool keep_failure_interval $sect_id keep_failure_interval 0
++	config_get recovery_interval $sect_id recovery_interval $interval
++	config_get_bool check_quality $sect_id check_quality 0
++	config_get failure_latency $sect_id failure_latency 1000
++	config_get recovery_latency $sect_id recovery_latency 500
++	config_get failure_loss $sect_id failure_loss 40
++	config_get recovery_loss $sect_id recovery_loss 10
+ 	local sleep_time result ping_status loss latency
+ 	mwan3_list_track_ips()
+ 	{
+@@ -379,6 +383,7 @@ main() {
+ 		echo "${lost}" > $MWAN3TRACK_STATUS_DIR/$INTERFACE/LOST
+ 		echo "${score}" > $MWAN3TRACK_STATUS_DIR/$INTERFACE/SCORE
+ 		echo "${turn}" > $MWAN3TRACK_STATUS_DIR/$INTERFACE/TURN
++		echo "${sect_id}" > "$MWAN3TRACK_STATUS_DIR/$INTERFACE/CONDITION_ID"
+ 		get_uptime > $MWAN3TRACK_STATUS_DIR/$INTERFACE/TIME
+ 
+ 		host_up_count=0
+@@ -403,4 +408,11 @@ main() {
+ 	done
+ }
+ 
+-main "$@"
++find_condition() {
++	config_get interface "$1" interface
++
++	[ "$interface" = "$2" ] && main "$1" "$2"
++}
++
++config_load mwan3
++config_foreach find_condition condition "$1"

@@ -1,0 +1,131 @@
+{
+  "config": {
+	"old_name": "sim_switch",
+	"new_name": "sim_switch"
+  },
+  "sections": [
+	{
+	  "old_name": "rules",
+	  "new_type": "sim",
+	  "options": {
+		"modem": {
+		  "sim": "1",
+		  "cb": "modem_cb"
+		},
+		"position": {
+		  "default": "1"
+		},
+		"interval": {
+		  "default": "10",
+		  "cb": "interval_cb"
+		},
+		"enabled": {
+		  "default": "1",
+		  "cb": "enabled_cb"
+		},
+		"retry_count": {
+		  "default": "3"
+		},
+		"switchsignal_sim1": {
+		  "new_name": "on_signal"
+		},
+		"signal_sim1": {
+		  "new_name": "weak_signal"
+		},
+		"switchdata_sim1": {
+		  "new_name": "data_limit"
+		},
+		"switchsms_sim1": {
+		  "new_name": "sms_limit"
+		},
+		"switchroaming_sim1": {
+		  "new_name": "roaming"
+		},
+		"ondenied1": {
+		  "new_name": "denied"
+		},
+		"switchfails_sim1": {
+		  "new_name": "fail_flag"
+		},
+		"check_method_sim1": {
+		  "new_name": "data_fail",
+		  "if": [
+			["lcp", "1"],
+			["icmp", "2"]
+		  ]
+		},
+		"switchnonetwork_sim1": {
+		  "new_name": "no_network"
+		},
+		"switchtimeout_sim1": {
+		  "new_name": "enable_back"
+		},
+		"initial_sim1": {
+		  "new_name": "switch_back"
+		}
+	  }
+	},
+	{
+	  "old_name": "rules",
+	  "new_type": "sim",
+	  "remove": true,
+	  "options": {
+		"modem": {
+		  "sim": "2",
+		  "cb": "modem_cb"
+		},
+		"position": {
+		  "default": "2"
+		},
+		"interval": {
+		  "default": "10",
+		  "cb": "interval_cb"
+		},
+		"enabled": {
+		  "default": "1",
+		  "cb": "enabled_cb"
+		},
+		"retry_count": {
+		  "default": "3"
+		},
+		"switchsignal_sim2": {
+		  "new_name": "on_signal"
+		},
+		"signal_sim2": {
+		  "new_name": "weak_signal"
+		},
+		"switchdata_sim2": {
+		  "new_name": "data_limit"
+		},
+		"switchsms_sim2": {
+		  "new_name": "sms_limit"
+		},
+		"switchroaming_sim2": {
+		  "new_name": "roaming"
+		},
+		"ondenied2": {
+		  "new_name": "denied"
+		},
+		"switchfails_sim2": {
+		  "new_name": "fail_flag"
+		},
+		"check_method_sim2": {
+		  "new_name": "data_fail",
+		  "if": [
+			["lcp", "1"],
+			["icmp", "2"]
+		  ]
+		},
+		"switchnonetwork_sim2": {
+		  "new_name": "no_network"
+		},
+		"switchtimeout_sim2": {
+		  "new_name": "enable_back"
+		},
+		"initial_sim2": {
+		  "new_name": "switch_back"
+		}
+	  }
+	}
+  ]
+}

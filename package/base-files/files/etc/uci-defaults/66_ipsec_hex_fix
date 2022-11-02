@@ -1,0 +1,22 @@
+#!/bin/sh
+. /lib/functions.sh
+
+fix_psk() {
+	local section opt secret
+	section="$1"
+	opt="$2"
+
+	config_get secret "$section" "$opt"
+
+	[ -z "$secret" ] && return
+	[ "${secret:0:2}" = "0x" ] && return
+
+	secret="0x$(echo -n "$secret" | hexdump -ve '1/1 "%.2x"')"
+	uci_set ipsec "$section" "$opt" "$secret"
+}
+
+config_load ipsec
+config_foreach fix_psk secret secret
+config_foreach fix_psk remote pre_shared_key
+uci commit ipsec
+

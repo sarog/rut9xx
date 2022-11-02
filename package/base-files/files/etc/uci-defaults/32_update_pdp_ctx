@@ -1,0 +1,20 @@
+#!/bin/sh
+
+. /lib/functions.sh
+CONFIG="network"
+
+update_pdp() {
+	config_get net_proto "$1" "proto"
+
+	[ "$net_proto" != "wwan" ] && return 0
+
+	config_get mobile_pdp "$1" "pdp"
+
+	[ "$mobile_pdp" -lt 8 -a "$mobile_pdp" -gt 3 ] && {
+		uci_set "$CONFIG" $1 "pdp" "$((mobile_pdp + 8))"
+		uci_commit "$CONFIG"
+	}
+}
+
+config_load "$CONFIG"
+config_foreach update_pdp "interface"

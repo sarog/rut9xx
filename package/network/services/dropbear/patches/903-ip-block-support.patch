@@ -1,0 +1,149 @@
+Index: dropbear-2020.81/ip_block.c
+===================================================================
+--- /dev/null
++++ dropbear-2020.81/ip_block.c
+@@ -0,0 +1,70 @@
++#include "ip_block.h"
++
++#include <libubus.h>
++#include <libubox/blobmsg.h>
++#include <uci.h>
++#include <syslog.h>
++
++void
++signal_ip_block(char *op, char *ip, char *local_ip)
++{
++	struct uci_context *ctx;
++	struct uci_package *pkg;
++	struct uci_element *el;
++	struct uci_element *o;
++	int found = 0;
++	char port[6];
++
++	struct ubus_context ubus_ctx = {0};
++	if (ubus_connect_ctx(&ubus_ctx, NULL)) {
++		return;
++	}
++
++	ctx = uci_alloc_context();
++	if (!ctx) {
++		syslog(LOG_ERR, "Failed to allocate uci context\n");
++		goto clean;
++	}
++	if (uci_load(ctx, "dropbear", &pkg)) {
++		syslog(LOG_ERR, "Failed to load '%s' package\n", "dropbear");
++		goto clean;
++	}
++	
++	uci_foreach_element (&pkg->sections, el) {
++		struct uci_section *sec = uci_to_section(el);
++		uci_foreach_element (&sec->options, el) {
++			struct uci_option *o = uci_to_option(el);
++			if (!strcmp(el->name, "Port")) {
++				strlcpy(port, o->v.string, strlen(o->v.string) + 1);
++				found = 1;
++				break;
++			}
++		}
++		if (found) {
++			break;
++		}
++	}
++	
++	uint32_t ip_block_obj = 0;
++	if (ubus_lookup_id(&ubus_ctx, "ip_block", &ip_block_obj)) {
++		goto clean;
++	}
++
++	struct blob_buf buffer = {0};
++	blob_buf_init(&buffer, 0);
++	blobmsg_add_string(&buffer, "ip", ip);
++
++	if (!local_ip) {
++		local_ip = "0";
++	}
++
++	blobmsg_add_string(&buffer, "destination_ip", local_ip);
++	blobmsg_add_string(&buffer, "port", port);
++
++	ubus_invoke(&ubus_ctx, ip_block_obj, op, buffer.head, NULL, NULL, 1000);
++
++	blob_buf_free(&buffer);
++clean:
++	ubus_shutdown(&ubus_ctx);
++	uci_free_context(ctx);
++}
+Index: dropbear-2020.81/ip_block.h
+===================================================================
+--- /dev/null
++++ dropbear-2020.81/ip_block.h
+@@ -0,0 +1,6 @@
++#ifndef __IP_BLOCK_H
++#define __IP_BLOCK_H
++
++void signal_ip_block(char *op, char *ip, char *local_ip);
++
++#endif
+Index: dropbear-2020.81/Makefile.in
+===================================================================
+--- dropbear-2020.81.orig/Makefile.in
++++ dropbear-2020.81/Makefile.in
+@@ -40,7 +40,7 @@ COMMONOBJS=dbutil.o buffer.o dbhelpers.o
+ 		dbmalloc.o \
+ 		gensignkey.o gendss.o genrsa.o gened25519.o
+ 
+-SVROBJS=svr-kex.o svr-auth.o sshpty.o \
++SVROBJS=ip_block.o svr-kex.o svr-auth.o sshpty.o \
+ 		svr-authpasswd.o svr-authpubkey.o svr-authpubkeyoptions.o svr-session.o svr-service.o \
+ 		svr-chansession.o svr-runopts.o svr-agentfwd.o svr-main.o svr-x11fwd.o\
+ 		svr-tcpfwd.o svr-authpam.o
+@@ -108,7 +108,7 @@ STRIP=@STRIP@
+ INSTALL=@INSTALL@
+ CPPFLAGS=@CPPFLAGS@
+ CFLAGS+=-I. -I$(srcdir) $(CPPFLAGS) @CFLAGS@
+-LIBS+=@LIBS@
++LIBS+=@LIBS@ -lubus -lubox -luci
+ LDFLAGS=@LDFLAGS@
+ 
+ EXEEXT=@EXEEXT@
+Index: dropbear-2020.81/svr-auth.c
+===================================================================
+--- dropbear-2020.81.orig/svr-auth.c
++++ dropbear-2020.81/svr-auth.c
+@@ -36,6 +36,7 @@
+ #include "auth.h"
+ #include "runopts.h"
+ #include "dbrandom.h"
++#include "ip_block.h"
+ 
+ static int checkusername(const char *username, unsigned int userlen);
+ 
+@@ -351,6 +352,14 @@ goodshell:
+  * failures */
+ void send_msg_userauth_failure(int partial, int incrfail) {
+ 
++	char *local_ip = NULL;
++
++	if (!partial && incrfail) {
++		get_socket_address(ses.sock_in, &local_ip, NULL, NULL, NULL, 0);
++		signal_ip_block("push", svr_ses.remotehost, local_ip);
++		m_free(local_ip);
++	}
++
+ 	buffer *typebuf = NULL;
+ 
+ 	TRACE(("enter send_msg_userauth_failure"))
+@@ -449,6 +458,13 @@ void send_msg_userauth_failure(int parti
+ /* Send a success message to the user, and set the "authdone" flag */
+ void send_msg_userauth_success() {
+ 
++	char *local_ip = NULL;
++	get_socket_address(ses.sock_in, &local_ip, NULL, NULL, NULL, 0);
++
++	signal_ip_block("unblock", svr_ses.remotehost, local_ip);
++
++	m_free(local_ip);
++
+ 	TRACE(("enter send_msg_userauth_success"))
+ 
+ 	CHECKCLEARTOWRITE();

@@ -1,14 +1,17 @@
-#!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
 # Copyright (C) 2010 Vertical Communications
 
-restore_config() {
-	cd /
-	mv "$1" /tmp
-	tar xzf /tmp/"$1"
-	echo "etc/config/fstab" > /tmp/tmpfilename
-	tar x -O -z -f /tmp/"$1" -T /tmp/tmpfilename > /tmp/tmpfile
-	cp /rom/etc/config/hwinfo /etc/config
+missing_lines() {
+	local file1 file2 line
+	file1="$1"
+	file2="$2"
+	oIFS="$IFS"
+	IFS=":"
+	while read line; do
+		set -- $line
+		grep -q "^$1:" "$file2" || echo "$line"
+	done < "$file1"
+	IFS="$oIFS"
 }
 
 do_mount_root() {
@@ -16,23 +19,25 @@ do_mount_root() {
 	boot_run_hook preinit_mount_root
 	if [ -f /user_defaults.tgz ]; then
 		echo "- restoring user config -"
-		restore_config "user_defaults.tgz"
-		mkdir /etc/default-config
-		mv /tmp/user_defaults.tgz /etc/default-config/config.tar.gz
-		rm -f /tmp/user_defaults.tgz
+		tar -C / -xzf /user_defaults.tgz
+		mkdir -p /etc/default-config
+		mv /user_defaults.tgz /etc/default-config/config.tar.gz
+		# Prevent configuration corruption on a power loss
 		sync
+		sme.sh --preboot || echo "- sme.sh failed with code $? -"
+
 	elif [ -f /sysupgrade.tgz ]; then
 		echo "- config restore -"
-		restore_config "sysupgrade.tgz"
-		rm -f /tmp/sysupgrade.tgz
+		cp /etc/passwd /etc/group /etc/shadow /tmp
+		tar -C / -xzf /sysupgrade.tgz
+		rm -f /sysupgrade.tgz
+		missing_lines /tmp/passwd /etc/passwd >> /etc/passwd
+		missing_lines /tmp/group /etc/group >> /etc/group
+		missing_lines /tmp/shadow /etc/shadow >> /etc/shadow
+		rm /tmp/passwd /tmp/group /tmp/shadow
+		# Prevent configuration corruption on a power loss
 		sync
-	fi
-
-	if [ -f /tmp/tmpfile ] && grep -q "/overlay" /tmp/tmpfile
-	then
-		# reboot after everything else is done (in /etc/init.d/done)
-		touch /tmp/memoryexpansion
-		sync
+		sme.sh --preboot || echo "- sme.sh failed with code $? -"
 	fi
 }
 

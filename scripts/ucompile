@@ -1,0 +1,16 @@
+#!/bin/sh
+
+[ -n "$1" ] && PKG_NAME="$1" || PKG_NAME="base-files"
+
+make "package/$PKG_NAME/toolchain-dump"
+
+oldIFS="$IFS"
+IFS=";"
+for f in $(cat tmp/.tc); do
+        [ -z "${f##TOOLCHAIN_DIR*}" ] && {
+                dir="${f:14}"
+                [ "${PATH#*$dir*}" = "$PATH" ] && export PATH="$dir/bin:$PATH"
+        } || export $f
+done
+IFS="$oldIFS"
+

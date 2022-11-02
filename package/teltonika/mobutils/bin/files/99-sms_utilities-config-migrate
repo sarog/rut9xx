@@ -1,0 +1,45 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+fix_sms_utils(){
+	local sec=$1 action
+
+	config_get action "$sec" action
+	case "$action" in
+	"wifi")
+		[ $wifi -eq 0 ] && {
+			uci -q delete sms_utils.$sec
+		}
+		;;
+	"gps")
+		[ $gps -eq 0 ] && {
+			uci -q delete sms_utils.$sec
+		}
+		;;
+	"mobile")
+		[ $mobile -eq 0 ] && {
+			uci -q delete sms_utils.$sec
+		}
+		;;
+	"switch_sim")
+		[ $dual_sim -eq 0 ] && {
+			uci -q delete sms_utils.$sec
+		}
+		;;
+	"gps_coordinates")
+		[ $gps -eq 0 ] && {
+			uci -q delete sms_utils.$sec
+		}
+		;;
+	esac
+}
+
+json_load_file "/etc/board.json"
+json_select hwinfo
+json_get_vars dual_sim wifi mobile gps
+
+config_load sms_utils
+config_foreach fix_sms_utils rule
+uci -q commit

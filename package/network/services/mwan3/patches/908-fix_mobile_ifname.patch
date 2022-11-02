@@ -1,0 +1,86 @@
+Index: mwan3-2.10.12/files/lib/mwan3/mwan3.sh
+===================================================================
+--- mwan3-2.10.12.orig/files/lib/mwan3/mwan3.sh
++++ mwan3-2.10.12/files/lib/mwan3/mwan3.sh
+@@ -42,10 +42,15 @@ mwan3_update_dev_to_table()
+ 
+ 	update_table()
+ 	{
+-		local family curr_table device enabled
++		local family curr_table device enabled proto
+ 		let _tid++
+ 		config_get family "$1" family ipv4
+-		network_get_device device "$1"
++		network_get_protocol proto "$1"
++		if [ "$proto" = "wwan" ]; then
++			network_get_device device "${1}_4"
++		else
++			network_get_device device "${1}"
++		fi
+ 		[ -z "$device" ] && return
+ 		config_get enabled "$1" enabled
+ 		[ "$enabled" -eq 0 ] && return
+@@ -535,7 +540,7 @@ mwan3_delete_iface_ipset_entries()
+ 
+ mwan3_set_policy()
+ {
+-	local id iface family metric probability weight device is_lowest is_offline IPT IPTR total_weight current update error
++	local id iface family metric probability weight device is_lowest is_offline IPT IPTR total_weight current update error proto
+ 
+ 	is_lowest=0
+ 	config_get iface "$1" interface
+@@ -543,7 +548,12 @@ mwan3_set_policy()
+ 	config_get weight "$1" weight 1
+ 
+ 	[ -n "$iface" ] || return 0
+-	network_get_device device "$iface"
++	network_get_protocol proto "$iface"
++	if [ "$proto" = "wwan" ]; then
++		network_get_device device "${iface}_4"
++	else
++		network_get_device device "${iface}"
++	fi
+ 	[ "$metric" -gt $DEFAULT_LOWEST_METRIC ] && LOG warn "Member interface $iface has >$DEFAULT_LOWEST_METRIC metric. Not appending to policy" && return 0
+ 
+ 	mwan3_get_iface_id id "$iface"
+@@ -716,7 +726,7 @@ mwan3_set_sticky_iptables()
+ 
+ mwan3_set_user_iptables_rule()
+ {
+-	local ipset family proto policy src_ip src_port src_iface src_dev
++	local ipset family proto policy src_ip src_port src_iface src_dev if_proto
+ 	local sticky dest_ip dest_port use_policy timeout policy
+ 	local global_logging rule_logging loglevel rule_policy rule ipv
+ 
+@@ -751,7 +761,12 @@ mwan3_set_user_iptables_rule()
+ 	done
+ 
+ 	if [ -n "$src_iface" ]; then
+-		network_get_device src_dev "$src_iface"
++		network_get_protocol if_proto "$src_iface"
++		if [ "$if_proto" = "wwan" ]; then
++			network_get_device src_dev "${src_iface}_4"
++		else
++			network_get_device src_dev "${src_iface}"
++		fi
+ 		if [ -z "$src_dev" ]; then
+ 			LOG notice "could not find device corresponding to src_iface $src_iface for rule $1"
+ 			return
+@@ -1022,10 +1037,15 @@ mwan3_get_iface_hotplug_state() {
+ 
+ mwan3_report_iface_status()
+ {
+-	local device result tracking IP IPT error
++	local device result tracking IP IPT error proto
+ 
+ 	mwan3_get_iface_id id "$1"
+-	network_get_device device "$1"
++	network_get_protocol proto "$1"
++	if [ "$proto" = "wwan" ]; then
++		network_get_device device "${1}_4"
++	else
++		network_get_device device "${1}"
++	fi
+ 	config_get enabled "$1" enabled 0
+ 	config_get family "$1" family ipv4
+ 

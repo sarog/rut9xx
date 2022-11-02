@@ -1,0 +1,31 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+fix_spelling() {
+	local section=$1
+	local eventMark
+
+	config_get eventMark "$1" "eventMark" ""
+
+	case "$eventMark" in
+	"to backup")
+		eventMark="Switched to backup"
+		;;
+	"main")
+		eventMark="Switched to main"
+		;;
+	*succesful)
+		eventMark=$(echo "$eventMark" | sed 's/succesful/successful/g')
+		;;
+	*)
+		return
+		;;
+	esac
+
+	uci_set events_reporting "$1" "eventMark" "$eventMark"
+}
+
+config_load events_reporting || exit 0
+config_foreach fix_spelling rule
+uci_commit

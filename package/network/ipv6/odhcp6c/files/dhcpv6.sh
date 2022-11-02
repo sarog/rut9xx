@@ -16,16 +16,20 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string 'forceprefix:bool'
 	proto_config_add_string 'extendprefix:bool'
 	proto_config_add_string 'norelease:bool'
+	proto_config_add_string 'noserverunicast:bool'
+	proto_config_add_string 'noclientfqdn:bool'
+	proto_config_add_string 'noacceptreconfig:bool'
 	proto_config_add_array 'ip6prefix:list(ip6addr)'
 	proto_config_add_string iface_dslite
 	proto_config_add_string zone_dslite
+	proto_config_add_string encaplimit_dslite
 	proto_config_add_string iface_map
 	proto_config_add_string zone_map
+	proto_config_add_string encaplimit_map
 	proto_config_add_string iface_464xlat
 	proto_config_add_string zone_464xlat
 	proto_config_add_string zone
 	proto_config_add_string 'ifaceid:ip6addr'
-	proto_config_add_string 'sourcerouting:bool'
 	proto_config_add_string "userclass"
 	proto_config_add_string "vendorclass"
 	proto_config_add_array "sendopts:list(string)"
@@ -35,6 +39,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_boolean sourcefilter
 	proto_config_add_boolean keep_ra_dnslifetime
 	proto_config_add_int "ra_holdoff"
+	proto_config_add_boolean ignore_valid
 }
 
 proto_dhcpv6_add_prefix() {
@@ -49,8 +54,8 @@ proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease ip6prefix ip6prefixes iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff
-	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff
+	local reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig ip6prefix ip6prefixes iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff ignore_valid
+	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff ignore_valid
 	json_for_each_item proto_dhcpv6_add_prefix ip6prefix ip6prefixes
 
 	# Configure
@@ -69,6 +74,12 @@ proto_dhcpv6_setup() {
 	[ "$forceprefix" = "1" ] && append opts "-F"
 
 	[ "$norelease" = "1" ] && append opts "-k"
+
+	[ "$noserverunicast" = "1" ] && append opts "-U"
+
+	[ "$noclientfqdn" = "1" ] && append opts "-f"
+
+	[ "$noacceptreconfig" = "1" ] && append opts "-a"
 
 	[ -n "$ifaceid" ] && append opts "-i$ifaceid"
 
@@ -91,7 +102,6 @@ proto_dhcpv6_setup() {
 
 	[ -n "$ip6prefixes" ] && proto_export "USERPREFIX=$ip6prefixes"
 	[ -n "$iface_dslite" ] && proto_export "IFACE_DSLITE=$iface_dslite"
-	[ "$sourcerouting" != "0" ] && proto_export "SOURCE_ROUTING=1"
 	[ -n "$iface_map" ] && proto_export "IFACE_MAP=$iface_map"
 	[ -n "$iface_464xlat" ] && proto_export "IFACE_464XLAT=$iface_464xlat"
 	[ "$delegate" = "0" ] && proto_export "IFACE_DSLITE_DELEGATE=0"
@@ -100,9 +110,12 @@ proto_dhcpv6_setup() {
 	[ -n "$zone_map" ] && proto_export "ZONE_MAP=$zone_map"
 	[ -n "$zone_464xlat" ] && proto_export "ZONE_464XLAT=$zone_464xlat"
 	[ -n "$zone" ] && proto_export "ZONE=$zone"
+	[ -n "$encaplimit_dslite" ] && proto_export "ENCAPLIMIT_DSLITE=$encaplimit_dslite"
+	[ -n "$encaplimit_map" ] && proto_export "ENCAPLIMIT_MAP=$encaplimit_map"
 	[ "$fakeroutes" != "0" ] && proto_export "FAKE_ROUTES=1"
 	[ "$sourcefilter" = "0" ] && proto_export "NOSOURCEFILTER=1"
 	[ "$extendprefix" = "1" ] && proto_export "EXTENDPREFIX=1"
+	[ "$ignore_valid" = "1" ] && proto_export "IGNORE_VALID=1"
 
 	proto_export "INTERFACE=$config"
 	proto_run_command "$config" odhcp6c \

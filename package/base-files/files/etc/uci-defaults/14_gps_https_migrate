@@ -1,0 +1,16 @@
+#!/bin/sh
+
+SECTION="https"
+CONFIG="gps"
+
+sec_flg=$(uci get $CONFIG.$SECTION 2>&1)
+
+if [ "$sec_flg" = "uci: Entry not found" ]; then
+	uci set $CONFIG.$SECTION=section
+	uci set $CONFIG.$SECTION."enabled"=0
+
+	uci commit $CONFIG
+fi
+
+
+exit 0

@@ -1,0 +1,76 @@
+--- a/libopkg/opkg_conf.c
++++ b/libopkg/opkg_conf.c
+@@ -74,6 +74,7 @@ opkg_option_t options[] = {
+ 	{"tmp_dir", OPKG_OPT_TYPE_STRING, &_conf.tmp_dir},
+ 	{"verbosity", OPKG_OPT_TYPE_INT, &_conf.verbosity},
+ 	{"verify_program", OPKG_OPT_TYPE_STRING, &_conf.verify_program},
++	{"force_feeds", OPKG_OPT_TYPE_STRING, &_conf.force_feeds},
+ 	{NULL, 0, NULL}
+ };
+ 
+@@ -455,13 +456,14 @@ int opkg_conf_load(void)
+ 
+ 	if (conf->offline_root)
+ 		sprintf_alloc(&etc_opkg_conf_pattern, "%s/etc/opkg/*.conf",
+-			      conf->offline_root);
++				conf->offline_root);
++	else if (conf->force_feeds)
++		sprintf_alloc(&etc_opkg_conf_pattern, conf->force_feeds);
+ 	else {
+ 		const char *conf_file_dir = getenv("OPKG_CONF_DIR");
+ 		if (conf_file_dir == NULL)
+ 			conf_file_dir = OPKG_CONF_DEFAULT_CONF_FILE_DIR;
+-		sprintf_alloc(&etc_opkg_conf_pattern, "%s/*.conf",
+-			      conf_file_dir);
++		sprintf_alloc(&etc_opkg_conf_pattern, "/etc/opkg/*.conf");
+ 	}
+ 
+ 	memset(&globbuf, 0, sizeof(globbuf));
+--- a/libopkg/opkg_conf.h
++++ b/libopkg/opkg_conf.h
+@@ -83,6 +83,7 @@ struct opkg_conf {
+ 	int nodeps;		/* do not follow dependencies */
+ 	int nocase;		/* perform case insensitive matching */
+ 	char *offline_root;
++	char *force_feeds;
+ 	char *overlay_root;
+ 	int query_all;
+ 	int verbosity;
+--- a/src/opkg-cl.c
++++ b/src/opkg-cl.c
+@@ -115,6 +115,7 @@ static struct option long_options[] = {
+ 	{"verbosity", 2, 0, 'V'},
+ 	{"verify-program", 1, 0, ARGS_OPT_VERIFY_PROGRAM},
+ 	{"verify_program", 1, 0, ARGS_OPT_VERIFY_PROGRAM},
++	{"force_feeds", 1, 0, 'e'},
+ 	{"version", 0, 0, 'v'},
+ 	{0, 0, 0, 0}
+ };
+@@ -127,7 +128,7 @@ static int args_parse(int argc, char *ar
+ 	char *tuple, *targ;
+ 
+ 	while (1) {
+-		c = getopt_long_only(argc, argv, "Ad:f:ino:p:l:t:vV::",
++		c = getopt_long_only(argc, argv, "Ad:f:ino:e:p:l:t:vV::",
+ 				     long_options, &option_index);
+ 		if (c == -1)
+ 			break;
+@@ -148,6 +149,9 @@ static int args_parse(int argc, char *ar
+ 		case 'o':
+ 			conf->offline_root = xstrdup(optarg);
+ 			break;
++		case 'e':
++			conf->force_feeds = xstrdup(optarg);
++			break;
+ 		case 't':
+ 			conf->tmp_dir = xstrdup(optarg);
+ 			break;
+@@ -374,6 +378,8 @@ static void usage()
+ 	printf("\t--tmp-dir		Specify tmp-dir.\n");
+ 	printf("\t-l			Specify lists-dir.\n");
+ 	printf("\t--lists-dir		Specify lists-dir.\n");
++	printf("\t-e <conf_file>			Specify feeds file.\n");
++	printf("\t--force-feeds	<conf_file>	Specify feeds file.\n");
+ 
+ 	printf("\n");
+ 

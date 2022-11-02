@@ -1,0 +1,6 @@
+[ "${DEVTYPE}" = "partition" ] || exit 0
+case "${ACTION}" in
+	add|remove)
+		/etc/init.d/minidlna restart
+		;;
+esac

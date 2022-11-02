@@ -1,0 +1,126 @@
+Index: vrrpd-1.15/vrrpd.c
+===================================================================
+--- vrrpd-1.15.orig/vrrpd.c
++++ vrrpd-1.15/vrrpd.c
+@@ -79,8 +79,10 @@ FILE *f2;
+ static time_t timenow;
+ static char *timenowstring;
+ int mypid;
+-int recheck	 = 0;
+-int recheck_mast = 0;
++int recheck		 = 0;
++int recheck_mast	 = 0;
++int interface_is_bridged = 0;
++char *parsed_bridge_interface;
+ 
+ /****************************************************************
+  NAME	: Monitoring only
+@@ -411,11 +413,6 @@ static int hwaddr_set(char *ifname, char
+ 	if (fd < 0)
+ 		return (-1);
+ 	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+-	/* get the flags */
+-	if (!strcasecmp(ifname, "br-lan") && st == 1) {
+-		system("/sbin/ifdown lan");
+-		system("/sbin/ifup lan");
+-	}
+ 	ret = ioctl(fd, SIOCGIFFLAGS, (char *)&ifr);
+ 	if (ret)
+ 		goto end;
+@@ -447,7 +444,7 @@ end:;
+ 	if (ret)
+ 		vrrpd_log(LOG_WARNING, "Can't add Virtual Mac erreur: %d", errno);
+ 	close(fd);
+-	if (!strcasecmp(ifname, "br-lan") && st == 1) {
++	if (interface_is_bridged && st == 1) {
+ 		close(fd);
+ 		if (open_sock(vsrv)) {
+ 			return -1;
+@@ -1501,7 +1498,7 @@ static void write_to_file(vrrp_rt *vsrv,
+ 	if (vsrv->log_file) {
+ 		f = fopen(vsrv->log_file, "wb");
+ 	} else {
+-		if (!strcmp(vsrv->vif.ifname, "br-lan")) {
++		if (interface_is_bridged) {
+ 			f = fopen("/tmp/vrrpd_lan_log", "wb");
+ 		} else {
+ 			f = fopen("/tmp/vrrpd_wan_log", "wb");
+@@ -1540,7 +1537,7 @@ static void write_ip_to_file(vrrp_rt *vs
+ 	FILE *pCMD, *f;
+ 	char BufferInfo[100];
+ 	char status[10];
+-	if (!strcmp(vsrv->vif.ifname, "br-lan")) {
++	if (interface_is_bridged) {
+ 		pCMD = fopen("/tmp/vrrpd_lan_log", "r");
+ 	} else {
+ 		pCMD = fopen("/tmp/vrrpd_wan_log", "r");
+@@ -1552,7 +1549,7 @@ static void write_ip_to_file(vrrp_rt *vs
+ 		BufferInfo[strlen(BufferInfo) - 1] = '\0';
+ 		strncpy(status, BufferInfo, sizeof(status));
+ 		fclose(pCMD);
+-		if (!strcmp(vsrv->vif.ifname, "br-lan")) {
++		if (interface_is_bridged) {
+ 			f = fopen("/tmp/vrrpd_lan_log", "wb");
+ 		} else {
+ 			f = fopen("/tmp/vrrpd_wan_log", "wb");
+@@ -1818,7 +1815,7 @@ static void state_mast(struct ubus_conte
+ 		.table = LLOG_NETWORK, .sender = "VRRP", .priority = EVENTLOG_NOTICE, .db_flag = 1
+ 	};
+ 
+-	if (!strcasecmp(vsrv->vif.ifname, "br-lan") && recheck_mast) {
++	if (interface_is_bridged && recheck_mast) {
+ 		recheck_mast = 0;
+ 		if (vsrv->no_vmac) {
+ 			goto add_ip;
+@@ -2122,7 +2119,7 @@ static int event_handle(struct ubus_cont
+ 
+ 	iface_name = blobmsg_get_string(tb[IFACE_NAME]);
+ 
+-	if (strcmp(iface_name, "lan"))
++	if (strcmp(iface_name,parsed_bridge_interface) != 0)
+ 		return 0;
+ 
+ 	if (blobmsg_get_bool(tb[IFACE_UP])) {
+@@ -2189,7 +2186,7 @@ reinit(vrrp_rt *vsrv)
+ {
+ 	close(vsrv->sockfd);
+ 
+-	vsrv->vif.ipaddr = ifname_to_ip("br-lan");
++	vsrv->vif.ipaddr = ifname_to_ip(vsrv->vif.ifname);
+ 
+ 	if (open_sock(vsrv)) {
+ 		return -1;
+@@ -2218,6 +2215,14 @@ int main(int argc, char *argv[])
+ 		exit(0);
+ 	}
+ 
++	if (strncmp(vsrv->vif.ifname, "br-", sizeof("br-") - 1) == 0) {
++		parsed_bridge_interface = vsrv->vif.ifname + 3;
++		vrrpd_log(LOG_WARNING, "Bridged interface %s detected", parsed_bridge_interface);
++		interface_is_bridged = 1;
++		pthread_t thread_id;
++		pthread_create(&thread_id, NULL, sub_to_event, NULL);
++	}
++
+ 	if (vsrv->instance_name) {
+ 		vsrv->log_file = (char *)malloc((size_t)(16 + strlen(vsrv->instance_name)));
+ 		if (vsrv->log_file == NULL) {
+@@ -2327,9 +2332,6 @@ int main(int argc, char *argv[])
+ 	killvrrpd(12, vsrv->vif.ifname);
+ 	strcpy(backup_reason, "INIT state");
+ 
+-	pthread_t thread_id;
+-	pthread_create(&thread_id, NULL, sub_to_event, NULL);
+-
+ 	ubus = ubus_connect(NULL);
+ 	if (!ubus) {
+ 		vrrpd_log(LOG_WARNING, "Failed to connect to ubus\n");
+@@ -2338,7 +2340,7 @@ int main(int argc, char *argv[])
+ 
+ 	/* main loop */
+ 	while (1) {
+-		if (!strcasecmp(vsrv->vif.ifname, "br-lan") && recheck) {
++		if (interface_is_bridged && recheck) {
+ 			reinit(vsrv);
+ 			recheck = 0;
+ 		}

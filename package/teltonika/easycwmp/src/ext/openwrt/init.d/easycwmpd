@@ -1,0 +1,76 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2012-2014 OpenWrt.org
+
+START=90
+STOP=90
+
+USE_PROCD=1
+PROG="/usr/sbin/easycwmpd"
+
+UCI_SET="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} set"
+UCI_GET="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} get"
+UCI_COMMIT="/sbin/uci -q ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} commit"
+init_device_info() {
+	local val oval
+	local change=0
+
+	val=`$UCI_GET network.wan.ifname`
+	oval=`$UCI_GET easycwmp.@local[0].interface`
+	[ -n "$val" -a "$val" != "$oval" ] && { $UCI_SET easycwmp.@local[0].interface="$val"; change=1; }
+
+	if [ `which brand` ]; then
+		val=`brand 2`
+	else
+		val="Teltonika"
+	fi
+
+	oval=`$UCI_GET easycwmp.@device[0].manufacturer`
+	[ -n "$val" -a "$val" != "$oval" ] && { $UCI_SET easycwmp.@device[0].manufacturer="$val"; change=1; }
+
+	val=`mnf_info -n | cut -c1-6`
+	oval=`$UCI_GET easycwmp.@device[0].product_class`
+	[ -n "$val" -a "$val" != "$oval" ] && { $UCI_SET easycwmp.@device[0].product_class="$val"; change=1; }
+
+	val=`mnf_info -H`
+	oval=`$UCI_GET easycwmp.@device[0].hardware_version`
+	[ -n "$val" -a "$val" != "$oval" ] && { $UCI_SET easycwmp.@device[0].hardware_version="$val"; change=1; }
+
+	val=`cat "/etc/version"`
+	oval=`$UCI_GET easycwmp.@device[0].software_version`
+	[ -n "$val" -a "$val" != "$oval" ] && { $UCI_SET easycwmp.@device[0].software_version="$val"; change=1; }
+
+	val="001E42"
+	oval=`$UCI_GET easycwmp.@device[0].oui`
+	[ -n "$val" -a "$val" != "$oval" ] && { $UCI_SET easycwmp.@device[0].oui="$val"; change=1; }
+
+	val=`mnf_info -s`
+	oval=`$UCI_GET easycwmp.@device[0].serial_number`
+	[ -n "$val" -a "$val" != "$oval" ] && { $UCI_SET easycwmp.@device[0].serial_number="$val"; change=1; }
+
+	#The same thing here for OUI and SerialNumber
+
+	[ "$change" = "1" ] && $UCI_COMMIT easycwmp
+}
+
+start_service() {
+	if [ "`uci get easycwmp.@acs[0].enabled`" == "1" ]; then
+		init_device_info
+		procd_open_instance
+		procd_set_param command "$PROG" -f
+		procd_append_param command --boot
+		procd_append_param command --getrpcmethod
+		procd_set_param respawn "3" "7" "0"
+		procd_close_instance
+	fi
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger easycwmp
+}
+
+
+reload_service() {
+	stop
+	start
+}

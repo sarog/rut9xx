@@ -1,0 +1,19 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+remove_auto() {
+	local section="$1"
+	local auto proto
+
+	config_get auto "$section" auto
+	config_get proto "$section" proto
+
+	[ -n "$auto" ] && [ "$proto" != "gre" ] && uci -q delete network."$section".auto
+}
+
+config_load network
+config_foreach remove_auto interface
+uci_commit network
+
+exit 0

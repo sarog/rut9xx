@@ -1,0 +1,11 @@
+--- ./build_dir/target-arm_cortex-a7_uClibc-1.0.14_eabi/Vrrpd-1.15/vrrpd.h	2019-05-07 09:14:58.537820386 +0300
++++ ./vrrpd.h	2019-05-07 09:48:30.109832970 +0300
+@@ -95,6 +95,8 @@
+ 
+ 	char *instance_name;
+ 
++	char *log_file;
++
+ 	/* rfc2336.6.2 */
+ 	uint32_t	ms_down_timer;
+ 	uint32_t	adver_timer;

@@ -1,0 +1,162 @@
+--- a/drivers/tty/serial/serial_core.c
++++ b/drivers/tty/serial/serial_core.c
+@@ -23,6 +23,7 @@
+ #include <linux/delay.h>
+ #include <linux/mutex.h>
+ #include <linux/security.h>
++#include <linux/mtd/mtd.h>
+ 
+ #include <linux/irq.h>
+ #include <linux/uaccess.h>
+@@ -3099,6 +3100,55 @@ EXPORT_SYMBOL(uart_resume_port);
+ EXPORT_SYMBOL(uart_add_one_port);
+ EXPORT_SYMBOL(uart_remove_one_port);
+ 
++#define RUT955_BATCH_VERSION 110 // not affected 955 batch version from
++#define MTD_LIST_SZ 2
++
++static bool validate_rs485(struct device *dev)
++{
++	u32 list[MTD_LIST_SZ] = {0};
++	u32 *list_ptr = list;
++	struct mtd_info *mtd;
++	size_t retlen;
++	int size, status;
++	unsigned batch_ver = 0;
++	u8 val[16] = {0};
++	bool ret = true;
++
++	if (device_property_read_u32_array(dev, "mtd-config", list_ptr, MTD_LIST_SZ))
++		goto no_mtd_exit;
++
++	mtd = get_mtd_device_nm("config");
++	if (IS_ERR(mtd))
++		goto exit;
++
++	// getting device code
++	status = mtd_read(mtd, be32_to_cpup(list_ptr++), 6, &retlen, val);
++	if (retlen < 6)
++		goto exit;
++
++	if (strncmp(val, "RUT955", 6)) {
++		goto exit;
++	}
++
++	// getting batch version
++	status = mtd_read(mtd, be32_to_cpup(list_ptr++), 4, &retlen, val);
++	if (retlen < 4)
++		goto exit;
++
++	val[4] = 0;
++	if (kstrtouint(val, 10, &batch_ver))
++		goto exit;
++
++	// only 955 batch version 110+ and 0001 samples is allowed
++	if (batch_ver < RUT955_BATCH_VERSION && batch_ver > 1 )
++		ret = false;
++
++exit:
++	put_mtd_device(mtd);
++no_mtd_exit:
++	return ret;
++}
++
+ /**
+  * uart_get_rs485_mode() - retrieve rs485 properties for given uart
+  * @dev: uart device
+@@ -3140,6 +3190,12 @@ void uart_get_rs485_mode(struct device *
+ 		rs485conf->flags &= ~SER_RS485_RTS_ON_SEND;
+ 		rs485conf->flags |= SER_RS485_RTS_AFTER_SEND;
+ 	}
++
++	if ((rs485conf->flags & SER_RS485_ENABLED) && !validate_rs485(dev)) {
++		dev_info(dev, "Incompatible hardware, disabling RS485 RTS control!\n");
++		rs485conf->flags &= ~(SER_RS485_RTS_ON_SEND | SER_RS485_RTS_AFTER_SEND);
++	}
++
+ }
+ EXPORT_SYMBOL_GPL(uart_get_rs485_mode);
+ 
+--- a/drivers/tty/serial/ar933x_uart.c
++++ b/drivers/tty/serial/ar933x_uart.c
+@@ -156,6 +156,10 @@ static void ar933x_uart_set_mctrl(struct
+ 	struct ar933x_uart_port *up =
+ 		container_of(port, struct ar933x_uart_port, port);
+ 
++	if ( mctrl & UART_GPIO_RTS && (port->rs485.flags & SER_RS485_ENABLED) &&
++		!(port->rs485.flags & (SER_RS485_RTS_ON_SEND | SER_RS485_RTS_AFTER_SEND)))
++			return;
++
+ 	mctrl_gpio_set(up->gpios, mctrl);
+ }
+ 
+@@ -170,9 +174,9 @@ static void ar933x_uart_start_tx(struct
+ static void ar933x_uart_wait_tx_complete(struct ar933x_uart_port *up)
+ {
+ 	unsigned int status;
+-	unsigned int timeout = 60000;
++	unsigned int timeout = 500000;
+ 
+-	/* Wait up to 60ms for the character(s) to be sent. */
++	/* Wait up to 500ms for the character(s) to be sent. */
+ 	do {
+ 		status = ar933x_uart_read(up, AR933X_UART_CS_REG);
+ 		if (--timeout == 0)
+@@ -402,7 +406,8 @@ static void ar933x_uart_tx_chars(struct
+ 
+ 	if ((rs485conf->flags & SER_RS485_ENABLED) &&
+ 	    (up->port.x_char || !uart_circ_empty(xmit))) {
+-		ar933x_uart_stop_rx_interrupt(up);
++		if (!(rs485conf->flags & SER_RS485_RX_DURING_TX))
++			ar933x_uart_stop_rx_interrupt(up);
+ 		gpiod_set_value(up->rts_gpiod, !!(rs485conf->flags & SER_RS485_RTS_ON_SEND));
+ 		half_duplex_send = true;
+ 	}
+@@ -438,9 +443,11 @@ static void ar933x_uart_tx_chars(struct
+ 		ar933x_uart_start_tx_interrupt(up);
+ 	} else if (half_duplex_send) {
+ 		ar933x_uart_wait_tx_complete(up);
+-		ar933x_uart_rx_flush(up);
+-		ar933x_uart_start_rx_interrupt(up);
+ 		gpiod_set_value(up->rts_gpiod, !!(rs485conf->flags & SER_RS485_RTS_AFTER_SEND));
++		if (!(rs485conf->flags & SER_RS485_RX_DURING_TX)) {
++			ar933x_uart_rx_flush(up);
++			ar933x_uart_start_rx_interrupt(up);
++		}
+ 	}
+ }
+ 
+@@ -604,9 +611,9 @@ ar933x_console_ports[CONFIG_SERIAL_AR933
+ static void ar933x_uart_wait_xmitr(struct ar933x_uart_port *up)
+ {
+ 	unsigned int status;
+-	unsigned int timeout = 60000;
++	unsigned int timeout = 500000;
+ 
+-	/* Wait up to 60ms for the character(s) to be sent. */
++	/* Wait up to 500ms for the character(s) to be sent. */
+ 	do {
+ 		status = ar933x_uart_read(up, AR933X_UART_DATA_REG);
+ 		if (--timeout == 0)
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -50,6 +50,10 @@ obj-$(CONFIG_REGULATOR)		+= regulator/
+ # reset controllers early, since gpu drivers might rely on them to initialize
+ obj-$(CONFIG_RESET_CONTROLLER)	+= reset/
+ 
++# moved here to satisfy tty mtd_read dependences
++obj-$(CONFIG_SPI)		+= spi/
++obj-$(CONFIG_MTD)		+= mtd/
++
+ # tty/ comes before char/ so that the VT console is the boot-time
+ # default.
+ obj-y				+= tty/
+@@ -80,8 +84,6 @@ obj-y				+= scsi/
+ obj-y				+= nvme/
+ obj-$(CONFIG_ATA)		+= ata/
+ obj-$(CONFIG_TARGET_CORE)	+= target/
+-obj-$(CONFIG_SPI)		+= spi/
+-obj-$(CONFIG_MTD)		+= mtd/
+ obj-$(CONFIG_SPMI)		+= spmi/
+ obj-$(CONFIG_HSI)		+= hsi/
+ obj-$(CONFIG_SLIMBUS)		+= slimbus/

@@ -1,0 +1,26 @@
+config group
+	option name 'default'
+	
+config chilli
+	option enabled '0'
+	option net '192.168.2.0/24'
+	option uamlisten '192.168.2.254'
+	option dns1 '8.8.8.8'
+	option dns2 '8.8.4.4'
+	option uamlogoutip '1.0.0.0'
+	option radiusauthport '1812'
+	option radiusacctport '1813'
+	option uamport '3990'
+	option ipup '/etc/chilli/up.sh'
+	option ipdown '/etc/chilli/down.sh'
+	option dbpath '/var/hotspot.db'
+	option usersdbpath '/etc/chilli/users.db'
+	option _success 'uam'
+	option _mode 'radius'
+	option _landingpage 'ext'
+	option uamdomainfile '/etc/chilli/uamdomains/uamdomainfile_hs
+	option uamserver 'https://customer.hotspotsystem.com/customer/hotspotlogin.php'
+	option uamsecret 'hotsys123'
+	option radiusserver1 'radius.hotspotsystem.com'
+	option radiusserver2 'radius2.hotspotsystem.com'
+	option radiussecret 'hotsys123'

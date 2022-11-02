@@ -1,0 +1,96 @@
+--- a/src/starter/starter.c
++++ b/src/starter/starter.c
+@@ -841,6 +841,32 @@ int main (int argc, char **argv)
+ 		}
+ 
+ 		/*
++		 * Check connections if there is nothing better to do
++		 */
++		if (!_action_)
++		{
++			ts.tv_sec = 30;
++			ts.tv_nsec = 0;
++			if (pselect(0, NULL, NULL, NULL, &ts, &action.sa_mask) == 0)
++			{
++				for (conn = cfg->conn_first; conn; conn = conn->next)
++				{
++					if (conn->startup == STARTUP_START)
++					{
++						if (starter_charon_pid())
++						{
++							if (starter_stroke_check_conn(conn) == 1)
++							{
++								starter_stroke_initiate_conn(conn);
++							}
++						}
++					}
++				}
++				continue;
++			}
++		}
++
++		/*
+ 		 * If auto_update activated, when to stop select
+ 		 */
+ 		if (auto_update)
+--- a/src/starter/starterstroke.c
++++ b/src/starter/starterstroke.c
+@@ -79,6 +79,7 @@ static int send_stroke_msg(stroke_msg_t
+ 	stream_t *stream;
+ 	char *uri, buffer[64];
+ 	int count;
++	int result = 0;
+ 
+ 	if (msg->length == UINT16_MAX)
+ 	{
+@@ -110,7 +111,14 @@ static int send_stroke_msg(stroke_msg_t
+ 	while ((count = stream->read(stream, buffer, sizeof(buffer)-1, TRUE)) > 0)
+ 	{
+ 		buffer[count] = '\0';
+-		DBG1(DBG_APP, "%s", buffer);
++		if (msg->type == STR_STATUS)
++		{
++			result = strstr(buffer, "no match") ? 1 : 0;
++		}
++		else
++		{
++			DBG1(DBG_APP, "%s", buffer);
++		}
+ 	}
+ 	if (count < 0)
+ 	{
+@@ -118,7 +126,7 @@ static int send_stroke_msg(stroke_msg_t
+ 	}
+ 	stream->destroy(stream);
+ 	free(msg);
+-	return 0;
++	return result;
+ }
+ 
+ static char* connection_name(starter_conn_t *conn)
+@@ -316,6 +324,15 @@ int starter_stroke_initiate_conn(starter
+ 	push_string(&msg, initiate.name, connection_name(conn));
+ 	return send_stroke_msg(msg);
+ }
++
++int starter_stroke_check_conn(starter_conn_t *conn)
++{
++	stroke_msg_t *msg;
++
++	msg = create_stroke_msg(STR_STATUS);
++	push_string(&msg, initiate.name, connection_name(conn));
++	return send_stroke_msg(msg);
++}
+ 
+ int starter_stroke_add_ca(starter_ca_t *ca)
+ {
+--- a/src/starter/starterstroke.h
++++ b/src/starter/starterstroke.h
+@@ -23,6 +23,7 @@ int starter_stroke_del_conn(starter_conn
+ int starter_stroke_route_conn(starter_conn_t *conn);
+ int starter_stroke_unroute_conn(starter_conn_t *conn);
+ int starter_stroke_initiate_conn(starter_conn_t *conn);
++int starter_stroke_check_conn(starter_conn_t *conn);
+ int starter_stroke_add_ca(starter_ca_t *ca);
+ int starter_stroke_del_ca(starter_ca_t *ca);
+ int starter_stroke_configure(starter_config_t *cfg);

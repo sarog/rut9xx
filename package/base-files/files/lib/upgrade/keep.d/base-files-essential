@@ -3,11 +3,12 @@
 /etc/inittab
 /etc/group
 /etc/passwd
-/etc/shadow
 /etc/profile
+/etc/shadow
 /etc/shells
+/etc/shinit
 /etc/sysctl.conf
 /etc/rc.local
-/etc/init.d/luci_fixtime
-/etc/uci-defaults/99_touch-firstboot
-/etc/scheduler/config
+/etc/firewall.user
+/usr/lib/mdcollectd/mdcollectd.db_new.gz
+/etc/vuci-uploads/

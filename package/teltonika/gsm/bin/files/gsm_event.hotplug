@@ -1,0 +1,69 @@
+#!/bin/sh
+. /usr/share/libubox/jshn.sh
+
+log() {
+	ubus call log write_ext "{
+		\"event\": \"$2\",
+		\"sender\": \"$1\",
+		\"table\": 2,
+		\"write_db\": 1
+	}"
+}
+
+identify_modem() {
+
+	local look_modem="$1"
+	local modem modems id primary
+	json_init
+	json_load_file "/etc/board.json"
+	json_get_keys modems modems
+	json_select modems
+
+	for modem in $modems; do
+		json_select "$modem"
+		json_get_vars id builtin primary
+		if [ "$id" != "$look_modem" ]; then
+			json_select ..
+			continue
+		fi
+
+		if [ "$builtin" != "1" ]; then
+			json_select ..
+			continue
+		fi
+
+		if [ "$DEV_NAME" = "RUTX12" -a "$primary" = "1" ]; then
+			MODEM_TYPE="primary"
+		elif [ "$DEV_NAME" = "RUTX12" ]; then
+			MODEM_TYPE="secondary"
+		else
+			MODEM_TYPE="internal"
+		fi
+		json_select ..
+	done
+
+	if [ "$MODEM_TYPE" = "" ]; then
+		MODEM_TYPE="external"
+	fi
+}
+
+interface=$(echo "$INTERFACE" | awk -F "_4" '{print $1}')
+iface=$(echo "$INTERFACE" | grep "_4" | wc -l)
+MODEM=$(uci -q get network."$interface".modem)
+MODEM_TYPE=""
+DEV_NAME=$(mnf_info -n | cut -b 0-6)
+
+if [ "$MODEM" != "" ]; then
+	identify_modem $MODEM
+
+	if [ "$ACTION" == "ifup"  -a $iface -gt 0 ]; then
+		OPERATOR=$(gsmctl -O "$MODEM" -o)
+		CONTYPE=$(gsmctl -O "$MODEM" -t)
+		log "Mobile Data" "Mobile data connected ($MODEM_TYPE modem)"
+		log "Network Type" "Joined $CONTYPE network ($MODEM_TYPE modem)"
+		log "Network Operator" "Connected to $OPERATOR operator ($MODEM_TYPE modem)"
+
+	elif [ "$ACTION" == "ifdown" ]; then
+		log "Mobile Data" "Mobile data disconnected ($MODEM_TYPE modem)"
+	fi
+fi

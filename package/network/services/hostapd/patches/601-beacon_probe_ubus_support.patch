@@ -1,0 +1,213 @@
+--- a/src/ap/ap_list.h
++++ b/src/ap/ap_list.h
+@@ -32,7 +32,8 @@
+ struct ieee802_11_elems;
+ struct hostapd_frame_info;
+ 
+-void ap_list_process_beacon(struct hostapd_iface *iface,
++void ap_list_process_beacon(struct hostapd_data *hapd,
++			    struct hostapd_iface *iface,
+ 			    const struct ieee80211_mgmt *mgmt,
+ 			    struct ieee802_11_elems *elems,
+ 			    struct hostapd_frame_info *fi);
+--- a/src/ap/ap_list.c
++++ b/src/ap/ap_list.c
+@@ -166,7 +166,8 @@
+ }
+ 
+ 
+-void ap_list_process_beacon(struct hostapd_iface *iface,
++void ap_list_process_beacon(struct hostapd_data *hapd,
++			    struct hostapd_iface *iface,
+ 			    const struct ieee80211_mgmt *mgmt,
+ 			    struct ieee802_11_elems *elems,
+ 			    struct hostapd_frame_info *fi)
+@@ -174,6 +175,17 @@
+ 	struct ap_info *ap;
+ 	int new_ap = 0;
+ 	int set_beacon = 0;
++	struct hostapd_ubus_request req = {
++		.type = HOSTAPD_UBUS_TYPE_MAX,
++		.mgmt_frame = mgmt,
++		.elems = elems,
++		.ssi_signal = fi->ssi_signal,
++	};
++
++	if (hostapd_ubus_handle_event(hapd, &req)) {
++		wpa_printf(MSG_DEBUG, "Probe request for " MACSTR " rejected by ubus handler.\n",
++			   MAC2STR(mgmt->sa));
++	}
+ 
+ 	if (iface->conf->ap_table_max_size < 1)
+ 		return;
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -1407,6 +1407,7 @@
+ 			return 0;
+ 	}
+ 
++	wpa_printf(MSG_DEBUG, "Signal strength: %d\n", rx_mgmt->ssi_signal);
+ 	os_memset(&fi, 0, sizeof(fi));
+ 	fi.freq = rx_mgmt->freq;
+ 	fi.datarate = rx_mgmt->datarate;
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -4705,7 +4705,7 @@
+ 					     sizeof(mgmt->u.beacon)), &elems,
+ 				      0);
+ 
+-	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
++	ap_list_process_beacon(hapd, hapd->iface, mgmt, &elems, fi);
+ }
+ 
+ 
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -773,6 +773,8 @@
+ 	dl_list_for_each(drv, &w->drvs, struct wpa_driver_nl80211_data,
+ 			 wiphy_list) {
+ 		os_memset(&event, 0, sizeof(event));
++		if (tb[NL80211_ATTR_RX_SIGNAL_DBM])
++			event.rx_mgmt.ssi_signal = nla_get_u32(tb[NL80211_ATTR_RX_SIGNAL_DBM]);
+ 		event.rx_mgmt.frame = nla_data(tb[NL80211_ATTR_FRAME]);
+ 		event.rx_mgmt.frame_len = nla_len(tb[NL80211_ATTR_FRAME]);
+ 		wpa_supplicant_event(drv->ctx, EVENT_RX_MGMT, &event);
+@@ -2397,6 +2399,24 @@
+ 	/* Radio Measurement - Link Measurement Request */
+ 	if ((drv->capa.rrm_flags & WPA_DRIVER_FLAGS_TX_POWER_INSERTION) &&
+ 	    (nl80211_register_action_frame(bss, (u8 *) "\x05\x02", 2) < 0))
++		ret = -1;
++
++	if (nl80211_register_frame(bss, bss->nl_mgmt,
++				   (WLAN_FC_TYPE_MGMT << 2) |
++				   (WLAN_FC_STYPE_PROBE_REQ << 4),
++				   NULL, 0, false) < 0)
++		ret = -1;
++
++	if (nl80211_register_frame(bss, bss->nl_mgmt,
++				   (WLAN_FC_TYPE_MGMT << 2) |
++				   (WLAN_FC_STYPE_PROBE_RESP << 4),
++				   NULL, 0, false) < 0)
++		ret = -1;
++
++	if (nl80211_register_frame(bss, bss->nl_mgmt,
++				   (WLAN_FC_TYPE_MGMT << 2) |
++				   (WLAN_FC_STYPE_BEACON << 4),
++				   NULL, 0, false) < 0)
+ 		ret = -1;
+ 
+ 	nl80211_mgmt_handle_register_eloop(bss);
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -4633,6 +4633,58 @@
+ 		wpa_printf(MSG_ERROR, "\nFailed to reload hostapd AP interfaces\n");
+ }
+ 
++static void sta_handle_beacon(void *ctx, const struct ieee80211_mgmt *mgmt, size_t len,
++			      struct wpas_frame_info *fi)
++{
++	struct wpa_supplicant *wpa_s = ctx;
++	struct ieee802_11_elems elems;
++	struct wpas_ubus_request req = {
++		.type = WPAS_UBUS_BEACON,
++		.mgmt_frame = mgmt,
++		.frame_info = fi,
++		.elems = &elems,
++	};
++
++	if (len < IEEE80211_HDRLEN + sizeof(mgmt->u.beacon)) {
++		wpa_printf(MSG_INFO, "handle_beacon - too short payload (len=%lu)",
++			   (unsigned long) len);
++		return;
++	}
++
++	(void) ieee802_11_parse_elems(mgmt->u.beacon.variable,
++				      len - (IEEE80211_HDRLEN +
++					     sizeof(mgmt->u.beacon)),
++				      &elems,
++				      0);
++
++	wpas_ubus_handle_event(wpa_s, &req);
++}
++
++static void sta_handle_probe(void *ctx, const struct ieee80211_mgmt *mgmt, size_t len,
++			     struct wpas_frame_info *fi)
++{
++	struct wpa_supplicant *wpa_s = ctx;
++	struct ieee802_11_elems elems;
++	const u8 *ie;
++	size_t ie_len;
++	struct wpas_ubus_request req = {
++		.type = WPAS_UBUS_PROBE_REQ,
++		.mgmt_frame = mgmt,
++		.frame_info = fi,
++		.elems = &elems,
++	};
++
++	ie = ((const u8 *) mgmt) + IEEE80211_HDRLEN;
++	ie_len = len - IEEE80211_HDRLEN;
++	if (ieee802_11_parse_elems(ie, ie_len, &elems, 0) == ParseFailed) {
++		wpa_printf(MSG_DEBUG, "Could not parse ProbeReq from " MACSTR,
++			   MAC2STR(mgmt->sa));
++		return;
++	}
++
++	wpas_ubus_handle_event(wpa_s, &req);
++}
++
+ void supplicant_event(void *ctx, enum wpa_event_type event,
+ 		      union wpa_event_data *data)
+ {
+@@ -5006,6 +5058,7 @@
+ 	case EVENT_RX_MGMT: {
+ 		u16 fc, stype;
+ 		const struct ieee80211_mgmt *mgmt;
++		struct wpas_frame_info fi;
+ 
+ #ifdef CONFIG_TESTING_OPTIONS
+ 		if (wpa_s->ext_mgmt_frame_handling) {
+@@ -5028,6 +5081,19 @@
+ 			data->rx_mgmt.frame;
+ 		fc = le_to_host16(mgmt->frame_control);
+ 		stype = WLAN_FC_GET_STYPE(fc);
++		os_memset(&fi, 0, sizeof(fi));
++		fi.freq = data->rx_mgmt.freq;
++		fi.datarate = data->rx_mgmt.datarate;
++		fi.ssi_signal = data->rx_mgmt.ssi_signal;
++
++		if (stype == WLAN_FC_STYPE_BEACON) {
++			sta_handle_beacon(wpa_s, mgmt,
++					  data->rx_mgmt.frame_len, &fi);
++		} else if (stype == WLAN_FC_STYPE_PROBE_REQ ||
++			   stype == WLAN_FC_STYPE_PROBE_RESP) {
++			sta_handle_probe(wpa_s, mgmt,
++					 data->rx_mgmt.frame_len, &fi);
++		}
+ 
+ #ifdef CONFIG_AP
+ 		if (wpa_s->ap_iface == NULL) {
+@@ -5111,6 +5177,23 @@
+ 		if (data->rx_probe_req.sa == NULL ||
+ 		    data->rx_probe_req.ie == NULL)
+ 			break;
++
++		u16 fc, stype;
++		const struct ieee80211_mgmt *mgmt;
++		struct wpas_frame_info fi;
++
++		mgmt = (const struct ieee80211_mgmt *)
++			data->rx_mgmt.frame;
++		fc = le_to_host16(mgmt->frame_control);
++		stype = WLAN_FC_GET_STYPE(fc);
++		os_memset(&fi, 0, sizeof(fi));
++		fi.freq = data->rx_mgmt.freq;
++		fi.datarate = data->rx_mgmt.datarate;
++		fi.ssi_signal = data->rx_mgmt.ssi_signal;
++
++		sta_handle_probe(wpa_s, mgmt,
++				  data->rx_mgmt.frame_len, &fi);
++
+ #ifdef CONFIG_AP
+ 		if (wpa_s->ap_iface) {
+ 			hostapd_probe_req_rx(wpa_s->ap_iface->bss[0],
+

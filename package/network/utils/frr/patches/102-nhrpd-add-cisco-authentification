@@ -1,0 +1,157 @@
+Index: nhrpd/nhrp_nhs.c
+===================================================================
+--- frr-5.0.2.orig/nhrpd/nhrp_nhs.c.orig
++++ frr-5.0.2/nhrpd/nhrp_nhs.c
+@@ -196,6 +196,7 @@ static int nhrp_reg_send_req(struct thre
+ 						   &r->reqid, nhrp_reg_reply));
+
+ 	/* FIXME: push CIE for each local protocol address */
++	/* CIE client information entry */
+ 	cie = nhrp_cie_push(zb, NHRP_CODE_SUCCESS, NULL, NULL);
+ 	cie->prefix_length = 0xff;
+ 	cie->holding_time = htons(if_ad->holdtime);
+@@ -203,6 +204,15 @@ static int nhrp_reg_send_req(struct thre
+
+ 	nhrp_ext_request(zb, hdr, ifp);
+
++	/* Cisco auth extension */
++
++	if (if_ad->cisco_authentification) {
++		debugf(NHRP_DEBUG_COMMON, "NHS: cisco authentification %s", if_ad->cisco_authentification);
++		ext = nhrp_ext_push(zb, hdr, NHRP_EXTENSION_AUTHENTICATION | NHRP_EXTENSION_FLAG_COMPULSORY);
++		nhrp_auth_push(zb, hdr, if_ad->cisco_authentification);
++		nhrp_ext_complete(zb, ext);
++	}
++
+ 	/* Cisco NAT detection extension */
+ 	hdr->flags |= htons(NHRP_FLAG_REGISTRATION_NAT);
+ 	ext = nhrp_ext_push(zb, hdr, NHRP_EXTENSION_NAT_ADDRESS);
+Index: nhrpd/nhrp_packet.c
+===================================================================
+--- frr-5.0.2.orig/nhrpd/nhrp_packet.c.orig
++++ frr-5.0.2/nhrpd/nhrp_packet.c
+@@ -153,6 +153,29 @@ struct nhrp_cie_header *nhrp_cie_push(st
+ 	return cie;
+ }
+
++struct nhrp_cisco_authentication_extension *nhrp_auth_push(struct zbuf *zb, struct nhrp_packet_header *hdr, char *auth)
++{
++	struct nhrp_cisco_authentication_extension *ext;
++	size_t auth_len = strlen(auth);
++
++	ext = zbuf_pushn(zb, auth_len + sizeof(ext->type));
++	if (!ext)
++		return NULL;
++
++	if (!hdr->extension_offset)
++		hdr->extension_offset =
++			htons(zb->tail - (uint8_t *)hdr
++			      - sizeof(struct nhrp_cisco_authentication_extension));
++
++	*ext = (struct nhrp_cisco_authentication_extension){
++		.type = htonl(NHRP_AUTHENTICATION_PLAINTEXT),
++	};
++	debugf(NHRP_DEBUG_COMMON, "nhrp_auth_push: AUTH LEN %d", auth_len);
++	memcpy(ext->secret, auth, auth_len);
++
++	return ext;
++}
++
+ struct nhrp_cie_header *nhrp_cie_pull(struct zbuf *zb,
+ 				      struct nhrp_packet_header *hdr,
+ 				      union sockunion *nbma,
+Index: nhrpd/nhrp_vty.c
+===================================================================
+--- frr-5.0.2.orig/nhrpd/nhrp_vty.c.orig
++++ frr-5.0.2/nhrpd/nhrp_vty.c
+@@ -318,6 +318,42 @@ DEFUN(if_nhrp_network_id, if_nhrp_networ
+ 	return CMD_SUCCESS;
+ }
+
++DEFUN(if_nhrp_cisco_authentification, if_nhrp_cisco_authentification_cmd,
++	AFI_CMD " nhrp cisco-authentification <PASSW>",
++	AFI_STR
++	NHRP_STR
++	"Pass phrase for cisco-authentification\n"
++	"Specify password, max 8 symbols\n")
++{
++	VTY_DECLVAR_CONTEXT(interface, ifp);
++	struct nhrp_interface *nifp = ifp->info;
++	afi_t afi = cmd_to_afi(argv[0]);
++	nifp->afi[afi].cisco_authentification = calloc(MAX_AUTHENTIFICATION_LENGTH, sizeof(char));
++	snprintf(nifp->afi[afi].cisco_authentification, MAX_AUTHENTIFICATION_LENGTH, "%s", argv[3]->arg);
++	nhrp_interface_update(ifp);
++
++	return CMD_SUCCESS;
++}
++
++DEFUN(if_no_nhrp_cisco_authentification, if_no_nhrp_cisco_authentification_cmd,
++	"no " AFI_CMD " nhrp cisco-authentification [<PASSW>]",
++	NO_STR
++	AFI_STR
++	NHRP_STR
++	"Pass phrase for cisco-authentification\n"
++	"Specify password max 8 symbols\n")
++{
++	VTY_DECLVAR_CONTEXT(interface, ifp);
++	struct nhrp_interface *nifp = ifp->info;
++	afi_t afi = cmd_to_afi(argv[1]);
++
++	free(nifp->afi[afi].cisco_authentification);
++	nifp->afi[afi].cisco_authentification = NULL;
++	nhrp_interface_update(ifp);
++
++	return CMD_SUCCESS;
++}
++
+ DEFUN(if_no_nhrp_network_id, if_no_nhrp_network_id_cmd,
+ 	"no " AFI_CMD " nhrp network-id [(1-4294967295)]",
+ 	NO_STR
+@@ -866,6 +902,10 @@ static int interface_config_write(struct
+ 				vty_out(vty, " %s nhrp network-id %u\n", aficmd,
+ 					ad->network_id);
+
++			if (ad->cisco_authentification)
++				vty_out(vty, " %s nhrp cisco-authentification %s\n", aficmd,
++					ad->cisco_authentification);
++
+ 			if (ad->holdtime != NHRPD_DEFAULT_HOLDTIME)
+ 				vty_out(vty, " %s nhrp holdtime %u\n", aficmd,
+ 					ad->holdtime);
+@@ -959,4 +999,6 @@ void nhrp_config_init(void)
+ 	install_element(INTERFACE_NODE, &if_no_nhrp_map_cmd);
+ 	install_element(INTERFACE_NODE, &if_nhrp_nhs_cmd);
+ 	install_element(INTERFACE_NODE, &if_no_nhrp_nhs_cmd);
++	install_element(INTERFACE_NODE, &if_nhrp_cisco_authentification_cmd);
++	install_element(INTERFACE_NODE, &if_no_nhrp_cisco_authentification_cmd);
+ }
+Index: nhrpd/nhrpd.h
+===================================================================
+--- frr-5.0.2.orig/nhrpd/nhrpd.h.orig
++++ frr-5.0.2/nhrpd/nhrpd.h
+@@ -104,6 +104,7 @@ struct nhrp_interface;
+
+ #define MAX_ID_LENGTH			64
+ #define MAX_CERT_LENGTH			2048
++#define MAX_AUTHENTIFICATION_LENGTH	9
+
+ enum nhrp_notify_type {
+ 	NOTIFY_INTERFACE_UP,
+@@ -303,6 +304,7 @@ struct nhrp_interface {
+ 		unsigned short mtu;
+ 		unsigned int holdtime;
+ 		struct list_head nhslist_head;
++		char *cisco_authentification;
+ 	} afi[AFI_MAX];
+ };
+
+@@ -426,6 +428,9 @@ struct nhrp_cie_header *nhrp_cie_pull(st
+
+ struct nhrp_extension_header *
+ nhrp_ext_push(struct zbuf *zb, struct nhrp_packet_header *hdr, uint16_t type);
++
++struct nhrp_cisco_authentication_extension * nhrp_auth_push(struct zbuf *zb, struct nhrp_packet_header *hdr, char *auth);
++
+ void nhrp_ext_complete(struct zbuf *zb, struct nhrp_extension_header *ext);
+ struct nhrp_extension_header *nhrp_ext_pull(struct zbuf *zb,
+ 					    struct zbuf *payload);

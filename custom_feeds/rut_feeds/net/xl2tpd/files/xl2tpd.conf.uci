@@ -1,3 +1,0 @@
-config 'login'
-	option 'username' 'user'
-	option 'password' 'pass'

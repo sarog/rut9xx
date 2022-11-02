@@ -1,0 +1,168 @@
+--- a/src/ap/acs.c
++++ b/src/ap/acs.c
+@@ -336,7 +336,9 @@ acs_survey_chan_interference_factor(stru
+ 	unsigned count = 0;
+ 
+ 	if (dl_list_empty(&chan->survey_list) ||
+-	    (chan->flag & HOSTAPD_CHAN_DISABLED))
++		(chan->flag & HOSTAPD_CHAN_DISABLED) ||
++			iface->conf->acs_exclude_dfs &&
++				(chan->flag & HOSTAPD_CHAN_RADAR))
+ 		return;
+ 
+ 	chan->interference_factor = 0;
+@@ -455,7 +457,7 @@ static int acs_survey_list_is_sufficient
+ }
+ 
+ 
+-static int acs_surveys_are_sufficient_mode(struct hostapd_hw_modes *mode)
++static int acs_surveys_are_sufficient_mode(struct hostapd_hw_modes *mode, struct hostapd_iface *iface)
+ {
+ 	int i;
+ 	struct hostapd_channel_data *chan;
+@@ -463,7 +465,9 @@ static int acs_surveys_are_sufficient_mo
+ 	for (i = 0; i < mode->num_channels; i++) {
+ 		chan = &mode->channels[i];
+ 		if (!(chan->flag & HOSTAPD_CHAN_DISABLED) &&
+-		    acs_survey_list_is_sufficient(chan))
++			!(iface->conf->acs_exclude_dfs &&
++				(chan->flag & HOSTAPD_CHAN_RADAR)) &&
++					acs_survey_list_is_sufficient(chan))
+ 			return 1;
+ 	}
+ 
+@@ -479,7 +483,7 @@ static int acs_surveys_are_sufficient(st
+ 	for (i = 0; i < iface->num_hw_features; i++) {
+ 		mode = &iface->hw_features[i];
+ 		if (!hostapd_hw_skip_mode(iface, mode) &&
+-		    acs_surveys_are_sufficient_mode(mode))
++		    acs_surveys_are_sufficient_mode(mode, iface))
+ 			return 1;
+ 	}
+ 
+@@ -487,10 +491,12 @@ static int acs_surveys_are_sufficient(st
+ }
+ 
+ 
+-static int acs_usable_chan(struct hostapd_channel_data *chan)
++static int acs_usable_chan(struct hostapd_channel_data *chan, struct hostapd_iface *iface)
+ {
+ 	return !dl_list_empty(&chan->survey_list) &&
+ 		!(chan->flag & HOSTAPD_CHAN_DISABLED) &&
++		!(iface->conf->acs_exclude_dfs &&
++		(chan->flag & HOSTAPD_CHAN_RADAR)) &&
+ 		acs_survey_list_is_sufficient(chan);
+ }
+ 
+@@ -525,7 +531,7 @@ static void acs_survey_mode_interference
+ 	for (i = 0; i < mode->num_channels; i++) {
+ 		chan = &mode->channels[i];
+ 
+-		if (!acs_usable_chan(chan))
++		if (!acs_usable_chan(chan, iface))
+ 			continue;
+ 
+ 		if (!is_in_chanlist(iface, chan))
+@@ -560,7 +566,7 @@ static void acs_survey_all_chans_interfe
+ 
+ 
+ static struct hostapd_channel_data *
+-acs_find_chan_mode(struct hostapd_hw_modes *mode, int freq)
++acs_find_chan_mode(struct hostapd_hw_modes *mode, int freq, struct hostapd_iface *iface)
+ {
+ 	struct hostapd_channel_data *chan;
+ 	int i;
+@@ -568,6 +574,10 @@ acs_find_chan_mode(struct hostapd_hw_mod
+ 	for (i = 0; i < mode->num_channels; i++) {
+ 		chan = &mode->channels[i];
+ 
++		if (iface->conf->acs_exclude_dfs &&
++				(chan->flag & HOSTAPD_CHAN_RADAR))
++			continue;
++
+ 		if (chan->flag & HOSTAPD_CHAN_DISABLED)
+ 			continue;
+ 
+@@ -589,7 +599,7 @@ acs_find_chan(struct hostapd_iface *ifac
+ 	for (i = 0; i < iface->num_hw_features; i++) {
+ 		mode = &iface->hw_features[i];
+ 		if (!hostapd_hw_skip_mode(iface, mode)) {
+-			chan = acs_find_chan_mode(mode, freq);
++			chan = acs_find_chan_mode(mode, freq, iface);
+ 			if (chan)
+ 				return chan;
+ 		}
+@@ -701,7 +711,7 @@ acs_find_ideal_chan_mode(struct hostapd_
+ 		}
+ 
+ 		factor = 0;
+-		if (acs_usable_chan(chan))
++		if (acs_usable_chan(chan, iface))
+ 			factor = chan->interference_factor;
+ 		total_weight = 1;
+ 
+@@ -717,7 +727,7 @@ acs_find_ideal_chan_mode(struct hostapd_
+ 				break;
+ 			}
+ 
+-			if (acs_usable_chan(adj_chan)) {
++			if (acs_usable_chan(adj_chan, iface)) {
+ 				factor += adj_chan->interference_factor;
+ 				total_weight += 1;
+ 			}
+@@ -735,7 +745,7 @@ acs_find_ideal_chan_mode(struct hostapd_
+ 			for (j = 0; j < n_chans; j++) {
+ 				adj_chan = acs_find_chan(iface, chan->freq +
+ 							 (j * 20) - 5);
+-				if (adj_chan && acs_usable_chan(adj_chan)) {
++				if (adj_chan && acs_usable_chan(adj_chan, iface)) {
+ 					factor += ACS_ADJ_WEIGHT *
+ 						adj_chan->interference_factor;
+ 					total_weight += ACS_ADJ_WEIGHT;
+@@ -743,7 +753,7 @@ acs_find_ideal_chan_mode(struct hostapd_
+ 
+ 				adj_chan = acs_find_chan(iface, chan->freq +
+ 							 (j * 20) - 10);
+-				if (adj_chan && acs_usable_chan(adj_chan)) {
++				if (adj_chan && acs_usable_chan(adj_chan, iface)) {
+ 					factor += ACS_NEXT_ADJ_WEIGHT *
+ 						adj_chan->interference_factor;
+ 					total_weight += ACS_NEXT_ADJ_WEIGHT;
+@@ -751,7 +761,7 @@ acs_find_ideal_chan_mode(struct hostapd_
+ 
+ 				adj_chan = acs_find_chan(iface, chan->freq +
+ 							 (j * 20) + 5);
+-				if (adj_chan && acs_usable_chan(adj_chan)) {
++				if (adj_chan && acs_usable_chan(adj_chan, iface)) {
+ 					factor += ACS_ADJ_WEIGHT *
+ 						adj_chan->interference_factor;
+ 					total_weight += ACS_ADJ_WEIGHT;
+@@ -759,7 +769,7 @@ acs_find_ideal_chan_mode(struct hostapd_
+ 
+ 				adj_chan = acs_find_chan(iface, chan->freq +
+ 							 (j * 20) + 10);
+-				if (adj_chan && acs_usable_chan(adj_chan)) {
++				if (adj_chan && acs_usable_chan(adj_chan, iface)) {
+ 					factor += ACS_NEXT_ADJ_WEIGHT *
+ 						adj_chan->interference_factor;
+ 					total_weight += ACS_NEXT_ADJ_WEIGHT;
+@@ -795,7 +805,7 @@ acs_find_ideal_chan_mode(struct hostapd_
+ 				   chan->chan, factor);
+ 		}
+ 
+-		if (acs_usable_chan(chan) &&
++		if (acs_usable_chan(chan, iface) &&
+ 		    (!*ideal_chan || factor < *ideal_factor)) {
+ 			*ideal_factor = factor;
+ 			*ideal_chan = chan;
+@@ -1017,6 +1027,10 @@ static int * acs_request_scan_add_freqs(
+ 
+ 	for (i = 0; i < mode->num_channels; i++) {
+ 		chan = &mode->channels[i];
++		if (iface->conf->acs_exclude_dfs &&
++				(chan->flag & HOSTAPD_CHAN_RADAR))
++			continue;
++
+ 		if (chan->flag & HOSTAPD_CHAN_DISABLED)
+ 			continue;
+ 

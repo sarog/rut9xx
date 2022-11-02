@@ -1,34 +1,50 @@
 #!/bin/sh
+
 Delay=
 TEXT=1
-FORCE=
-while getopts "wvscipeubrotd:nf" opt; do
+force=
+count=0
+
+if killall -q -0 ubusd; then
+	ledman --boot &>/dev/null &
+else
+	# on RAMdisk during sysupgrade, ubusd isn't running and the normal way of
+	# notifying ledman doesn't work
+	killall -q -TERM ledman
+	ledman --boot &>/dev/null &
+fi
+
+
+while getopts "wsipgebcmvojrad:nf" opt; do
 
 	case $opt in
 		w) TEXT="Request from Web UI"
 			;;
 		s) TEXT="Request from SMS"
 			;;
-		c) TEXT="Request from Call"
-			;;
 		i) TEXT="Request from Input/Output"
 			;;
 		p) TEXT="Request from ping reboot"
 			;;
-		e) TEXT="Request from periodic reboot"
+		g) TEXT="Request from wget reboot"
 			;;
-		v) TEXT="Request from wget reboot"
-			;;
-		u) TEXT="Request after FW upgrade"
+		e) TEXT="Request from reboot scheduler"
 			;;
 		b) TEXT="Request from button"
 			;;
-		r) TEXT="Request after factory reset button"
+		c) TEXT="Request after backup"
 			;;
-		o) TEXT="Request after restore to default"
+		m) TEXT="Request after modem firmware upgrade"
 			;;
-# reboot after restore point
-		t) TEXT="Request after restore"
+		v) TEXT="Request after firmware upgrade"
+			;;
+		o) TEXT="Request from modbus"
+			;;
+		j) TEXT="Request from iojuggler"
+			;;
+		r) TEXT="Request from gsm due to GPRS Attach Mode change"
+			;;
+		a) TEXT="Request from call"
 			;;
 		d) Delay="$2"
 			;;
@@ -40,13 +56,13 @@ while getopts "wvscipeubrotd:nf" opt; do
 		\?) reboot=0 >&2 ;;
 	esac
 done
+if [ "$force" ]; then
+	/bin/busybox reboot -f
+fi
 if [ "$reboot" != "0" ]; then
 	if [ "$TEXT" = "1" ]; then
 		parentPPID=`cat /proc/"$PPID"/status 2>/dev/null | grep "PPid:" | awk -F' ' '{print $2}'`
-		parentPname=`cat /proc/"$PPID"/status 2>/dev/null | grep "Name:" | awk -F' ' '{print $2}'`
 		parentName=`cat /proc/"$parentPPID"/status 2>/dev/null | grep "Name:" | awk -F' ' '{print $2}'`
-		parentpid=`cat /proc/"$parentPPID"/status 2>/dev/null | grep "PPid:" | awk -F' ' '{print $2}'`
-
 		case "$parentName" in
 			"dropbear")
 				TEXT="Request from SSH"
@@ -59,26 +75,35 @@ if [ "$reboot" != "0" ]; then
 			;;
 		esac
 	fi
-	/usr/bin/eventslog -i -t EVENTS -n Reboot -e "$TEXT" &
-	sleep 1;
-	return=$(ps w | grep "/usr/sbin/messaged" | grep -v "grep")
-	timeOut=0;
-	while [ -n "$return" ] && [ $timeOut -lt 30 ]
-	do
-		return=$(ps w | grep "/usr/sbin/messaged" | grep -v "grep")
-		timeOut=$((timeOut+1))
-		sleep 1;
-	done
-	uci set system.device_info.reboot=1
-	uci commit system
 
-	if [ "$notsync" = "1" ] || [ "$force" = "1" ] || [ $Delay ]; then
+	ubus call log write_ext "{
+		\"event\": \"$TEXT\",
+		\"sender\": \"Reboot\",
+		\"table\": 1,
+		\"write_db\": 1,
+	}"
+
+	sleep 1;
+	#Oh boy, we have unfinished job here
+	while [ -e "/tmp/events_reporting.lock" -a "$count" -le 10 ]; do
+		sleep 1
+		count=$((count +1))
+	done
+
+	[ -e "/var/lock/opkg.lock" ] && {
+		/etc/init.d/package_restore stop
+		count=0
+		echo "opkg.lock exists, will be waiting for up to 60sec for opkg to finish"
+		while [ -e "/var/lock/opkg.lock" -a "$count" -le 60 ]; do
+			sleep 1
+			count=$((count +1))
+		done
+	}
+
+	if [ "$notsync" = "1" ] || [ $Delay ]; then
 		var="-"
 		if [ "$notsync" = "1" ]; then
 			var="$var""n"
-		fi
-		if [ "$force" = "1" ]; then
-			var="$var""f"
 		fi
 		if [ $Delay ]; then
 			var="$var""d$Delay"
@@ -86,5 +111,8 @@ if [ "$reboot" != "0" ]; then
 	else
 		var=""
 	fi
+
+	/sbin/mctl -s -a
+
 	/bin/busybox reboot "$var"
 fi

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ebtables
-PKG_VERSION:=2.0.10-4
+PKG_SOURCE_DATE:=2018-06-27
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-v$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@SF/ebtables
-PKG_MD5SUM:=506742a3d44b9925955425a659c1a8d0
+PKG_SOURCE_URL:=https://git.netfilter.org/ebtables
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_VERSION:=48cff25dfea5b37e16ba5dc6601e98ab140f5f99
+PKG_MIRROR_HASH:=1327cdc3402e5e3056819e4e9b6f9d4a5bfd401f2c4f58447afb2c3c73fc8aac
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/ebtables-v$(PKG_VERSION)
+PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
 

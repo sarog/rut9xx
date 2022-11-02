@@ -1,15 +1,12 @@
-# 
-# Copyright (C) 2007 OpenWrt.org
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2007-2020 OpenWrt.org
 
 ifeq ($(MAKECMDGOALS),prereq)
   SUBTARGETS:=prereq
   PREREQ_ONLY:=1
 else
-  SUBTARGETS:=clean download prepare compile install update refresh prereq dist distcheck configure develop stage unstage
+  SUBTARGETS:=$(DEFAULT_SUBDIR_TARGETS)
 endif
 
 subtarget-default = $(filter-out ., \
@@ -23,27 +20,58 @@ define subtarget
 endef
 
 define ERROR
-	($(call MESSAGE, $(2)); $(if $(BUILD_LOG), echo "$(2)" >> $(BUILD_LOG_DIR)/$(1)/error.txt))
+	($(call MESSAGE, $(2)); $(if $(BUILD_LOG), echo "$(2)" >> $(BUILD_LOG_DIR)/$(1)/error.txt;) $(if $(3),, exit 1;))
 endef
 
 lastdir=$(word $(words $(subst /, ,$(1))),$(subst /, ,$(1)))
 diralias=$(if $(findstring $(1),$(call lastdir,$(1))),,$(call lastdir,$(1)))
+
+subdir_make_opts = \
+	-r -C $(1) \
+		BUILD_SUBDIR="$(1)" \
+		BUILD_VARIANT="$(4)"
+
+# 1: subdir
+# 2: target
+# 3: build type
+# 4: build variant
+log_make = \
+	 $(if $(call debug,$(1),v),,@)+ \
+	 $(if $(BUILD_LOG), \
+		set -o pipefail; \
+		mkdir -p $(BUILD_LOG_DIR)/$(1)$(if $(4),/$(4));) \
+	$(SCRIPT_DIR)/time.pl "time: $(1)$(if $(4),/$(4))/$(if $(3),$(3)-)$(2)" \
+	$$(SUBMAKE) $(subdir_make_opts) $(if $(3),$(3)-)$(2) \
+		$(if $(BUILD_LOG),SILENT= 2>&1 | tee $(BUILD_LOG_DIR)/$(1)$(if $(4),/$(4))/$(if $(3),$(3)-)$(2).txt)
+
+ifdef CONFIG_AUTOREMOVE
+rebuild_check = \
+	@-$$(NO_TRACE_MAKE) $(subdir_make_opts) check-depends >/dev/null 2>/dev/null; \
+		$(if $(BUILD_LOG),mkdir -p $(BUILD_LOG_DIR)/$(1)$(if $(4),/$(4));) \
+		$$(NO_TRACE_MAKE) $(if $(BUILD_LOG),-d) -q $(subdir_make_opts) .$(if $(3),$(3)-)$(2) \
+			> $(if $(BUILD_LOG),$(BUILD_LOG_DIR)/$(1)$(if $(4),/$(4))/check-$(if $(3),$(3)-)$(2).txt,/dev/null) 2>&1 || \
+			$$(SUBMAKE) $(subdir_make_opts) clean-build >/dev/null 2>/dev/null
+
+endif
 
 # Parameters: <subdir>
 define subdir
   $(call warn,$(1),d,D $(1))
   $(foreach bd,$($(1)/builddirs),
     $(call warn,$(1),d,BD $(1)/$(bd))
-    $(foreach target,$(SUBTARGETS),
+    $(foreach target,$(SUBTARGETS) $($(1)/subtargets),
       $(foreach btype,$(buildtypes-$(bd)),
-        $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(btype)/$(target): $(if $(QUILT),,$($(1)/$(bd)/$(btype)/$(target)) $(call $(1)//$(btype)/$(target),$(1)/$(bd)/$(btype))))
-		  $(if $(call debug,$(1)/$(bd),v),,@)+$$(SUBMAKE) -C $(1)/$(bd) $(btype)-$(target) $(if $(findstring $(bd),$($(1)/builddirs-ignore-$(btype)-$(target))), || $(call ERROR,$(1),   ERROR: $(1)/$(bd) [$(btype)] failed to build.))
+        $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(btype)/$(target): $(if $(NO_DEPS)$(QUILT),,$($(1)/$(bd)/$(btype)/$(target)) $(call $(1)//$(btype)/$(target),$(1)/$(bd)/$(btype))))
+		  $(call log_make,$(1)/$(bd),$(target),$(btype),$(filter-out __default,$(variant))) \
+			|| $(call ERROR,$(2),   ERROR: $(1)/$(bd) [$(btype)] failed to build.,$(findstring $(bd),$($(1)/builddirs-ignore-$(btype)-$(target))))
         $(if $(call diralias,$(bd)),$(call warn_eval,$(1)/$(bd),l,T,$(1)/$(call diralias,$(bd))/$(btype)/$(target): $(1)/$(bd)/$(btype)/$(target)))
       )
-      $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $(if $(QUILT),,$($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd))))
-	  	$(if $(BUILD_LOG),@mkdir -p $(BUILD_LOG_DIR)/$(1)/$(bd))
+      $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $(if $(NO_DEPS)$(QUILT),,$($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd))))
         $(foreach variant,$(if $(BUILD_VARIANT),$(BUILD_VARIANT),$(if $(strip $($(1)/$(bd)/variants)),$($(1)/$(bd)/variants),$(if $($(1)/$(bd)/default-variant),$($(1)/$(bd)/default-variant),__default))),
-			$(if $(call debug,$(1)/$(bd),v),,@)+$(if $(BUILD_LOG),set -o pipefail;) $$(SUBMAKE) -C $(1)/$(bd) $(target) BUILD_VARIANT="$(filter-out __default,$(variant))" $(if $(BUILD_LOG),SILENT= 2>&1 | tee $(BUILD_LOG_DIR)/$(1)/$(bd)/$(target).txt) $(if $(findstring $(bd),$($(1)/builddirs-ignore-$(target))), || $(call ERROR,$(1),   ERROR: $(1)/$(bd) failed to build$(if $(filter-out __default,$(variant)), (build variant: $(variant))).))
+			$(if $(BUILD_LOG),@mkdir -p $(BUILD_LOG_DIR)/$(1)/$(bd)/$(filter-out __default,$(variant)))
+			$(if $($(1)/autoremove),$(call rebuild_check,$(1)/$(bd),$(target),,$(filter-out __default,$(variant))))
+			$(call log_make,$(1)/$(bd),$(target),,$(filter-out __default,$(variant))) \
+				|| $(call ERROR,$(1),   ERROR: $(1)/$(bd) failed to build$(if $(filter-out __default,$(variant)), (build variant: $(variant))).,$(findstring $(bd),$($(1)/builddirs-ignore-$(target)))) 
         )
       $(if $(PREREQ_ONLY)$(DUMP_TARGET_DB),,
         # aliases
@@ -51,7 +79,7 @@ define subdir
 	  )
 	)
   )
-  $(foreach target,$(SUBTARGETS),$(call subtarget,$(1),$(target)))
+  $(foreach target,$(SUBTARGETS) $($(1)/subtargets),$(call subtarget,$(1),$(target)))
 endef
 
 ifndef DUMP_TARGET_DB

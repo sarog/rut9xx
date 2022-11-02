@@ -1,0 +1,22 @@
+Index: zebra/if_netlink.c
+===================================================================
+--- frr-5.0.2.orig/zebra/if_netlink.c.orig
++++ frr-5.0.2/zebra/if_netlink.c
+@@ -674,6 +674,9 @@ static int netlink_interface(struct sock
+ 	zebra_if_update_link(ifp, link_ifindex);
+ 
+ 	/* Hardware type and address. */
++	if (IS_ZEBRA_DEBUG_KERNEL)
++		zlog_debug("%s: setting ll_type", __func__);
++
+ 	ifp->ll_type = netlink_to_zebra_link_type(ifi->ifi_type);
+ 	netlink_interface_update_hw_addr(tb, ifp);
+ 
+@@ -1271,6 +1274,7 @@ int netlink_link_change(struct sockaddr_
+ 			zebra_if_set_ziftype(ifp, zif_type, zif_slave_type);
+ 
+ 			netlink_interface_update_hw_addr(tb, ifp);
++			ifp->ll_type = netlink_to_zebra_link_type(ifi->ifi_type);
+ 
+ 			if (if_is_no_ptm_operative(ifp)) {
+ 				ifp->flags = ifi->ifi_flags & 0x0000fffff;

@@ -1,0 +1,45 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+check_enabled() {
+	config_get enabled "$1" enabled 0
+	[ "$enabled" -eq 1 ] && hotspot_enabled=true	
+}
+check_firewall() {
+	config_get name "$1" name
+	[ "$name" = "Hotspot_input" ] && rule_exists=true
+}
+
+hotspot_enabled=false
+rule_exists=false
+
+config_load chilli
+config_foreach check_enabled chilli
+
+config_load firewall
+config_foreach check_firewall rule
+
+if [ "$hotspot_enabled" = "true" ] && [ "$rule_exists" = "false" ]; then
+	uci -q batch <<-EOT
+		set firewall.hotspot=zone
+		set firewall.hotspot.name='hotspot'
+		set firewall.hotspot.input='REJECT'
+		set firewall.hotspot.forward='REJECT'
+		set firewall.hotspot.device='tun0 tun1 tun2 tun3'
+		set firewall.hotspot.output='ACCEPT'
+
+		add firewall forwarding
+		set firewall.@forwarding[-1].src='hotspot'
+		set firewall.@forwarding[-1].dest='wan'
+
+		add firewall rule
+		set firewall.@rule[-1].dest_port='53 67-68 444 81 1812 1813 3991 3990'
+		set firewall.@rule[-1].src='hotspot'
+		set firewall.@rule[-1].name='Hotspot_input'
+		set firewall.@rule[-1].target='ACCEPT'
+		set firewall.@rule[-1].enabled='1'
+		commit firewall
+	EOT
+
+fi

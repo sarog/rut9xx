@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # 
-# Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
+# Copyright (C) 2006 Felix Fietkau <nbd@nbd.name>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -102,8 +102,15 @@ sub config_sub($$) {
 	my $cfg1 = shift;
 	my $cfg2 = shift;
 	my %config = %{$cfg1};
-	
-	foreach my $config (keys %$cfg2) {
+	my @keys = map {
+		my $expr = $_;
+		$expr =~ /[?.*]/ ?
+			map {
+				/^$expr$/ ? $_ : ()
+			} keys %config : $expr;
+	} keys %$cfg2;
+
+	foreach my $config (@keys) {
 		delete $config{$config};
 	}
 	return \%config;
